@@ -46,6 +46,7 @@ import { Picture } from './ui/Picture';
 import { nodeDomains } from '../config/charter';
 import { useAutosave } from '../hooks/useAutosave';
 import { COMMUNITY_APPEARANCE_FIELDS, reconcile } from '../domain/autosave';
+import { mailWordsOf } from '../domain/mailVoice';
 import { NewsletterAdmin } from './NewsletterAdmin';
 interface CommunityProfileProps {
   community: Community;
@@ -214,6 +215,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [editShowStats, setEditShowStats] = useState(community.showStats === true);
   const [editLandingPages, setEditLandingPages] = useState<{ id: string; label: string; html: string }[]>(community.landingPages || []);
   const [editTheme, setEditTheme] = useState(normalizeTheme(community.theme));
+  // The palette's reach and the letters' words (rings 2026-09-14) — live dials like the rest.
+  const [editPaletteReach, setEditPaletteReach] = useState(community.paletteReach === true);
+  const [editMail, setEditMail] = useState<{ greeting: string; signature: string; footer: string }>({ greeting: community.mail?.greeting || '', signature: community.mail?.signature || '', footer: community.mail?.footer || '' });
   const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
   const [heroImageUrl, setHeroImageUrl] = useState(community.heroImageUrl || '');
   const [imageUrls, setImageUrls] = useState<string[]>(community.imageUrls || []);
@@ -261,7 +265,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     customLanding: editCustomLanding,
     showStats: editShowStats,
     landingPages: editLandingPages.filter(p => p.label.trim()),
-  }), [editName, editTheme, logoUrl, heroImageUrl, imageUrls, editSocial, editCarouselQuotes, editCustomLanding, editShowStats, editLandingPages]);
+    paletteReach: editPaletteReach,
+    mail: mailWordsOf(editMail),
+  }), [editName, editTheme, logoUrl, heroImageUrl, imageUrls, editSocial, editCarouselQuotes, editCustomLanding, editShowStats, editLandingPages, editPaletteReach, editMail]);
   const appearancePersisted = useMemo(() => ({
     name: community.name,
     theme: normalizeTheme(community.theme),
@@ -273,6 +279,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     customLanding: community.customLanding === true,
     showStats: community.showStats === true,
     landingPages: community.landingPages || [],
+    paletteReach: community.paletteReach === true,
+    mail: mailWordsOf(community.mail),
   }), [community]);
   const appearanceSave = useAutosave({
     persisted: appearancePersisted,
@@ -316,8 +324,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setEditCustomLanding(next.customLanding);
     setEditShowStats(next.showStats);
     setEditLandingPages(next.landingPages);
+    setEditPaletteReach(next.paletteReach);
+    setEditMail({ greeting: next.mail.greeting || '', signature: next.mail.signature || '', footer: next.mail.footer || '' });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); object identities change per fetch and would re-run this needlessly; the draft is read, not depended on
-  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, imageUrlsKey]);
+  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, community.paletteReach, community.mail, imageUrlsKey]);
 
   useEffect(() => {
     // Own-tree merge only where the place allows it (domain ownMergeUid): a STRICT face
@@ -451,6 +461,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
         customLanding: editCustomLanding,
         showStats: editShowStats,
         landingPages: editLandingPages.filter(p => p.label.trim()),
+        paletteReach: editPaletteReach,
+        mail: mailWordsOf(editMail),
       };
       await updateCommunity(community.id, updates);
       // Refresh from Firestore so the view reflects exactly what was persisted.
@@ -777,6 +789,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             onShowStatsChange={setEditShowStats}
             editLandingPages={editLandingPages}
             onLandingPagesChange={setEditLandingPages}
+            editPaletteReach={editPaletteReach}
+            onPaletteReachChange={setEditPaletteReach}
+            editMail={editMail}
+            onMailChange={setEditMail}
             autosave={appearanceSave.state}
             status={status}
           />

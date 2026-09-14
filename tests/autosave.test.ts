@@ -59,7 +59,7 @@ describe('the one spelling of a value', () => {
 
 describe('the appearance the tab edits', () => {
   it('names every field the community Appearance tab may change, and a breath under a second', () => {
-    expect([...COMMUNITY_APPEARANCE_FIELDS]).toEqual(['name', 'theme', 'logoUrl', 'heroImageUrl', 'imageUrls', 'socialLinks', 'carouselQuotes', 'customLanding', 'showStats', 'landingPages']);
+    expect([...COMMUNITY_APPEARANCE_FIELDS]).toEqual(['name', 'theme', 'logoUrl', 'heroImageUrl', 'imageUrls', 'socialLinks', 'carouselQuotes', 'customLanding', 'showStats', 'landingPages', 'paletteReach', 'mail']);
     expect(AUTOSAVE_DELAY_MS).toBeGreaterThan(0);
     expect(AUTOSAVE_DELAY_MS).toBeLessThan(1000);
   });

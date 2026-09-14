@@ -9,8 +9,10 @@ import { normalizeTheme } from '../../utils/theme';
 import { nodeDefaultTheme } from '../../hooks/useConfig';
 import { AppearanceSection } from '../sections/AppearanceSection';
 import type { AutosaveState } from '../../domain/autosave';
+import { MAIL_LINE_MAX } from '../../domain/mailVoice';
 
 type SocialLinks = NonNullable<Community['socialLinks']>;
+export type MailDraft = { greeting: string; signature: string; footer: string };
 type EditableTheme = ReturnType<typeof normalizeTheme>;
 
 // The appearance tab is presentational and LIVE (ring 2026-09-07): every edited field is
@@ -46,6 +48,12 @@ interface CommunityAppearanceProps {
   // The landing's authored pages (menu panels) — rich text blocks, data not code.
   editLandingPages: { id: string; label: string; html: string }[];
   onLandingPagesChange: React.Dispatch<React.SetStateAction<{ id: string; label: string; html: string }[]>>;
+  // The palette reaches the page (domain/paletteReach): ink and primary dress text and buttons too.
+  editPaletteReach: boolean;
+  onPaletteReachChange: (value: boolean) => void;
+  // The letters' words (domain/mailVoice): greeting, signature, footer of every mail from this door.
+  editMail: MailDraft;
+  onMailChange: React.Dispatch<React.SetStateAction<MailDraft>>;
   autosave: AutosaveState;
   status: string | null;
 }
@@ -79,6 +87,10 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
   onShowStatsChange,
   editLandingPages,
   onLandingPagesChange,
+  editPaletteReach,
+  onPaletteReachChange,
+  editMail,
+  onMailChange,
   autosave,
   status,
 }) => {
@@ -118,6 +130,48 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
       autosave={autosave}
       status={status}
     />
+
+    {/* The palette reaches the page (ring 2026-09-14): off, the theme colours the frame (header,
+        ground, the text dial barely seen); on, its ink and primary dress the reading text and
+        the buttons too. Explicit, so no standing garden changes its face unasked. */}
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('palette_reach')}</p>
+        <p className="text-xs text-slate-500">{t('palette_reach_note')}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={editPaletteReach}
+        onClick={() => onPaletteReachChange(!editPaletteReach)}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editPaletteReach ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+      >
+        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editPaletteReach ? 'translate-x-5' : 'translate-x-0'}`} />
+      </button>
+    </div>
+
+    {/* Letters from this place (ring 2026-09-14): the words every system mail sent from this
+        door is dressed in — data the keeper writes, the server composes (domain/mailVoice). */}
+    <div className="space-y-3 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('letters_title')}</p>
+        <p className="text-xs text-slate-500">{t('letters_note')}</p>
+      </div>
+      {(['greeting', 'signature', 'footer'] as const).map(k => (
+        <label key={k} className="block space-y-1">
+          <span className="text-[10px] font-bold uppercase text-slate-400">{t(`mail_${k}`)}</span>
+          <textarea
+            dir="auto"
+            rows={k === 'signature' ? 2 : 1}
+            maxLength={MAIL_LINE_MAX}
+            value={editMail[k]}
+            onChange={e => onMailChange(prev => ({ ...prev, [k]: e.target.value }))}
+            placeholder={t(`mail_${k}_ph`)}
+            className="w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
+          />
+        </label>
+      ))}
+    </div>
 
     {/* Custom landing — data, not code: flipping this makes the community's hero image the
         domain's front page (sign-in + events), with the seed behind the corner logo. Like

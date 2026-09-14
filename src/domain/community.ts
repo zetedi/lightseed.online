@@ -43,6 +43,13 @@ export interface Community extends Being {
   // The landing's own pages (menu panels): authored rich text — a food menu, an About, an
   // offering list. Data, not code: every organisation shapes its own site from these blocks.
   landingPages?: { id: string; label: string; html: string }[];
+  // THE PALETTE REACHES THE PAGE (domain/paletteReach): on, the theme's ink and primary colour
+  // the reading text and the buttons too, not only the shell's frame. Off by default.
+  paletteReach?: boolean;
+  // THE VOICE OF THE PLACE'S LETTERS (domain/mailVoice): a greeting before, a signature after,
+  // a footer line of its own — data a keeper writes; the server dresses every system mail
+  // sent from this place in them.
+  mail?: { greeting?: string; signature?: string; footer?: string };
   // Vanity counts (trees/pulses/visions on the home cards) stay hidden unless a node opts in —
   // this is not about numbers. Off by default; toggled from the Appearance tab.
   showStats?: boolean;

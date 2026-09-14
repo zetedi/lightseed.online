@@ -4,6 +4,7 @@ import { Community } from '../types';
 import { defaultConfig } from '../config/default';
 import { signupRequiresInvite } from '../domain/communityDoor';
 import { normalizeTheme, oldEmeraldEarthTheme } from '../utils/theme';
+import { paletteReaches } from '../domain/paletteReach';
 
 import { nodeDomains } from '../config/charter';
 // Branding/shell identity only. This helper MUST NOT decide data scope or nodehood:
@@ -46,6 +47,7 @@ export const useConfig = (hostCommunity: Community | null) => {
         name: hostDomain === 'lifeseed.online' ? 'lifeseed' : defaultConfig.name,
         domain: hostDomain || defaultConfig.domain,
         theme: domainDefaultTheme,
+        paletteReach: false,
       };
     }
 
@@ -57,6 +59,8 @@ export const useConfig = (hostCommunity: Community | null) => {
       // Sign-up on this domain is governed by the node's own door: open = anyone may create an
       // account (identity open, delegated to the keeper); else invitation-gated (the default).
       inviteOnly: signupRequiresInvite(hostCommunity),
+      // The host's palette reaches its page only when its keeper turned the dial (domain/paletteReach).
+      paletteReach: paletteReaches(hostCommunity),
       theme: normalizeTheme(
         hostDomain === 'lifeseed.online' && isPreviousLifeseedDefaultTheme(hostCommunity.theme)
           ? undefined

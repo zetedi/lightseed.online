@@ -53,6 +53,61 @@ body,
   display: none;
 }
 
+/* THE PALETTE REACHES THE PAGE (ring 2026-09-14; domain/paletteReach). The shell's reading text
+   and buttons are hand-painted slate and emerald in some 1,300 places; a keeper's ink and primary
+   coloured only the frame. When a community turns the dial, useSiteTheme stamps
+   data-palette="reach" on <html> and these rules — unlayered, so they win over Tailwind's
+   utilities layer whatever the order — remap the slate text (by day only; the night keeps its
+   slate) and the emerald family (day and night) onto the theme's own ink and primary, every
+   step mixed from those two. Nothing here is a second palette. */
+:root[data-palette="reach"] {
+  --ink-90: color-mix(in srgb, var(--color-text) 88%, var(--color-background));
+  --ink-70: color-mix(in srgb, var(--color-text) 74%, var(--color-background));
+  --ink-55: color-mix(in srgb, var(--color-text) 58%, var(--color-background));
+  --ink-40: color-mix(in srgb, var(--color-text) 44%, var(--color-background));
+  --primary-50: color-mix(in srgb, var(--color-primary) 8%, white);
+  --primary-100: color-mix(in srgb, var(--color-primary) 14%, white);
+  --primary-200: color-mix(in srgb, var(--color-primary) 28%, white);
+  --primary-300: color-mix(in srgb, var(--color-primary) 45%, white);
+  --primary-400: color-mix(in srgb, var(--color-primary) 62%, white);
+  --primary-500: color-mix(in srgb, var(--color-primary) 88%, white);
+  --primary-700: color-mix(in srgb, var(--color-primary) 84%, black);
+  --primary-800: color-mix(in srgb, var(--color-primary) 68%, black);
+  --primary-900: color-mix(in srgb, var(--color-primary) 40%, #020617);
+  --primary-950: color-mix(in srgb, var(--color-primary) 22%, #020617);
+}
+/* The ink, by day. */
+:root[data-palette="reach"][data-mode="light"] :is(.text-slate-950, .text-slate-900, .text-slate-800) { color: var(--color-text); }
+:root[data-palette="reach"][data-mode="light"] .text-slate-700 { color: var(--ink-90); }
+:root[data-palette="reach"][data-mode="light"] .text-slate-600 { color: var(--ink-70); }
+:root[data-palette="reach"][data-mode="light"] .text-slate-500 { color: var(--ink-55); }
+:root[data-palette="reach"][data-mode="light"] .text-slate-400 { color: var(--ink-40); }
+/* The primary, day and night. */
+:root[data-palette="reach"] :is(.bg-emerald-600, .hover\:bg-emerald-600:hover, .bg-emerald-400) { background-color: var(--color-primary); }
+:root[data-palette="reach"] :is(.bg-emerald-500, .hover\:bg-emerald-500:hover) { background-color: var(--primary-500); }
+:root[data-palette="reach"] :is(.bg-emerald-700, .hover\:bg-emerald-700:hover) { background-color: var(--primary-700); }
+:root[data-palette="reach"] :is(.text-emerald-600, .hover\:text-emerald-600:hover, .text-emerald-500) { color: var(--color-primary); }
+:root[data-palette="reach"] :is(.text-emerald-700, .hover\:text-emerald-700:hover) { color: var(--primary-700); }
+:root[data-palette="reach"] :is(.text-emerald-800, .text-emerald-900) { color: var(--primary-800); }
+:root[data-palette="reach"] :is(.border-emerald-500, .border-emerald-600, .border-emerald-400) { border-color: var(--color-primary); }
+:root[data-palette="reach"] :is(.ring-emerald-500, .focus\:ring-emerald-500:focus, .ring-emerald-400, .focus\:ring-emerald-400:focus) { --tw-ring-color: var(--color-primary); }
+:root[data-palette="reach"] :is(.ring-emerald-100, .focus\:ring-emerald-100:focus) { --tw-ring-color: var(--primary-100); }
+/* The primary's tints: the light ones by day … */
+:root[data-palette="reach"][data-mode="light"] :is(.bg-emerald-50, .hover\:bg-emerald-50:hover) { background-color: var(--primary-50); }
+:root[data-palette="reach"][data-mode="light"] :is(.bg-emerald-100, .hover\:bg-emerald-100:hover) { background-color: var(--primary-100); }
+:root[data-palette="reach"][data-mode="light"] .border-emerald-100 { border-color: var(--primary-100); }
+:root[data-palette="reach"][data-mode="light"] :is(.border-emerald-200, .hover\:border-emerald-200:hover) { border-color: var(--primary-200); }
+:root[data-palette="reach"][data-mode="light"] :is(.border-emerald-300, .hover\:border-emerald-300:hover) { border-color: var(--primary-300); }
+/* … the deep ones by night. */
+:root[data-palette="reach"][data-mode="dark"] .dark\:bg-emerald-950 { background-color: var(--primary-950); }
+:root[data-palette="reach"][data-mode="dark"] .dark\:bg-emerald-950\/40 { background-color: color-mix(in srgb, var(--primary-950) 40%, transparent); }
+:root[data-palette="reach"][data-mode="dark"] .dark\:bg-emerald-950\/60 { background-color: color-mix(in srgb, var(--primary-950) 60%, transparent); }
+:root[data-palette="reach"][data-mode="dark"] .dark\:bg-emerald-900 { background-color: var(--primary-900); }
+:root[data-palette="reach"][data-mode="dark"] :is(.dark\:border-emerald-900, .dark\:border-emerald-800) { border-color: var(--primary-900); }
+:root[data-palette="reach"][data-mode="dark"] .dark\:text-emerald-300 { color: var(--primary-300); }
+:root[data-palette="reach"][data-mode="dark"] :is(.dark\:text-emerald-200, .dark\:text-emerald-100) { color: var(--primary-200); }
+:root[data-palette="reach"][data-mode="dark"] .dark\:text-emerald-400 { color: var(--primary-400); }
+
 /* THE EDITOR'S CORNERS (ring 2026-09-13). The wrapper used to round its corners with
    overflow-hidden, which also clipped the heading dropdown at the box's edge. The corners
    are Quill's own now, and the open dropdown rides above what follows. */

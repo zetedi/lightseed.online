@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import type { Community, Lightseed } from '../types';
 import { isSeedShellHost, useConfig } from './useConfig';
 import { normalizeTheme } from '../utils/theme';
+import { PALETTE_REACH_ATTR, paletteReaches } from '../domain/paletteReach';
 
 export type ThemeModePreference = 'light' | 'dark' | null;
 
@@ -64,6 +65,9 @@ export function useSiteTheme(params: {
     mode: 'light' as const,
   };
   const effectiveIsDark = effectiveTheme.mode === 'dark';
+  // THE PALETTE REACHES THE PAGE (ring 2026-09-14): the viewed community's dial, else the
+  // host's; a personal palette never reaches (the person's site keeps the shell's text).
+  const paletteReach = impersonatedCommunity ? paletteReaches(impersonatedCommunity) : (!personalActive && paletteReaches(config));
 
   useEffect(() => {
     // effectiveTheme is a fresh object literal every render (always truthy), so the effect keys
@@ -76,7 +80,8 @@ export function useSiteTheme(params: {
     root.style.setProperty('--color-surface', effectiveTheme.surface || '#ffffff');
     root.style.setProperty('--color-text', effectiveTheme.text || '#0f172a');
     root.dataset.mode = effectiveIsDark ? 'dark' : 'light';
-  }, [effectiveTheme.primary, effectiveTheme.secondary, effectiveTheme.accent, effectiveTheme.background, effectiveTheme.surface, effectiveTheme.text, effectiveIsDark]);
+    if (paletteReach) root.dataset.palette = PALETTE_REACH_ATTR; else delete root.dataset.palette;
+  }, [effectiveTheme.primary, effectiveTheme.secondary, effectiveTheme.accent, effectiveTheme.background, effectiveTheme.surface, effectiveTheme.text, effectiveIsDark, paletteReach]);
 
   useEffect(() => {
     if (localStorage.getItem('lifeseed_theme_mode') === null && localStorage.getItem('lifeseed_night_mode') === null) {

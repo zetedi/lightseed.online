@@ -21,6 +21,7 @@ import { defineSecret } from "firebase-functions/params";
 import webpush from "web-push";
 import { judgeOfferingAccept, offeringTwinBlocks, type OfferedToKind } from "./offering";
 import { publicNameOf } from "./publicName";
+import { mailVoiceOf, dressMailText, type MailVoice, type MailVoiceSource } from "./mailVoice";
 import { createBlock, computeCanonicalHash, BLOCK_HASH_VERSION } from "./chain";
 import { FACE_PREVIEW_MAX_BYTES, facePreviewAttempts, facePreviewDoorOf, facePreviewKeyOf, facePreviewUrlOf } from "./facePreview";
 import { getStorage } from "firebase-admin/storage";
@@ -545,7 +546,17 @@ export const activateSigningKeyRecovery = onCall({ cors: true }, async request =
 // The PLACE a mail is triggered at — the community rooted at a domain, or answering at one of
 // its doors (the getCommunityByDomain fallback) — so the sender may wear its name
 // (charter mailFromOf: "The Living Web - The O House"). A node domain, or no cradle, is the node.
-type MailPlace = { name?: string | null; domain?: string | null } | null;
+// THE VOICE OF A LETTER (ring 2026-09-14): the place also lends its body — name at the head,
+// palette on the button and paper, a greeting, a signature, a footer line — all read from the
+// community's own record by the mirrored law (mailVoice); the node speaks bare.
+type MailPlace = ({ name?: string | null; domain?: string | null } & { source?: MailVoiceSource | null }) | null;
+const NODE_VOICE = { name: charter.name, origin: NODE_ORIGIN, postal: "The O House, Bigeh Island, Aswan, Egypt" };
+const voiceOf = (place: MailPlace): MailVoice => mailVoiceOf(place?.source ?? (place ? { name: place.name, domain: place.domain } : null), NODE_VOICE);
+const placeOfCommunity = (c: Record<string, unknown>, domain?: string): MailPlace => ({
+    name: String(c.name || ""),
+    domain: String(c.domain || domain || ""),
+    source: { name: c.name as string, domain: (c.domain as string) || domain, theme: c.theme as MailVoiceSource["theme"], mail: c.mail as MailVoiceSource["mail"] },
+});
 const placeOfDomain = async (domainRaw: unknown): Promise<MailPlace> => {
     const domain = String(domainRaw || "").trim().toLowerCase().replace(/^www\./, "");
     if (!domain || charterOwnDomains(charter).includes(domain)) return null;
@@ -553,8 +564,7 @@ const placeOfDomain = async (domainRaw: unknown): Promise<MailPlace> => {
         let cradle = await db.collection("communities").where("domain", "==", domain).limit(1).get();
         if (cradle.empty) cradle = await db.collection("communities").where("domainAliases", "array-contains", domain).limit(1).get();
         if (cradle.empty) return { domain };
-        const c = cradle.docs[0].data() as Record<string, unknown>;
-        return { name: String(c.name || ""), domain: String(c.domain || domain) };
+        return placeOfCommunity(cradle.docs[0].data() as Record<string, unknown>, domain);
     } catch { return { domain }; }
 };
 
@@ -580,12 +590,15 @@ const writeMail = async (params: { to: string | string[]; subject: string; html:
 const escapeHtml = (s: string): string =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-const composeSystemEmailHtml = (text: string, ctaUrl: string, ctaLabel: string): string => {
-    const body = escapeHtml(text).replace(/\n/g, "<br>");
+// Dressed in the place's VOICE (ring 2026-09-14): its name where ".seed" stood, its primary on
+// the button and links, its ink on its paper, the greeting and signature around the words,
+// its footer line under the rule. The node's own letters wear the shell voice unchanged.
+const composeSystemEmailHtml = (text: string, ctaUrl: string, ctaLabel: string, voice: MailVoice = voiceOf(null)): string => {
+    const body = escapeHtml(dressMailText(text, voice)).replace(/\n/g, "<br>");
     const cta = ctaUrl
-        ? `<div style="margin:24px 0;"><a href="${ctaUrl}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-weight:bold;padding:12px 26px;border-radius:9999px;font-size:15px;">${escapeHtml(ctaLabel)}</a></div><p style="font-size:12px;color:#9ca3af;">Or paste this link:<br/><a href="${ctaUrl}" style="color:#059669;word-break:break-all;">${escapeHtml(ctaUrl)}</a></p>`
+        ? `<div style="margin:24px 0;"><a href="${ctaUrl}" style="display:inline-block;background:${voice.primary};color:#fff;text-decoration:none;font-weight:bold;padding:12px 26px;border-radius:9999px;font-size:15px;">${escapeHtml(ctaLabel)}</a></div><p style="font-size:12px;color:#9ca3af;">Or paste this link:<br/><a href="${ctaUrl}" style="color:${voice.primary};word-break:break-all;">${escapeHtml(ctaUrl)}</a></p>`
         : "";
-    return `<div style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: #059669; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">.seed</h2><div style="font-size: 16px; margin-bottom: 8px;">${body}</div>${cta}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from the <a href=NODE_ORIGIN style="color: #059669; text-decoration: none;">Lifetree Network</a><br/>The O House, Bigeh Island, Aswan, Egypt</p></div>`;
+    return `<div style="font-family: sans-serif; line-height: 1.6; color: ${voice.ink}; background: ${voice.paper}; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;"><h2 style="color: ${voice.primary}; font-weight: 300; letter-spacing: 1px; margin-bottom: 20px;">${escapeHtml(voice.name)}</h2><div style="font-size: 16px; margin-bottom: 8px;">${body}</div>${cta}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" /><p style="font-size: 12px; color: #9ca3af; text-align: center;">Sent from <a href="${voice.origin}" style="color: ${voice.primary}; text-decoration: none;">${escapeHtml(voice.name)}</a> on the Lifetree Network<br/>${escapeHtml(voice.footer)}</p></div>`;
 };
 
 // --- Staff check + server-authoritative daily quotas -----------------------------------------
@@ -787,11 +800,13 @@ export const sendSystemEmail = onCall({ cors: true }, async (request) => {
         await enforceDailyQuota(uid, 'dailyEmail', DAILY_EMAIL_LIMIT);
     }
 
-    const html = composeSystemEmailHtml(text, ctaUrl, ctaLabel);
-    const plain = ctaUrl ? `${text}\n\n${ctaUrl}` : text;
-    // The door the hand stood at (the client's hostname) names the place the sender speaks for.
+    // The door the hand stood at (the client's hostname) names the place the sender speaks for —
+    // and whose voice dresses the letter.
     const doorRaw = String(request.data?.domain || "").slice(0, 253);
     const place = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(doorRaw) ? await placeOfDomain(doorRaw) : null;
+    const voice = voiceOf(place);
+    const html = composeSystemEmailHtml(text, ctaUrl, ctaLabel, voice);
+    const plain = ctaUrl ? `${dressMailText(text, voice)}\n\n${ctaUrl}` : dressMailText(text, voice);
     try {
         await writeMail({ to: recipients, subject, html, text: plain, uid, place });
         return { success: true };
@@ -1363,7 +1378,8 @@ export const onJoinRequestCreated = onDocumentCreated("links/{linkId}", async (e
         const requester = (await publicNameByPerson(String(link.from), personSnap.exists ? (personSnap.data() as any) : null)) || "Someone";
         const communityName = community.name || "your community";
         const text = `${requester} asked to join ${communityName}.\n\nYou can accept or decline on the community's Members tab.`;
-        const html = composeSystemEmailHtml(text, NODE_ORIGIN, `Open ${charter.name}`);
+        const knockPlace = placeOfCommunity(community as Record<string, unknown>);
+        const html = composeSystemEmailHtml(text, NODE_ORIGIN, `Open ${charter.name}`, voiceOf(knockPlace));
         await Promise.all(keeperIds.map(async (uid) => {
             const keeper = await db.collection("users").doc(uid).get();
             const email = keeper.exists ? (keeper.data() as any)?.email : null;
@@ -1371,9 +1387,9 @@ export const onJoinRequestCreated = onDocumentCreated("links/{linkId}", async (e
             await writeMail({
                 to: [email],
                 subject: `${requester} asked to join ${communityName}`,
-                place: { name: community.name, domain: community.domain },
+                place: knockPlace,
                 html,
-                text: `${text}\n\n${NODE_ORIGIN}`,
+                text: `${dressMailText(text, voiceOf(knockPlace))}\n\n${NODE_ORIGIN}`,
                 uid,
             });
         }));

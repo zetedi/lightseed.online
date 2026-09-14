@@ -6,6 +6,39 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-14 · The palette reaches the page, and a letter speaks in the voice of its place** —
+Enlightened Nations brought their branding: text in Deep Taupe (#504243), ground in Sand
+(#FEF8F3), blues, greens, warm accents, two signature tones. Their keeper had already set the
+theme on the Appearance tab — and the text dial moved nothing anyone could see, because the
+shell's reading text and buttons are hand-painted in some 1,300 places (text-slate-*, the
+emerald family); a theme coloured only the frame (header, ground, a few landing accents).
+TWO things, both data. (1) THE REACH is a DIAL on the community (`paletteReach`, off by
+default; domain/paletteReach): on, useSiteTheme stamps `data-palette="reach"` on <html> and
+index.css remaps the slate text (by day only — the night keeps its slate) and the emerald
+family (day and night) onto the theme's own ink and primary, every step mixed from those two
+with color-mix, never a second palette; unlayered rules, so Tailwind's utilities layer never
+outranks them. Explicit so that the three gardens wearing a custom theme today (Enlightened
+Nations, The O House, Per Auset) change nothing until their keeper turns it. (2) THE VOICE OF
+A LETTER (domain/mailVoice, mirrored in functions, held equal by test): a system mail sent
+from a door is dressed in that place's name where ".seed" stood, its primary on the button
+and links, its ink on its paper (taken together, only when they read at contrast ≥ 3; a
+dark-authored theme lends nothing — mail is read on white), a greeting before the words, a
+signature after, its own footer line under the rule — three lines the keeper writes on the
+Appearance tab ("Letters from this place", `mail.{greeting,signature,footer}`, ≤ 280 chars,
+control characters stripped). The node's own letters (goodbye, the shell default) stay bare.
+Applied to sendSystemEmail (the door the hand stood at) and the knock to keepers (the
+community's own voice). NOT YET: the direct-message notice keeps its own hand-built shell
+(sender line already the place's; body not yet dressed); the newsletter footer keeps the
+node's postal line and emerald link; gradients, the gray family and the rarer opacity tints
+are not reached; a person's site palette never reaches (the person's page keeps the shell's
+text). REVERT: two dials off is the data revert (paletteReach false, mail empty); the code
+revert is this one commit. REJECTED: a fixed mapping of the EN palette into code (data, not
+code: their theme is theirs on the tab); reaching the primary by contrast heuristics (hidden
+magic a keeper cannot see or turn); a per-face email template file (a place's voice is
+three lines of its own record, not a file in the repo).
+
+---
+
 **2026-09-14 · What the regen tokens taught: representatives, not inventories** — Zoltán's
 answer to Enlightened Nations named the three ways earlier regenerative-token endeavours
 died, and this ring keeps them where a year from now the next "credit" request will find

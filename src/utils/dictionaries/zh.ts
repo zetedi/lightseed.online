@@ -535,7 +535,7 @@ const zh = {
   landing_no_pages: "还没有页面；着陆页显示首页与活动。",
   menu_label_ph: "菜单标签（如厨房）", page_content_ph: "页面内容：文字、列表、图片…",
   home_counts: "在首页显示数量",
-  home_counts_note: "首页卡片上的树/脉动/愿景计数。关掉后，首页只关乎生命，而非数字。",
+  home_counts_note: "首页卡片上的树/脉动/愿景计数。关掉后，首页只关乎生命，而非数字。", palette_reach: "调色板抵达页面", palette_reach_note: "开启后，你的文字色与主色也会用于正文与按钮，而不只是页眉与底色。关闭时，种子在那里保留自己的石板灰与翠绿。", letters_title: "来自此地的信", letters_note: "种子从你的门发出的每一封邮件——邀请、叩门、浇水——都以这些话语装点。留空一行即沿用种子的原话。", mail_greeting: "问候", mail_greeting_ph: "亲爱的万邦之友，", mail_signature: "署名", mail_signature_ph: "满怀感恩，\n此圈", mail_footer: "页脚一行", mail_footer_ph: "此地立于何处，一句话",
   chain_sealed: "链已封印",
   chain_sealed_note: "此节点铸造的每个新区块都以规范、可复现的哈希封印，其内容可对照哈希验证。",
   chain_seal: "封印链",

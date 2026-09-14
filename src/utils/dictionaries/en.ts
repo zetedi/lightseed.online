@@ -530,7 +530,7 @@ const en = {
   landing_no_pages: "No pages yet; the landing shows Home and Events.",
   menu_label_ph: "Menu label (e.g. Kitchen)", page_content_ph: "The page's content: text, lists, images…",
   home_counts: "Show counts on the home",
-  home_counts_note: "The trees / pulses / visions tallies on the home cards. Left off, the home stays about the living, not the numbers.",
+  home_counts_note: "The trees / pulses / visions tallies on the home cards. Left off, the home stays about the living, not the numbers.", palette_reach: "The palette reaches the page", palette_reach_note: "On, your text and primary colours dress the reading text and the buttons too, not only the header and the ground. Off, the seed keeps its own slate and emerald there.", letters_title: "Letters from this place", letters_note: "Every mail the seed sends from your door — invitations, knocks, waterings — is dressed in these words. Leave a line empty to keep the seed's own.", mail_greeting: "Greeting", mail_greeting_ph: "Dear friend of the Nations,", mail_signature: "Signature", mail_signature_ph: "With gratitude,\nThe circle", mail_footer: "Footer line", mail_footer_ph: "Where this place stands, in one line",
   chain_sealed: "Chain sealed",
   chain_sealed_note: "Every new block this node mints is sealed with the canonical, reproducible hash, so its content can be verified against its hash.",
   chain_seal: "Seal the chain",
