@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
-  charterProblem, charterHosts, charterOrigin, charterOwnDomains, charterFaceDoor, charterPublicOf, firebasercOf, hostingOf, mailFromOf,
+  charterProblem, charterHosts, charterOrigin, charterOwnDomains, charterAuthHosts, charterFaceDoor, charterPublicOf, firebasercOf, hostingOf, mailFromOf,
   type Charter,
 } from '../src/domain/charter';
 import {
   charterProblem as sCharterProblem, charterHosts as sCharterHosts, charterOrigin as sCharterOrigin,
-  charterOwnDomains as sCharterOwnDomains, charterFaceDoor as sCharterFaceDoor, charterPublicOf as sCharterPublicOf,
+  charterOwnDomains as sCharterOwnDomains, charterAuthHosts as sCharterAuthHosts, charterFaceDoor as sCharterFaceDoor, charterPublicOf as sCharterPublicOf,
   mailFromOf as sMailFromOf,
 } from '../functions/src/charter';
 import { speak } from '../src/utils/translations';
@@ -53,6 +53,14 @@ describe('what the charter derives', () => {
       'lightseed.online', 'mamaway.web.app', 'perauset.com', 'perauset.web.app', 'seed.enlightenednations.org', 'seed.perauset.org', 'seed.theohouse.org', 'theohouse.org',
       'theohouse.web.app',
     ]);
+  });
+
+  it('names the hosts that may be their own auth domain: its own, plus the faces the charter declares wired (ring 2026-09-16)', () => {
+    expect(charterAuthHosts(node)).toEqual([...new Set([...charterOwnDomains(node), ...(node.authHosts ?? [])])].sort());
+    expect(charterAuthHosts({ ...node, authHosts: undefined })).toEqual([...charterOwnDomains(node)].sort());
+    expect(charterProblem({ ...node, authHosts: ['seed.perauset.org'] })).toBe(null);
+    expect(charterProblem({ ...node, authHosts: ['perauset.org'] })).toBe('charter_auth_host'); // answers nowhere on this node
+    expect(charterProblem({ ...node, authHosts: ['not a host'] })).toBe('charter_auth_host');
   });
 
   it('speaks from its own origin, knows its own domains and each face\'s door', () => {
@@ -136,6 +144,8 @@ describe('the functions mirror stays true', () => {
     expect(sCharterHosts(node)).toEqual(charterHosts(node));
     expect(sCharterOrigin(node)).toBe(charterOrigin(node));
     expect(sCharterOwnDomains(node)).toEqual(charterOwnDomains(node));
+    expect(sCharterAuthHosts(node)).toEqual(charterAuthHosts(node));
+    expect(sCharterProblem({ ...node, authHosts: ['perauset.org'] })).toBe(charterProblem({ ...node, authHosts: ['perauset.org'] }));
     expect(sCharterFaceDoor(node, 'perauset')).toBe(charterFaceDoor(node, 'perauset'));
     expect(sCharterPublicOf(node)).toEqual(charterPublicOf(node));
     for (const place of [undefined, null, { name: 'The O House', domain: 'theohouse.org' }, { domain: node.domain }, { name: '' }]) {

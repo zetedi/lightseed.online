@@ -282,7 +282,7 @@ const en = {
   charter_face: "A face needs a sound target, site and door, each its own.",
   charter_project: "The Firebase project, bucket, region or web config is missing or malformed.",
   charter_keeper: "The keeper needs an address.",
-  charter_push_key: "The push key is not a public VAPID key.",
+  charter_push_key: "The push key is not a public VAPID key.", charter_auth_host: "An auth host must be a hostname this node answers at.",
   push_toggle: "Notifications on this device",
   push_note: "A knock when someone reaches you or offers care.",
   push_unsupported: "Install the seed to your home screen to allow notifications here.",

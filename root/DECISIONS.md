@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-16 · A face signs in under its own name** — on Per Auset the Google screen said
+"continue to lifeseed-75dfe.firebaseapp.com": the shell hands Google an auth domain, and it
+used the host the visitor stands on only for the node's own domains; every face fell back to
+the project's name. It cannot simply use every face host: the auth domain must serve
+Firebase's helper pages AND be wired by hand in the OAuth client (JS origin + the
+/__/auth/handler redirect) and in Auth's authorized domains, or sign-in fails there with a
+redirect mismatch. So the charter DECLARES the wired ones: `authHosts` in node.json
+(optional; every entry must be a host the node answers at, or charterProblem says
+charter_auth_host), charterAuthHosts = the node's own domains plus the declared faces
+(domain/charter, mirrored in functions, held equal by test), and the shell's authDomain is
+the current host only when it is one of those. First declared: seed.perauset.org and
+seed.enlightenednations.org, after Zoltán wired them. NOT: perauset.org itself — it is served by Cloudflare, not by the Firebase
+site, so it cannot host the helper pages; the screen can say seed.perauset.org, and would
+say perauset.org only if their Cloudflare proxied /__/auth/* to the site and both consoles
+knew that host too. REJECTED: every face host by default (an unwired face would break
+sign-in on the day it was added); a per-face boolean (a list reads as the checklist it is).
+
+---
+
 **2026-09-16 · The conductor conducts** — src/App.tsx was 1,899 lines with 69 state and effect
 hooks: the "single conductor" was honest naming for a god component. It is 802 lines and 10
 hooks now, and every seam is a file with one owner, lifted VERBATIM (effects in the order

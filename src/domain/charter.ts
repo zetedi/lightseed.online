@@ -54,6 +54,8 @@ export interface Charter {
     web: { apiKey: string; authDomain: string; messagingSenderId: string; appId: string; measurementId?: string };
   };
   faces: CharterFace[];
+  // Face hosts wired to serve as their own auth domain (see charterAuthHosts); optional.
+  authHosts?: string[];
 }
 
 const DOMAIN_RE = /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/;
@@ -85,6 +87,10 @@ export const charterProblem = (c: Charter): DomainKey | null => {
   if (!fb.web?.apiKey?.trim() || !fb.web?.appId?.trim() || !isDomainName(fb.web?.authDomain)) return 'charter_project';
   if (!c.keeper?.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.keeper.email)) return 'charter_keeper';
   if (!c.push || !c.push.subject?.trim() || (c.push.publicKey && !VAPID_RE.test(c.push.publicKey))) return 'charter_push_key';
+  if (c.authHosts !== undefined) {
+    const hosts = new Set(charterHosts(c));
+    if (!Array.isArray(c.authHosts) || !c.authHosts.every((h) => isDomainName(h) && hosts.has(h.toLowerCase()))) return 'charter_auth_host';
+  }
   return null;
 };
 
@@ -106,6 +112,15 @@ export const charterOrigin = (c: Charter): string => `https://${c.domain}`;
 // The domains that are the node ITSELF (its own shell, its own auth domain), as opposed to
 // the faces of other places it hosts.
 export const charterOwnDomains = (c: Charter): string[] => [c.domain, ...c.aliases];
+
+// THE HOSTS THAT MAY BE THEIR OWN AUTH DOMAIN (ring 2026-09-16). The Google sign-in screen
+// names the auth domain the shell hands it, and the helper pages load from there. The node's
+// own domains always may; a face's host may only once its keeper has wired it in the OAuth
+// client (JS origin + /__/auth/handler redirect) and in Firebase Auth's authorized domains —
+// so the charter DECLARES the wired ones, and the shell never names a host that would fail.
+// Every declared host must be one the node answers at (charterHosts).
+export const charterAuthHosts = (c: Charter): string[] =>
+  [...new Set([...charterOwnDomains(c), ...(c.authHosts ?? [])].map((h) => h.toLowerCase()))].sort();
 
 // THE SENDER A MAIL WEARS (ring 2026-09-07). The charter's `mail.from` is the node's own:
 // `The Living Web - Lightseed <admin@…>` — one web, and the seat of the place that speaks. A

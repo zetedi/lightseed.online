@@ -78,5 +78,9 @@
       "door": "mamaway.web.app",
       "domains": []
     }
+  ],
+  "authHosts": [
+    "seed.perauset.org",
+    "seed.enlightenednations.org"
   ]
 }

@@ -266,7 +266,7 @@ const zh = {
   charter_face: "每个面孔都需要各自独有且合规的目标、站点与门。",
   charter_project: "Firebase 项目、存储桶、区域或网页配置缺失或格式错误。",
   charter_keeper: "守护者需要一个地址。",
-  charter_push_key: "推送密钥不是公开的 VAPID 密钥。",
+  charter_push_key: "推送密钥不是公开的 VAPID 密钥。", charter_auth_host: "认证主机必须是此节点应答的主机名。",
   push_toggle: "此设备上的通知",
   push_note: "有人联系你或奉献照料时轻轻一敲。",
   push_unsupported: "将种子安装到主屏幕后即可在此允许通知。",

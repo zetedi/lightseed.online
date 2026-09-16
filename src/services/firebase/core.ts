@@ -2,7 +2,7 @@
 // helpers shared across every aggregate module. Everything under services/firebase/ imports from
 // here; services/firebase.ts re-exports the aggregates as one barrel so call sites stay unchanged.
 import '../../utils/polyfill';
-import { charter, nodeDomains } from '../../config/charter';
+import { charter, nodeAuthHosts } from '../../config/charter';
 import { initializeApp } from 'firebase/app';
 import type { DocumentData } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, onAuthStateChanged, GoogleAuthProvider, type User as FirebaseUser } from 'firebase/auth';
@@ -44,9 +44,10 @@ export const getEnv = (key: string) => {
 // third-party-storage popup issues). Only domains served by THIS Firebase Hosting site can do
 // that (Hosting auto-serves /__/auth/* there), and each one must first be wired up in the
 // consoles: Firebase Auth → Authorized domains, AND the Google OAuth client's JS origins +
-// redirect URI (https://<domain>/__/auth/handler). Everywhere else (localhost, previews) we
-// fall back to the env authDomain.
-const HOSTED_AUTH_DOMAINS = nodeDomains;
+// redirect URI (https://<domain>/__/auth/handler). The charter DECLARES which face hosts are
+// wired (node.json authHosts; ring 2026-09-16) — the node's own domains always are. Everywhere
+// else (localhost, previews, an unwired face) we fall back to the env authDomain.
+const HOSTED_AUTH_DOMAINS = nodeAuthHosts;
 const currentHost = window.location.hostname.replace(/^www\./, '');
 
 // The charter is the node (config/charter → node.json); an env var still overrides it, so a

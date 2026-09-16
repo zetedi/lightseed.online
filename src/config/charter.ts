@@ -1,5 +1,5 @@
 import raw from './charter.json';
-import { charterProblem, charterHosts, charterOrigin, charterOwnDomains, type Charter } from '../domain/charter';
+import { charterProblem, charterHosts, charterOrigin, charterOwnDomains, charterAuthHosts, type Charter } from '../domain/charter';
 
 // THE NODE THIS SHELL RUNS AS (ring 2026-09-06) — the charter the checkout was synced to
 // (scripts/charter-sync.mjs writes ./charter.json from node.json, or from NODE_CHARTER), read once. Every place the code
@@ -10,3 +10,5 @@ if (problem) console.error(`[lightseed] node.json is not a sound charter: ${prob
 export const nodeOrigin = charterOrigin(charter);
 export const nodeHosts = charterHosts(charter);
 export const nodeDomains = charterOwnDomains(charter);
+// The hosts that may be their own auth domain: the node's own, plus the faces the charter declares wired.
+export const nodeAuthHosts = charterAuthHosts(charter);
