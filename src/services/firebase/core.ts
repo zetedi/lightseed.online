@@ -4,6 +4,7 @@
 import '../../utils/polyfill';
 import { charter, nodeDomains } from '../../config/charter';
 import { initializeApp } from 'firebase/app';
+import type { DocumentData } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, onAuthStateChanged, GoogleAuthProvider, type User as FirebaseUser } from 'firebase/auth';
 import { initializeFirestore, connectFirestoreEmulator, collection, doc } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
@@ -12,24 +13,29 @@ import { type Pulse } from '../../types';
 import { normalizePulseType } from '../../domain/pulse';
 
 // Robustly read a millisecond timestamp from a Firestore Timestamp, a JS Date, or nothing.
-export const toMillis = (value: any): number =>
-    value?.toMillis ? value.toMillis() : (value instanceof Date ? value.getTime() : 0);
+export const toMillis = (value: unknown): number => {
+    if (value instanceof Date) return value.getTime();
+    const stamp = value as { toMillis?: () => number } | null | undefined;
+    return typeof stamp?.toMillis === 'function' ? stamp.toMillis() : 0;
+};
 
-// Repository boundary: map a Firestore doc snapshot → a domain object ({ id, ...fields }). The one
-// place the `id`-merge + `as any` cast lives, so call sites read cleanly and stay type-consistent.
-export const mapDoc = <T = any>(d: any): T => ({ id: d.id, ...d.data() } as any as T);
+// One doc → one being: the id beside the fields. Firestore's DocumentData is untyped at
+// the boundary; the caller names the shape it expects (mapDoc<Lifetree>(snap)).
+export const mapDoc = <T>(d: { id: string; data(): DocumentData | undefined }): T => ({ id: d.id, ...d.data() } as T);
 
 // Repository boundary: map a Firestore pulse doc → Pulse, normalising the legacy UPPERCASE
 // type casing to canonical lowercase so the rest of the app only ever sees one form.
-export const mapPulse = (d: any): Pulse => {
-    const data = d.data() as any;
+export const mapPulse = (d: { id: string; data(): DocumentData | undefined }): Pulse => {
+    const data = (d.data() || {}) as Partial<Pulse> & { type?: string };
     return { id: d.id, ...data, type: normalizePulseType(data.type) } as Pulse;
 };
 
 export const SYSTEM_EMAIL_FROM = charter.mail.from;
 
 export const getEnv = (key: string) => {
-    return (window as any).process?.env?.[key] || (import.meta as any).env?.[key] || "";
+    const w = window as unknown as { process?: { env?: Record<string, string> } };
+    const meta = import.meta as unknown as { env?: Record<string, string> };
+    return w.process?.env?.[key] || meta.env?.[key] || "";
 };
 
 // OAuth popups display — and load their helper pages (/__/auth/*) from — authDomain. Using the

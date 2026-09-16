@@ -1,7 +1,7 @@
 import { getDocs, getDoc, query, where, limit, doc, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions, mapDoc, mapPulse, lifetreesCollection, lightHousesCollection, visionsCollection, pulsesCollection } from './core';
-import type { Lifetree, Vision, Pulse, LightHouse } from '../../types';
+import type { Lifetree, Vision, Pulse, LightHouse, Link } from '../../types';
 import { canViewLightHouse } from '../../domain/lightHouse';
 
 // Being resolution — the /b/<lid> door. A lid names exactly one being somewhere in the
@@ -35,8 +35,8 @@ const gateLightHouse = async (
         viewer?.uid ? getDocs(query(collection(db, 'links'), where('from', '==', viewer.uid), where('rel', '==', 'member'))).catch(() => null) : null,
         getDocs(query(collection(db, 'links'), where('from', '==', lightHouse.id), where('rel', '==', 'shelters'))).catch(() => null),
     ]);
-    const memberCommunityIds = new Set((memberLinks?.docs || []).map(x => (x.data() as any).to as string));
-    const homes = [...(lightHouse.communityId ? [lightHouse.communityId] : []), ...(shelterLinks?.docs || []).map(x => (x.data() as any).to as string)];
+    const memberCommunityIds = new Set((memberLinks?.docs || []).map(x => (x.data() as Partial<Link>).to as string));
+    const homes = [...(lightHouse.communityId ? [lightHouse.communityId] : []), ...(shelterLinks?.docs || []).map(x => (x.data() as Partial<Link>).to as string)];
     if (!canViewLightHouse(lightHouse, { uid: viewer?.uid, isStaff: viewer?.isStaff, memberCommunityIds }, homes)) return null;
     return { kind: 'lightHouse', lightHouse };
 };

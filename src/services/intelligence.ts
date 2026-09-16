@@ -54,7 +54,7 @@ const googleProvider: IntelligenceProvider = {
       systemInstruction,
       model: intelligence.model || DEFAULT_MODEL,
     });
-    return (result.data as any)?.text || '';
+    return (result.data as { text?: string } | undefined)?.text || '';
   },
 };
 
@@ -73,7 +73,7 @@ const anthropicProvider: IntelligenceProvider = {
         ? { scope: intelligence.credentialScope, ownerId: intelligence.credentialOwnerId }
         : undefined,
     });
-    return (result.data as any)?.text || '';
+    return (result.data as { text?: string } | undefined)?.text || '';
   },
 };
 
@@ -112,7 +112,7 @@ export const saveProviderCredential = async (params: {
 }): Promise<{ connected: boolean; keyHint?: string }> => {
   const fn = httpsCallable(functions, 'saveProviderCredential');
   const res = await fn(params);
-  return res.data as any;
+  return res.data as { connected: boolean; keyHint?: string };
 };
 
 export const disconnectProviderCredential = (params: {
@@ -142,8 +142,10 @@ export const resolveAISource = async (opts?: { intelligenceId?: string; dailyTex
   const provider = intel?.provider || 'google';
   const model = intel?.model;
   const label = providerLabel(provider);
-  const connected = (intel as any)?.connected;
-  const keyHint = (intel as any)?.keyHint;
+  // The callable-only fields the intelligence record carries beside its domain shape.
+  const wired = intel as ({ connected?: boolean; keyHint?: string; sponsored?: string } | null);
+  const connected = wired?.connected;
+  const keyHint = wired?.keyHint;
   const scope = intel?.credentialScope;
 
   if (connected && scope === 'user') {
@@ -152,8 +154,8 @@ export const resolveAISource = async (opts?: { intelligenceId?: string; dailyTex
   if (connected && scope === 'community') {
     return { source: 'community_key', allowed: true, provider, model, keyHint, label: `${label} · community key`, detail: keyHint };
   }
-  if ((intel as any)?.sponsored) {
-    return { source: 'sponsored', allowed: true, provider, model, label: `${label} · sponsored`, detail: String((intel as any).sponsored) };
+  if (wired?.sponsored) {
+    return { source: 'sponsored', allowed: true, provider, model, label: `${label} · sponsored`, detail: String(wired.sponsored) };
   }
   const left = Math.max(0, AI_DAILY_TEXT_LIMIT - (opts?.dailyTextUsed || 0));
   return { source: 'node_compute', allowed: left > 0, provider, model, remainingToday: left, label: `${label} · network`, detail: `${left} reflections left today` };
@@ -170,7 +172,7 @@ export const sendIntelligenceMessage = (
 // Firestore access
 // ---------------------------------------------------------------------------
 
-const mapDoc = <T,>(d: any): T => ({ id: d.id, ...(d.data() as any) });
+const mapDoc = <T,>(d: { id: string; data(): Record<string, unknown> | undefined }): T => ({ id: d.id, ...d.data() } as T);
 
 export const getIntelligence = async (id: string): Promise<Intelligence | null> => {
   const snap = await getDoc(doc(db, 'intelligences', id));
@@ -272,7 +274,7 @@ export const createIntelligence = async (data: Omit<Intelligence, 'id' | 'create
 };
 
 export const updateIntelligence = (id: string, data: Partial<Intelligence>) =>
-  updateDoc(doc(db, 'intelligences', id), data as any);
+  updateDoc(doc(db, 'intelligences', id), { ...data });
 
 export const deleteIntelligence = (id: string) => deleteDoc(doc(db, 'intelligences', id));
 

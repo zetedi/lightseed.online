@@ -1,6 +1,7 @@
 import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, setDoc, runTransaction, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, deleteField, getCountFromServer, Timestamp, type CollectionReference, type DocumentData } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { type Pulse, type Vision, type Community, type Being, type CommunityInvite } from '../../types';
+import { type Pulse, type Vision, type Community, type Being, type CommunityInvite, type Link } from '../../types';
+import type { Stamp } from '../../domain/time';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
 import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection, auth } from './core';
@@ -78,10 +79,10 @@ export const getMyVisionCount = async (uid: string): Promise<number> =>
 // Visions a user joined — a prism over their outgoing 'joined' links (the LIN), then hydrate.
 export const getJoinedVisions = async (uid: string): Promise<Vision[]> => {
     const links = await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'joined')));
-    const ids = links.docs.map(d => (d.data() as any).to as string);
+    const ids = links.docs.map(d => (d.data() as Partial<Link>).to as string);
     const visions = await Promise.all(ids.map(async id => {
         const snap = await getDoc(doc(db, 'visions', id));
-        return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Vision) : null;
+        return snap.exists() ? mapDoc<Vision>(snap) : null;
     }));
     return visions.filter((v): v is Vision => v !== null);
 };
@@ -326,10 +327,10 @@ export const backfillPulseVisibility = async (): Promise<number> => {
 export const migratePulseTypeCasing = async (): Promise<number> => {
     const snap = await getDocs(pulsesCollection);
     const remap: Record<string, string> = { GROWTH: 'tree_growth', growth: 'vision_growth', STANDARD: 'standard' };
-    const toFix = snap.docs.filter(d => remap[(d.data() as any).type] !== undefined);
+    const toFix = snap.docs.filter(d => remap[String((d.data() as { type?: string }).type)] !== undefined);
     for (let i = 0; i < toFix.length; i += 400) {
         const batch = writeBatch(db);
-        toFix.slice(i, i + 400).forEach(d => batch.update(d.ref, { type: remap[(d.data() as any).type] }));
+        toFix.slice(i, i + 400).forEach(d => batch.update(d.ref, { type: remap[String((d.data() as { type?: string }).type)] }));
         await batch.commit();
     }
     return toFix.length;
@@ -340,7 +341,7 @@ export const migratePulseTypeCasing = async (): Promise<number> => {
 // re-run (idempotent).
 export const migrateTreeVisibility = async (): Promise<{ updated: number }> => {
     const snap = await getDocs(lifetreesCollection);
-    const toFix = snap.docs.filter(d => !(d.data() as any).visibility);
+    const toFix = snap.docs.filter(d => !(d.data() as { visibility?: string }).visibility);
     for (let i = 0; i < toFix.length; i += 400) {
         const batch = writeBatch(db);
         toFix.slice(i, i + 400).forEach(d => batch.update(d.ref, { visibility: 'public' }));
@@ -357,24 +358,24 @@ const linkDocId = (from: string, rel: string, to: string) => `${from}__${rel}__$
 
 export const migrateArraysToLinks = async (): Promise<Record<string, number>> => {
     const counts: Record<string, number> = {};
-    const queued: { id: string; data: any }[] = [];
+    const queued: { id: string; data: Record<string, unknown> }[] = [];
     const add = (from: string, rel: string, to: string) => {
         if (!from || !to) return;
         queued.push({ id: linkDocId(from, rel, to), data: { lid: uuidv7(), type: 'link', rel, from, to, createdAt: serverTimestamp() } });
         counts[rel] = (counts[rel] || 0) + 1;
     };
     (await getDocs(lifetreesCollection)).forEach(d => {
-        const t = d.data() as any;
+        const t = d.data() as { coOwnerIds?: string[]; guardians?: string[]; stewardIds?: string[]; observerIds?: string[] };
         (t.coOwnerIds || []).forEach((u: string) => add(u, 'co_owner', d.id));
         (t.guardians || []).forEach((u: string) => add(u, 'guardian', d.id));
         (t.stewardIds || []).forEach((u: string) => add(u, 'steward', d.id));
         (t.observerIds || []).forEach((u: string) => add(u, 'observer', d.id));
     });
     (await getDocs(communitiesCollection)).forEach(d => {
-        ((d.data() as any).memberIds || []).forEach((u: string) => add(u, 'member', d.id));
+        ((d.data() as { memberIds?: string[] }).memberIds || []).forEach((u: string) => add(u, 'member', d.id));
     });
     (await getDocs(visionsCollection)).forEach(d => {
-        ((d.data() as any).joinedUserIds || []).forEach((u: string) => add(u, 'joined', d.id));
+        ((d.data() as { joinedUserIds?: string[] }).joinedUserIds || []).forEach((u: string) => add(u, 'joined', d.id));
     });
     for (let i = 0; i < queued.length; i += 400) {
         const batch = writeBatch(db);
@@ -389,10 +390,10 @@ export const migrateArraysToLinks = async (): Promise<Record<string, number>> =>
 export const dropLegacyArrays = async (): Promise<number> => {
     let n = 0;
     const clear = async (coll: typeof lifetreesCollection, fields: string[]) => {
-        const docs = (await getDocs(coll)).docs.filter(d => fields.some(f => (d.data() as any)[f] !== undefined));
+        const docs = (await getDocs(coll)).docs.filter(d => fields.some(f => (d.data() as Record<string, unknown>)[f] !== undefined));
         for (let i = 0; i < docs.length; i += 400) {
             const batch = writeBatch(db);
-            docs.slice(i, i + 400).forEach(d => { const upd: any = {}; fields.forEach(f => (upd[f] = deleteField())); batch.update(d.ref, upd); });
+            docs.slice(i, i + 400).forEach(d => { const upd: Record<string, ReturnType<typeof deleteField>> = {}; fields.forEach(f => (upd[f] = deleteField())); batch.update(d.ref, upd); });
             await batch.commit();
             n += Math.min(400, docs.length - i);
         }
@@ -411,10 +412,10 @@ export const dropLegacyArrays = async (): Promise<number> => {
 // genesisHash is skipped. Staff-run from the superadmin console; NOT invoked automatically.
 export const backfillVisionChains = async (): Promise<{ updated: number; skipped: number }> => {
     const snap = await getDocs(visionsCollection);
-    const missing = snap.docs.filter(d => !(d.data() as any).genesisHash);
+    const missing = snap.docs.filter(d => !(d.data() as { genesisHash?: string }).genesisHash);
     const sealed = await Promise.all(missing.map(async d => ({
         ref: d.ref,
-        genesisHash: await createBlock('0', { msg: 'Birth' }, toMillis((d.data() as any).createdAt) || Date.now()),
+        genesisHash: await createBlock('0', { msg: 'Birth' }, toMillis((d.data() as { createdAt?: unknown }).createdAt) || Date.now()),
     })));
     for (let i = 0; i < sealed.length; i += 400) {
         const batch = writeBatch(db);
@@ -528,7 +529,7 @@ export interface CommunityTreeInvite {
     invitedUserId: string;    // the tree's owner — who must accept
     invitedByUserId: string;
     status: 'pending' | 'accepted' | 'declined';
-    createdAt?: any;
+    createdAt?: Stamp | null;
 }
 
 const communityTreeInvitesCollection = collection(db, 'communityTreeInvites');
@@ -540,7 +541,7 @@ export const inviteTreeToCommunity = async (params: {
 }): Promise<string> => {
     // One pending invite per tree+community.
     const existing = await getDocs(query(communityTreeInvitesCollection, where('lifetreeId', '==', params.lifetreeId)));
-    if (existing.docs.some(d => { const x = d.data() as any; return x.communityId === params.communityId && x.status === 'pending'; })) {
+    if (existing.docs.some(d => { const x = d.data() as { communityId?: string; status?: string }; return x.communityId === params.communityId && x.status === 'pending'; })) {
         throw new Error('err_tree_invite_pending');
     }
     // Already participating? The link is the source of truth.

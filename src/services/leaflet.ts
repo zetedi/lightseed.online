@@ -16,10 +16,10 @@ export const loadLeaflet = (): Promise<LeafletModule> => {
             import('leaflet'),
             import('leaflet/dist/leaflet.css'),
         ]).then(([mod]) => {
-            const L = (mod as any).default ?? mod;
+            const L = (mod as { default?: typeof import('leaflet') }).default ?? mod;
             // Under a bundler Leaflet can't derive its default marker image URLs from the
             // stylesheet path — point them at the hashed assets Vite emits.
-            delete (L.Icon.Default.prototype as any)._getIconUrl;
+            delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
             L.Icon.Default.mergeOptions({
                 iconRetinaUrl: markerIcon2x,
                 iconUrl: markerIcon,

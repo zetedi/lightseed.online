@@ -1,4 +1,4 @@
-import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, writeBatch, onSnapshot, Timestamp, type Query, type DocumentData } from 'firebase/firestore';
 import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile, type User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import { type Pulse, type Lifetree, type Vision } from '../../types';
@@ -17,7 +17,7 @@ export const ensurePersonEntity = async (uid: string, displayName?: string | nul
     const ref = doc(db, 'persons', uid);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-        const d = snap.data() as any;
+        const d = snap.data() as Record<string, unknown>;
         // Backfill a lid if an older person doc somehow lacks one.
         if (!d.lid) { const lid = uuidv7(); await setDoc(ref, { lid }, { merge: true }); return { lid, uid }; }
         return { lid: d.lid as string, uid };
@@ -46,17 +46,18 @@ export interface PersonPresence { displayName: string; anonymous: boolean; defau
 export const getPersonPresence = async (uid: string): Promise<PersonPresence | null> => {
     const snap = await getDoc(doc(db, 'persons', uid));
     if (!snap.exists()) return null;
-    const d = snap.data() as any;
+    const d = snap.data() as { displayName?: string; anonymous?: boolean; defaultTreeId?: string };
     return { displayName: String(d.displayName || ''), anonymous: !!d.anonymous, defaultTreeId: d.defaultTreeId || undefined };
 };
 
 const ownedTreeName = async (uid: string, defaultTreeId?: string): Promise<string | null> => {
     if (defaultTreeId) {
         const t = await getDoc(doc(db, 'lifetrees', defaultTreeId));
-        if (t.exists() && (t.data() as any).ownerId === uid) return String((t.data() as any).name || '') || null;
+        const tree = t.exists() ? (t.data() as Partial<Lifetree>) : null;
+        if (tree && tree.ownerId === uid) return String(tree.name || '') || null;
     }
     const first = await getDocs(query(lifetreesCollection, where('ownerId', '==', uid), limit(1)));
-    return first.empty ? null : (String((first.docs[0].data() as any).name || '') || null);
+    return first.empty ? null : (String((first.docs[0].data() as Partial<Lifetree>).name || '') || null);
 };
 
 // THE SIGNED-IN BEING'S NAMING (ring 2026-09-10) — for a service that stamps a name without the
@@ -94,7 +95,7 @@ const ensureUserProfile = async (user: FirebaseUser, extra: Record<string, any> 
     await setDoc(ref, {
         uid: user.uid,
         email: user.email,
-        displayName: user.displayName || (extra as any).displayName || '',
+        displayName: user.displayName || (extra as { displayName?: string }).displayName || '',
         createdAt: serverTimestamp(),
         newsletterSubscribed: false,
         emailNotifications: { directMessages: true },
@@ -199,7 +200,7 @@ export const createNetworkInvite = async (email: string, invitedByUserId: string
             getDoc(doc(db, 'config', 'superadmin')).catch(() => null),
             getDoc(doc(db, 'admins', invitedByUserId)).catch(() => null),
         ]);
-        unlimited = (superadmin?.exists() && (superadmin.data() as any)?.uid === invitedByUserId) || !!adminDoc?.exists();
+        unlimited = (superadmin?.exists() && (superadmin.data() as { uid?: string } | undefined)?.uid === invitedByUserId) || !!adminDoc?.exists();
     }
     if (!unlimited && !alreadyInvited) {
         // Spend one of the inviter's allotment atomically (a duplicate costs nothing).
@@ -218,7 +219,7 @@ export const createNetworkInvite = async (email: string, invitedByUserId: string
     const normHost = window.location.hostname.replace(/^www\./, '');
     const hostSnap = await getDocs(query(collection(db, 'communities'), where('domain', '==', normHost), limit(1))).catch(() => null);
     const hostNode = hostSnap && !hostSnap.empty
-        ? { id: hostSnap.docs[0].id, domain: (hostSnap.docs[0].data() as any).domain || normHost }
+        ? { id: hostSnap.docs[0].id, domain: (hostSnap.docs[0].data() as { domain?: string }).domain || normHost }
         : null;
 
     const ref = await addDoc(networkInvitesCollection, {
@@ -236,17 +237,19 @@ export const createNetworkInvite = async (email: string, invitedByUserId: string
 
 export const getNetworkInvite = async (inviteId: string): Promise<any | null> => {
     const snap = await getDoc(doc(db, 'networkInvites', inviteId));
-    return snap.exists() ? { id: snap.id, ...(snap.data() as any) } : null;
+    return snap.exists() ? mapDoc<Record<string, unknown> & { id: string }>(snap) : null;
 };
 
 const INVITE_PAGE = 12;
-type Paged = { items: any[]; lastDoc: QueryDocumentSnapshot | null; hasMore: boolean };
+// An invitation or a request as the admin lists read it: the three fields every row has, the rest as stored.
+export type InviteRow = { id: string; email: string; status: string } & DocumentData;
+type Paged = { items: InviteRow[]; lastDoc: QueryDocumentSnapshot | null; hasMore: boolean };
 
 export const getSentInvites = async (userId: string, lastDoc?: QueryDocumentSnapshot): Promise<Paged> => {
     let q = query(networkInvitesCollection, where('invitedByUserId', '==', userId), orderBy('createdAt', 'desc'), limit(INVITE_PAGE));
     if (lastDoc) q = query(q, startAfter(lastDoc));
     const snap = await getDocs(q);
-    return { items: snap.docs.map(d => (mapDoc(d))), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
+    return { items: snap.docs.map(d => mapDoc<InviteRow>(d)), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
 };
 
 // The welcomed_by mark for a network invitation is minted SERVER-SIDE
@@ -271,7 +274,7 @@ export const getInviteRequests = async (lastDoc?: QueryDocumentSnapshot): Promis
     let q = query(inviteRequestsCollection, orderBy('createdAt', 'desc'), limit(INVITE_PAGE));
     if (lastDoc) q = query(q, startAfter(lastDoc));
     const snap = await getDocs(q);
-    return { items: snap.docs.map(d => (mapDoc(d))), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
+    return { items: snap.docs.map(d => mapDoc<InviteRow>(d)), lastDoc: snap.docs[snap.docs.length - 1] || null, hasMore: snap.docs.length === INVITE_PAGE };
 };
 
 // Submitting a request goes through a Cloud Function so it can (with admin rights) check
@@ -280,7 +283,7 @@ export const getInviteRequests = async (lastDoc?: QueryDocumentSnapshot): Promis
 export const submitInviteRequest = async (email: string, reason: string): Promise<string> => {
     const callable = httpsCallable(functions, 'requestInvite');
     const res = await callable({ email, reason });
-    return (res.data as any)?.status as string;
+    return (res.data as { status?: string } | undefined)?.status as string;
 };
 
 // Approve → mint a real invitation to that email and mark the request handled.
@@ -288,7 +291,7 @@ export const approveInviteRequest = async (requestId: string, adminUid: string) 
     const reqRef = doc(db, 'inviteRequests', requestId);
     const snap = await getDoc(reqRef);
     if (!snap.exists()) throw new Error('err_request_not_found');
-    const invite = await createNetworkInvite((snap.data() as any).email, adminUid);
+    const invite = await createNetworkInvite(String((snap.data() as { email?: string }).email || ''), adminUid);
     await updateDoc(reqRef, { status: 'approved', approvedBy: adminUid, approvedAt: serverTimestamp() });
     return invite;
 };
@@ -298,7 +301,9 @@ export const declineInviteRequest = (requestId: string) =>
 
 export const logout = () => firebaseSignOut(auth);
 
-export const listenToUserProfile = (userId: string, callback: (data: any) => void) => {
+// The users document as stored — Firestore's own untyped shape at this boundary; each reader
+// names the fields it takes (a typed person profile is a rung still to climb).
+export const listenToUserProfile = (userId: string, callback: (data: DocumentData) => void) => {
     return onSnapshot(doc(db, 'users', userId), (docSnap) => {
         if (docSnap.exists()) callback(docSnap.data());
     });
@@ -412,7 +417,7 @@ export const sendInvite = async (targetEmail: string, customMessage: string, use
     await triggerSystemEmail(targetEmail, "You have been invited to lightseed", `${customMessage ? `"${customMessage}"\n\n` : ""}You have been invited to join the lightseed network. Join here: ${inviteLink}`, userId);
 }
 
-export const monitorMailStatus = (docId: string, onChange: (status: any) => void) => {
+export const monitorMailStatus = (docId: string, onChange: (status: unknown) => void) => {
     return onSnapshot(doc(db, 'mail', docId), (docSnap) => {
         if (docSnap.exists()) onChange(docSnap.data().delivery);
     }, (error) => {
@@ -483,7 +488,7 @@ export const setNewsletterSubscription = async (uid: string, email: string, subs
 const NEWSLETTER_DIGEST_SIZE = 8;
 
 const fetchNewsletterChanges = async <T>(
-    collectionRef: any, lastSentAt: Timestamp | null, mapper: (doc: any) => T,
+    collectionRef: Query, lastSentAt: Timestamp | null, mapper: (doc: QueryDocumentSnapshot) => T,
     sieve?: (items: T[]) => T[], domain?: string,
 ) => {
     // A sieve (excludeBedTrees) runs BEFORE the newest-N slice: over-fetch head-room so the
@@ -507,7 +512,7 @@ export const getNewsletterDraftData = async (place: { id: string; domain?: strin
     if (!lastSentAt && (!place?.domain || place.domain === charter.domain)) {
         try {
             const configSnap = await getDoc(newsletterConfigRef);
-            lastSentAt = (configSnap.exists() ? (configSnap.data() as any).lastSentAt : null) || null;
+            lastSentAt = (configSnap.exists() ? ((configSnap.data() as { lastSentAt?: Timestamp | null }).lastSentAt ?? null) : null) || null;
         } catch (e) {
             console.warn('Newsletter config read skipped', e);
         }
@@ -530,7 +535,7 @@ export const getNewsletterDraftData = async (place: { id: string; domain?: strin
 export const sendNewsletter = async ({ subject, html, communityId }: { subject: string; html: string; communityId: string }) => {
     const fn = httpsCallable(functions, 'sendNewsletterEmails');
     const res = await fn({ subject, html, communityId });
-    return (res.data as any)?.sent ?? 0;
+    return (res.data as { sent?: number } | undefined)?.sent ?? 0;
 };
 
 // Admin: delete a user (their data + Auth record) via a staff-only Cloud Function. Handy for
@@ -547,6 +552,6 @@ export type AdminUserRow = { uid: string; email: string | null; displayName: str
 export const listUsersAsAdmin = async (): Promise<AdminUserRow[]> => {
     const fn = httpsCallable(functions, 'listUsersAsAdmin');
     const res = await fn({});
-    return ((res.data as any)?.users || []) as AdminUserRow[];
+    return ((res.data as { users?: AdminUserRow[] } | undefined)?.users || []);
 };
 

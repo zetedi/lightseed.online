@@ -1,5 +1,5 @@
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer } from 'firebase/firestore';
-import { type Pulse, type Lifetree, type Vision, type ReachAudience } from '../../types';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer, type UpdateData, type DocumentData } from 'firebase/firestore';
+import { type Pulse, type Lifetree, type Vision, type ReachAudience, type Link } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
 import { computeCanonicalHash, isChainLocked, BLOCK_HASH_VERSION } from '../../domain/chain';
@@ -119,7 +119,7 @@ export const getMyPulseCount = async (uid: string): Promise<number> => {
 export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
     const res = await fetchPulsesRaw(lastD, domainFilter, levels);
     return {
-        items: res.items.filter(pulse => !NON_FEED_PULSE_TYPES.has((pulse as any).type)),
+        items: res.items.filter(pulse => !NON_FEED_PULSE_TYPES.has(String(pulse.type))),
         lastDoc: res.lastDoc
     };
 }
@@ -163,7 +163,7 @@ export const fetchOfferingPulses = async (lastD?: QueryDocumentSnapshot, domainF
 };
 
 // Reaches (and legacy 'tree_chat' pulses) power the Inspiration threads.
-const isReachPulse = (p: Pulse) => p.type === 'reach' || (p as any).type === 'tree_chat';
+const isReachPulse = (p: Pulse) => p.type === 'reach' || String(p.type) === 'tree_chat';
 
 // The open Inspiration feed. `levels` (public + node + the viewer's qualifying scopes) keeps
 // the query to docs the rules allow — without it the visibility-filter is dropped and a single
@@ -294,7 +294,7 @@ export const resolveCircleUids = async (tree: Lifetree, audience: ReachAudience)
     const byRel: Record<string, string[]> = { co_owner: [], guardian: [], steward: [], observer: [] };
     try {
         const links = await getDocs(query(collection(db, 'links'), where('to', '==', tree.id)));
-        links.docs.forEach(d => { const x = d.data() as any; if (byRel[x.rel]) byRel[x.rel].push(x.from); });
+        links.docs.forEach(d => { const x = d.data() as Partial<Link>; if (x.rel && x.from && byRel[x.rel]) byRel[x.rel].push(x.from); });
     } catch (e) { console.warn('resolveCircleUids: link read failed', e); }
     const ids =
         audience === 'owners' ? [...owner, ...byRel.co_owner]
@@ -477,7 +477,7 @@ export const sendThreadMessage = async ({
 
 export const getLifetreeById = async (id: string): Promise<Lifetree | null> => {
     const snap = await getDoc(doc(db, 'lifetrees', id));
-    return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
+    return snap.exists() ? mapDoc<Lifetree>(snap) : null;
 };
 
 // A single pulse by id (used to hydrate alignment cards with the two matched pulses' text).
@@ -567,7 +567,10 @@ export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string
         // enter the hash.
         t.set(newPulseRef, { ...record, ...(locked ? { hashVersion: BLOCK_HASH_VERSION } : {}), createdAt: serverTimestamp(), hash: newHash });
 
-        const updateData: any = { latestHash: newHash, blockHeight: (tree.blockHeight || 0) + 1 };
+        // The tree's head move: the chain fields, the growth view, the care stamp, and whatever the
+        // caller committed alongside (a watering's schedule reset) — one atomic update.
+        const blockHeight = (tree.blockHeight || 0) + 1;
+        const updateData: { latestHash: string; blockHeight: number; latestGrowthUrl?: string; lastCaredAt?: ReturnType<typeof serverTimestamp> } & Record<string, unknown> = { latestHash: newHash, blockHeight };
         // A tree growth pulse with an image updates the tree's latest growth view, and counts
         // as a care that keeps the tree's living validation alive.
         if (isTreeGrowth(canonicalType)) {
@@ -577,10 +580,10 @@ export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string
         // Caller-supplied tree fields (e.g. a watering's schedule reset) — committed atomically.
         if (extraTreeUpdate) Object.assign(updateData, extraTreeUpdate);
 
-        t.update(treeRef, updateData);
+        t.update(treeRef, updateData as UpdateData<DocumentData>);
         head = {
             latestHash: newHash,
-            blockHeight: updateData.blockHeight,
+            blockHeight,
             ...(updateData.latestGrowthUrl ? { latestGrowthUrl: updateData.latestGrowthUrl } : {}),
         };
     });

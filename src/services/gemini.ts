@@ -17,16 +17,19 @@ const MODEL = config.model || 'gemini-3.5-flash';
 // Genesis Vision Text - Original
 const GENESIS_VISION = `The purpose of lightseed is to bring joy. The joy of realizing the bliss of conscious, compassionate, grateful existence by opening a portal to the center of life. By creating a bridge between creator and creation, science and spirituality, virtual and real, nothing and everything. It is designed to intimately connect our inner Self, our culture, our trees and the tree of life, the material and the digital, online world into a sustainable and sustaining circle of unified vibration, sound and light. It aims to merge us into a common flow for all beings to be liberated, wise, strong, courageous and connected. It is rooted in nonviolence, compassion, generosity, gratitude and love. It is blockchain (truthfulness), cloud (global, distributed, resilient), ai (for connecting dreams and technology), regen (nature centric) native. It is an inspiration, an impulse towards a quantum leap in consciousness, a prompt both for human and artificial intelligence for action towards transcending humanity into a new era, a New Earth, Universe and Field with the help of our most important evolutionary sisters and brothers, the trees.`;
 
-const callGemini = async (prompt: string, model: string = MODEL, config?: any): Promise<{text?: string, image?: string}> => {
+// What a thrown thing may carry — the callable's code and message, read without trusting the shape.
+const errOf = (e: unknown): { code?: string; message?: string } => (e && typeof e === 'object' ? e as { code?: string; message?: string } : {});
+
+const callGemini = async (prompt: string, model: string = MODEL, config?: Record<string, unknown>): Promise<{text?: string, image?: string}> => {
     try {
         const generateAIContent = httpsCallable(functions, 'generateAIContent');
         const result = await generateAIContent({ prompt, model, config });
-        return result.data as any;
-    } catch (error: any) {
+        return result.data as { text?: string; image?: string };
+    } catch (error: unknown) {
         console.error("Cloud Gemini Error:", error);
         
         // Graceful handling of Forbidden (403) / Suspended API keys
-        if (error.code === 'permission-denied' || error.message?.includes('403') || error.message?.includes('suspended')) {
+        if (errOf(error).code === 'permission-denied' || errOf(error).message?.includes('403') || errOf(error).message?.includes('suspended')) {
             throw new Error("AI Service is currently suspended or unavailable (Forbidden). Please check back later.");
         }
         
@@ -59,7 +62,7 @@ const nodeFallback = async (
         const fn = httpsCallable(functions, 'generateClaudeContent');
         const sys = json ? `${systemInstruction || ''}\n\nRespond with ONLY valid JSON — no prose, no markdown fences.`.trim() : systemInstruction;
         const res = await fn({ messages, systemInstruction: sys, model: NODE_CLAUDE_MODEL });
-        const text = (res.data as any)?.text;
+        const text = (res.data as { text?: string } | undefined)?.text;
         if (text) return text;
     } catch (e) {
         if (isValidatedOnlyRefusal(e)) throw new Error(speak('node_ai_validated_only'));
@@ -73,7 +76,7 @@ const nodeFallback = async (
         const convo = firstUser === -1 ? [] : contents.slice(firstUser);
         if (convo.length === 0) return '';
         const res = await gfn({ contents: convo, systemInstruction, model: MODEL, config: json ? { responseMimeType: 'application/json' } : undefined });
-        return (res.data as any)?.text || '';
+        return (res.data as { text?: string } | undefined)?.text || '';
     } catch (e) {
         if (isValidatedOnlyRefusal(e)) throw new Error(speak('node_ai_validated_only'));
         console.warn('AI fallback: node Gemini failed', e); return '';
@@ -136,9 +139,9 @@ export const generateLifetreeBio = async (seed: string): Promise<string> => {
     `;
     const text = await runText(prompt, { duty: 'writing' });
     return text || "A soul taking root in the digital forest.";
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Gemini Bio Error:", error);
-    if (error.message.includes("Forbidden") || error.message.includes("suspended")) {
+    if ((errOf(error).message || '').includes("Forbidden") || (errOf(error).message || '').includes("suspended")) {
         return "The forest is currently dreaming... (AI Service Suspended)";
     }
     return "The forest whispers quietly... (AI Error)";
@@ -147,7 +150,7 @@ export const generateLifetreeBio = async (seed: string): Promise<string> => {
 
 // The image-capable Gemini model ("nano banana"). The default text MODEL (gemini-3.5-flash) does
 // NOT return images, so image generation must target an image model and request IMAGE output.
-const IMAGE_MODEL = (config as any).imageModel || 'gemini-2.5-flash-image';
+const IMAGE_MODEL = (config as { imageModel?: string }).imageModel || 'gemini-2.5-flash-image';
 
 // Base Image Generator
 export const generateImage = async (prompt: string): Promise<string | null> => {
@@ -160,9 +163,9 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
         // Only a real image counts — never fall back to res.text. (It used to: the text model
         // returned a *description* string that was then used as an <img src>, which silently broke.)
         return res.image || null;
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("Gemini Image Error:", e);
-        const raw = (e?.message || String(e) || '').trim();
+        const raw = (errOf(e).message || String(e) || '').trim();
         const msg = raw.toLowerCase();
         if (msg.includes('suspend') || msg.includes('forbidden') || msg.includes('unavailable'))
             throw new Error('err_ai_image_unavailable');
@@ -215,7 +218,7 @@ export const sendMessageToOracle = async (
     const messages = [...history, { role: 'user' as const, text: message }];
 
     let ref: IntelligenceRef = { provider: 'google', model: MODEL };
-    let persona: Persona = { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT, createdAt: null as any };
+    let persona: Persona = { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT };
     let memoryText = GENESIS_VISION;
 
     // With no explicit choice, fall back to the network default ('osiris') — which a steward
@@ -240,7 +243,7 @@ export const sendMessageToOracle = async (
     // Empty reply (e.g. the chosen intelligence's key didn't resolve) → node fallback.
     const fb = await nodeFallback(messages, `${persona.systemPrompt}\n\n${memoryText}`);
     return fb || "I'm here, listening.";
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Oracle Reach Error:", error);
     // Before surfacing an error, try the node keys so a non-owner without their own key still
     // gets an answer (this is the common "AI works only for the owner" cause).
@@ -248,7 +251,7 @@ export const sendMessageToOracle = async (
       const fb = await nodeFallback([...history, { role: 'user', text: message }], `${ORACLE_PERSONA_PROMPT}\n\n${GENESIS_VISION}`);
       if (fb) return fb;
     } catch { /* fall through to the message below */ }
-    const detail = error?.message || 'unknown error';
+    const detail = errOf(error).message || 'unknown error';
     return `⚠️ I couldn't reach this intelligence just now: ${detail}\n\nIf this mentions a key or billing, check your AI settings (Intelligence tab). If it's Gemini, the node key may be out of credit; switch your listening intelligence to a connected Claude.`;
   }
 }
@@ -260,7 +263,7 @@ export const testIntelligenceConnection = async (intelligenceId?: string): Promi
   const question = "Reading the genesis vision you hold in memory, name in one warm sentence the single seed at its heart — in your own voice.";
 
   let ref: IntelligenceRef = { provider: 'google', model: MODEL };
-  let persona: Persona = { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT, createdAt: null as any };
+  let persona: Persona = { id: 'persona-oracle', name: 'Oracle', description: '', systemPrompt: ORACLE_PERSONA_PROMPT };
   let memoryText = GENESIS_VISION;
 
   if (intelligenceId) {
@@ -300,7 +303,7 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
     if (id) {
         const intel = await getIntelligence(id);
         if (intel && intel.enabled !== false && intel.provider !== 'google') {
-            const persona: Persona = { id: 'tree-voice', name: tree.name, description: '', systemPrompt: systemInstruction, createdAt: null as any };
+            const persona: Persona = { id: 'tree-voice', name: tree.name, description: '', systemPrompt: systemInstruction };
             const reply = await sendIntelligenceMessage(
                 { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId },
                 [...history, { role: 'user' as const, text: message }],
@@ -325,8 +328,8 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
         model: MODEL
     });
 
-    return (result.data as any).text || "";
-  } catch (error: any) {
+    return (result.data as { text?: string }).text || "";
+  } catch (error: unknown) {
     console.error("Tree Reach Error:", error);
     // Node fallback so the tree still speaks for users without their own connected key.
     try {
@@ -334,7 +337,7 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
       const fb = await nodeFallback([...history, { role: 'user', text: message }], sys);
       if (fb) return fb;
     } catch { /* fall through */ }
-    if (error.message?.includes("Forbidden") || error.message?.includes("suspended")) {
+    if (errOf(error).message?.includes("Forbidden") || errOf(error).message?.includes("suspended")) {
         return "My roots are quiet right now. Please come back later.";
     }
     return "The signal through my branches is weak right now.";
@@ -377,7 +380,7 @@ Return ONLY a JSON object, no prose, no markdown:
                     ? { scope: intel.credentialScope, ownerId: intel.credentialOwnerId }
                     : undefined,
             });
-            const parsed = parseJsonObject<WateringAnalysis>((res.data as any)?.text || '');
+            const parsed = parseJsonObject<WateringAnalysis>((res.data as { text?: string } | undefined)?.text || '');
             return parsed ? { ...parsed, model: intel.model, provider: 'anthropic' } : fallback;
         }
 
@@ -392,7 +395,7 @@ Return ONLY a JSON object, no prose, no markdown:
             model,
             config: { responseMimeType: 'application/json' },
         });
-        const parsed = parseJsonObject<WateringAnalysis>((result.data as any)?.text || '');
+        const parsed = parseJsonObject<WateringAnalysis>((result.data as { text?: string } | undefined)?.text || '');
         return parsed ? { ...parsed, model, provider: 'google' } : fallback;
     } catch (e) {
         console.error('Watering analysis error', e);
@@ -433,7 +436,7 @@ export const findVisionSynergies = async (visions: Vision[], intelligenceId?: st
     if (visions.length < 2) return [];
     const field = visions.slice(0, Math.max(2, depth));
     const visionsList = field.map(v => {
-        const place = (v as any).place ? `, Place: ${(v as any).place}` : '';
+        const place = (v as { place?: string }).place ? `, Place: ${(v as { place?: string }).place}` : '';
         return `- Tree: ${v.title}${place}, Vision: ${(v.body || v.description || '').slice(0, 400)}`;
     }).join('\n');
 

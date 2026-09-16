@@ -53,7 +53,7 @@ export interface Persona {
   name: string;
   description: string;
   systemPrompt: string;
-  createdAt: Stamp;
+  createdAt?: Stamp; // absent on a synthetic persona (the oracle, a tree's voice) that was never stored
 }
 
 // What an intelligence is allowed to recall. Memory is durable and outlives any

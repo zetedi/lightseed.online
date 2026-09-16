@@ -47,7 +47,7 @@ export const createDecision = async (
         proposedBy: data.proposedBy,
         mode,
         votesRequired: required,
-        positions: [] as any[],
+        positions: [] as Decision['positions'],
         status: 'open' as const,
     };
     const hash = await createBlock('DECISION', payload, Date.now());
@@ -326,8 +326,8 @@ export const raiseConcern = async (decisionId: string, uid: string, note?: strin
     return runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
         if (!snap.exists()) throw new Error('err_decision_not_found');
-        const d = snap.data() as any;
-        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
+        const d = snap.data() as Partial<Decision>;
+        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(String(d.status))) return 'closed' as const;
         // One concern per voice (a re-raise replaces it) — bounds the array, no spam. And
         // serverTimestamp() can't live inside an array element, so stamp the concern client-side.
         const concerns = (Array.isArray(d.concerns) ? d.concerns : []).filter((c: { by: string }) => c.by !== actor);
@@ -395,8 +395,8 @@ export const recordPosition = async (decisionId: string, uid: string, stance: Co
     return runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
         if (!snap.exists()) throw new Error('err_proposal_not_found');
-        const d = snap.data() as any;
-        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) return 'closed' as const;
+        const d = snap.data() as Partial<Decision>;
+        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(String(d.status))) return 'closed' as const;
         const positions = (Array.isArray(d.positions) ? d.positions : []).filter((p: { by: string }) => p.by !== actor);
         positions.push({ by: actor, stance, note: note || '', at: Timestamp.fromMillis(Date.now()) });
         tx.update(ref, { positions });
@@ -412,8 +412,8 @@ export const discernDecision = async (decisionId: string, outcome: 'passed' | 'r
     return runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
         if (!snap.exists()) throw new Error('err_proposal_not_found');
-        const d = snap.data() as any;
-        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(d.status)) throw new Error('err_proposal_settled');
+        const d = snap.data() as Partial<Decision>;
+        if (['passed', 'withdrawn', 'rejected', 'expired'].includes(String(d.status))) throw new Error('err_proposal_settled');
         if (outcome === 'passed') {
             const blocks = (Array.isArray(d.positions) ? d.positions : []).filter((p: { stance: string }) => p.stance === 'block');
             if (blocks.length) throw new Error('err_block_stands');
@@ -437,7 +437,7 @@ export const getDecisions = async (communityId: string, levels?: PulseVisibility
     const snap = await getDocs(q);
     return snap.docs
         .map(d => (mapDoc(d) as Decision))
-        .filter(p => (p as any).type === 'decision')
+        .filter(p => (p as { type?: string }).type === 'decision')
         .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 };
 
@@ -567,7 +567,7 @@ export const getOfferingsTo = async (kind: 'tree' | 'vision', id: string): Promi
     const snap = await getDocs(query(pulsesCollection, where('type', '==', 'offering'), where('offeredToKind', '==', kind), where('offeredToId', '==', id)));
     return snap.docs
         .map(d => ({ id: d.id, ...(d.data() as DocumentData) }) as Pulse)
-        .sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
+        .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 };
 
 // The offering's lifecycle switch: its author pauses or rewakes it. A paused offering leaves the

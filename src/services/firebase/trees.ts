@@ -1,10 +1,11 @@
-import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, doc, getDoc, where, updateDoc, deleteDoc, limit, startAfter, QueryDocumentSnapshot, getCountFromServer, Timestamp, type QueryConstraint } from 'firebase/firestore';
 import { charter } from '../../config/charter';
 import { announce } from '../refreshBus';
 import { LIGHT_HOUSE_ROOT, type LightHouseCareAct } from '../../domain/lightHouse';
 import { firestoreStore } from '../../adapters/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { type Lifetree, type LightHouse, type TreeOwnershipInvite, type InvitableRole } from '../../types';
+import { type Lifetree, type LightHouse, type TreeOwnershipInvite, type InvitableRole, type Link } from '../../types';
+import { msOf } from '../../domain/time';
 import { tendedTreeRoles, type TendingRole } from '../../domain/treeCircle';
 import { createBlock } from '../../utils/crypto';
 import { treePlantingGate, normalizeNodeLimits, DEFAULT_NODE_LIMITS, type NodeLimits } from '../../domain/limits';
@@ -35,8 +36,8 @@ export const ensureGenesis = async () => {
         // flower-of-life image, which outranked every fallback). latestGrowthUrl is the
         // display cache that wins over imageUrl in the renderers — align both. Staff-run.
         if (genesisSnap.exists()) {
-            const g = genesisSnap.data() as any;
-            const momentDrifted = (g.createdAt?.toMillis?.() !== GENESIS_MOMENT_MS) || !g.plantedAt;
+            const g = genesisSnap.data() as Partial<Lifetree>;
+            const momentDrifted = (msOf(g.createdAt) !== GENESIS_MOMENT_MS) || !g.plantedAt;
             if ((g.imageUrl !== MAHAMERU_IMAGE || (g.latestGrowthUrl && g.latestGrowthUrl !== MAHAMERU_IMAGE) || momentDrifted)
                 && await checkIsSuperAdmin(user.uid)) {
                 await updateDoc(genesisRef, {
@@ -184,7 +185,7 @@ export const getNetworkStats = async (domain?: string, publicOnly = false) => {
     // In a scoped place, try the true (unfiltered) count first — accurate, and provable while
     // every matched doc is readable. Reflection skips that attempt and asks PUBLIC at the source.
     // null = the constrained count was rejected (e.g. a missing composite index).
-    const provableCount = async (coll: string, extra: any[] = []): Promise<number | null> => {
+    const provableCount = async (coll: string, extra: QueryConstraint[] = []): Promise<number | null> => {
         if (!publicOnly) {
             try {
                 return (await getCountFromServer(query(collection(db, coll), ...extra))).data().count;
@@ -224,7 +225,7 @@ export const getNodeLimits = async (): Promise<NodeLimits> => {
 
 // Staff-only by Firestore rules — the node admin page saves the caps here.
 export const setNodeLimits = (limits: Partial<NodeLimits>) =>
-    setDoc(doc(db, 'config', 'limits'), normalizeNodeLimits(limits) as any, { merge: true });
+    setDoc(doc(db, 'config', 'limits'), normalizeNodeLimits(limits), { merge: true });
 
 // The AI dial alone (ring 2026-08-25) — a targeted merge that writes ONLY nodeAiValidatedOnly,
 // so toggling the node's AI never disturbs the planting/fullness caps beside it in config/limits.
@@ -233,7 +234,7 @@ export const setNodeAiValidatedOnly = (value: boolean) =>
 
 export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string; name: string; body?: string }) => {
     // Quality, not quantity: the node's caps (or the 12 + 132 = 144 defaults) per being.
-    const plantingType: 'LIFETREE' | 'GUARDED' = (data.treeType as any) || (data.isNature ? 'GUARDED' : 'LIFETREE');
+    const plantingType: 'LIFETREE' | 'GUARDED' = (data.treeType as 'LIFETREE' | 'GUARDED' | undefined) || (data.isNature ? 'GUARDED' : 'LIFETREE');
     const [mine, limits] = await Promise.all([getMyLifetrees(data.ownerId), getNodeLimits()]);
     const refusal = treePlantingGate(mine, plantingType, limits);
     if (refusal) throw new Error(refusal);
@@ -422,7 +423,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     // A broad index fallback must never become a broad visible forest.
     if (communityScoped) items = items.filter(tree => (tree.domain || '') === scopedDomain);
     // Always newest-first (covers the unordered fallback).
-    items = items.sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
+    items = items.sort((a, b) => msOf(b.createdAt) - msOf(a.createdAt));
 
     // Pre-backfill safety: legacy trees have no `visibility` field, so a filtered query matches
     // none. If the first page comes back empty, retry unfiltered (rules still allow this while no
@@ -434,7 +435,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
                 : query(lifetreesCollection, orderBy('createdAt', 'desc'), limit(12));
             const s2 = await getDocs(base);
             items = s2.docs.map(d => (mapDoc(d) as Lifetree))
-                .sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
+                .sort((a, b) => msOf(b.createdAt) - msOf(a.createdAt));
         } catch { /* rules now block unfiltered (private trees exist) — keep empty */ }
     }
 
@@ -474,7 +475,7 @@ export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string
     const communityScoped = !!scopedDomain;
     const visCons = (levels && levels.length) ? [where('visibility', 'in', levels)] : [];
     const byId = new Map<string, Lifetree>();
-    const add = (d: any) => byId.set(d.id, mapDoc(d) as Lifetree);
+    const add = (d: QueryDocumentSnapshot) => byId.set(d.id, mapDoc<Lifetree>(d));
 
     try {
         if (communityScoped) {
@@ -510,7 +511,7 @@ export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string
 
     if (!communityScoped) {
         const genesisSnap = await getDoc(doc(db, 'lifetrees', 'GENESIS_TREE'));
-        if (genesisSnap.exists()) byId.set(genesisSnap.id, { id: genesisSnap.id, ...(genesisSnap.data() as any) } as Lifetree);
+        if (genesisSnap.exists()) byId.set(genesisSnap.id, mapDoc<Lifetree>(genesisSnap));
     }
 
     // Beds are furniture, not forest — the map never shows one (domain/bed.ts).
@@ -671,7 +672,7 @@ export const getRootedTrees = async (lightHouseIds: string[]): Promise<Lifetree[
     const linkSnaps = await Promise.all(lightHouseIds.map(sid =>
         getDocs(query(collection(db, 'links'), where('from', '==', sid), where('rel', '==', 'rooted'))).catch(() => null)
     ));
-    const treeIds = [...new Set(linkSnaps.flatMap(snap => snap ? snap.docs.map(d => (d.data() as any).to as string) : []))];
+    const treeIds = [...new Set(linkSnaps.flatMap(snap => snap ? snap.docs.map(d => (d.data() as Partial<Link>).to as string) : []))];
     const trees = await Promise.all(treeIds.map(id =>
         getDoc(doc(db, 'lifetrees', id)).then(s => s.exists() ? ({ id: s.id, ...s.data() } as Lifetree) : null).catch(() => null)
     ));
@@ -698,7 +699,7 @@ export const createLightHouse = async (data: Partial<LightHouse> & { name: strin
 
 export const getLightHouseById = async (id: string): Promise<LightHouse | null> => {
     const snap = await getDoc(doc(db, 'lightHouses', id));
-    return snap.exists() ? (mapDoc(snap as any) as LightHouse) : null;
+    return snap.exists() ? mapDoc<LightHouse>(snap) : null;
 };
 
 // LightHouses sheltering a community — belonging lives in the LIN (lightHouse __shelters__
@@ -710,7 +711,7 @@ export const getLightHousesByCommunity = async (communityId: string): Promise<Li
     ]);
     const out = new Map<string, LightHouse>();
     for (const d of primary.docs) out.set(d.id, mapDoc(d) as LightHouse);
-    const missing = links.docs.map(l => (l.data() as any).from).filter((id: string) => !out.has(id));
+    const missing = links.docs.map(l => (l.data() as Partial<Link>).from as string).filter(id => !out.has(id));
     const fetched = await Promise.all(missing.map((id: string) => getLightHouseById(id).catch(() => null)));
     for (const s of fetched) if (s) out.set(s.id, s);
     return [...out.values()];
@@ -795,7 +796,7 @@ export const witnessLightHouseCare = async (pulseId: string) => {
 // values are stripped (belt and braces alongside ignoreUndefinedProperties).
 export const updateLightHouse = (lightHouseId: string, data: Partial<LightHouse>) =>
     updateDoc(doc(db, 'lightHouses', lightHouseId),
-        Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== '')) as any);
+        Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== '')));
 
 // Release a lightHouse — owner or staff, per the rules. Its LIN edges (rooted, shelters)
 // are released FIRST (while the ownership check can still see the doc), best-effort.
@@ -803,7 +804,7 @@ export const deleteLightHouse = async (lightHouseId: string) => {
     try {
         const links = await getDocs(query(collection(db, 'links'), where('from', '==', lightHouseId)));
         await Promise.all(links.docs
-            .filter(d => ['rooted', 'shelters'].includes((d.data() as any).rel))
+            .filter(d => ['rooted', 'shelters'].includes(String((d.data() as Partial<Link>).rel)))
             .map(d => deleteDoc(d.ref).catch(() => {})));
     } catch { /* best-effort — the exists-guarded rules allow later staff cleanup */ }
     await deleteDoc(doc(db, 'lightHouses', lightHouseId));
@@ -817,7 +818,7 @@ export const checkIsAdmin = async (uid: string): Promise<boolean> => (await getD
 
 export const getSuperAdminUid = async (): Promise<string | null> => {
     const snap = await getDoc(doc(db, 'config', 'superadmin'));
-    return snap.exists() ? (snap.data() as any).uid : null;
+    return snap.exists() ? ((snap.data() as { uid?: string }).uid ?? null) : null;
 };
 export const checkIsSuperAdmin = async (uid: string): Promise<boolean> => (await getSuperAdminUid()) === uid;
 export const SUPERADMIN_INVITE_ALLOTMENT = 144;
@@ -837,11 +838,11 @@ export const getAdmins = async (): Promise<{ uid: string }[]> =>
 // Trees a user guards — a prism over their outgoing 'guardian' links (the LIN), then hydrate.
 export const getGuardedTrees = async (uid: string): Promise<Lifetree[]> => {
     const links = await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'guardian')));
-    const ids = links.docs.map(d => (d.data() as any).to as string);
+    const ids = links.docs.map(d => (d.data() as Partial<Link>).to as string);
     const trees = await Promise.all(ids.map(async id => {
         try {
             const snap = await getDoc(doc(db, 'lifetrees', id));
-            return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
+            return snap.exists() ? mapDoc<Lifetree>(snap) : null;
         } catch { return null; } // e.g. a guarded tree the owner made private
     }));
     // Guardian links are self-serve, so one could point at a bed — furniture stays out.
@@ -872,11 +873,11 @@ export const getTendedTrees = async (uid: string): Promise<TendedTree[]> => {
 // (from = treeId), then hydrate. Mirrors getGuardedTrees but keyed on the target entity.
 export const getParticipatingTrees = async (entityId: string): Promise<Lifetree[]> => {
     const links = await getDocs(query(collection(db, 'links'), where('to', '==', entityId), where('rel', '==', 'participant')));
-    const ids = links.docs.map(d => (d.data() as any).from as string);
+    const ids = links.docs.map(d => (d.data() as Partial<Link>).from as string);
     const trees = await Promise.all(ids.map(async id => {
         try {
             const snap = await getDoc(doc(db, 'lifetrees', id));
-            return snap.exists() ? ({ id: snap.id, ...(snap.data() as any) } as Lifetree) : null;
+            return snap.exists() ? mapDoc<Lifetree>(snap) : null;
         } catch { return null; } // a participating tree that later went private
     }));
     // A bed never stands in an event or vision — participants are forest (domain/bed.ts).
@@ -902,7 +903,7 @@ export const createTreeInvite = async (params: {
     // Single-field query + client filter, to avoid requiring a composite index.
     const existing = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetree.id)));
     const hasPendingDupe = existing.docs.some(d => {
-        const x = d.data() as any;
+        const x = d.data() as Partial<TreeOwnershipInvite>;
         return x.invitedUserId === invitedUserId && x.role === role && x.status === 'pending';
     });
     if (hasPendingDupe) throw new Error('err_invite_pending_role');
@@ -932,7 +933,7 @@ export const getPendingTreeInvites = async (userId: string): Promise<TreeOwnersh
 export const getSentTreeInvites = async (lifetreeId: string): Promise<TreeOwnershipInvite[]> => {
     const snap = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetreeId)));
     return snap.docs.map(d => (mapDoc(d) as TreeOwnershipInvite))
-        .sort((a, b) => ((b.createdAt as any)?.toMillis?.() || 0) - ((a.createdAt as any)?.toMillis?.() || 0));
+        .sort((a, b) => msOf(b.createdAt) - msOf(a.createdAt));
 };
 
 export const declineTreeInvite = (inviteId: string) =>
