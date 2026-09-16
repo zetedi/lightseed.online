@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { STAFF_HANDS, staffHandOn, staffHandById } from '../src/domain/staffHands';
 import { DOMAIN_KEYS } from '../src/domain/words';
@@ -7,7 +7,9 @@ import { DOMAIN_KEYS } from '../src/domain/words';
 // The staff hands (ring 2026-09-09): recorded once, switchable where wired — and the rules
 // and the record are held to name the same hands.
 const rules = readFileSync(join(__dirname, '..', 'firestore.rules'), 'utf8');
-const fns = readFileSync(join(__dirname, '..', 'functions', 'src', 'index.ts'), 'utf8');
+// The server is many modules since the split (ring 2026-09-16): every source under functions/src.
+const fnsDir = join(__dirname, '..', 'functions', 'src');
+const fns = readdirSync(fnsDir).filter((f) => f.endsWith('.ts')).map((f) => readFileSync(join(fnsDir, f), 'utf8')).join('\n');
 const inRules = new Set([...rules.matchAll(/staffHand\('([a-z_]+)'\)/g)].map((m) => m[1]));
 const inFunctions = new Set([...fns.matchAll(/staffHandOn\([^,]+,\s*"([a-z_]+)"/g)].map((m) => m[1]));
 
