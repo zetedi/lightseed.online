@@ -42,8 +42,10 @@ domain/     pure rules, no backend, no React: ALWAYS testable (tests/ mirrors it
 adapters/   the Store port (firestoreStore: links CRUD by deterministic id)
 services/   Firebase aggregates (barrel: services/firebase.ts) + weather, refreshBus
 hooks/      session (useLifeseed → SessionContext), feeds, facts, visible-lightHouses
-components/ the faces; components/sections/ = the shared Being anatomy (8 organs)
-pages/      tab-level shells; App.tsx is the single conductor (overlays, routing)
+components/ the faces; components/sections/ = the shared Being anatomy (8 organs);
+            components/app/ = the conductor's own limbs (main content, overlays, being detail)
+pages/      tab-level shells; App.tsx is the single conductor — composing hooks/use* seams
+            (overlays, modal doors, host node, door arrivals, carrying), not holding them
 ```
 
 New logic starts in `domain/` with a test. UI reads domain truths; services carry
@@ -190,6 +192,12 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   `Stamp` time port replaced Firestore `Timestamp`; `words.ts` owns the key
   manifest the dictionary proves coverage of; the block hash lives in
   `chain/hash.ts`) — the `@lightseed/domain` extraction is a folder-move away.
+  CLOSED 2026-09-16 for the two conductors: `functions/src/index.ts` is a 17-line
+  composition root over fifteen modules by concern (core imports no feature module);
+  `App.tsx` is 802 lines and 10 hooks over `hooks/use*` seams and `components/app/`.
+  The Firebase services stay large but now name what they read at the Firestore
+  boundary (`mapDoc<T>`, `Partial<Link>`, `msOf`); the users document still reaches its
+  readers as untyped `DocumentData`.
 - Scoped feeds paginated in document-id order (no createdAt composite for domain-scoped
   queries). CLOSED 2026-09-03: the `domain[, type][, visibility] + createdAt DESC` composites
   exist for pulses, trees and visions; every feed orders on the server, with an

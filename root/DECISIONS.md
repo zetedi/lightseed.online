@@ -6,6 +6,62 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-16 · The conductor conducts** — src/App.tsx was 1,899 lines with 69 state and effect
+hooks: the "single conductor" was honest naming for a god component. It is 802 lines and 10
+hooks now, and every seam is a file with one owner, lifted VERBATIM (effects in the order
+they ran, dependency arrays unchanged, the refresh-bus announce/prune and the hero-events seq
+guard intact): hooks/useBeingOverlays (which being is open), useModalDoors (every modal flag
+and opener), usePersonalSite (the person's own palette and its listener), useHostNode (host
+community, data authority, the crown, the chainLocked and tokenisation flags, the document
+title), useDoorArrivals (/b/, /i/, ?invite, ?signin — each consumed once auth settles),
+useCarrying (the bridge: carriedByName and disclosure display-only, authorId the real hand),
+useHeroEvents, usePathwayInput; and components/app/{MainContent, AppOverlays, BeingDetail,
+CareCorner, ShellBanners, SearchBox, DetailWrapper}. Walked signed-out on the built shell:
+landing, Forest, Visions, Events, no new console errors. The App seam's own `any` went 14 → 0.
+THE FOURTH OBSERVATION, honestly: react-hooks disables are 94 before and 94 after; three
+`set-state-in-effect` became `exhaustive-deps` because the effect now calls an opener
+instead of a setter — the same behaviour, not a fix. The 52 that remain are mostly one shape:
+an effect that fetches and then sets, with a synchronous reset in its else-branch, or a
+prop→state RECONCILE that must not clobber an in-flight edit (ring 2026-09-07). Neither is
+fixed by a lint rule; the first wants one async-read hook the whole shell shares, the second
+is correct as written. That is the next rung, and it is a design, not a sweep. REJECTED:
+converting reconcile effects to useMemo (they would clobber edits landing mid-word); a
+component test suite in this batch (a real end-to-end walk is its own season).
+
+---
+
+**2026-09-16 · The server is many rooms; every letter speaks for its place; the services name
+what they read** — three answers to one review. (1) functions/src/index.ts was 3,453 lines
+and 51 functions in one file; it is now THE COMPOSITION ROOT (17 lines: `import "./core"`,
+then re-exports) over fifteen modules by concern — core (admin app, db, mail plumbing, the
+staff and quota gates; imports NO feature module, so no cycle can leave a helper undefined
+at init), keys, invites, preview, ai, light, lifetrees, domains, accounts, mail, lidIndex,
+offeringCalls, letters, pictures. Firebase discovers functions by the exports of index, so
+every name is a deployed function's identity: the export set was proven IDENTICAL before and
+after against the compiled lib (51 names, empty diff); trigger paths, regions, schedules and
+`secrets` moved verbatim; the moved code is the old code, line for line, except the thirty
+lines rewritten on purpose (below). (2) The mail voice (ring 2026-09-14) now reaches the two
+letters it had not: the direct-message notice (mail.ts — the place's name at the head, its
+primary on the button and rule, greeting and signature around the words, footer under the
+rule, links to the place's own door; and every user string is now escaped, where before the
+message and the recipient's name rode raw into HTML) and the newsletter footer (letters.ts —
+the place's primary on Unsubscribe, its own footer line; the receiving sentence and the
+List-Unsubscribe headers byte-identical). One postal line now, in core, shared by both.
+(3) The explicit `any` count: src 331 → 232, functions 64 → 45. In src/services the Firestore
+boundary now names what it reads — `d.data() as Partial<Link>`, `mapDoc<Lifetree>(snap)`,
+`msOf(stamp)` for every createdAt sort, callable results as `{ text?: string }`, thrown things
+read through one `errOf(e: unknown)` — instead of `as any` (services: 23 → 2, the two in
+core's own boundary helpers). A synthetic persona (the oracle, a tree's voice) now simply has
+no `createdAt` (optional on the domain type) instead of `null as any`. NOT DONE, honestly:
+the users document reaches its readers as Firestore's own `DocumentData` (a typed person
+profile is a rung still to climb); 45 functions anys remain where doc shapes are wide (18 in
+invites alone); and `eslint .` does not lint functions/src at all (the root config ignores
+it; there has never been a lint gate there — a debt now written down). REJECTED: one module
+per function (fifty files hide the seams as well as one file did); renaming any export while
+moving (a rename is a delete + create on deploy).
+
+---
+
 **2026-09-14 · The share card names its place** — Zoltán shared an event from the Enlightened
 Nations door and the card read "Ancestral Wisdom Summit — Lightseed": the /b/ preview wrote
 the node's name by heart after every being, whatever garden it stood in. The card now names
