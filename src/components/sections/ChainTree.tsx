@@ -6,6 +6,7 @@ import Logo from '../Logo';
 import { Pulse } from '../../types';
 
 import { Picture } from '../ui/Picture';
+import { FullViewButton } from '../ui/FullView';
 // ChainTree — renders ANY being's chain (Indra's net). The "digital tree" is the universal
 // chain renderer: every being (human, AI, community, node, tree) shares one profile anatomy,
 // and its immutable pulse chain always draws as a living tree — trunk, branch, leaf, root.
@@ -245,7 +246,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                             <div className={`flex gap-4 ${isRightSide ? '' : 'md:flex-row-reverse'} flex-row items-start`}>
                                                 {pulseImages.length > 0 && (
                                                     <div className="relative shrink-0">
-                                                        <Picture size={480} src={pulseImages[0]} className="w-16 h-16 rounded-lg object-cover bg-slate-50 border border-slate-100 dark:bg-slate-900 dark:border-slate-800" />
+                                                        <FullViewButton wrap src={pulseImages[0]}><Picture size={480} src={pulseImages[0]} className="w-16 h-16 rounded-lg object-cover bg-slate-50 border border-slate-100 dark:bg-slate-900 dark:border-slate-800" /></FullViewButton>
                                                         {pulseImages.length > 1 && (
                                                             <span className="absolute -right-1 -top-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-bold text-slate-600 shadow dark:bg-slate-900 dark:text-slate-300">{pulseImages.length}</span>
                                                         )}
@@ -298,6 +299,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                                  {root.imageUrl && (
                                      <div className="relative h-40 w-full">
                                          <Picture size={1200} src={root.imageUrl} alt={root.name} className="h-full w-full object-cover opacity-90" />
+                                         <FullViewButton src={root.imageUrl} alt={root.name} />
                                          <div className="absolute inset-0 bg-gradient-to-t from-[#5D4037] via-[#5D4037]/40 to-transparent" />
                                          <span className="absolute left-3 top-3 rounded-full bg-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-amber-900 shadow dark:bg-amber-950/90 dark:text-amber-200">🌱 {t('badge_planting')}</span>
                                      </div>

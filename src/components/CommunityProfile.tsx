@@ -43,6 +43,7 @@ import { canCareForTree } from '../domain/policy';
 import { speak, spokenLine } from '../utils/translations';
 
 import { Picture } from './ui/Picture';
+import { FullViewButton } from './ui/FullView';
 import { nodeDomains } from '../config/charter';
 import { useAutosave } from '../hooks/useAutosave';
 import { COMMUNITY_APPEARANCE_FIELDS, reconcile } from '../domain/autosave';
@@ -895,9 +896,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           </>
         ),
         avatar: (
-          <div className="flex h-14 w-14 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl dark:bg-slate-900">
+          <div className="relative flex h-14 w-14 md:h-20 md:w-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-white shadow-xl dark:bg-slate-900">
+            {logoUrl && <FullViewButton src={logoUrl} alt={community.name} className="-bottom-1 -right-1" />}
             {logoUrl ? (
-              <Picture size={480} src={logoUrl} className="h-full w-full object-cover" alt={`${community.name} ${t('logo')}`} referrerPolicy="no-referrer" />
+              <Picture size={480} src={logoUrl} className="h-full w-full rounded-full object-cover" alt={`${community.name} ${t('logo')}`} referrerPolicy="no-referrer" />
             ) : (
               <span className="text-slate-300"><Icons.Globe /></span>
             )}

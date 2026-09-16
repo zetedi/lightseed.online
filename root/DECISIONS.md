@@ -6,6 +6,37 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-16 · A picture may be seen whole** — every picture in the seed is served small for
+its seat (ring 2026-09-06: variants at 480 and 1200); a flyer for a ceremony, a watering
+proof, a tree's portrait sometimes wants to be seen whole, and there was no door to it.
+ui/FullView is that door: FullViewButton rides a corner of a picture (or WRAPS a thumbnail too
+small to carry a corner, so the whole thumb is the door) and opens the PRIMARY over everything
+on the modal's night, with a caption, Escape, the backdrop and the cross to let go; the click
+stops at the button, so a card that opens a being on tap keeps doing so. Picture gained
+size="primary" — the one seat that asks for the stored picture itself. Seated in the shared
+card carousel (every event and pulse card), the shared profile hero (every being's banner),
+the event and pulse galleries, the vision image and the vision card, the tree, bed, offering
+and community avatars, the Light House card, the chain's root picture and pulse thumbnails,
+the watering proofs, the events list thumbnails and the profile's pulses. Walked on the built
+shell against production data: an event, a tree's portrait, a chain thumbnail. LEARNED the hard
+way: Chrome left a 1600px picture unpainted on first open, both with a backdrop blur and with
+the fade-in, until the next style change — asynchronous decoding inside a freshly composited
+layer never triggered a repaint; the full view therefore appears without an entrance
+animation, without blur, and decodes synchronously. NOT: pinch-zoom or a next/previous inside
+the view (the gallery underneath still pages); a download button (a saved file is the phone's
+own gesture, and the primary is already what is shown). REJECTED: a full-view prop on Picture
+itself (eighty seats would have grown a button, avatars in a header included; the seats that
+want it name it). AND THEN, the same evening, Zoltán found three things: closing the view on a
+chain leaf opened the leaf's pulse (a portal's clicks bubble through the REACT tree, not the
+DOM — the view now stops its own clicks; and the door is a <span role="button">, never a
+<button> inside a card's button); the event card's seats badge sat where the full-view button
+now rides, so the seats moved beneath the loves at the bottom-right; and the card wore the
+face of the community the VIEWER stood at, not the event's own — domain/eventFace names
+whose the event is (its communityId, else its domain stamp), hooks/useEventCommunity reads
+that place once and remembers it, and the face is a door to THAT community.
+
+---
+
 **2026-09-16 · A face signs in under its own name** — on Per Auset the Google screen said
 "continue to lifeseed-75dfe.firebaseapp.com": the shell hands Google an auth domain, and it
 used the host the visitor stands on only for the node's own domains; every face fell back to

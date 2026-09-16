@@ -8,18 +8,19 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { spokenLine } from '../utils/translations';
 
 import { Picture } from './ui/Picture';
+import { useEventCommunity } from '../hooks/useEventCommunity';
 // ONE event card, shared by the home hero banner and the Events section (DRY). A solid card, so
 // it reads the same on a coloured banner or a white page. The image carries four corners:
 //   top-left  — the countdown (In / N / days; Today in one word)
-//   top-right — the seats (participants, N/max)
-//   bottom-left  — the host community's face (a door to it)
-//   bottom-right — the loves (opposite corner of the countdown, by request)
+//   top-right — the full view of the picture (ui/FullView, worn by the carousel)
+//   bottom-left  — the EVENT'S OWN community's face (a door to it; hooks/useEventCommunity)
+//   bottom-right — the loves, and the seats (participants, N/max) beneath them (ring 2026-09-16)
 // Title + when/where sit beneath; an optional `actions` slot holds edit/delete on the events page.
 export const EventCard = ({ event, onOpen, community, onOpenCommunity, participantCount, actions, className, isDark = false }: {
     event: Pulse;
     onOpen: () => void;
-    community?: Community | null;   // the host community's face, resolved by the caller
-    onOpenCommunity?: () => void;   // when set, the face becomes a door to the community
+    community?: Community | null;   // a hint: the place the caller holds — worn only if the event is its own
+    onOpenCommunity?: (community: Community) => void; // when set, the face becomes a door to the event's community
     participantCount?: number;      // supply to skip the card's own read; else it reads once
     actions?: React.ReactNode;      // edit/delete etc. (events page); absent on the hero
     className?: string;             // width/shrink for the context (default w-full)
@@ -46,8 +47,10 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
         return Math.ceil((ms - nowMs) / 86400000);
     })();
     const max = event.eventMaxParticipants || 0;
-    const faceName = event.communityName || community?.name || t('community_label');
-    const showFace = !!(event.communityId || community);
+    const face = useEventCommunity(event, community);
+    const faceName = event.communityName || face?.name || t('community_label');
+    const showFace = !!(event.communityId || event.domain || face);
+    const openFace = onOpenCommunity && face ? () => onOpenCommunity(face) : undefined;
 
     return (
         <button onClick={onOpen} className={`group relative flex h-full flex-col self-stretch overflow-hidden rounded-xl border text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'} ${className ?? 'w-full'}`}>
@@ -71,43 +74,46 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                     </span>
                 )}
 
-                {/* top-right: the gathering's seats */}
-                {(max > 0 || count > 0) && (
-                    <span className="absolute right-1.5 top-1.5 flex flex-col items-center rounded-md bg-black/30 px-1.5 py-0.5 leading-tight text-white backdrop-blur-sm">
-                        <span className="text-xs font-bold tabular-nums">{max ? `${count}/${max}` : count}</span>
-                        <span className="text-[8px] uppercase tracking-wide text-white/75">{count === 1 && !max ? t('tree') : t('trees')}</span>
-                    </span>
-                )}
-
                 {/* bottom-left: the host community's face, a door to its profile */}
                 {showFace && (
                     <span
                         role={onOpenCommunity ? 'button' : undefined}
                         tabIndex={onOpenCommunity ? 0 : undefined}
                         title={spokenLine('hosted_by', { name: faceName })}
-                        onClick={onOpenCommunity ? (e) => { e.stopPropagation(); onOpenCommunity(); } : undefined}
-                        onKeyDown={onOpenCommunity ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onOpenCommunity(); } } : undefined}
+                        onClick={openFace ? (e) => { e.stopPropagation(); openFace(); } : undefined}
+                        onKeyDown={openFace ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); openFace(); } } : undefined}
                         className={`absolute bottom-1.5 left-1.5 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-emerald-600 text-[11px] font-bold text-white shadow-md ${onOpenCommunity ? 'transition-transform hover:scale-110' : ''}`}
                     >
-                        {community?.logoUrl
-                            ? <Picture size={480} src={community.logoUrl} className="h-full w-full object-cover" alt={faceName} referrerPolicy="no-referrer" />
+                        {face?.logoUrl
+                            ? <Picture size={480} src={face.logoUrl} className="h-full w-full object-cover" alt={faceName} referrerPolicy="no-referrer" />
                             : faceName.charAt(0).toUpperCase()}
                     </span>
                 )}
 
-                {/* bottom-right: love this event (the countdown's opposite corner). The shared heart,
+                {/* bottom-right: love this event, and the gathering's seats beneath (moved down from
+                    the top-right corner, which the full-view button now wears). The shared heart,
                     rendered inline (a <span role=button>) so it never nests a <button> inside the
                     card's own button; a badge bg appears once there are loves. */}
-                <LoveButton
-                    inline
-                    collection="pulses"
-                    id={event.id}
-                    initialCount={event.loveCount || 0}
-                    noun="love_this_event"
-                    className="absolute bottom-1.5 right-1.5 rounded-full px-1.5 py-0.5 text-white"
-                    activeClassName="bg-black/30 backdrop-blur-sm"
-                    iconClassName="[&>svg]:h-4 [&>svg]:w-4 drop-shadow"
-                />
+                <span className="absolute bottom-1.5 right-1.5 flex flex-col items-end gap-1">
+                    <LoveButton
+                        inline
+                        collection="pulses"
+                        id={event.id}
+                        initialCount={event.loveCount || 0}
+                        noun="love_this_event"
+                        className="rounded-full px-1.5 py-0.5 text-white"
+                        activeClassName="bg-black/30 backdrop-blur-sm"
+                        // The empty heart is slate elsewhere; on a photograph that vanished, so here its
+                        // outline is red whether loved or not (Zoltán, 2026-09-16).
+                        iconClassName="[&>svg]:h-4 [&>svg]:w-4 [&>svg]:text-red-500 drop-shadow"
+                    />
+                    {(max > 0 || count > 0) && (
+                        <span className="flex items-baseline gap-1 rounded-md bg-black/30 px-1.5 py-0.5 leading-tight text-white backdrop-blur-sm">
+                            <span className="text-xs font-bold tabular-nums">{max ? `${count}/${max}` : count}</span>
+                            <span className="text-[8px] uppercase tracking-wide text-white/75">{count === 1 && !max ? t('tree') : t('trees')}</span>
+                        </span>
+                    )}
+                </span>
             </div>
 
             {/* EVERY CARD ENDS ON ONE LINE (ring 2026-09-11): the row stretches its cards to the

@@ -353,14 +353,14 @@ export const MainContent: React.FC<{
           // Big-cards density uses the shared EventCard; its community face opens
           // the host community (the same resolution the dashboard banner uses).
           renderBigCard={(ev: Pulse) => {
-            const hostFace = place || defaultCommunity;
-            const face = hostFace && (!ev.communityId || ev.communityId === hostFace.id) ? hostFace : null;
+            // The card resolves the EVENT'S OWN community (hooks/useEventCommunity); the
+            // place being viewed is only a hint it wears when the event is its own.
             return (
               <EventCard
                 event={ev}
                 onOpen={() => { void onViewPulseOrAlignment(ev); }}
-                community={face}
-                onOpenCommunity={face ? () => setSelectedCommunity(face) : undefined}
+                community={place || defaultCommunity}
+                onOpenCommunity={(c) => setSelectedCommunity(c)}
                 isDark={isDark}
               />
             );

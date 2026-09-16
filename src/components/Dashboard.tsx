@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
-import { getNetworkStats, getLightHousesByDomain, getAllLightHouses, getRootedTrees, getCommunityById } from '../services/firebase';
+import { getNetworkStats, getLightHousesByDomain, getAllLightHouses, getRootedTrees } from '../services/firebase';
 import { dataDomainFor } from '../domain/communityDoor';
 import { headerSurface } from '../domain/themeSurface';
 import { treeCoordinates } from '../domain/views/forest';
@@ -80,17 +80,9 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
     // carry no communityId — those belong to the domain's home, the host community, so the
     // door falls back to it rather than vanishing. With an id: the host opens from the doc in
     // hand; any other community resolves by id first.
-    const openEventCommunity = async (ev: Pulse) => {
-        if (!onViewCommunity) return;
-        if (!ev.communityId) { if (hostCommunity) onViewCommunity(hostCommunity); return; }
-        if (hostCommunity && hostCommunity.id === ev.communityId) { onViewCommunity(hostCommunity); return; }
-        const community = await getCommunityById(ev.communityId).catch(() => null);
-        if (community) onViewCommunity(community);
-    };
-    // The face on the card: the community we can already SHOW without a fetch (the host, when
-    // the event is its own or carries no id); others show their name's initial.
-    const eventCommunityFace = (ev: Pulse): Community | null =>
-        hostCommunity && (!ev.communityId || ev.communityId === hostCommunity.id) ? hostCommunity : null;
+    // The face on the card is the EVENT'S OWN community (hooks/useEventCommunity, ring
+    // 2026-09-16); the host is only a hint the card wears when the event is its own.
+    const eventCommunityFace = (): Community | null => hostCommunity ?? null;
     // (The card owns its own countdown + participant read now — see components/EventCard.)
     // Fade only the side(s) that hide a card — the same source the nav arrows read, so a fade
     // shows exactly where an arrow does (and neither when everything fits).
@@ -184,8 +176,8 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                                 key={ev.id}
                                 event={ev}
                                 onOpen={() => onViewEvent?.(ev)}
-                                community={eventCommunityFace(ev)}
-                                onOpenCommunity={onViewCommunity ? () => { void openEventCommunity(ev); } : undefined}
+                                community={eventCommunityFace()}
+                                onOpenCommunity={onViewCommunity ? (c) => onViewCommunity(c) : undefined}
                                 className="w-48 shrink-0 md:w-60"
                                 isDark={isDark}
                             />

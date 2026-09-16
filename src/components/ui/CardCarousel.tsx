@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Picture } from './Picture';
+import { FullViewButton } from './FullView';
 
 // ONE carousel for every card (ring 2026-08-22): when a being carries several images, the
 // card pages through them in place — arrows on hover, dots beneath, the card's own tap
@@ -22,6 +23,7 @@ export const CardCarousel = ({ images, alt = '', className = '', imgClassName = 
   return (
     <div className={`group/carousel relative h-full w-full ${className}`}>
       <Picture src={images[i]} alt={alt} className={imgClassName} />
+      <FullViewButton src={images[i]} alt={alt} />
       {images.length > 1 && (
         <>
           <button type="button" aria-label="previous image" onClick={(e) => step(e, -1)}

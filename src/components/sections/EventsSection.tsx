@@ -17,6 +17,7 @@ import { visibilitiesForScope } from '../../domain/pulseVisibility';
 import type { PulseVisibility } from '../../domain/pulse';
 
 import { Picture } from '../ui/Picture';
+import { FullViewButton } from '../ui/FullView';
 // Being-generic events section. Events are conceptually the same for communities, nodes and
 // personal profiles — only where they're rooted (and therefore how they're fetched/created)
 // differs, so the owner binds those via `loadEvents` / `onCreate`. CommunityEvents is a thin
@@ -245,7 +246,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               className={`group flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 ${onViewEvent ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
             >
               <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-                {ev.imageUrl ? <Picture size={480} src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} /> : <div className="h-full w-full" style={{ backgroundColor: placeholderColor }} />}
+                {ev.imageUrl ? <FullViewButton wrap src={ev.imageUrl} alt={ev.title} className="h-full w-full"><Picture size={480} src={ev.imageUrl} className="h-full w-full object-cover" alt={ev.title} /></FullViewButton> : <div className="h-full w-full" style={{ backgroundColor: placeholderColor }} />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="break-words text-sm font-bold text-slate-800 dark:text-slate-100">{ev.title}</p>

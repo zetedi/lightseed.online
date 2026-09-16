@@ -3,6 +3,7 @@ import { type Vision } from '../types';
 import { Icons } from './ui/Icons';
 import { OutwardLink } from './ui/OutwardLink';
 import { Picture } from './ui/Picture';
+import { FullViewButton } from './ui/FullView';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { ListDensity } from '../hooks/useListDensity';
 
@@ -59,6 +60,7 @@ export const VisionCard = ({ vision, density = 'cards' }: { vision: Vision; dens
             {/* The image (or the galaxy) carries the card, heading overlaid. */}
             <div className="relative h-36 shrink-0 bg-[#04070f] overflow-hidden">
                     <Picture src={visionImage} alt={heading} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    {vision.imageUrl && <FullViewButton src={vision.imageUrl} alt={heading} />}
 
                     {/* Author avatar — the soul this vision grows from. */}
                     {vision.authorId && (

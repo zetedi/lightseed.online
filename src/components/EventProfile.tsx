@@ -23,6 +23,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { spokenLine } from '../utils/translations';
 
 import { Picture } from './ui/Picture';
+import { FullViewButton } from './ui/FullView';
 // The event view, rendered through the shared profile scaffold (ProfileHero + ProfileLayout) so an
 // event reads like the community / lifetree / lightseed profiles rather than a generic pulse. Events
 // are pulses of type 'event'; this is the read view — editing still goes through EventModal (onEdit).
@@ -180,6 +181,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         {images.length > 0 && (
                             <div className="relative mb-6 h-72 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:bg-slate-900 dark:border-slate-800">
                                 <Picture src={images[activeImageIndex]} size={1200} loading="eager" alt={pulse.title} className="h-full w-full object-cover" />
+                                <FullViewButton src={images[activeImageIndex]} alt={pulse.title} className="right-3 top-3" />
                                 {images.length > 1 && (
                                     <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto rounded-2xl bg-black/30 p-2 backdrop-blur-md">
                                         {images.map((url, index) => (

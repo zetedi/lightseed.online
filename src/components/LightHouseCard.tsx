@@ -3,6 +3,7 @@ import { lightHouseVisibility, isLightHouseKind, lightHouseKindKey, type LightHo
 import { useLanguage } from '../contexts/LanguageContext';
 
 import { Picture } from './ui/Picture';
+import { FullViewButton } from './ui/FullView';
 // The visibility chip speaks: the stored value is an identifier, the badge is a word.
 const VIS_CHIP_KEY = { community: 'vis_community_chip', node: 'vis_node_chip', public: 'vis_public_chip' } as const;
 
@@ -33,6 +34,7 @@ export const LightHouseCard = ({ lightHouse, onOpen, placeholderColor, className
             </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/10" />
+        {lightHouse.imageUrl && <FullViewButton src={lightHouse.imageUrl} alt={lightHouse.name} />}
         {/* The glow every lightHouse wears — the same warmth as its map marker. */}
         <div className="pointer-events-none absolute -inset-8 rounded-full opacity-40" style={{ background: 'radial-gradient(circle, rgba(253,224,71,0.35) 0%, transparent 70%)' }} />
         <div className="absolute right-3 top-3 flex items-center gap-1.5">

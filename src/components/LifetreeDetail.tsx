@@ -29,6 +29,7 @@ import { TreeConnections } from './lifetree/TreeConnections';
 import { TreeDetails, type TreeDetailsUpdates } from './lifetree/TreeDetails';
 
 import { Picture } from './ui/Picture';
+import { FullViewButton } from './ui/FullView';
 import { EditableName } from './ui/EditableName';
 import { TREE_NAME_MAX, normalizeTreeName, treeNameProblem } from '../domain/treeName';
 import { OfferingsTo } from './offerings/OfferingsTo';
@@ -545,6 +546,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                             : tree.id === 'GENESIS_TREE'
                                 ? <img src="/mahameru.svg" alt="Mahameru" className="h-16 w-16 rounded-full border-4 border-white object-cover shadow-xl md:h-24 md:w-24" />
                                 : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-emerald-700 text-white shadow-xl md:h-24 md:w-24"><Icons.Tree /></div>}
+                        {heroImg && <FullViewButton src={heroImg} alt={tree.name} className="-bottom-1 -right-1" />}
                         {/* The shield IS the validation marker, worn on the TOP-LEFT of the avatar
                             (like the user profile): green when validated, grey when not yet; for
                             those who may act it opens the modal. */}

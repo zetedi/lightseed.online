@@ -19,6 +19,7 @@ import { type Pulse, type Lifetree } from '../../types';
 import { spokenLine } from '../../utils/translations';
 
 import { Picture } from '../ui/Picture';
+import { FullViewButton } from '../ui/FullView';
 // The bed's own profile — a bed IS a Lifetree, so it wears the same face (BeingProfile) and the
 // same chain (ChainTree, each stay a leaf). What's its own: a HOUSED/LOOSE pill, a calendar of
 // nights, and a details card with no tree machinery (no domain, no convert, no steward).
@@ -194,7 +195,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
         avatar: (
           <div className="relative">
             {heroImg
-              ? <Picture size={480} src={heroImg} alt={bed.name} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" />
+              ? <><Picture size={480} src={heroImg} alt={bed.name} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" /><FullViewButton src={heroImg} alt={bed.name} className="-bottom-1 -right-1" /></>
               : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-indigo-400 to-violet-500 text-white shadow-xl md:h-24 md:w-24 [&>svg]:h-8 [&>svg]:w-8"><Icons.Moon /></div>}
             {bed.validated && <div className="absolute -bottom-1 -right-1"><ValidationBadge compact /></div>}
           </div>

@@ -9,6 +9,7 @@ import { SectionTitle } from '../ui/SectionTitle';
 import { Loading } from '../ui/Loading';
 
 import { Picture } from '../ui/Picture';
+import { FullViewButton } from '../ui/FullView';
 interface ProfilePulsesProps {
   uid: string;
   // Opens the pulse's profile view (the same one the pulses page uses).
@@ -89,7 +90,7 @@ export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse, 
             >
               <div className="h-24 bg-slate-100 relative dark:bg-slate-800">
                 {pulse.imageUrl ? (
-                  <Picture size={480} src={pulse.imageUrl} className="w-full h-full object-cover" />
+                  <><Picture size={480} src={pulse.imageUrl} className="w-full h-full object-cover" /><FullViewButton src={pulse.imageUrl} alt={pulse.title} /></>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-slate-300"><Icons.Hash /></div>
                 )}

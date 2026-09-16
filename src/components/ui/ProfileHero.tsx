@@ -1,5 +1,6 @@
 import React from 'react';
 import { Picture } from './Picture';
+import { FullViewButton } from './FullView';
 
 // The shared banner atop every profile-style view (community, lightseed, lifetree, and — next —
 // event and vision). It owns ONLY the outer shell: the slate gradient, the optional hero image +
@@ -56,6 +57,7 @@ export const ProfileHero = ({
                 />
             )}
             {(heroImageUrl || alwaysOverlay) && <div className={`absolute inset-0 ${overlayClassName}`} />}
+            {heroImageUrl && <FullViewButton src={heroImageUrl} className="bottom-3 right-3" />}
             <div className={`relative ${maxWidth} mx-auto`}>{children}</div>
         </div>
     </>

@@ -3,6 +3,7 @@ import { useSession } from '../../contexts/SessionContext';
 import { Icons } from '../ui/Icons';
 import { OutwardLink } from '../ui/OutwardLink';
 import { Picture } from '../ui/Picture';
+import { FullViewButton } from '../ui/FullView';
 import { linkLabel } from '../../domain/webLink';
 import { BeingQr } from '../ui/BeingQr';
 import { LoveButton } from '../ui/LoveButton';
@@ -248,7 +249,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
         avatar: (
           <div className="relative">
             {img
-              ? <Picture src={img} alt={offering.title} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" />
+              ? <><Picture src={img} alt={offering.title} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" /><FullViewButton src={img} alt={offering.title} className="-bottom-1 -right-1" /></>
               : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white text-white shadow-xl md:h-24 md:w-24 [&>svg]:h-8 [&>svg]:w-8" style={{ backgroundColor: HEART }}>{isBed ? <Icons.Moon /> : <Icons.Drop />}</div>}
           </div>
         ),
