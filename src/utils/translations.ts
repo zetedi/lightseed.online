@@ -3,12 +3,11 @@
 import { line, type DomainKey } from '../domain/words';
 import en, { type Dictionary } from './dictionaries/en';
 
-// Every tongue the shell can speak. The list IS the type: a new seat needs a file under
-// dictionaries/ and a loader below, and the compiler refuses a seat without one.
-export const LANGUAGES = ['en', 'es', 'hu', 'qu', 'sa', 'ja', 'ar', 'sw', 'zh', 'xnz'] as const;
-export type Language = (typeof LANGUAGES)[number];
-export const isLanguage = (value: unknown): value is Language =>
-  typeof value === 'string' && (LANGUAGES as readonly string[]).includes(value);
+// Every tongue the shell can speak lives in the domain (domain/tongues, so a DESIRE may name
+// one); re-exported here so every reader of this module keeps its door. A new seat needs a
+// file under dictionaries/ and a loader below, and the compiler refuses a seat without one.
+import { LANGUAGES, isLanguage, type Language } from '../domain/tongues';
+export { LANGUAGES, isLanguage, type Language };
 
 // THE DICTIONARIES ARRIVE ONE AT A TIME (ring 2026-09-13). English rides with the shell: it is
 // the fallback every other tongue reads through, and the type of every key. Every other

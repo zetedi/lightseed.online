@@ -92,7 +92,7 @@ const DataModelCrystal = lazy(() => import('./components/about/DataModelCrystal'
 const messageOf = (e: unknown): string | undefined => (e instanceof Error && e.message ? e.message : undefined);
 
 const AppContent = () => {
-    const { t } = useLanguage();
+    const { t, language, setLanguage } = useLanguage();
     const { lightseed, myTrees, guardedTrees, activeTree, defaultVisionId, publicName, isAdmin, isSuperAdmin, loading: authLoading, refreshTrees } = useSession();
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
@@ -106,6 +106,13 @@ const AppContent = () => {
     const observatory = useObservatoryQuote(tab);
     const doors = useModalDoors();
     const personal = usePersonalSite(lightseed?.uid);
+    // THE TONGUE FOLLOWS THE BEING (ring 2026-09-18; domain/desires): the desire on the person
+    // wins over what this browser remembered, the moment the profile arrives.
+    const desiredTongue = personal.desiredTongue;
+    useEffect(() => {
+        if (desiredTongue && desiredTongue !== language) setLanguage(desiredTongue);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reacts to the DESIRE arriving or changing; the current tongue is compared, not depended on (a local choice must not re-trigger the desire)
+    }, [desiredTongue]);
     const host = useHostNode({ uid: lightseed?.uid, isSuperAdmin, selectedCommunity: beings.selectedCommunity });
     const { hostCommunity, impersonatedCommunity, defaultCommunity, activeCommunity, activeDataDomain, hostResolved, hostCommunityResolved } = host;
     const [searchTerm, setSearchTerm] = useState('');

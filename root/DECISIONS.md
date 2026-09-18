@@ -27,6 +27,27 @@ is no place of record; the stamp stays one host, and moves).
 
 ---
 
+**2026-09-18 · A being carries desires; the tongue is the first** — the tongue a reader chose
+lived in one browser's localStorage and stayed there: another phone, another laptop, and the
+seed spoke English again. Zoltán: "it would be nice to follow me on devices, so persisted in
+the person as a desire. Light has desires maybe." DESIRES (domain/desires) are the wishes a
+being carries wherever it stands, stored on the person (users/{uid}.desires, a map the crystal
+now names): desiresOf reads only known desires with lawful values, tongueToWear lets the desire
+win over what a browser remembered. Choosing a tongue in the header while signed in writes the
+desire (services saveDesires, a merge); the profile listener (hooks/usePersonalSite) carries
+it, and the conductor sets the shell's tongue the moment it arrives — on every device, over
+that browser's memory. Signed out, a browser still remembers alone, as before. The tongues
+themselves (LANGUAGES, isLanguage) moved into the domain (domain/tongues) so a desire may name
+one without the domain reaching up into the shell; utils/translations re-exports them, held
+equal by test. NOT YET: the server does not read the desire — letters still go out in
+English; that is the next rung of the mail voice (ring 2026-09-14), where a letter would be
+dressed in the reader's tongue as well as the place's. Also not walked in a browser (it needs
+a signed-in hand on two devices); the law is tested, the rest is the palette's own road.
+REJECTED: a desire per device (the point is the being); the tongue on the public person
+record (a desire is the being's own, on the private users document, beside its palette).
+
+---
+
 **2026-09-16 · A picture may be seen whole** — every picture in the seed is served small for
 its seat (ring 2026-09-06: variants at 480 and 1200); a flyer for a ceremony, a watering
 proof, a tree's portrait sometimes wants to be seen whole, and there was no door to it.

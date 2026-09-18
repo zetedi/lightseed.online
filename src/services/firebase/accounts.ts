@@ -4,6 +4,7 @@ import { httpsCallable } from 'firebase/functions';
 import { type Pulse, type Lifetree, type Vision } from '../../types';
 import { excludeBedTrees } from '../../domain/bed';
 import { publicNameOf } from '../../domain/publicName';
+import type { Desires } from '../../domain/desires';
 import { charter } from '../../config/charter';
 import { subscriptionIdOf, isSubscriberEmail, normalizeSubscriberEmail, normalizePlaceDomain } from '../../domain/newsletter';
 import { uuidv7 } from '../../utils/id';
@@ -311,6 +312,10 @@ export const listenToUserProfile = (userId: string, callback: (data: DocumentDat
 
 export const updateUserSiteTheme = (userId: string, data: { siteTheme?: Record<string, string>; siteLogoUrl?: string; siteHeroUrl?: string; siteInherit?: boolean }) =>
     setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+
+// A DESIRE follows the being (domain/desires): written on the person when chosen while signed in.
+export const saveDesires = (userId: string, desires: Desires) =>
+    setDoc(doc(db, 'users', userId), { desires: { ...desires }, updatedAt: serverTimestamp() }, { merge: true });
 
 export const updateUserProfile = (userId: string, data: Record<string, unknown>) =>
     setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });

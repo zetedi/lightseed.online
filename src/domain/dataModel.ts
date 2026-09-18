@@ -151,6 +151,7 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'newsletterSubscribed', type: 'bool' },
       { name: 'preferredIntelligenceId', type: 'string?', ref: 'Intelligence' },
       { name: 'siteTheme', type: 'map?' },
+      { name: 'desires', type: 'map?' }, // what the being wishes wherever it stands: { tongue } (domain/desires)
     ],
   },
   {

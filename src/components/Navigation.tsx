@@ -11,6 +11,8 @@ import { crownName, type CrownRole } from '../domain/dataAuthority';
 
 
 import { Picture } from './ui/Picture';
+import { saveDesires } from '../services/firebase';
+import type { Language } from '../domain/tongues';
 interface NavigationProps {
   activeTab: string;
   setTab: (tab: string) => void;
@@ -209,6 +211,12 @@ export const Navigation = ({
     const { t, language, setLanguage } = useLanguage();
     // Session-derived values come straight from context now (no longer prop-drilled from App).
     const { lightseed, guardedTrees, activeTree } = useSession();
+    // Choosing a tongue while signed in writes it on the person as a DESIRE (domain/desires),
+    // so it follows the being to every device; signed out, this browser alone remembers.
+    const chooseTongue = (tongue: Language) => {
+        setLanguage(tongue);
+        if (lightseed?.uid) saveDesires(lightseed.uid, { tongue }).catch(() => {});
+    };
     const dangerTreesCount = guardedTrees.filter((tr) => tr.status === 'DANGER').length;
     const activeTreeImage = activeTree?.latestGrowthUrl || activeTree?.imageUrl;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -401,7 +409,7 @@ export const Navigation = ({
                             {isLangOpen && (
                                 <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border py-2 z-50 text-slate-700 dark:bg-slate-900 dark:text-slate-200">
                                     {languages.map(l => (
-                                        <button key={l.code} onClick={() => { setLanguage(l.code as any); setIsLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === l.code ? 'bg-emerald-50 text-emerald-600 font-bold dark:bg-emerald-950/40 dark:text-emerald-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                        <button key={l.code} onClick={() => { chooseTongue(l.code as Language); setIsLangOpen(false); }} className={`w-full text-left px-4 py-2 text-sm ${language === l.code ? 'bg-emerald-50 text-emerald-600 font-bold dark:bg-emerald-950/40 dark:text-emerald-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                             {l.name}
                                         </button>
                                     ))}

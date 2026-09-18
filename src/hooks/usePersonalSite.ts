@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { listenToUserProfile } from '../services/firebase';
 import { setActiveIntelligenceId, setActiveIntelligenceDuties } from '../services/intelligence';
 import type { CommunityThemePreset } from '../utils/theme';
+import { desiresOf } from '../domain/desires';
+import type { Language } from '../domain/tongues';
 
 // THE PERSONAL SITE (ring 2026-09-16, lifted out of App.tsx unchanged). A signed-in
 // being's own palette, logo and inherit choice, and the intelligence they prefer —
@@ -12,6 +14,8 @@ export function usePersonalSite(uid: string | undefined) {
   const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string | undefined>(undefined);
   const [personalSiteLogoUrl, setPersonalSiteLogoUrl] = useState('');
   const [personalSiteInherit, setPersonalSiteInherit] = useState(false);
+  // The tongue the being desires (domain/desires) — followed from the profile like the palette.
+  const [desiredTongue, setDesiredTongue] = useState<Language | undefined>(undefined);
 
   useEffect(() => {
     if (!uid) {
@@ -19,6 +23,7 @@ export function usePersonalSite(uid: string | undefined) {
       setPersonalSiteTheme(null);
       setPersonalSiteLogoUrl('');
       setPersonalSiteInherit(false);
+      setDesiredTongue(undefined);
       setActiveIntelligenceId(undefined);
       setActiveIntelligenceDuties(undefined);
       return;
@@ -31,6 +36,7 @@ export function usePersonalSite(uid: string | undefined) {
       setPersonalSiteLogoUrl(str(profile?.siteLogoUrl));
       setPersonalSiteInherit(!!profile?.siteInherit);
       setPreferredIntelligenceId(str(profile?.preferredIntelligenceId) || undefined);
+      setDesiredTongue(desiresOf(profile?.desires).tongue);
       // Mirror the choice so stateless AI helpers route through it everywhere.
       setActiveIntelligenceId(str(profile?.preferredIntelligenceId) || undefined);
       setActiveIntelligenceDuties((profile?.intelligenceByDuty as Parameters<typeof setActiveIntelligenceDuties>[0]) || undefined);
@@ -39,5 +45,5 @@ export function usePersonalSite(uid: string | undefined) {
   // and re-subscribing per object would churn the listener
   }, [uid]);
 
-  return { personalSiteTheme, preferredIntelligenceId, personalSiteLogoUrl, personalSiteInherit };
+  return { personalSiteTheme, preferredIntelligenceId, personalSiteLogoUrl, personalSiteInherit, desiredTongue };
 }
