@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-18 · The place of record is where the seed answers** — Zoltán could not find his
+event on Per Auset's own face. The record's place was perauset.org (the mother site, on
+Cloudflare, serving no seed page) with seed.perauset.org as an alias; the event was stamped
+with the alias, so the face's scoped feed, asking for perauset.org, never saw it — and the hub,
+reflecting the commons, showed it first. Zoltán's rule, adopted: the place of record is the
+FULL host the seed answers at (seed.<domain>), never the mother apex — two communities may one
+day stand under one apex on two seeds, and an apex serving no seed page stamps nothing anyone
+can find. Enlightened Nations already stood so; Per Auset now does (domain seed.perauset.org;
+perauset.org leaves the aliases; the charter's face door names the seed host, as theohouse's
+does); The O House stays at theohouse.org for now, its DNS proof standing for that apex.
+The hand: scripts/move-place-of-record.mjs — witnessed by name, it moves the record's domain
+and re-stamps every pulse, lifetree, vision, Light House and subscription that carried the old
+one (three came home: the Bigeh planting and two trees), grounding a moving vision in its
+community; a dry run first, always. LEARNED: when a keeper moves a community's domain, its
+beings must move with it or the face goes blind — today that is this script's hand; a server
+trigger that brings them home on the change itself is the next rung, and wants its own review.
+REJECTED: widening scoped queries to a place's aliases (a stamp that means "somewhere near"
+is no place of record; the stamp stays one host, and moves).
+
+---
+
 **2026-09-16 · A picture may be seen whole** — every picture in the seed is served small for
 its seat (ring 2026-09-06: variants at 480 and 1200); a flyer for a ceremony, a watering
 proof, a tree's portrait sometimes wants to be seen whole, and there was no door to it.
