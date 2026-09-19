@@ -168,7 +168,11 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   intelligences do not all bind ownership/authorship or safe birth defaults in the
   rules. In particular, a direct client can claim another owner/author or create a
   lifetree already validated. Close at CREATE with schema keysets and emulator tests
-  before new Being kinds grow (first-sight ring, 2026-08-12).
+  before new Being kinds grow (first-sight ring, 2026-08-12). CLOSED 2026-08-17 (the
+  births-are-bound ring): ownerId/authorId/initiatorUid is the writer's own uid on every
+  client create, a tree cannot be born validated, the persons hinge is guarded, each
+  refusal held by an emulator test. (This bullet stood open a month after the ring; a
+  review of 2026-09-20 cited it as live debt before checking the rules — noted there.)
 - **Append-only is not yet system-wide.** The general pulse delete path still admits
   deletion of some chain blocks; vision deletion attempts to remove contributions;
   and explicit care advances a tree's head without persisting the described care

@@ -70,6 +70,32 @@ Tend this file when seasons turn; don't let it promise what the roots can't hold
 - perauset.com goes live on 8/8 (deploy `--only hosting:perauset`); printed QRs
   should carry the final domain (refresh mints after the move).
 
+## The season of roots (decided 2026-09-20)
+
+Communities are forming, people are planting, the light has begun to glow. The review
+of 2026-09-20 (ring: "The season of roots") found the core strong where it is hardest to
+retrofit — identity, chains, links, rules, server-minted light — and thin exactly where
+the new life presses: the seams between two truths. This season is spent on roots before
+canopy, in this order, no new canopy until the first two stand:
+
+1. **Server-held heads.** A block's birth checked by the server against the head it
+   claims to follow, so a chain is lawful, not merely stored-consistent. Close the last
+   client-computed births of ordinary blocks; with it, make append-only SYSTEM-WIDE (the
+   general pulse delete path, vision deletion, explicit care advancing a head without its
+   block): one exact draft/mint/mark/release law per chain-bearing type.
+2. **Spending is a gate, not a number.** Glow spent only through a council decision; a ray
+   appreciated only at a coin the place ACCEPTS (`accepts_coin_of` checked at the moment of
+   appreciation, not merely attested); acceptance and spend both server-minted. Not before 1.
+3. **A place takes its beings with it.** A server hand that re-stamps beings when a keeper
+   moves a community's domain, and re-names rays already kindled when a coin is renamed —
+   today both are scripts run by hand (move-place-of-record, the coin's data).
+4. **Letters in the reader's tongue.** The server reads the person's desire (`desires.tongue`)
+   and dresses a letter in it as well as in the place's voice.
+5. **One real walk.** An end-to-end path in CI — landing, plant, water witnessed, knock
+   accepted — so the next newcomer's fault is caught before they write.
+6. **The shell's async reads through one hook**, retiring the set-state-in-effect shape
+   (52 disables) by design rather than by sweep; and a lint gate for functions/src.
+
 ## Next (after 8/8)
 
 - **Nodes become real (the domain–DB link).** The first boundary now exists:

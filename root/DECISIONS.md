@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-20 · The season of roots** — Zoltán: "communities forming, people planting, the
+light starts to glow. What are the next steps? Is the core strong enough?" The reviewer's
+answer, recorded as given and then corrected. STRONG: identity, chains, links, rules — portable
+lids, append-only pulses, deterministic links bound to their data, 221 rules tests, a domain
+layer that imports nothing; light server-minted, witnessed, capped, private by rule; the coin
+kept a face over that physics. THIN, exactly where new life presses: a coin's acceptance is an
+attestation, not a gate, and spending does not exist, so glow is a number nothing can move; a
+block's birth is client-computed and append-only is not yet system-wide; a place that moves
+takes its beings with it only by a hand-run script; letters ignore the reader's tongue; there
+is no end-to-end walk. THE WEEK'S PATTERN, read as health: every fault a newcomer met was a
+seam between two truths — a knock that worked beside a message that misspoke, an event
+standing where its record had moved away, a toast that forgot to speak — and each seam got
+its contract the same day. CORRECTED: the reviewer named "births not bound" as the first
+root to close, citing ARCHITECTURE's debts; the rules and the ring of 2026-08-17 show the
+births ARE bound (ownership to the signing hand, no tree born validated, each refusal
+tested) — the architecture file had carried a closed debt for a month. Fixed there; the
+lesson is the root's own: verify against the code before trusting a document, even the
+root's. THE SEASON, written into ROADMAP: server-held heads and system-wide append-only
+first; spending as a gate second and never before; a place that takes its beings with it;
+letters in the reader's tongue; one real walk in CI; the shell's async reads through one
+hook and a lint gate for functions. Roots before canopy, and the roadmap says so.
+
+---
+
 **2026-09-19 · A wallet holds coins, each named by its place** — Zoltán: "I would like my
 personal wallet to have a list of coins. So I'd have BLUE now, but when I'd care for a
 lightseed tree I'd get Light. There would be a domain and community name next to it." THE
