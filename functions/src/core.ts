@@ -44,6 +44,17 @@ export const placeOfCommunity = (c: Record<string, unknown>, domain?: string): M
     domain: String(c.domain || domain || ""),
     source: { name: c.name as string, domain: (c.domain as string) || domain, theme: c.theme as MailVoiceSource["theme"], mail: c.mail as MailVoiceSource["mail"] },
 });
+// The community rooted at a domain (or answering at it as an alias), by id — the place a
+// ray is kindled in when the tree names only its domain (ring 2026-09-19).
+export const communityIdOfDomain = async (domainRaw: unknown): Promise<string | undefined> => {
+    const domain = String(domainRaw || "").trim().toLowerCase().replace(/^www\./, "");
+    if (!domain) return undefined;
+    try {
+        let cradle = await db.collection("communities").where("domain", "==", domain).limit(1).get();
+        if (cradle.empty) cradle = await db.collection("communities").where("domainAliases", "array-contains", domain).limit(1).get();
+        return cradle.empty ? undefined : cradle.docs[0].id;
+    } catch { return undefined; }
+};
 export const placeOfDomain = async (domainRaw: unknown): Promise<MailPlace> => {
     const domain = String(domainRaw || "").trim().toLowerCase().replace(/^www\./, "");
     if (!domain || charterOwnDomains(charter).includes(domain)) return null;

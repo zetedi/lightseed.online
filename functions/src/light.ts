@@ -4,7 +4,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { FieldValue } from "firebase-admin/firestore";
 import { randomUUID } from "node:crypto";
 import { judgeWitness, kindleDayKeyFromMs } from "./mint";
-import { db, mintLid, tsToMs } from "./core";
+import { db, mintLid, tsToMs, communityIdOfDomain } from "./core";
 
 // ── THE MINT: light kindled from witnessed care (the sun ring; domain/light.ts) ────────────────
 // Light enters the world ONLY through a GUARDIAN witnessing care for the living — and the mint is a
@@ -87,7 +87,10 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
                     treeType: tree.treeType,
                     diedAtMs: (tree.diedAt && typeof tree.diedAt.toMillis === "function") ? tree.diedAt.toMillis() : null,
                 };
-                communityId = tree.communityId ? String(tree.communityId) : undefined;
+                // Provenance: the community the tree was born in, else the one rooted at the
+                // tree's domain (ring 2026-09-19) — so a personal tree's care at Per Auset
+                // kindles BLUE, and the wallet can name the place of every ray.
+                communityId = tree.communityId ? String(tree.communityId) : await communityIdOfDomain(tree.domain);
             }
             if (createdAtMs !== null) {
                 const dayKey = kindleDayKeyFromMs(createdAtMs);

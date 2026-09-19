@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Icons } from '../ui/Icons';
-import { fetchMyRays, fetchTreeNames, type HeldRay } from '../../services/firebase/light';
+import { fetchMyRays, fetchTreePlaces, placesOfRays, type HeldRay, type TreePlace } from '../../services/firebase/light';
+import { walletOf, type WalletRow } from '../../domain/wallet';
+import { formatLight } from '../../domain/light';
+import { charter } from '../../config/charter';
+import { Picture } from '../ui/Picture';
 import { RAY_UNITS } from '../../domain/light';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { say, speak, spokenLine } from '../../utils/translations';
@@ -26,7 +30,9 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
     const { t } = useLanguage();
     const coin = useCoin();
     const [rays, setRays] = useState<HeldRay[] | null>(null); // null = still gathering
-    const [treeNames, setTreeNames] = useState<Record<string, string>>({});
+    const [trees, setTrees] = useState<Record<string, TreePlace>>({});
+    // THE COINS (ring 2026-09-19; domain/wallet): one row per place the rays were kindled in.
+    const [wallet, setWallet] = useState<WalletRow[]>([]);
 
     useEffect(() => {
         let alive = true;
@@ -35,10 +41,11 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                 if (!alive) return;
                 setRays(held);
                 const ids = Array.from(new Set(held.map(r => r.treeId).filter(Boolean)));
-                if (ids.length) {
-                    const names = await fetchTreeNames(ids);
-                    if (alive) setTreeNames(names);
-                }
+                const places = ids.length ? await fetchTreePlaces(ids) : {};
+                if (!alive) return;
+                setTrees(places);
+                const placeOf = await placesOfRays(held, places);
+                if (alive) setWallet(walletOf(held, placeOf, { name: charter.name, domain: charter.domain }));
             })
             .catch(() => { if (alive) setRays([]); });
         return () => { alive = false; };
@@ -72,7 +79,7 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                         <span className="text-[10px] uppercase tracking-wider text-amber-500">{t('units')}</span>
                     </div>
                 </div>
-                <p className="mt-2 text-center text-sm font-medium text-amber-700 dark:text-amber-300">{spoken(total, coin.name)}</p>
+                <p className="mt-2 text-center text-sm font-medium text-amber-700 dark:text-amber-300">{wallet.length > 1 ? say('wallet_coins', { n: wallet.length }) : spoken(total, wallet[0]?.coin.name || coin.name)}</p>
                 <p className="mt-1 text-center text-xs text-amber-600/70">{t('light_private_note')}</p>
             </div>
 
@@ -86,13 +93,32 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                 </div>
             ) : (
                 <div>
+                    {wallet.length > 0 && (
+                        <div className="mb-5 space-y-2">
+                            {wallet.map(row => (
+                                <div key={row.key} className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-white p-3 dark:border-amber-900 dark:bg-slate-900">
+                                    {row.coin.logoUrl
+                                        ? <Picture size={480} src={row.coin.logoUrl} alt="" className="h-10 w-10 shrink-0 rounded-full border-2 border-amber-200 object-cover" />
+                                        : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/40"><Icons.Sun /></span>}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{row.coin.name}</p>
+                                        <p className="truncate text-[11px] text-slate-400">{[row.placeName, row.place].filter(Boolean).join(' · ')}</p>
+                                    </div>
+                                    <div className="shrink-0 text-right">
+                                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-300">{formatLight(row.units, row.coin)}</p>
+                                        <p dir="ltr" className="text-[10px] font-mono uppercase text-slate-400">{row.coin.code} · {row.units}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     <h3 className="mb-2 px-1 text-sm font-semibold text-gray-700 dark:text-slate-200">{t('kindled_from_care')}</h3>
                     <div className="space-y-2">
                         {rays.map(ray => (
                             <div key={ray.id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3 dark:bg-slate-900 dark:border-slate-800">
                                 <div className="min-w-0">
                                     <p className="truncate text-sm font-medium text-gray-800 dark:text-slate-100">
-                                        {treeNames[ray.treeId] || t('a_tree')}
+                                        {trees[ray.treeId]?.name || t('a_tree')}
                                     </p>
                                     <p className="text-xs text-gray-400">{ray.dayKey}</p>
                                 </div>

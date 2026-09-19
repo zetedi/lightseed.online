@@ -696,7 +696,7 @@ const ar = {
   unmint_coheld: "كائن آخر يمسك بهذه الكتلة — رُئيت أو أُحبّت أو نُقضت أو سُكّت مشتركة، فهي باقية.",
   unmint_head_title: "الحلقة الأحدث", unmint_head_hint: "ما دام لا يمسك بها كائن آخر، يمكن استرجاع أحدث كتلة في السلسلة كاملة.",
   keepers: "الحفظة", keeper_badge: "حافظ",
-  offer_keepership: "اعرض الحفاظة", wallet: "المحفظة", offer_co_ownership: "اعرض المشاركة في الملكية", co_owner_offered: "عُرضت المشاركة في الملكية", keeper_offer_sent: "عُرضت الحفاظة على {name}. تنتظر موافقته.",
+  offer_keepership: "اعرض الحفاظة", wallet: "المحفظة", wallet_coins: "{n} عملات في هذه المحفظة", offer_co_ownership: "اعرض المشاركة في الملكية", co_owner_offered: "عُرضت المشاركة في الملكية", keeper_offer_sent: "عُرضت الحفاظة على {name}. تنتظر موافقته.",
   keeper_offer_pending: "حفاظة معروضة", keeper_invite_banner: "{name} يعرض عليك حفاظة مشتركة لـ {community}.",
   keeper_requests: "طلبات الحفاظة", keeper_knock_accepted: "{name} يحفظ هذا المجتمع معك الآن.",
   ask_to_keep: "اطلب أن تحفظ", withdraw_ask: "اسحب الطلب", keeper_request_sent: "وُضع طلبك للحفاظة عند الباب.",

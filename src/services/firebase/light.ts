@@ -1,6 +1,8 @@
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from './core';
+import { getCommunityById, getCommunityByDomain } from './spaces';
+import type { Community } from '../../types';
 
 // --- Light: the rays a being holds -----------------------------------------------------------
 // Rays are SERVER-MINTED (the witnessWatering callable; functions/src/mint.ts) and holder-private
@@ -61,6 +63,45 @@ export const getGlow = async (homeId: string): Promise<number> => {
 
 // Names for the trees a holder's light came from (bounded: the distinct trees in their rays).
 // A tree now beyond reach (unshared, deleted) keeps a quiet placeholder instead of failing the face.
+// THE PLACES OF A BEING'S RAYS (ring 2026-09-19; domain/wallet): a ray names its community
+// when the tree was born inside one; an older ray, or a personal tree's, names only the tree,
+// whose domain stamp names the place (the same resolution the event card uses). Read once and
+// remembered for the session.
+export interface TreePlace { name: string; domain: string; communityId?: string }
+export const fetchTreePlaces = async (treeIds: string[]): Promise<Record<string, TreePlace>> => {
+    const out: Record<string, TreePlace> = {};
+    await Promise.all(treeIds.map(async id => {
+        try {
+            const snap = await getDoc(doc(db, 'lifetrees', id));
+            if (!snap.exists()) return;
+            const t = snap.data() as { name?: string; domain?: string; communityId?: string };
+            out[id] = { name: String(t.name || ''), domain: String(t.domain || '').toLowerCase(), ...(t.communityId ? { communityId: String(t.communityId) } : {}) };
+        } catch { /* unreadable tree: its ray rides as the node's light */ }
+    }));
+    return out;
+};
+const rememberedPlaces = new Map<string, Promise<Community | null>>();
+const placeByKey = (key: string): Promise<Community | null> => {
+    let p = rememberedPlaces.get(key);
+    if (!p) {
+        p = (key.startsWith('id:') ? getCommunityById(key.slice(3)) : getCommunityByDomain(key.slice(7))).catch(() => null);
+        rememberedPlaces.set(key, p);
+    }
+    return p;
+};
+export const placesOfRays = async (rays: HeldRay[], trees: Record<string, TreePlace>): Promise<(ray: HeldRay) => Community | null> => {
+    const keyOf = (r: HeldRay): string | null => {
+        const cid = r.communityId || trees[r.treeId]?.communityId;
+        if (cid) return `id:${cid}`;
+        const d = trees[r.treeId]?.domain;
+        return d ? `domain:${d}` : null;
+    };
+    const keys = [...new Set(rays.map(keyOf).filter((k): k is string => !!k))];
+    const found = new Map<string, Community | null>();
+    await Promise.all(keys.map(async k => { found.set(k, await placeByKey(k)); }));
+    return (r) => { const k = keyOf(r); return k ? (found.get(k) ?? null) : null; };
+};
+
 export const fetchTreeNames = async (treeIds: string[]): Promise<Record<string, string>> => {
     const names: Record<string, string> = {};
     await Promise.all(treeIds.map(async id => {

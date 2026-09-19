@@ -6,6 +6,24 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-19 · A wallet holds coins, each named by its place** — Zoltán: "I would like my
+personal wallet to have a list of coins. So I'd have BLUE now, but when I'd care for a
+lightseed tree I'd get Light. There would be a domain and community name next to it." THE
+WALLET (domain/wallet): a being's rays were kindled in places, and each place names the face
+of its light; walletOf gathers the rays into one row per place — the coin, its logo, the
+community's name and domain beside it, the units and rays of each — the node's Light for a ray
+with no place, largest first. The physics under every row is one: rays are rays, and a row's
+units are the units the glow and the prisms count. The place of a ray is its communityId when
+the tree was born in a community; otherwise the community rooted at the tree's domain, the
+same resolution the event card uses — read on the client for the rays already minted, and
+STAMPED BY THE SERVER from now on (functions/light: a personal tree's care at Per Auset
+kindles a ray that names Per Auset). The disc still counts every unit; its line names the
+coin when the wallet holds one, and counts the coins when it holds more. NOT YET: a coin's
+row is not yet a door to its place; spending across coins is not a thing (spending itself is
+the coming rung); the older rays keep their absent stamp and are resolved each time.
+
+---
+
 **2026-09-19 · A guardian may be offered the deeper seat** — Zoltán: "I would like to be able
 to offer co-ownership to a tree for a guardian of it." The circle keeps ONE privileged door:
 an invitation in a chosen role, confirmed by the invited (tree-circle invites, ring 2026-07).
