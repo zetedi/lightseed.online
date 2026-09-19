@@ -6,11 +6,13 @@ const perAuset = { domain: 'seed.perauset.org', logoUrl: 'https://x/logo.webp', 
 
 describe('the coin — a community names the face of its light, never its physics', () => {
   it('the shell speaks Light when a community names none', () => {
-    expect(coinOf(null)).toEqual({ name: 'Light', code: 'light', place: null, logoUrl: null, own: false });
+    expect(coinOf(null)).toEqual({ name: 'Light', code: 'light', color: '#f59e0b', place: null, logoUrl: null, own: false });
     expect(coinOf({ domain: 'lightseed.online', coin: null })).toMatchObject({ name: 'Light', own: false });
   });
   it('a named coin wears the community\'s place and logo', () => {
-    expect(coinOf(perAuset)).toEqual({ name: 'Blue Lotus Universal Exchange', code: 'BLUE', place: 'seed.perauset.org', logoUrl: 'https://x/logo.webp', own: true });
+    expect(coinOf(perAuset)).toEqual({ name: 'Blue Lotus Universal Exchange', code: 'BLUE', color: '#f59e0b', place: 'seed.perauset.org', logoUrl: 'https://x/logo.webp', own: true });
+    expect(coinOf({ ...perAuset, coin: { ...perAuset.coin, color: '#3F6CAB' } }).color).toBe('#3f6cab');
+    expect(coinOf({ ...perAuset, coin: { ...perAuset.coin, color: 'blue' } }).color).toBe('#f59e0b');
     expect(coinTitle(coinOf(perAuset))).toBe('BLUE · seed.perauset.org');
     expect(coinTitle(coinOf(null))).toBe('Light');
   });

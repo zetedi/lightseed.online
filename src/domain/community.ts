@@ -45,7 +45,7 @@ export interface Community extends Being {
   landingPages?: { id: string; label: string; html: string }[];
   // THE COIN (domain/coin): the face of this community's light — a name and a code (Blue Lotus
   // Universal Exchange, BLUE). Absent, the shell's Light. The physics is never here.
-  coin?: { name?: string; code?: string };
+  coin?: { name?: string; code?: string; color?: string };
   // THE PALETTE REACHES THE PAGE (domain/paletteReach): on, the theme's ink and primary colour
   // the reading text and the buttons too, not only the shell's frame. Off by default.
   paletteReach?: boolean;

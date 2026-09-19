@@ -39,7 +39,7 @@ const zh = {
   auth_reset_sent: "密码重置邮件已发送。请查看你的收件箱。", auth_reset_failed: "无法发送重置邮件。",
   network: "网络", about_the_node: "关于此节点", profile_page: "个人主页",
   tree_circle_invitations: "树之环邀请", observatory_subtitle: "等待你接受以在网络中同步的共鸣。",
-  light_of_value: "价值之光", coin_title: "币", coin_note: "为这个社区之光命名——一个名字与一个短代码（Blue Lotus Universal Exchange，BLUE）。币佩戴你的标志与你的所在。它不能改变的：一道光芒是 108 单位被见证的照料，光会消退，分配仍是 15/3/3。", coin_name: "币名", coin_code: "代码", coin_saved: "币已命名。", coin_of_place: "{place} 的 {code}", coin_name_long: "币名最多 {max} 个字符。", coin_code_bad: "币的代码为 2 至 8 个字母或数字。", interbeing_accepts_coin_of: "接受其币", interbeing_accepts_coin_of_desc: "一个社区接受另一个社区的光作为酬谢：在那里点燃的光芒可在这里被感谢。",
+  light_of_value: "价值之光", coin_title: "币", coin_note: "为这个社区之光命名——一个名字与一个短代码（Blue Lotus Universal Exchange，BLUE）。币佩戴你的标志与你的所在。它不能改变的：一道光芒是 108 单位被见证的照料，光会消退，分配仍是 15/3/3。", coin_name: "币名", coin_code: "代码", coin_color: "颜色", coin_saved: "币已命名。", coin_of_place: "{place} 的 {code}", coin_name_long: "币名最多 {max} 个字符。", coin_code_bad: "币的代码为 2 至 8 个字母或数字。", interbeing_accepts_coin_of: "接受其币", interbeing_accepts_coin_of_desc: "一个社区接受另一个社区的光作为酬谢：在那里点燃的光芒可在这里被感谢。",
   care: "照护", needs_care: "需要照护", care_nudge: "你的一些树已沉寂。验证只有在树被照护时才会保持点亮。确认它们仍然活着，它们便会重新闪耀。",
   saved_resonances: "已收藏的共鸣", alignments_sub: "你在网络中已同步的共鸣。", no_history: "暂无历史记录。",
   visions_sub: "寻求共鸣与共同动力的成长方向。",

@@ -5,7 +5,7 @@ import { getGlow } from '../../services/firebase/light';
 import { RAY_UNITS } from '../../domain/light';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { say, speak, spokenLine } from '../../utils/translations';
-import { COIN_CODE_MAX, COIN_NAME_MAX, coinOf, coinProblem, normalizeCoin } from '../../domain/coin';
+import { COIN_CODE_MAX, COIN_NAME_MAX, LIGHT_COLOR, coinOf, coinProblem, normalizeCoin } from '../../domain/coin';
 import { updateCommunity } from '../../services/firebase';
 import { notify } from '../ui/Toast';
 import { Picture } from '../ui/Picture';
@@ -28,13 +28,17 @@ export const CommunityLight = ({ communityId, community, isKeeper, onGoToCouncil
     const coin = coinOf(community);
     const [coinName, setCoinName] = useState(community?.coin?.name || '');
     const [coinCode, setCoinCode] = useState(community?.coin?.code || '');
+    const [coinColor, setCoinColor] = useState(community?.coin?.color || LIGHT_COLOR);
+    // The hue the coin shines in — inline, so the shell's amber utilities yield only when a coin is named.
+    const hue = coin.own ? coin.color : null;
+    const glow = (alpha: string) => (hue ? { backgroundColor: `${hue}${alpha}` } : undefined);
     const [savingCoin, setSavingCoin] = useState(false);
     const coinDraftProblem = coinProblem({ name: coinName, code: coinCode });
     const saveCoin = async () => {
         if (!community || coinDraftProblem) return;
         setSavingCoin(true);
         try {
-            const next = normalizeCoin({ name: coinName, code: coinCode });
+            const next = normalizeCoin({ name: coinName, code: coinCode, color: coinColor });
             const patch = { coin: next ?? undefined } as Partial<Community>;
             await updateCommunity(community.id, next ? patch : ({ coin: null } as unknown as Partial<Community>));
             onUpdate?.(patch);
@@ -74,12 +78,12 @@ export const CommunityLight = ({ communityId, community, isKeeper, onGoToCouncil
                 <div className="relative flex items-center justify-center py-4">
                     {units !== null && units > 0 && (
                         <>
-                            <div className="absolute h-44 w-44 rounded-full bg-amber-300 blur-2xl" style={{ opacity: Math.min(0.5, 0.14 + units / 3000) }} />
-                            <div className="absolute h-28 w-28 rounded-full bg-amber-200 blur-xl" style={{ opacity: Math.min(0.75, 0.3 + units / 2000) }} />
+                            <div className={`absolute h-44 w-44 rounded-full blur-2xl ${hue ? '' : 'bg-amber-300'}`} style={{ ...glow('99'), opacity: Math.min(0.5, 0.14 + units / 3000) }} />
+                            <div className={`absolute h-28 w-28 rounded-full blur-xl ${hue ? '' : 'bg-amber-200'}`} style={{ ...glow('66'), opacity: Math.min(0.75, 0.3 + units / 2000) }} />
                         </>
                     )}
-                    <div className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full border border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50 dark:border-amber-900">
-                        <span className="text-3xl font-semibold text-amber-600 dark:text-amber-300">{units === null ? '·' : units}</span>
+                    <div className={`relative flex h-28 w-28 flex-col items-center justify-center rounded-full border ${hue ? '' : 'border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50 dark:border-amber-900'}`} style={hue ? { borderColor: `${hue}66`, background: `linear-gradient(135deg, ${hue}33, ${hue}14)` } : undefined}>
+                        <span className={`text-3xl font-semibold ${hue ? '' : 'text-amber-600 dark:text-amber-300'}`} style={hue ? { color: hue } : undefined}>{units === null ? '·' : units}</span>
                         <span className="text-[10px] uppercase tracking-wider text-amber-500">{t('units')}</span>
                     </div>
                 </div>
@@ -99,8 +103,9 @@ export const CommunityLight = ({ communityId, community, isKeeper, onGoToCouncil
                         <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
                             <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('coin_title')}</p>
                             <p className="mb-3 text-xs text-slate-500">{t('coin_note')}</p>
-                            <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+                            <div className="grid gap-2 sm:grid-cols-[1fr_4rem_8rem_auto]">
                                 <input dir="auto" value={coinName} maxLength={COIN_NAME_MAX} onChange={e => setCoinName(e.target.value)} placeholder={t('coin_name')} aria-label={t('coin_name')} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+                                <input type="color" value={coinColor} onChange={e => setCoinColor(e.target.value)} aria-label={t('coin_color')} title={t('coin_color')} className="h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1 dark:bg-slate-900 dark:border-slate-700" />
                                 <input dir="ltr" value={coinCode} maxLength={COIN_CODE_MAX} onChange={e => setCoinCode(e.target.value)} placeholder={t('coin_code')} aria-label={t('coin_code')} className="h-10 rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
                                 <button type="button" onClick={() => void saveCoin()} disabled={savingCoin || !!coinDraftProblem} className="h-10 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">{savingCoin ? t('saving') : t('save')}</button>
                             </div>

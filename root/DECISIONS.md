@@ -22,6 +22,12 @@ coin when the wallet holds one, and counts the coins when it holds more. NOT YET
 row is not yet a door to its place; spending across coins is not a thing (spending itself is
 the coming rung); the older rays keep their absent stamp and are resolved each time.
 
+AND A HUE: a coin carries a colour beside its name and code (a dial on the Light tab); where
+a community's coin is named, its wallet disc and glow shine in that hue instead of the light's
+amber, and on a person's wallet each coin's row wears its own — the disc takes the coin's hue
+when the wallet holds one coin, amber when several. Per Auset's BLUE shines Ocean, #3f6cab.
+"Accepts the coin of" gained its capital, like its three siblings.
+
 ---
 
 **2026-09-19 · A guardian may be offered the deeper seat** — Zoltán: "I would like to be able

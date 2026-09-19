@@ -33,6 +33,8 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
     const [trees, setTrees] = useState<Record<string, TreePlace>>({});
     // THE COINS (ring 2026-09-19; domain/wallet): one row per place the rays were kindled in.
     const [wallet, setWallet] = useState<WalletRow[]>([]);
+    // The disc shines in the coin's hue when the wallet holds one coin; mixed, the light's amber.
+    const hue = wallet.length === 1 && wallet[0].coin.own ? wallet[0].coin.color : null;
 
     useEffect(() => {
         let alive = true;
@@ -65,17 +67,17 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                     {total > 0 && (
                         <>
                             <div
-                                className="absolute h-44 w-44 rounded-full bg-amber-300 blur-2xl"
-                                style={{ opacity: Math.min(0.45, 0.12 + total / 2000) }}
+                                className={`absolute h-44 w-44 rounded-full blur-2xl ${hue ? '' : 'bg-amber-300'}`}
+                                style={{ ...(hue ? { backgroundColor: `${hue}99` } : {}), opacity: Math.min(0.45, 0.12 + total / 2000) }}
                             />
                             <div
-                                className="absolute h-28 w-28 rounded-full bg-amber-200 blur-xl"
-                                style={{ opacity: Math.min(0.7, 0.25 + total / 1500) }}
+                                className={`absolute h-28 w-28 rounded-full blur-xl ${hue ? '' : 'bg-amber-200'}`}
+                                style={{ ...(hue ? { backgroundColor: `${hue}66` } : {}), opacity: Math.min(0.7, 0.25 + total / 1500) }}
                             />
                         </>
                     )}
-                    <div className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full border border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50 dark:border-amber-900">
-                        <span className="text-3xl font-semibold text-amber-600 dark:text-amber-300">{total}</span>
+                    <div className={`relative flex h-28 w-28 flex-col items-center justify-center rounded-full border ${hue ? '' : 'border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50 dark:border-amber-900'}`} style={hue ? { borderColor: `${hue}66`, background: `linear-gradient(135deg, ${hue}33, ${hue}14)` } : undefined}>
+                        <span className={`text-3xl font-semibold ${hue ? '' : 'text-amber-600 dark:text-amber-300'}`} style={hue ? { color: hue } : undefined}>{total}</span>
                         <span className="text-[10px] uppercase tracking-wider text-amber-500">{t('units')}</span>
                     </div>
                 </div>
@@ -98,14 +100,14 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                             {wallet.map(row => (
                                 <div key={row.key} className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-white p-3 dark:border-amber-900 dark:bg-slate-900">
                                     {row.coin.logoUrl
-                                        ? <Picture size={480} src={row.coin.logoUrl} alt="" className="h-10 w-10 shrink-0 rounded-full border-2 border-amber-200 object-cover" />
-                                        : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/40"><Icons.Sun /></span>}
+                                        ? <Picture size={480} src={row.coin.logoUrl} alt="" className="h-10 w-10 shrink-0 rounded-full border-2 object-cover" style={{ borderColor: row.coin.color }} />
+                                        : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${row.coin.color}22`, color: row.coin.color }}><Icons.Sun /></span>}
                                     <div className="min-w-0 flex-1">
                                         <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{row.coin.name}</p>
                                         <p className="truncate text-[11px] text-slate-400">{[row.placeName, row.place].filter(Boolean).join(' · ')}</p>
                                     </div>
                                     <div className="shrink-0 text-right">
-                                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-300">{formatLight(row.units, row.coin)}</p>
+                                        <p className="text-sm font-semibold" style={{ color: row.coin.color }}>{formatLight(row.units, row.coin)}</p>
                                         <p dir="ltr" className="text-[10px] font-mono uppercase text-slate-400">{row.coin.code} · {row.units}</p>
                                     </div>
                                 </div>

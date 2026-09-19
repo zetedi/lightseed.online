@@ -16,10 +16,11 @@ import type { DomainKey } from './words';
 // its place, not by its word), or that another community accepts it (that is an Interbeing
 // attestation, `accepts_coin_of`, each side speaking for itself).
 
-export interface CoinWords { name?: string | null; code?: string | null }
+export interface CoinWords { name?: string | null; code?: string | null; color?: string | null }
 export interface Coin {
   name: string;
   code: string;
+  color: string;          // the hue the coin shines in (#rrggbb); the shell's Light is amber
   place: string | null;   // the community's domain, when the coin is a community's own
   logoUrl: string | null; // the community's logo, when the coin is a community's own
   own: boolean;           // named by a community (true) or the shell's Light (false)
@@ -27,7 +28,10 @@ export interface Coin {
 
 export const COIN_NAME_MAX = 48;
 export const COIN_CODE_MAX = 8;
-export const SHELL_COIN: CoinWords = { name: 'Light', code: 'light' };
+export const LIGHT_COLOR = '#f59e0b'; // amber-500, the light's own hue
+export const SHELL_COIN: CoinWords = { name: 'Light', code: 'light', color: LIGHT_COLOR };
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+export const coinColorOf = (raw: unknown): string | null => (typeof raw === 'string' && HEX_RE.test(raw.trim()) ? raw.trim().toLowerCase() : null);
 const CODE_RE = /^[A-Za-z0-9]{2,8}$/;
 
 const clean = (v: unknown): string => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '');
@@ -42,22 +46,24 @@ export const coinProblem = (raw: CoinWords | null | undefined): DomainKey | null
 };
 
 // The words as stored: both present, or none at all (a half-named coin is no coin).
-export const normalizeCoin = (raw: CoinWords | null | undefined): { name: string; code: string } | null => {
+export const normalizeCoin = (raw: CoinWords | null | undefined): { name: string; code: string; color?: string } | null => {
   if (coinProblem(raw)) return null;
   const name = clean(raw?.name);
   const code = clean(raw?.code);
   if (!name && !code) return null;
-  return { name: name || code, code: code || name.replace(/[^A-Za-z0-9]/g, '').slice(0, COIN_CODE_MAX) || 'coin' };
+  const color = coinColorOf(raw?.color);
+  return { name: name || code, code: code || name.replace(/[^A-Za-z0-9]/g, '').slice(0, COIN_CODE_MAX) || 'coin', ...(color ? { color } : {}) };
 };
 
 export const coinOf = (
   community: { domain?: string | null; logoUrl?: string | null; coin?: CoinWords | null } | null | undefined,
 ): Coin => {
   const own = normalizeCoin(community?.coin);
-  if (!own) return { name: SHELL_COIN.name!, code: SHELL_COIN.code!, place: null, logoUrl: null, own: false };
+  if (!own) return { name: SHELL_COIN.name!, code: SHELL_COIN.code!, color: LIGHT_COLOR, place: null, logoUrl: null, own: false };
   return {
     name: own.name,
     code: own.code,
+    color: own.color || LIGHT_COLOR,
     place: (community?.domain || '').trim().toLowerCase() || null,
     logoUrl: community?.logoUrl || null,
     own: true,
