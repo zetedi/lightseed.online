@@ -198,7 +198,8 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
         {
             // The light face: what witnessed care has kindled. Holder-private by rule, so it
             // lives only on the OWN profile shell (there is no public balance to show anyone).
-            key: 'light', label: t('light_word'), icon: <Icons.Sun />, render: () => (
+            // THE WALLET (ring 2026-09-19): a person's coin is kept here, as a community's is on its own.
+            key: 'light', label: t('wallet'), icon: <Icons.Wallet />, render: () => (
                 <ProfileLight uid={lightseed.uid} />
             ),
         },

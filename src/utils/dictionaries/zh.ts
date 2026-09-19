@@ -694,7 +694,7 @@ const zh = {
   unmint_coheld: "已有别的存在持有此区块——被看见、被珍爱、被否决或共同铸造，它便矗立。",
   unmint_head_title: "最新一环", unmint_head_hint: "只要没有别的存在持有它，链条最新的区块就能整个撤回。",
   keepers: "守护人", keeper_badge: "守护人",
-  offer_keepership: "邀请共同守护", keeper_offer_sent: "已向 {name} 发出守护邀请，等待对方同意。",
+  offer_keepership: "邀请共同守护", wallet: "钱包", offer_co_ownership: "邀请共同拥有", co_owner_offered: "已邀请共同拥有", keeper_offer_sent: "已向 {name} 发出守护邀请，等待对方同意。",
   keeper_offer_pending: "守护邀请待定", keeper_invite_banner: "{name} 邀请你共同守护 {community}。",
   keeper_requests: "守护请求", keeper_knock_accepted: "{name} 现在与你共同守护这个社区。",
   ask_to_keep: "请求守护", withdraw_ask: "撤回请求", keeper_request_sent: "你的守护请求已送达。",

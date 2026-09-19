@@ -48,7 +48,6 @@ import { nodeDomains } from '../config/charter';
 import { useAutosave } from '../hooks/useAutosave';
 import { COMMUNITY_APPEARANCE_FIELDS, reconcile } from '../domain/autosave';
 import { mailWordsOf } from '../domain/mailVoice';
-import { coinOf } from '../domain/coin';
 import { NewsletterAdmin } from './NewsletterAdmin';
 interface CommunityProfileProps {
   community: Community;
@@ -719,7 +718,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'light', label: coinOf(community).own ? coinOf(community).name : t('light'), icon: <Icons.Sun />, render: () => (
+      // THE WALLET (ring 2026-09-19): where the community's coin is kept — the tab says wallet,
+      // the page inside says the coin's name (domain/coin).
+      key: 'light', label: t('wallet'), icon: <Icons.Wallet />, render: () => (
         <CommunityLight communityId={community.id} community={community} isKeeper={canEdit} onGoToCouncil={() => setSection('council')} onUpdate={onUpdate} />
       ),
     },

@@ -225,6 +225,29 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         setAnswering(null);
     };
 
+    // OFFERING CO-OWNERSHIP TO A GUARDIAN (ring 2026-09-19): the same one door — an invitation
+    // in the co-owner role, confirmed by the guardian — opened from their row, so a keeper who
+    // has watched a guardian witness need not search for them in the invite box.
+    const [offeringTo, setOfferingTo] = useState<string | null>(null);
+    const pendingFor = (uid: string) => sentInvites.find(i => i.invitedUserId === uid);
+    const handleOfferCoOwnership = async (uid: string) => {
+        if (!currentUserId || !canInviteRoles) return;
+        setOfferingTo(uid);
+        try {
+            await createTreeInvite({
+                lifetree: tree as Lifetree,
+                invitedUserId: uid,
+                role: 'co_owner',
+                invitedByUserId: currentUserId,
+                invitedByName: currentUserName || undefined,
+                message: `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey('co_owner')].toLowerCase()}?`,
+            });
+            setInviteNonce(n => n + 1);
+            notify(speak(spokenLine('circle_invite_sent', { name: labelFor(uid, faceFromForest(uid, forest)), role: roleName('co_owner').toLowerCase(), tree: tree.name || '—' })));
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+        setOfferingTo(null);
+    };
+
     // Withdrawing an invitation that still waits: the inviter's own hand, or the keeper's for
     // any invitation on their tree (rules). The record stays, marked revoked.
     const handleRevokeInvite = async (inv: TreeOwnershipInvite) => {
@@ -310,6 +333,17 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                                 <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{labelFor(uid, face)}</p>
                                                 <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{roleName(g.role)}</p>
                                             </div>
+                                            {/* A keeper offers a guardian the deeper seat — an invitation they confirm. */}
+                                            {canInviteRoles && g.role === 'guardian' && uid !== currentUserId && (
+                                                pendingFor(uid) ? (
+                                                    <span className="ml-auto shrink-0 rounded-lg border border-emerald-100 bg-emerald-50/50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-500 dark:border-emerald-900 dark:bg-emerald-950/30">{t('co_owner_offered')}</span>
+                                                ) : (
+                                                    <button onClick={() => void handleOfferCoOwnership(uid)} disabled={offeringTo === uid}
+                                                        className="ml-auto shrink-0 rounded-lg border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">
+                                                        {offeringTo === uid ? '…' : t('offer_co_ownership')}
+                                                    </button>
+                                                )
+                                            )}
                                             {uid === currentUserId && g.role !== 'owner' && (
                                                 <button onClick={() => handleStepDown(g.role as InvitableRole)} disabled={steppingDown}
                                                     className="ml-auto shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:border-slate-700">

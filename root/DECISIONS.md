@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-19 · A guardian may be offered the deeper seat** — Zoltán: "I would like to be able
+to offer co-ownership to a tree for a guardian of it." The circle keeps ONE privileged door:
+an invitation in a chosen role, confirmed by the invited (tree-circle invites, ring 2026-07).
+This opens that door from the guardian's own row: a keeper (or staff) sees "Offer
+co-ownership" beside each guardian who is not themself, the offer is the same
+treeOwnershipInvite in the co_owner role, and the row shows "Co-ownership offered" while it
+waits — the keeper who watched a guardian witness need not search for them in the invite box.
+Nothing new in the rules or the law: the authority is the existing canInviteRoles, the record
+the existing invite, the acceptance the guardian's own hand. REJECTED: promoting a guardian
+directly (a co-owner is a caring commitment; it is confirmed, never conferred).
+
+AND THE WALLET: the tab that held a being's light — on a person's profile and on a community's —
+is now called the wallet, with a wallet icon; the page inside still says the coin's name.
+A community has a wallet; so does a person.
+
+---
+
 **2026-09-19 · A community names its coin; the toast speaks** — Zoltán: "make the name of the
 token (Light) a variable, attach the domain information, for Per Auset make this coin the Blue
 Lotus Universal Exchange (BLUE)… the coin should have the logo of the community… one Interbeing

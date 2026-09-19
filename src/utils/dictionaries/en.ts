@@ -696,7 +696,7 @@ const en = {
   unmint_head_title: "The newest link", unmint_head_hint: "While no other being holds it, the chain's newest block can be taken back whole.",
   // The keeper circle (domain/keeperCircle, ring 2026-08-12) \u2014 shared, resignable, askable keepership.
   keepers: "Keepers", keeper_badge: "keeper",
-  offer_keepership: "Offer keepership", keeper_offer_sent: "Keepership offered to {name}. It waits for their yes.",
+  offer_keepership: "Offer keepership", wallet: "Wallet", offer_co_ownership: "Offer co-ownership", co_owner_offered: "Co-ownership offered", keeper_offer_sent: "Keepership offered to {name}. It waits for their yes.",
   keeper_offer_pending: "keepership offered", keeper_invite_banner: "{name} offers you shared keepership of {community}.",
   keeper_requests: "Keepership asks", keeper_knock_accepted: "{name} now keeps this community with you.",
   ask_to_keep: "Ask to keep", withdraw_ask: "Withdraw ask", keeper_request_sent: "Your ask to keep has been placed at the door.",
