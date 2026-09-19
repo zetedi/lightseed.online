@@ -43,6 +43,9 @@ export interface Community extends Being {
   // The landing's own pages (menu panels): authored rich text — a food menu, an About, an
   // offering list. Data, not code: every organisation shapes its own site from these blocks.
   landingPages?: { id: string; label: string; html: string }[];
+  // THE COIN (domain/coin): the face of this community's light — a name and a code (Blue Lotus
+  // Universal Exchange, BLUE). Absent, the shell's Light. The physics is never here.
+  coin?: { name?: string; code?: string };
   // THE PALETTE REACHES THE PAGE (domain/paletteReach): on, the theme's ink and primary colour
   // the reading text and the buttons too, not only the shell's frame. Off by default.
   paletteReach?: boolean;

@@ -44,7 +44,7 @@ import type { Being } from './being';
 // proposal; the matching reverse edge is the other community's own attestation. Reciprocity is
 // derived, never stored as status and never read for authority. The first vocabulary is limited
 // to mutual meanings so reversing an edge cannot silently change the statement.
-export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request' | 'grows_in' | 'collaborates_with' | 'recognises' | 'shares_resources_with';
+export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request' | 'grows_in' | 'collaborates_with' | 'recognises' | 'shares_resources_with' | 'accepts_coin_of';
 
 export interface Link extends Being {
   type: 'link';

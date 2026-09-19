@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getOfferingsTo } from '../../services/firebase';
 import { offeringStatusOf } from '../../domain/offering';
 import { formatLight } from '../../domain/light';
+import { useCoin } from '../../hooks/useCoin';
 import { Icons } from '../ui/Icons';
 import { Picture } from '../ui/Picture';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -11,6 +12,7 @@ import type { Pulse } from '../../types';
 // face: each a door to the offering's leaf, where it is answered. Open ones first.
 export const OfferingsTo = ({ kind, id, onView }: { kind: 'tree' | 'vision'; id: string; onView: (p: Pulse) => void }) => {
     const { t } = useLanguage();
+    const coin = useCoin();
     const [offerings, setOfferings] = useState<Pulse[] | null>(null);
     useEffect(() => {
         let live = true;
@@ -35,7 +37,7 @@ export const OfferingsTo = ({ kind, id, onView }: { kind: 'tree' | 'vision'; id:
                                 : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 [&>svg]:h-4 [&>svg]:w-4 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Sun /></span>}
                             <span className="min-w-0 flex-1">
                                 <span dir="auto" className="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">{p.title}</span>
-                                <span className="block truncate text-xs text-slate-400">{p.authorName || ''}{p.offeringAppreciationLight ? ` · ${formatLight(p.offeringAppreciationLight)}` : ''}</span>
+                                <span className="block truncate text-xs text-slate-400">{p.authorName || ''}{p.offeringAppreciationLight ? ` · ${formatLight(p.offeringAppreciationLight, coin)}` : ''}</span>
                             </span>
                             <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${tone(p)}`}>{t(statusKey(p))}</span>
                         </button>

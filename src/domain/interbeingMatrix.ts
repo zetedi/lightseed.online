@@ -5,6 +5,9 @@ export const INTERBEING_RELATIONS = [
   'collaborates_with',
   'recognises',
   'shares_resources_with',
+  // A community ACCEPTS another's coin (domain/coin; ring 2026-09-19): its light may be
+  // appreciated here. One direction is one community's word; both directions, a shared tender.
+  'accepts_coin_of',
 ] as const satisfies readonly LinkRel[];
 
 export type InterbeingRelation = (typeof INTERBEING_RELATIONS)[number];

@@ -6,6 +6,37 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-19 · A community names its coin; the toast speaks** — Zoltán: "make the name of the
+token (Light) a variable, attach the domain information, for Per Auset make this coin the Blue
+Lotus Universal Exchange (BLUE)… the coin should have the logo of the community… one Interbeing
+relationship would be a community accepting another community's coin." THE COIN (domain/coin):
+a community may name the FACE of its light — a name and a 2–8 character code, stored as
+`community.coin`, keeper-editable on the Light tab — and the coin wears the community's logo
+and its place: BLUE of seed.perauset.org, so a ray that travels is always named by where it
+was kindled. What a community may NOT change is the physics: a ray is 108 units of witnessed
+care, light fades, the split stays 15/3/3 (the regen-token ring names how renamed economies
+die); formatLight speaks rays as rays under any coin and only the unit word changes. The
+active coin (hooks/useCoin, set by the conductor from the community the viewer stands at)
+reaches the Light tab, the home tile, the profile's light, the offer form and every
+appreciation on cards and offerings; the unit-bearing lines carry a {coin} hole in en/ar/zh.
+THE MATRIX gains `accepts_coin_of`: one community's word that another's light is tender here
+(rules, registry, words), reciprocity derived as for every attestation — the first step toward
+charters, communities and their ways of kindling being comparable across nodes. Per Auset's
+coin is written: Blue Lotus Universal Exchange, BLUE. NOT YET: a card away from home shows the
+appreciation in the viewer's coin, not the offering's (the offering's community would need
+resolving, as the event card resolves its face); the server's letters name no coin; nothing
+enforces `accepts_coin_of` at the moment of appreciation — it is an attestation, not a gate.
+ALSO: the toast never SPOKE — a spoken line (`key::{json}`) went to the screen raw, so offering
+keepership showed `keeper_offer_sent::{…}`; notify now speaks at its boundary like the confirm
+dialog, and a `say(key, params)` helper serves the four seats that rendered a line as a title
+or caption. And Jasmeen's knock at Per Auset: her account carries the member link and a
+guardian link, so the knock went through and was accepted; the rules (repo and deployed,
+identical) admit a knock from any signed-in being at any open or invite door, and the suite
+holds it — the permission text she saw was a step beside the knock, and the next report
+should carry its exact words.
+
+---
+
 **2026-09-18 · The place of record is where the seed answers** — Zoltán could not find his
 event on Per Auset's own face. The record's place was perauset.org (the mother site, on
 Cloudflare, serving no seed page) with seed.perauset.org as an alias; the event was stamped

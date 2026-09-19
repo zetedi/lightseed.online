@@ -43,6 +43,8 @@ import { useDoorArrivals } from './hooks/useDoorArrivals';
 import { useCarrying } from './hooks/useCarrying';
 import { useHeroEvents } from './hooks/useHeroEvents';
 import { usePathwayInput } from './hooks/usePathwayInput';
+import { setActiveCoin } from './hooks/useCoin';
+import { coinOf } from './domain/coin';
 import { GDPRBanner } from './components/GDPRBanner';
 
 // Components — the always-present shell (nav, footer, loaders, dialogs) stays statically imported.
@@ -125,6 +127,8 @@ const AppContent = () => {
     const filters = useForestFilters();
 
     const config = useConfig(activeCommunity);
+    // THE ACTIVE COIN (ring 2026-09-19): the face the light wears where the viewer stands.
+    useEffect(() => { setActiveCoin(coinOf(activeCommunity)); }, [activeCommunity]);
     const { effectiveTheme, effectiveIsDark, configuredLogoUrl, toggleNightMode, backgroundStyle } =
         useSiteTheme({ config, impersonatedCommunity, lightseed, personalSiteTheme: personal.personalSiteTheme, personalSiteLogoUrl: personal.personalSiteLogoUrl, personalSiteInherit: personal.personalSiteInherit });
 

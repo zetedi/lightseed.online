@@ -16,6 +16,7 @@ import { MiniForestMap, type MapPoint } from './ui/MiniForestMap';
 import { EventCard } from './EventCard';
 import { fetchMyRays } from '../services/firebase/light';
 import { formatLight } from '../domain/light';
+import { useCoin } from '../hooks/useCoin';
 import { Community, Pulse } from '../types';
 
 import { Picture } from './ui/Picture';
@@ -59,6 +60,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
     // Key the private reading to the account it belongs to. On logout or account-switch the
     // derived label disappears immediately, before the next request resolves, so one being's
     // light can never flash on another being's Home card.
+    const coin = useCoin();
     const [lightReading, setLightReading] = useState<{ uid: string; label: string } | null>(null);
     const lightLabel = lightReading && lightReading.uid === lightseed?.uid ? lightReading.label : null;
     useEffect(() => {
@@ -69,12 +71,12 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
             .then(rays => {
                 if (alive) setLightReading({
                     uid,
-                    label: formatLight(rays.reduce((sum, r) => sum + r.units, 0)),
+                    label: formatLight(rays.reduce((sum, r) => sum + r.units, 0), coin),
                 });
             })
             .catch(() => {});
         return () => { alive = false; };
-    }, [lightseed?.uid]);
+    }, [lightseed?.uid, coin]);
     const eventsScrollRef = useRef<HTMLDivElement>(null);
     // The event card's community door. Events are fetched BY DOMAIN, and older event pulses
     // carry no communityId — those belong to the domain's home, the host community, so the

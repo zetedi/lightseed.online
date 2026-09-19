@@ -48,6 +48,7 @@ import { nodeDomains } from '../config/charter';
 import { useAutosave } from '../hooks/useAutosave';
 import { COMMUNITY_APPEARANCE_FIELDS, reconcile } from '../domain/autosave';
 import { mailWordsOf } from '../domain/mailVoice';
+import { coinOf } from '../domain/coin';
 import { NewsletterAdmin } from './NewsletterAdmin';
 interface CommunityProfileProps {
   community: Community;
@@ -718,8 +719,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       ),
     },
     {
-      key: 'light', label: t('light'), icon: <Icons.Sun />, render: () => (
-        <CommunityLight communityId={community.id} isKeeper={canEdit} onGoToCouncil={() => setSection('council')} />
+      key: 'light', label: coinOf(community).own ? coinOf(community).name : t('light'), icon: <Icons.Sun />, render: () => (
+        <CommunityLight communityId={community.id} community={community} isKeeper={canEdit} onGoToCouncil={() => setSection('council')} onUpdate={onUpdate} />
       ),
     },
     {

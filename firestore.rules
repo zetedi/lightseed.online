@@ -1699,7 +1699,7 @@ service cloud.firestore {
         // can be minted only by the other community's owner/keeper peer, so reciprocity is derived from
         // two independently authorised statements. These edges grant no privilege anywhere.
         || (isSignedIn()
-            && request.resource.data.rel in ['collaborates_with', 'recognises', 'shares_resources_with']
+            && request.resource.data.rel in ['collaborates_with', 'recognises', 'shares_resources_with', 'accepts_coin_of']
             && request.resource.data.from != request.resource.data.to
             && exists(/databases/$(database)/documents/communities/$(request.resource.data.from))
             && exists(/databases/$(database)/documents/communities/$(request.resource.data.to))
@@ -1771,7 +1771,8 @@ service cloud.firestore {
           && resource.data.get('rel', '') != 'party'
           && resource.data.get('rel', '') != 'collaborates_with'
           && resource.data.get('rel', '') != 'recognises'
-          && resource.data.get('rel', '') != 'shares_resources_with')
+          && resource.data.get('rel', '') != 'shares_resources_with'
+          && resource.data.get('rel', '') != 'accepts_coin_of')
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
         // grows_in: a tree carer withdraws their tree, or the keeper curates their garden.
@@ -1779,7 +1780,7 @@ service cloud.firestore {
             && (isTreeCarer(resource.data.from) || isCommunityKeeper(resource.data.to)))
         // Either community's owner/keeper circle may change only its OWN attestation. Removing one direction turns
         // reciprocal recognition back into a one-sided proposal; it never edits the other hand.
-        || (resource.data.get('rel', '') in ['collaborates_with', 'recognises', 'shares_resources_with']
+        || (resource.data.get('rel', '') in ['collaborates_with', 'recognises', 'shares_resources_with', 'accepts_coin_of']
             && isCommunityOwner(resource.data.from))
         || (resource.data.get('rel', '') in ['rooted', 'shelters']
             && exists(/databases/$(database)/documents/lightHouses/$(resource.data.from))

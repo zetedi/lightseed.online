@@ -6,6 +6,7 @@ import { Icons } from './ui/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LoveButton } from './ui/LoveButton';
 import { formatLight } from '../domain/light';
+import { useCoin } from '../hooks/useCoin';
 import { tabTone } from '../utils/tabTheme';
 import type { ListDensity } from '../hooks/useListDensity';
 
@@ -24,6 +25,7 @@ const POP = 'hover:shadow-xl hover:-translate-y-1 active:shadow-xl active:-trans
 
 export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards' }: PulseCardProps) => {
     const { t } = useLanguage();
+    const coin = useCoin();
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
     const isOffering = pulse.type === 'offering';
     const appreciationLight = pulse.offeringAppreciationLight;
@@ -56,7 +58,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
             {/* Suggested appreciation after the contribution — never its admission price. */}
             {isOffering && !!appreciationLight && (
                 <span title={t('offer_appreciation_title')} className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black text-amber-950 shadow-sm">
-                    <span className="[&>svg]:h-2.5 [&>svg]:w-2.5"><Icons.Sun /></span> {formatLight(appreciationLight)}
+                    <span className="[&>svg]:h-2.5 [&>svg]:w-2.5"><Icons.Sun /></span> {formatLight(appreciationLight, coin)}
                 </span>
             )}
             {images.length > 1 && <span className="bg-white/90 text-slate-600 text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm dark:bg-slate-900/90 dark:text-slate-300">{images.length} {t('badge_img')}</span>}

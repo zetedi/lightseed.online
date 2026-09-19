@@ -13,6 +13,7 @@ import { offeringStatusOf, canWithdrawOffering, canAnswerOffering } from '../../
 import { BeingProfile, type BeingSection } from '../BeingProfile';
 import { ChainTree } from '../sections/ChainTree';
 import { formatLight } from '../../domain/light';
+import { useCoin } from '../../hooks/useCoin';
 import { tabTone } from '../../utils/tabTheme';
 import { notify } from '../ui/Toast';
 import { showAlert } from '../ui/Dialog';
@@ -34,6 +35,7 @@ interface OfferingProfileProps {
 
 export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onClose, onUpdate, onEdit }) => {
     const { t } = useLanguage();
+    const coin = useCoin();
   const { lightseed, myTrees, tendedTrees } = useSession();
   const isAuthor = !!lightseed && offering.authorId === lightseed.uid;
   const [active, setActive] = useState(offering.offeringActive !== false);
@@ -177,7 +179,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
             <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('offer_suggested')}</div>
             <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200">
               <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Sun /></span>
-              {formatLight(offering.offeringAppreciationLight || 0)}
+              {formatLight(offering.offeringAppreciationLight || 0, coin)}
               <span className="text-xs text-slate-400">{t('offer_after_receiving')}</span>
             </p>
           </div>
@@ -265,7 +267,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
             )}
             {!!offering.offeringAppreciationLight && (
               <span title={t('offer_suggested_title')} className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950">
-                <span className="[&>svg]:h-2.5 [&>svg]:w-2.5"><Icons.Sun /></span> {formatLight(offering.offeringAppreciationLight)}
+                <span className="[&>svg]:h-2.5 [&>svg]:w-2.5"><Icons.Sun /></span> {formatLight(offering.offeringAppreciationLight, coin)}
               </span>
             )}
             {isAuthor && onEdit && (

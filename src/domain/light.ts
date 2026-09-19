@@ -31,13 +31,16 @@ export const RAY_UNITS = 108;
 // Light spoken for humans: whole rays where it divides, otherwise exact light units. This is
 // deliberately neutral formatting — a holding, a contribution's suggested appreciation, and a
 // circulating branch are all light; none becomes a purchase merely by being named.
-export const formatLight = (units: number): string => {
-  if (!Number.isFinite(units) || units <= 0) return '0 light';
+// The unit word is the COIN's code when a community named one (domain/coin); rays are rays
+// everywhere — the physics is not a community's to rename.
+export const formatLight = (units: number, coin?: { code: string } | null): string => {
+  const unit = coin?.code || 'light';
+  if (!Number.isFinite(units) || units <= 0) return `0 ${unit}`;
   if (units % RAY_UNITS === 0) {
     const rays = units / RAY_UNITS;
     return `${rays} ray${rays === 1 ? '' : 's'}`;
   }
-  return `${units} light`;
+  return `${units} ${unit}`;
 };
 
 // One witnessed daily care kindles one ray (the nights are covered by the mornings).

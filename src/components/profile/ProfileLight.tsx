@@ -3,7 +3,8 @@ import { Icons } from '../ui/Icons';
 import { fetchMyRays, fetchTreeNames, type HeldRay } from '../../services/firebase/light';
 import { RAY_UNITS } from '../../domain/light';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { speak, spokenLine } from '../../utils/translations';
+import { say, speak, spokenLine } from '../../utils/translations';
+import { useCoin } from '../../hooks/useCoin';
 
 // THE LIGHT FACE — where a being sees the light their witnessed care has kindled. Rays are
 // server-minted and holder-private (solitary light is private; ring 2026-07-20), so this face
@@ -13,16 +14,17 @@ import { speak, spokenLine } from '../../utils/translations';
 
 // A ray is spoken as 108, the geometry of light (the nights are covered by the mornings).
 // Spoken through the translation keys so every language counts its own light.
-const spoken = (units: number): string => {
+const spoken = (units: number, coin: string): string => {
     const whole = Math.floor(units / RAY_UNITS);
     const rest = units % RAY_UNITS;
-    if (whole === 0) return speak(spokenLine('light_units', { n: rest }));
+    if (whole === 0) return speak(spokenLine('light_units', { n: rest, coin }));
     const rays = speak(spokenLine('light_rays', { n: whole }));
     return rest ? speak(spokenLine('light_rays_and_units', { rays, n: rest })) : rays;
 };
 
 export const ProfileLight = ({ uid }: { uid: string }) => {
     const { t } = useLanguage();
+    const coin = useCoin();
     const [rays, setRays] = useState<HeldRay[] | null>(null); // null = still gathering
     const [treeNames, setTreeNames] = useState<Record<string, string>>({});
 
@@ -45,7 +47,7 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
     const total = useMemo(() => (rays || []).reduce((sum, r) => sum + r.units, 0), [rays]);
 
     if (rays === null) {
-        return <div className="p-6 text-center text-sm text-gray-400">{t('light_gathering')}</div>;
+        return <div className="p-6 text-center text-sm text-gray-400">{say('light_gathering', { coin: coin.name })}</div>;
     }
 
     return (
@@ -70,7 +72,7 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                         <span className="text-[10px] uppercase tracking-wider text-amber-500">{t('units')}</span>
                     </div>
                 </div>
-                <p className="mt-2 text-center text-sm font-medium text-amber-700 dark:text-amber-300">{spoken(total)}</p>
+                <p className="mt-2 text-center text-sm font-medium text-amber-700 dark:text-amber-300">{spoken(total, coin.name)}</p>
                 <p className="mt-1 text-center text-xs text-amber-600/70">{t('light_private_note')}</p>
             </div>
 
@@ -79,7 +81,7 @@ export const ProfileLight = ({ uid }: { uid: string }) => {
                     <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-950/40">
                         <Icons.Sun />
                     </div>
-                    <p className="text-sm text-gray-600">{t('no_light')}</p>
+                    <p className="text-sm text-gray-600">{say('no_light', { coin: coin.name })}</p>
                     <p className="mx-auto mt-1 max-w-sm text-xs text-gray-400">{t('light_kindles_note')}</p>
                 </div>
             ) : (

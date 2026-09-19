@@ -8,9 +8,10 @@ import { createOffering, updateOffering, uploadImage, getMyBeds } from '../../se
 import { offeringProblem, type OfferingKind, type OfferedTo } from '../../domain/offering';
 import { normalizeWebLink, webLinkProblem } from '../../domain/webLink';
 import { formatLight, RAY_UNITS } from '../../domain/light';
+import { useCoin } from '../../hooks/useCoin';
 import { tabTone } from '../../utils/tabTheme';
 import type { Lifetree, Pulse } from '../../types';
-import { speak, spokenLine } from '../../utils/translations';
+import { speak, spokenLine, say } from '../../utils/translations';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 // MAKE AN OFFERING — post a BED or SERVICE through trust, with light named only as the hoped-for
@@ -33,6 +34,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
     const standing = (myTrees || []).filter(tr => !(to?.kind === 'tree' && tr.id === to.id));
     const [fromTreeId, setFromTreeId] = useState(() => (activeTree && standing.some(tr => tr.id === activeTree.id) ? activeTree.id : standing[0]?.id) || '');
     const { t } = useLanguage();
+    const coin = useCoin();
     const editing = !!offering;
     const [kind, setKind] = useState<OfferingKind>(offering?.offeringKind || 'service');
     const [title, setTitle] = useState(offering?.title || '');
@@ -193,14 +195,14 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
                 <label className="block">
                     <span className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase text-slate-400">
                         <span>{t('offer_suggested')}</span>
-                        <span className="text-amber-500">{formatLight(Number.isFinite(suggestedAppreciationLight) ? suggestedAppreciationLight : 0)}</span>
+                        <span className="text-amber-500">{formatLight(Number.isFinite(suggestedAppreciationLight) ? suggestedAppreciationLight : 0, coin)}</span>
                     </span>
                     <div className="flex items-center gap-2">
                         <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Sun /></span>
                         <input type="number" min="1" inputMode="numeric" value={appreciation} onChange={e => setAppreciation(e.target.value)}
                             className={`${field} h-11 px-3`} />
                     </div>
-                    <span className="mt-1 block text-[10px] text-slate-400">{speak(spokenLine('offer_light_note', { units: RAY_UNITS }))}</span>
+                    <span className="mt-1 block text-[10px] text-slate-400">{speak(spokenLine('offer_light_note', { units: RAY_UNITS, coin: coin.name }))}</span>
                 </label>
 
                 <ImagePicker onImageSelect={pickImage} previewUrl={imageUrl} loading={uploading} className="h-40" />
@@ -211,7 +213,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
                     style={{ backgroundColor: HEART, boxShadow: '0 10px 15px -3px rgba(41,132,66,0.25)' }}>
                     {saving ? t('saving') : editing ? t('offer_save') : t('offer_post')}
                 </button>
-                <p className="text-center text-[11px] text-slate-400">{to ? t('offer_care_note') : t('offer_trust_note')}</p>
+                <p className="text-center text-[11px] text-slate-400">{to ? t('offer_care_note') : say('offer_trust_note', { coin: coin.name })}</p>
             </form>
         </Modal>
     );
