@@ -5,7 +5,7 @@ import { LoveButton } from './ui/LoveButton';
 import { firestoreStore } from '../adapters/firestore';
 import type { Community, Pulse } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import { spokenLine } from '../utils/translations';
+import { say } from '../utils/translations';
 
 import { Picture } from './ui/Picture';
 import { useEventCommunity } from '../hooks/useEventCommunity';
@@ -79,7 +79,7 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                     <span
                         role={onOpenCommunity ? 'button' : undefined}
                         tabIndex={onOpenCommunity ? 0 : undefined}
-                        title={spokenLine('hosted_by', { name: faceName })}
+                        title={say('hosted_by', { name: faceName })}
                         onClick={openFace ? (e) => { e.stopPropagation(); openFace(); } : undefined}
                         onKeyDown={openFace ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); openFace(); } } : undefined}
                         className={`absolute bottom-1.5 left-1.5 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-emerald-600 text-[11px] font-bold text-white shadow-md ${onOpenCommunity ? 'transition-transform hover:scale-110' : ''}`}

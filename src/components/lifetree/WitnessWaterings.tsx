@@ -3,7 +3,7 @@ import { showAlert } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { witnessWatering } from '../../services/firebase';
-import { spokenLine } from '../../utils/translations';
+import { say } from '../../utils/translations';
 import type { Pulse } from '../../types';
 
 import { Picture } from '../ui/Picture';
@@ -40,7 +40,7 @@ export const WitnessWaterings: React.FC<WitnessWateringsProps> = ({ treeName, pu
         try {
             const res = await witnessWatering(p.id);
             showAlert(res.kindled
-                ? spokenLine('witness_kindled', { tree: treeName || t('tree') })
+                ? say('witness_kindled', { tree: treeName || t('tree') })
                 : 'witness_already_lit');
             onWitnessed?.();
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }

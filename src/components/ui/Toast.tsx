@@ -1,3 +1,4 @@
+import { speak } from '../../utils/translations';
 import { useEffect, useRef, useState } from 'react';
 
 // A confirmation toast — the visible "done" for background work (saves, flips, consecrations).
@@ -9,7 +10,10 @@ export type ToastKind = 'success' | 'error';
 
 let listener: ((message: string, kind: ToastKind) => void) | null = null;
 
-export const notify = (message: string, kind: ToastKind = 'success'): void => { listener?.(message, kind); };
+// The toast SPEAKS (ring 2026-09-19): a key, or a spoken line `key::{json}`, is said in the
+// reader's tongue here; a composed sentence passes through untouched. Offering keepership
+// showed `keeper_offer_sent::{"name":…}` raw because this boundary let the line through.
+export const notify = (message: string, kind: ToastKind = 'success'): void => { listener?.(speak(message), kind); };
 
 export const ToastHost = () => {
   const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);

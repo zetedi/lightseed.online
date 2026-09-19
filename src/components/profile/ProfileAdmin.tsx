@@ -10,7 +10,7 @@ import { DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { STAFF_HANDS, staffHandOn, type StaffHandSwitches } from '../../domain/staffHands';
 import { listenStaffHands, setStaffHand } from '../../services/firebase/staffHands';
 import { SectionTitle } from '../ui/SectionTitle';
-import { speak, spokenLine } from '../../utils/translations';
+import { speak, spokenLine, say } from '../../utils/translations';
 
 interface ProfileAdminProps {
   uid: string;
@@ -184,7 +184,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
               return (
                 <li key={h.id} className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm text-slate-700 dark:text-slate-200">{spokenLine(h.key, {})}</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-200">{say(h.key, {})}</p>
                     <p className="truncate text-[10px] font-mono text-slate-400" title={h.enforcedBy.join(' · ')}>{h.id} · {h.since} · {h.enforcedBy[0]}</p>
                   </div>
                   {h.switchable ? (

@@ -12,7 +12,7 @@ import { testIntelligenceConnection } from '../../services/gemini';
 import { AIAccessCard } from './AIAccessCard';
 import { SectionMenu } from '../ui/SectionMenu';
 import { INTELLIGENCE_DUTIES, DUTY_LABEL_KEY, dutiesOf, type DutyAssignment, type IntelligenceDuty } from '../../domain/intelligenceDuty';
-import { spokenLine } from '../../utils/translations';
+import { say } from '../../utils/translations';
 
 // The model names are brand tokens; only the parenthetical hint speaks — so the label
 // is a translation key that carries the brand name inside it.
@@ -300,10 +300,10 @@ export const IntelligencePanel = ({
               const other = !mine && !!duties?.[d];
               return (
                 <button key={d} type="button" aria-pressed={mine}
-                  title={other ? `${spokenLine(DUTY_LABEL_KEY[d], {})} → ${intelligences.find(i => i.id === duties?.[d])?.name || '…'}` : spokenLine(DUTY_LABEL_KEY[d], {})}
+                  title={other ? `${say(DUTY_LABEL_KEY[d], {})} → ${intelligences.find(i => i.id === duties?.[d])?.name || '…'}` : say(DUTY_LABEL_KEY[d], {})}
                   onClick={() => onAssignDuty(d, mine ? null : intel.id)}
                   className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors ${mine ? 'border-emerald-600 bg-emerald-600 text-white' : other ? 'border-slate-200 text-slate-400 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:hover:text-emerald-300' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-400 hover:text-emerald-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-emerald-300'}`}>
-                  {spokenLine(DUTY_LABEL_KEY[d], {})}
+                  {say(DUTY_LABEL_KEY[d], {})}
                 </button>
               );
             })}

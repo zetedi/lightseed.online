@@ -110,6 +110,11 @@ export const speak = (message: string, params?: Record<string, string | number>)
 // so the `key::{json}` shape can never fork between the two layers.
 export const spokenLine = (key: TranslationKey, params: Record<string, string | number>): string =>
   line(key, params);
+// SAY a keyed sentence with its holes filled, NOW, in the reader's tongue — for a title, a
+// caption, a label a component renders itself. (spokenLine is for a line that travels: a
+// toast, a confirm, a thrown refusal — spoken later, at the boundary.)
+export const say = (key: TranslationKey, params: Record<string, string | number>): string =>
+  speak(line(key, params));
 
 // THE WORDS CONTRACT, held: every key the domain's laws speak (domain/words DOMAIN_KEYS)
 // exists in this dictionary — the compiler is the mirror test. A key added to the manifest
