@@ -952,7 +952,7 @@ const zh = {
   lh_communities_sub: "这座光之屋所容纳的家：每个社区“光之屋”页签的映照。",
   lh_no_community: "还没有社区走进这座光之屋。",
   lh_open_community: "打开 {name}",
-  nav_lin_full: "生命树网络（LIN）",
+  nav_lin_full: "生命之网",
   nav_tree_needs_watering: "有一棵树需要浇水",
   nav_offer: "供献",
   nav_commune: "共聚",

@@ -980,7 +980,7 @@ const en = {
   lh_communities_sub: "The houses this Light House holds: the mirror of each community's Light Houses tab.",
   lh_no_community: "No community has stepped into this Light House yet.",
   lh_open_community: "Open {name}",
-  nav_lin_full: "Lifetree Network (LIN)",
+  nav_lin_full: "The Living Web",
   nav_tree_needs_watering: "A tree needs watering",
   nav_offer: "Offer",
   nav_commune: "Commune",

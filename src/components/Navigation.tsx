@@ -331,16 +331,13 @@ export const Navigation = ({
                             : activeTab === 'dashboard' ? t('nav_lin_full')
                             : cap(getTabLabel(activeTab));
                         return (
-                            // White letters with a dark-green outline: legible on ANY theme
-                            // surface, light or dark (the emerald fill failed on emerald headers).
-                            // paint-order stroke keeps the white centres clear.
+                            // The tablet title wears the menu's own colour, no outline, no shadow
+                            // (ring 2026-09-20): the header surface already decides what reads on
+                            // it, and the stroked white letters sat off from everything beside them.
                             <span
                                 dir="auto"
-                                className="pointer-events-none absolute left-1/2 hidden max-w-[46vw] -translate-x-1/2 truncate text-center font-semibold text-2xl tracking-wide sm:block xl:hidden"
-                                // White fill + dark-green outline reads on any surface; the emerald
-                                // shadow lifts it off a WHITE header, where the white fill would
-                                // otherwise vanish and leave only a thin outline.
-                                style={{ color: '#ffffff', WebkitTextStroke: '1.2px #064e3b', paintOrder: 'stroke', textShadow: '0 1px 7px rgba(16,185,129,0.7), 0 1px 2px rgba(6,78,59,0.55)' }}
+                                className="pointer-events-none absolute left-1/2 hidden max-w-[46vw] -translate-x-1/2 truncate text-center font-light text-2xl tracking-wide sm:block xl:hidden"
+                                style={{ color: navText }}
                             >{label}</span>
                         );
                     })()}

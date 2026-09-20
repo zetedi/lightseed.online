@@ -954,7 +954,7 @@ const ar = {
   lh_communities_sub: "البيوت التي يحملها بيت النور هذا: مرآة تبويب بيوت النور لكل مجتمع.",
   lh_no_community: "لم يخطُ أيّ مجتمع إلى بيت النور هذا بعد.",
   lh_open_community: "افتح {name}",
-  nav_lin_full: "شبكة أشجار الحياة (LIN)",
+  nav_lin_full: "الشبكة الحيّة",
   nav_tree_needs_watering: "شجرة تحتاج السقاية",
   nav_offer: "اعرض عطاء",
   nav_commune: "تجمّع",
