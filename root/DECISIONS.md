@@ -19,8 +19,9 @@ dissolves and the tree's thanks arrives without closing the inbox. The refresh b
 (ring 2026-09-03) already said this — mutation sites announce, mounted views follow — and
 these three had not yet learned it. AND THE ARROWS: the horizontal scroll arrows hung 14px
 over a card's border everywhere; on a phone the border sits one gutter from the glass, so
-the arrow touched the screen edge, ugliest at night. On phones they now stay inside the
-border (left-1 / right-1) and hang over it from sm up, one rule for every arrow.
+the arrow touched the screen edge, ugliest at night. Fully inside they hid too much of the
+card; on phones they now hang 5px over the border (the middle Zoltán asked for) and the full
+overhang from sm up, one rule for every arrow.
 
 ---
 

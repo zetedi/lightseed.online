@@ -19,10 +19,11 @@ export const NAV_ARROW_CLS =
 
 // Standard edge placement: the button sits centred on the axis. On sm+ it hangs ~2/5 of itself
 // over the border, the same overhang for every arrow, so they read as one. On a PHONE the
-// horizontal arrows stay INSIDE the border (ring 2026-09-20): a card's border sits a gutter from
-// the screen edge, and an arrow hanging over it touched the glass, ugliest at night.
-export const NAV_ARROW_PREV_X = 'left-1 sm:-left-4 top-1/2 -translate-y-1/2';
-export const NAV_ARROW_NEXT_X = 'right-1 sm:-right-4 top-1/2 -translate-y-1/2';
+// horizontal arrows hang only 5px over the border (ring 2026-09-20): a card's border sits a
+// gutter from the screen edge, and the full overhang touched the glass, ugliest at night —
+// while fully inside they hid too much of the card's edge. Five pixels is the middle.
+export const NAV_ARROW_PREV_X = '-left-[5px] sm:-left-4 top-1/2 -translate-y-1/2';
+export const NAV_ARROW_NEXT_X = '-right-[5px] sm:-right-4 top-1/2 -translate-y-1/2';
 export const NAV_ARROW_PREV_Y = '-top-3.5 sm:-top-4 left-1/2 -translate-x-1/2';
 export const NAV_ARROW_NEXT_Y = '-bottom-3.5 sm:-bottom-4 left-1/2 -translate-x-1/2';
 
