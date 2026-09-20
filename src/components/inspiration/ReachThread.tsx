@@ -13,6 +13,7 @@ import { Icons } from '../ui/Icons';
 import { OutwardLink } from '../ui/OutwardLink';
 import { spokenLine } from '../../utils/translations';
 import { isWateringOverdue } from '../../domain/watering';
+import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { linkifyParts } from '../../utils/sanitize';
 import { Lifetree, Pulse, ReachAudience } from '../../types';
 
@@ -100,6 +101,10 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
     const { t } = useLanguage();
     const { lightseed, activeTree, myTrees, isAdmin, isSuperAdmin, nameAs } = useLifeseed();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    // THE THREAD FOLLOWS THE BUS (ring 2026-09-20): a watering confirmed from a care ping
+    // announces 'reaches' and the tree's new head; the thread re-reads so the ping dissolves
+    // and the tree's answer arrives without closing and reopening.
+    const reachSignal = useRefreshSignal(['reaches', 'trees']);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -267,7 +272,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
         return () => { cancelled = true; };
         // Reload when the partner / group / audience changes, or once auth resolves.
         // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive ids only; the listed objects (lightseed, myTrees, selectedTree, groupThread) and render-scoped fns (buildHistory, markThreadSeen, t) change identity per render and would refetch the thread in a loop
-    }, [mode, selectedTree?.id, groupThread?.threadId, audience, lightseed?.uid]);
+    }, [mode, selectedTree?.id, groupThread?.threadId, audience, lightseed?.uid, reachSignal]);
 
     useEffect(() => {
         if (mode === 'tree' && !selectedTree && !groupThread && activeTree) {

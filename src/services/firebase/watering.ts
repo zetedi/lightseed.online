@@ -90,6 +90,15 @@ const postWateredNotice = async (
 // or storing a photo (no chain advance), for routine watering you don't want on the tree's
 // ledger. Still counts as caring (lastCaredAt keeps living validation lit) and still tells
 // the guardians' thread, which clears any standing 'water me' alert.
+// THE WATERING REACHES EVERY LOADED COPY (ring 2026-09-20): the dotted Firestore update,
+// folded into the nested `watering` the shell reads, so a session's trees, an open thread's
+// quench and a tree's care tab all learn the tree drank — without a reload.
+const wateringPatchOf = (tree: Lifetree, update: Record<string, unknown>): Record<string, unknown> => {
+    const watering: Record<string, unknown> = { ...(tree.watering || {}) };
+    for (const [k, v] of Object.entries(update)) if (k.startsWith('watering.')) watering[k.slice('watering.'.length)] = v;
+    return { watering };
+};
+
 export const markWateredOffChain = async (
     tree: Lifetree,
     sender: { uid: string; displayName?: string | null; photoURL?: string | null },
@@ -109,6 +118,7 @@ export const markWateredOffChain = async (
     };
     if (intervalDays) update['watering.nextDueAt'] = Timestamp.fromMillis(computeNextDueMillis(now, intervalDays));
     await updateDoc(doc(db, 'lifetrees', tree.id), update);
+    announce('trees', tree.id, wateringPatchOf(tree, update));
     await postWateredNotice(tree, sender, `💧 ${naming.name || 'A guardian'} watered me — thank you!`);
 };
 
@@ -167,6 +177,8 @@ export const recordWatering = async ({
         authorPersonName: naming.personName,
         authorPhoto: tree.imageUrl || sender.photoURL || undefined,
     }, wateringUpdate);
+    // The mint announced the tree's new head; the watering itself reaches every loaded copy too.
+    announce('trees', tree.id, wateringPatchOf(tree, wateringUpdate));
 
     // Let the guardians' thread know — a normal (newest) message clears the blue alert border.
     await postWateredNotice(tree, sender, `🌱 ${naming.name || 'A guardian'} watered me — thank you! (${confirmedBy === 'ai' ? 'confirmed by AI' : 'awaiting confirmation'})`);

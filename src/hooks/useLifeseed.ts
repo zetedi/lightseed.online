@@ -1,5 +1,6 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { onRefresh } from '../services/refreshBus';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase/core';
 import { uuidv7 } from '../utils/id';
@@ -161,6 +162,25 @@ export const useLifeseed = () => {
             setTendedTrees(tended);
         }
     };
+
+    // THE SESSION'S TREES FOLLOW THE BUS (ring 2026-09-20): a tree announced with a patch is
+    // merged into every list that holds it (my trees, guarded, tended); announced bare, the
+    // lists re-read. Before this a watering confirmed from a reach left the session's copy dry,
+    // so the thread's care ping stayed until the next full load.
+    const refreshRef = useRef(refreshTrees);
+    useEffect(() => { refreshRef.current = refreshTrees; });
+    useEffect(() => {
+        if (!lightseed?.uid) return;
+        return onRefresh((e) => {
+            if (e.topic !== 'trees' || !e.id) return;
+            if (!e.patch) { refreshRef.current().catch(() => {}); return; }
+            const patch = e.patch;
+            const mend = (t: Lifetree): Lifetree => (t.id === e.id ? { ...t, ...patch } as Lifetree : t);
+            setMyTrees(prev => prev.map(mend));
+            setGuardedTrees(prev => prev.map(mend));
+            setTendedTrees(prev => prev.map(item => ('tree' in item && item.tree?.id === e.id ? { ...item, tree: mend(item.tree) } : item)));
+        });
+    }, [lightseed?.uid]);
 
     // Persist the default tree; the profile listener echoes it back into defaultTreeId.
     const setDefaultTree = async (treeId: string) => {

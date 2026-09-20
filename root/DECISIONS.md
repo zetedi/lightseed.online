@@ -6,6 +6,24 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-20 · A watering reaches every loaded copy; the arrows stay off the glass** —
+Zoltán: "after care opened from reaches and confirmed watering, the messages do not refresh."
+Three seams, one cause: the watering wrote the tree but announced nothing FOR the tree (the
+off-chain "I watered today" announced only the guardians' thread; the on-chain one only the
+new head), the session's tree lists listened to no announce at all, and the thread's loader
+keyed on ids alone. NOW: both waterings announce the tree with its new `watering` folded
+into the nested shape the shell reads (wateringPatchOf); the session's my/guarded/tended
+trees merge every 'trees' patch in place and re-read on a bare announce (hooks/useLifeseed);
+the reach thread re-reads on 'reaches' and 'trees' (useRefreshSignal), so the care ping
+dissolves and the tree's thanks arrives without closing the inbox. The refresh bus's own law
+(ring 2026-09-03) already said this — mutation sites announce, mounted views follow — and
+these three had not yet learned it. AND THE ARROWS: the horizontal scroll arrows hung 14px
+over a card's border everywhere; on a phone the border sits one gutter from the glass, so
+the arrow touched the screen edge, ugliest at night. On phones they now stay inside the
+border (left-1 / right-1) and hang over it from sm up, one rule for every arrow.
+
+---
+
 **2026-09-20 · The season of roots** — Zoltán: "communities forming, people planting, the
 light starts to glow. What are the next steps? Is the core strong enough?" The reviewer's
 answer, recorded as given and then corrected. STRONG: identity, chains, links, rules — portable

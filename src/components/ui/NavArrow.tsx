@@ -17,10 +17,12 @@ const PATH: Record<NavDir, string> = {
 export const NAV_ARROW_CLS =
     'pointer-events-auto flex items-center justify-center rounded-full bg-white/90 text-slate-500 shadow ring-1 ring-emerald-100 transition-all duration-300 hover:bg-white hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:bg-slate-900/90';
 
-// Standard edge placement: the button sits centred on the axis and hangs ~2/5 of itself over the
-// border on mobile, a touch more on sm+ — the same overhang for every arrow, so they read as one.
-export const NAV_ARROW_PREV_X = '-left-3.5 sm:-left-4 top-1/2 -translate-y-1/2';
-export const NAV_ARROW_NEXT_X = '-right-3.5 sm:-right-4 top-1/2 -translate-y-1/2';
+// Standard edge placement: the button sits centred on the axis. On sm+ it hangs ~2/5 of itself
+// over the border, the same overhang for every arrow, so they read as one. On a PHONE the
+// horizontal arrows stay INSIDE the border (ring 2026-09-20): a card's border sits a gutter from
+// the screen edge, and an arrow hanging over it touched the glass, ugliest at night.
+export const NAV_ARROW_PREV_X = 'left-1 sm:-left-4 top-1/2 -translate-y-1/2';
+export const NAV_ARROW_NEXT_X = 'right-1 sm:-right-4 top-1/2 -translate-y-1/2';
 export const NAV_ARROW_PREV_Y = '-top-3.5 sm:-top-4 left-1/2 -translate-x-1/2';
 export const NAV_ARROW_NEXT_Y = '-bottom-3.5 sm:-bottom-4 left-1/2 -translate-x-1/2';
 
