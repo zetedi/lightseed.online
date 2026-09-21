@@ -31,8 +31,10 @@ for (const d of snap.docs) {
   const label = `${d.id.padEnd(22)} ${String(c.name || '').padEnd(24)}`;
   if (retire) {
     if ('vision' in c) {
-      console.log(`${label} retire vision (${vision.length} chars)${hasVisionPaper ? '' : '  ! no vision paper stands — refusing'}`);
-      if (hasVisionPaper) { await d.ref.update({ vision: FieldValue.delete(), updatedAt: FieldValue.serverTimestamp() }); retired++; }
+      // An EMPTY field has nothing to lose; a field with words goes only once a vision paper stands.
+      const safe = hasVisionPaper || !vision.trim();
+      console.log(`${label} retire vision (${vision.length} chars)${safe ? '' : '  ! no vision paper stands — refusing'}`);
+      if (safe) { await d.ref.update({ vision: FieldValue.delete(), updatedAt: FieldValue.serverTimestamp() }); retired++; }
     }
     continue;
   }
