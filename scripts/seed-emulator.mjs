@@ -61,7 +61,7 @@ batch.set(db.doc(`users/${demoUid}`), { uid: demoUid, email: 'gardener@demo.loca
 const com = db.collection('communities').doc();
 batch.set(com, {
   lid: uuidv7(), ownerId: demoUid, name: 'Riverside Grove', domain: 'grove.local',
-  vision: 'A small grove by the river where every tree is known by name.',
+  papers: [{ key: 'vision', title: '', html: 'A small grove by the river where every tree is known by name.' }],
   door: 'open', reflectsPublic: false, createdAt: now, updatedAt: now, loveCount: 0,
 });
 

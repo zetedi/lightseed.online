@@ -6,6 +6,39 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-21 · A place's words are papers; the vision is the first** — Zoltán: "merge the
+white paper into the charter object and load it lazily in the editor… a json with chapters
+like architecture, vision… the vision would also be shown on the community page… take out
+ossified things from the code." Then, asked: "The /root stays, of course. Changing that means
+fork, and a fork can't bear the design / logo and association by default, only through an
+agreement." TWO CHARTERS, kept apart: node.json is the node's identity (lid, domain, faces,
+keys — small, machine-checked, never prose); root/*.md is the seed's constitution (reviewed in
+git, append-only in spirit, served by the deploy so every node carries what it grew from; a
+fork wears its own face, and association is an agreement). A PLACE'S OWN WORDS are neither:
+they are DATA on the community — PAPERS (domain/papers): an ordered list of chapters, each a
+stable key, a title, rich text and the surfaces it shows on, at most 24, the vision FIRST.
+The vision was a field of its own and is one no longer (Zoltán: "even if that is a migration,
+it's more aligned with no legacy"): every reader — the profile's Vision tab, the community
+list, the hearth hero, the custom landing, the digital tree's words, the resonance matcher,
+the newborn circle on the server — reads visionOf(papers); the field itself is migrated by
+scripts/move-vision-to-papers.mjs (dry run, --apply, then --retire deletes it), and no code
+reads it again. The Vision tab edits the vision paper and the chapters beside it (title +
+rich text, the lazy editor), saved by the same Save; readers see the chapters under the
+vision. The rules hold papers to a bounded list (papersSound: a list, ≤ 24); the shape of a
+chapter is the domain's to judge; an emulator test holds it. NEXT, as Zoltán saw mid-work:
+(1) a charter as a LIVING BEING WITH HISTORY — each edit a block naming the hand and the
+moment, never rewritten, as a vision's contributions and a covenant's signatures already are;
+papers as data on the record is the first rung, the chain the second; (2) papers the SHELL
+READS — reserved keys beside 'vision': the place's Light Path ruleset, its code of conduct
+(literally), so a place's law is written in its own words and the software walks it; (3) the
+About page composed from a place's papers first and the seed's root chapters read-only after,
+retiring the hard-coded chapters of AboutSections where a paper replaces them (the genesis
+block, the yantra and the trademark note stay code: the seed's face, not a place's words).
+REJECTED: the root as editable data (a constitution edited outside review is no constitution);
+reading the old field "for a while" (no legacy: migrate, deploy, retire).
+
+---
+
 **2026-09-21 · A face shows its members what is theirs** — Zoltán: "I would like the events to
 have a member-only visibility also, so the invitation-based door would keep the signed-in
 users from seeing them… some events could be sensitive to light or some would be just drafts."

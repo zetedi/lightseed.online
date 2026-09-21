@@ -156,7 +156,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
       const created = await createCommunity({
         name: grow.name.trim(),
         domain: grow.domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
-        vision: org.blurb || '',
+        papers: org.blurb ? [{ key: 'vision', title: '', html: org.blurb }] : [],
         imageUrls: [],
         ...(org.logoUrl ? { logoUrl: org.logoUrl } : {}),
         theme: communityThemePresets[0],

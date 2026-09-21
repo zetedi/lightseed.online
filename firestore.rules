@@ -46,6 +46,12 @@ service cloud.firestore {
     }
     // The community's door (domain/communityDoor.ts). Absent = 'invite' (the pre-door
     // behaviour: knock + accept). A missing community's door reads as closed — deny.
+    // PAPERS (ring 2026-09-21): a community's chapters are a list, bounded; the shape of each
+    // chapter is the domain's to judge (papersOf), the rules hold only the list and its size.
+    function papersSound() {
+      return !('papers' in request.resource.data)
+        || (request.resource.data.papers is list && request.resource.data.papers.size() <= 24);
+    }
     function communityDoor(communityId) {
       return (communityId is string
           && exists(/databases/$(database)/documents/communities/$(communityId)))
@@ -1434,7 +1440,7 @@ service cloud.firestore {
       allow read: if true;
       // THE BIRTH IS SIGNED: a community is founded in the founder's own name (both the
       // anchor ownerId and, when carried, the legacy founderUserId).
-      allow create: if isSignedIn() && (isStaff() || (
+      allow create: if papersSound() && isSignedIn() && (isStaff() || (
         request.resource.data.get('ownerId', '') == request.auth.uid
         && request.resource.data.get('founderUserId', request.auth.uid) == request.auth.uid
         // `keeperUids` is the server's mirror of the keeper links (storage.rules reads it) —
@@ -1451,7 +1457,7 @@ service cloud.firestore {
       // `domainVerification` is SERVER-OBSERVED truth (a DNS control proof, written only by
       // the checkDomainVerification callable via Admin SDK) — no client hand may write it,
       // or the badge would be a self-claim wearing a proof's clothes.
-      allow update: if isSignedIn() && (
+      allow update: if papersSound() && isSignedIn() && (
         (
           (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || staffHand('community_edit'))
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn', 'domainVerification', 'formedAt', 'formedBy', 'keeperUids', 'newsletterLastSentAt', 'newsletterLastSubject', 'newsletterLastSent', 'domainAliases'])

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { visionOf } from '../../domain/papers';
 import { ChainTree } from '../sections/ChainTree';
 import { getPulsesByCommunity } from '../../services/firebase';
 import type { Community, Pulse } from '../../types';
@@ -48,7 +49,7 @@ export const CommunityDigitalTree = ({ community, onViewPulse }: {
                 // A faceless community roots in Mahameru, the first willow every chain remembers.
                 imageUrl: community.logoUrl || community.heroImageUrl || '/mahameru.svg',
                 name: community.name,
-                body: plainWords(community.vision),
+                body: plainWords(visionOf(community)),
                 plantedLabel: community.createdAt?.toDate ? community.createdAt.toDate().toLocaleDateString() : undefined,
             }}
         />

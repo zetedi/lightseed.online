@@ -1,5 +1,6 @@
 import type { Stamp } from './time';
 import type { Being } from './being';
+import type { Paper } from './papers';
 
 export interface Community extends Being {
   id: string;
@@ -13,7 +14,8 @@ export interface Community extends Being {
   // the checkDomainVerification callable; the rules refuse every client hand. Speaks only
   // while `domain` still equals the proven domain (isDomainVerified).
   domainVerification?: { domain: string; method: 'dns_txt'; verifiedAt?: Stamp } | null;
-  vision: string; // Rich text
+  // PAPERS (domain/papers): the place's own words — the vision first, then its chapters. Data, never code.
+  papers?: Paper[];
   imageUrls: string[]; // For carousel
   logoUrl?: string;       // Square brand mark (avatar) — shown in lists and the hero badge
   heroImageUrl?: string;  // Wide banner image shown behind the community page hero

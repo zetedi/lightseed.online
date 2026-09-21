@@ -73,6 +73,7 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'name', type: 'string' },
       { name: 'domain', type: 'string' },
       { name: 'heroImageUrl', type: 'string?' },
+      { name: 'papers', type: 'array?' }, // the place's own chapters, the vision first (domain/papers)
       { name: 'theme', type: 'map?' },
       { name: 'reflectsPublic', type: 'bool?' },
       { name: 'chainLocked', type: 'bool?' },

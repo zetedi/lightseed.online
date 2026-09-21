@@ -250,7 +250,7 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
                     // tree's own domain and grows_in links). Inheriting tree.domain here once
                     // made a newborn circle claim a whole face's domain (ring 2026-08-28).
                     domain: "",
-                    vision: "",
+                    papers: [],
                     imageUrls: [],
                     createdAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp(),

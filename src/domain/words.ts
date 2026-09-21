@@ -38,6 +38,8 @@ export const DOMAIN_KEYS = [
   'interbeing_accepts_coin_of', 'interbeing_accepts_coin_of_desc',
   // coin — the face a community gives its light (domain/coin)
   'coin_name_long', 'coin_code_bad',
+  // papers — a place's own chapters (domain/papers)
+  'paper_key_bad', 'paper_title_long',
   // unmint — taking back an accidental head mint (domain/unmint)
   'unmint_not_author', 'unmint_not_mint', 'unmint_not_last', 'unmint_witnessed', 'unmint_coheld',
   // personName — the name a being wears is theirs to change; the law keeps it a name

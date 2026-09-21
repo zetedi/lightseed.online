@@ -324,6 +324,17 @@ describe("the keeper mirror is the server's alone (ring 2026-09-07)", () => {
   });
 });
 
+describe('papers — a community\'s chapters are a bounded list (ring 2026-09-21)', () => {
+  it('the keeper writes a list of chapters; a string, or too many, is refused', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'communities', 'com-papers'), { name: 'Papers', ownerId: ALICE, domain: 'papers.org' });
+    });
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com-papers'), { papers: [{ key: 'vision', title: '', html: '<p>a garden</p>' }] }));
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com-papers'), { papers: 'a garden' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com-papers'), { papers: Array.from({ length: 25 }, (_, i) => ({ key: `k${i}`, title: '', html: '' })) }));
+  });
+});
+
 describe('community reflection — the keeper alone opens the canopy', () => {
   it('the owner may choose or close reflection; a stranger cannot choose for them', async () => {
     await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com1'), { reflectsPublic: true }));

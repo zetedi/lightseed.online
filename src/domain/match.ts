@@ -1,3 +1,4 @@
+import { visionOf } from './papers';
 // Vision ↔ community matching — pure resonance arithmetic, no AI needed for v1: the words
 // a being plants in its visions, weighed against the words each community lives by. Honest
 // and inspectable: every match shows WHICH words carried it. (An intelligence can deepen
@@ -41,7 +42,7 @@ export interface CommunityMatch<C> {
 // Top matches between a being's vision texts and the communities' visions. Weighted-Jaccard
 // on token frequencies: shared weight over total weight — a community whose whole vision
 // resonates beats one that merely mentions a word once.
-export function matchCommunities<C extends { vision?: string; name?: string }>(
+export function matchCommunities<C extends { papers?: unknown; name?: string }>(
   myVisionTexts: string[],
   communities: C[],
   top = 3,
@@ -51,7 +52,7 @@ export function matchCommunities<C extends { vision?: string; name?: string }>(
 
   const scored: CommunityMatch<C>[] = [];
   for (const community of communities) {
-    const theirs = frequencies(tokenize(`${community.name || ''} ${community.vision || ''}`));
+    const theirs = frequencies(tokenize(`${community.name || ''} ${visionOf(community)}`));
     if (theirs.size === 0) continue;
 
     let sharedWeight = 0;

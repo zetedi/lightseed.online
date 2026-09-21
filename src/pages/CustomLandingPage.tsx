@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { visionOf } from '../domain/papers';
 import type { Community, Lightseed, Pulse } from '../types';
 import { EventsSection } from '../components/sections/EventsSection';
 import { createCommunityEvent, fetchEventPulses } from '../services/firebase';
@@ -82,8 +83,8 @@ export const CustomLandingPage: React.FC<CustomLandingPageProps> = ({
 
   // The vision, rendered like everywhere else on seed — plus &nbsp; flattened to real spaces
   // (the rich editor pastes them in), or the text refuses to wrap and flows out of its box.
-  const visionHtml = community.vision
-    ? sanitizeRichText(community.vision).replace(/&nbsp;| /g, ' ')
+  const visionHtml = visionOf(community)
+    ? sanitizeRichText(visionOf(community)).replace(/&nbsp;| /g, ' ')
     : '';
 
   // The page's menu: Home and Events are built-in; everything else is the community's own

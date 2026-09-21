@@ -48,6 +48,7 @@ import { nodeDomains } from '../config/charter';
 import { useAutosave } from '../hooks/useAutosave';
 import { COMMUNITY_APPEARANCE_FIELDS, reconcile } from '../domain/autosave';
 import { mailWordsOf } from '../domain/mailVoice';
+import { VISION_KEY, papersOf, visionOf, withVision, type Paper } from '../domain/papers';
 import { NewsletterAdmin } from './NewsletterAdmin';
 interface CommunityProfileProps {
   community: Community;
@@ -209,7 +210,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
 
   // Editable copies of the community fields (branding + vision).
   const [editName, setEditName] = useState(community.name);
-  const [editVision, setEditVision] = useState(community.vision);
+  const [editVision, setEditVision] = useState(visionOf(community));
+  // THE PAPERS (ring 2026-09-21; domain/papers): the chapters beside the vision, edited on the
+  // Vision tab and saved with it — the vision is papers[0], the rest follow.
+  const [editPapers, setEditPapers] = useState<Paper[]>(() => papersOf(community.papers).filter(p => p.key !== VISION_KEY));
   const [editSocial, setEditSocial] = useState<{ instagram?: string; telegram?: string; whatsapp?: string; website?: string }>(community.socialLinks || {});
   const [editCarouselQuotes, setEditCarouselQuotes] = useState<string[]>(community.carouselQuotes || []);
   const [editCustomLanding, setEditCustomLanding] = useState(community.customLanding === true);
@@ -305,18 +309,19 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // fresh value; a field still under the hand keeps its draft (an autosave landing mid-word,
   // or landing while the Vision tab holds unsaved writing, drops nothing). A new community
   // adopts everything.
-  const adoptedRef = React.useRef<{ id: string; fields: typeof appearancePersisted & { vision: string } } | null>(null);
+  const adoptedRef = React.useRef<{ id: string; fields: typeof appearancePersisted & { vision: string; papers: Paper[] } } | null>(null);
   const imageUrlsKey = (community.imageUrls || []).join(',');
   useEffect(() => {
-    const fresh = { ...appearancePersisted, vision: community.vision };
-    const keys = [...COMMUNITY_APPEARANCE_FIELDS, 'vision'] as const;
+    const fresh = { ...appearancePersisted, vision: visionOf(community), papers: papersOf(community.papers).filter(p => p.key !== VISION_KEY) };
+    const keys = [...COMMUNITY_APPEARANCE_FIELDS, 'vision', 'papers'] as const;
     const adopted = adoptedRef.current?.id === community.id ? adoptedRef.current.fields : null;
-    const draft = { ...appearanceDraft, vision: editVision };
+    const draft = { ...appearanceDraft, vision: editVision, papers: editPapers };
     const next = adopted ? reconcile(adopted, fresh, draft, keys) : fresh;
     adoptedRef.current = { id: community.id, fields: fresh };
     // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state reconcile of the editable copies; deriving instead would clobber in-flight edits
     setEditName(next.name);
     setEditVision(next.vision);
+    setEditPapers(next.papers);
     setEditSocial(next.socialLinks);
     setEditTheme(normalizeTheme(next.theme));
     setLogoUrl(next.logoUrl);
@@ -328,7 +333,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setEditPaletteReach(next.paletteReach);
     setEditMail({ greeting: next.mail.greeting || '', signature: next.mail.signature || '', footer: next.mail.footer || '' });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); object identities change per fetch and would re-run this needlessly; the draft is read, not depended on
-  }, [community.id, community.name, community.vision, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, community.paletteReach, community.mail, imageUrlsKey]);
+  }, [community.id, community.name, community.papers, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, community.paletteReach, community.mail, imageUrlsKey]);
 
   useEffect(() => {
     // Own-tree merge only where the place allows it (domain ownMergeUid): a STRICT face
@@ -452,7 +457,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     try {
       const updates = {
         name: editName,
-        vision: editVision,
+        papers: withVision(editPapers, editVision),
         imageUrls,
         theme: normalizeTheme(editTheme),
         logoUrl,
@@ -624,6 +629,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           linkedTrees={linkedTrees}
           editVision={editVision}
           onVisionChange={setEditVision}
+          editPapers={editPapers}
+          onPapersChange={setEditPapers}
           onSave={handleSave}
           isSaving={isSaving}
           saveDisabled={isSaving || isUploadingLogo || isUploadingImage}

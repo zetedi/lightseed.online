@@ -19,10 +19,10 @@ describe('tokenize', () => {
 
 describe('matchCommunities', () => {
   const communities = [
-    { name: 'Per Auset', vision: 'A garden of souls — regeneration, trees, and care for the living land.' },
-    { name: 'Techno Hub', vision: 'Blockchain synergy ventures and disruptive scaling.' },
-    { name: 'Forest School', vision: 'Children learning under trees, care and slow growth.' },
-    { name: 'Empty', vision: '' },
+    { name: 'Per Auset', papers: [{ key: 'vision', title: '', html: 'A garden of souls — regeneration, trees, and care for the living land.' }] },
+    { name: 'Techno Hub', papers: [{ key: 'vision', title: '', html: 'Blockchain synergy ventures and disruptive scaling.' }] },
+    { name: 'Forest School', papers: [{ key: 'vision', title: '', html: 'Children learning under trees, care and slow growth.' }] },
+    { name: 'Empty', papers: [] },
   ];
 
   it('ranks by resonance and names the shared ground', () => {

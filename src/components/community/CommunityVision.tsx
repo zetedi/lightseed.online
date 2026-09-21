@@ -4,6 +4,9 @@ import { showAlert, showConfirm } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Community, Lifetree } from '../../types';
+import { PAPER_TITLE_MAX, paperKeyFor, papersOf, visionOf, type Paper } from '../../domain/papers';
+import { sanitizeRichText } from '../../utils/sanitize';
+import RichTextEditor from '../ui/RichTextEditor';
 import { ownMergeUid } from '../../domain/pulseVisibility';
 import { challengeHostLabel, challengeZone, isDomainVerified } from '../../domain/domainVerification';
 import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, exportCommunity, startDoorClaim, checkDoorClaim, grantDoor, withdrawDoor, listDoorClaims, type DomainChallengeRecord, type DoorClaim } from '../../services/firebase';
@@ -28,6 +31,9 @@ interface CommunityVisionProps {
   // runs from the Appearance tab), so this tab only edits it.
   editVision: string;
   onVisionChange: (value: string) => void;
+  // The chapters beside the vision (domain/papers), saved by the same Save.
+  editPapers: Paper[];
+  onPapersChange: React.Dispatch<React.SetStateAction<Paper[]>>;
   onSave: () => void;
   isSaving: boolean;
   saveDisabled: boolean;
@@ -48,6 +54,8 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   linkedTrees,
   editVision,
   onVisionChange,
+  editPapers,
+  onPapersChange,
   onSave,
   isSaving,
   saveDisabled,
@@ -328,8 +336,50 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
 
   // Node-level commitments injected under the shared vision — the chain seal and the
   // tokenisation toggle are community/node-only, so they live here, not in the section.
+  // THE PAPERS (ring 2026-09-21): the chapters beside the vision. A keeper edits them here,
+  // saved by the tab's Save with the vision; everyone else reads them under it.
+  const shownPapers = canEdit ? editPapers : papersOf(community.papers).filter(p => p.key !== 'vision');
+  const papersBlock = (canEdit || shownPapers.length > 0) && (
+    <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('papers_title')}</p>
+          {canEdit && <p className="text-xs text-slate-500">{t('papers_note')}</p>}
+        </div>
+        {canEdit && (
+          <button type="button" onClick={() => onPapersChange(prev => [...prev, { key: paperKeyFor(t('paper_title_ph'), prev), title: '', html: '' }])}
+            className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500">
+            + {t('add_paper')}
+          </button>
+        )}
+      </div>
+      <div className="space-y-4">
+        {shownPapers.map((paper, i) => canEdit ? (
+          <div key={paper.key} className="space-y-2 rounded-xl border border-slate-100 p-3 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <input dir="auto" value={paper.title} maxLength={PAPER_TITLE_MAX} placeholder={t('paper_title_ph')}
+                onChange={e => onPapersChange(prev => prev.map((p, j) => j === i ? { ...p, title: e.target.value } : p))}
+                className="h-9 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+              <button type="button" onClick={() => onPapersChange(prev => prev.filter((_, j) => j !== i))}
+                className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 dark:bg-slate-900 dark:border-red-900">
+                {t('remove')}
+              </button>
+            </div>
+            <RichTextEditor value={paper.html} onChange={html => onPapersChange(prev => prev.map((p, j) => j === i ? { ...p, html } : p))} placeholder={t('paper_body_ph')} />
+          </div>
+        ) : (
+          <div key={paper.key} className="rounded-xl border border-slate-100 p-4 dark:border-slate-800">
+            {paper.title && <h4 dir="auto" className="mb-2 text-base font-semibold text-slate-800 dark:text-slate-100">{paper.title}</h4>}
+            <div dir="auto" className="prose prose-sm max-w-none text-slate-600 dark:prose-invert dark:text-slate-300" dangerouslySetInnerHTML={{ __html: sanitizeRichText(paper.html) }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   const extras = (
     <>
+      {papersBlock}
       {/* The chain seal — this node's commitment to a verifiable chain. Sealed is a public
           mark of integrity (shown to all); sealing is the owner's one-way "big red stamp". */}
       {(chainSealed || canEdit) && (
@@ -667,7 +717,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   return (
     <VisionSection
       canEdit={canEdit}
-      vision={community.vision}
+      vision={visionOf(community)}
       editValue={editVision}
       onChange={onVisionChange}
       onSave={onSave}

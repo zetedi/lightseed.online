@@ -62,7 +62,7 @@ async function run() {
   await db.collection('communities').doc('per-auset').set({
     name: 'Per Auset',
     domain: DOMAIN,
-    vision: 'The house of Auset — a vision, a community, a garden of souls.',
+    papers: [{ key: 'vision', title: '', html: 'The house of Auset — a vision, a community, a garden of souls.' }],
     imageUrls: [],
     ownerId,
     theme: THEME,

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { visionOf } from '../../domain/papers';
 import type { Community, Lightseed, Pulse } from '../../types';
 import { fetchEventPulses } from '../../services/firebase';
 import { eventFeedScope, eventsOnView } from '../../domain/pulseVisibility';
@@ -47,7 +48,7 @@ export const HearthHero: React.FC<HearthHeroProps> = ({ community, props, lights
     return () => { alive = false; };
   }, [community.domain, community.reflectsPublic, community.strictScope, lightseed, showEvents, maxEvents, lightseed?.uid]);
 
-  const visionHtml = community.vision ? sanitizeRichText(community.vision).replace(/&nbsp;| /g, ' ') : '';
+  const visionHtml = visionOf(community) ? sanitizeRichText(visionOf(community)).replace(/&nbsp;| /g, ' ') : '';
 
   return (
     <section className="relative mx-auto w-full max-w-3xl px-4 py-10 text-center">

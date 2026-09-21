@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { visionOf } from '../domain/papers';
 import { showAlert } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
@@ -137,7 +138,7 @@ const CommunityCard = ({ community, isGenesis = false, onSelect, standing = 'joi
           </div>
           <div
               className="text-white/85 text-sm line-clamp-2 mb-3 leading-relaxed overflow-hidden drop-shadow [&_img]:hidden"
-              dangerouslySetInnerHTML={{ __html: community.vision ? sanitizeRichText(community.vision) : t('no_vision_shared') }}
+              dangerouslySetInnerHTML={{ __html: visionOf(community) ? sanitizeRichText(visionOf(community)) : t('no_vision_shared') }}
           />
           <div className="flex items-center justify-between gap-2">
               <button className="text-white font-bold text-xs uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all drop-shadow">
@@ -226,7 +227,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   const matchesSearch = (c: Community) => {
     const term = search.trim().toLowerCase();
     if (!term) return true;
-    return `${c.name || ''} ${c.domain || ''} ${c.vision || ''}`.toLowerCase().includes(term);
+    return `${c.name || ''} ${c.domain || ''} ${visionOf(c) || ''}`.toLowerCase().includes(term);
   };
   const filteredCommunities = communities.filter(matchesSearch);
   const showGenesis = genesisCommunity && matchesSearch(genesisCommunity);
