@@ -28,6 +28,16 @@ visitor who has not stepped in does not see them; a member's own event stays sta
 members-only birth is a keeper's hand). NOT walked in a browser (it needs a keeper's hand at
 a face); the law is tested, the query index stood already.
 
+THE SAME EVENING: editing an older event still offered no Members — the edit form scoped by
+the event's own community, and a standalone event had none; and the rules freeze a pulse's
+community after birth. So a keeper may now ADOPT a standalone event into their place: rules
+branch (f2) lets the keeper of the community rooted at the event's own domain set its
+communityId — that one community, once, forward only; the author alone cannot move an event,
+nor may it go to a place it does not stand in (canAdoptEvent, eventEditScope; three emulator
+tests). On the edit form, choosing Members on such an event adopts it. Zoltán: "I truly feel
+this was a very important part, the membership gate." It is: the door decides who may see,
+and now the keeper's hand reaches the events born before the door had that meaning.
+
 ---
 
 **2026-09-20 · A watering reaches every loaded copy; the arrows stay off the glass** —

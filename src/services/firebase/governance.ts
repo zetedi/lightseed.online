@@ -449,7 +449,7 @@ export const deleteCommunityEvent = (eventId: string) => deleteDoc(doc(db, 'puls
 // canEditEvent (creator / community admin / node owner), matching the trusted-cohort posture.
 export const updateEvent = async (
     eventId: string,
-    data: Partial<Pick<Pulse, 'title' | 'body' | 'content' | 'imageUrl' | 'imageUrls' | 'eventDate' | 'eventLocation' | 'eventMaxParticipants' | 'visibility'>>,
+    data: Partial<Pick<Pulse, 'communityId' | 'title' | 'body' | 'content' | 'imageUrl' | 'imageUrls' | 'eventDate' | 'eventLocation' | 'eventMaxParticipants' | 'visibility'>>,
 ) => {
     await updateDoc(doc(db, 'pulses', eventId), { ...data });
     // The edit whispers its patch — every open list merges it (ring 2026-08-22).

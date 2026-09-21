@@ -1029,6 +1029,34 @@ describe('the place-of-record mend — only the node\'s stewards move a being be
   });
 });
 
+describe('a keeper adopts a standalone event into their place (ring 2026-09-21)', () => {
+  const EV2 = 'ev-standalone';
+  const seed = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'communities', 'com-pa'), { name: 'Per Auset', ownerId: ALICE, domain: 'seed.perauset.org' });
+    await setDoc(doc(d, 'communities', 'com-other'), { name: 'Other', ownerId: BOB, domain: 'other.org' });
+    await setDoc(doc(d, 'pulses', EV2), { authorId: MALLORY, type: 'event', title: 'Dance', domain: 'seed.perauset.org', visibility: 'public' });
+  });
+
+  it('the keeper of the community rooted at the event\'s domain adopts it and may make it members-only', async () => {
+    await seed();
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', EV2), { communityId: 'com-pa', visibility: 'community', updatedAt: 1 }));
+  });
+
+  it('the author cannot adopt it; a keeper of another place cannot; no place it does not stand in', async () => {
+    await seed();
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', EV2), { communityId: 'com-pa', updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', EV2), { communityId: 'com-other', updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', EV2), { communityId: 'com-other', updatedAt: 1 }));
+  });
+
+  it('once adopted, the community is frozen again — even for the keeper', async () => {
+    await seed();
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', EV2), { communityId: 'com-pa', updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', EV2), { communityId: 'com-other', updatedAt: 2 }));
+  });
+});
+
 describe('guardian veto — window and tenure live in the rules, not only the client', () => {
   const mintPulse = async (createdAtMs: number, guardianSinceMs?: number) => {
     await env.withSecurityRulesDisabled(async (ctx) => {

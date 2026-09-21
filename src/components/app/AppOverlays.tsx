@@ -10,7 +10,7 @@ import {
   setLightHouseVisibility, deleteLightHouse,
 } from '../../services/firebase';
 import { announce } from '../../services/refreshBus';
-import { canEditEvent, placeOfRecordDomain, eventBirthScope, type HostStanding } from '../../domain/pulseVisibility';
+import { canEditEvent, placeOfRecordDomain, eventBirthScope, type HostStanding, eventEditScope, canAdoptEvent } from '../../domain/pulseVisibility';
 import { readPhotoProvenance } from '../../utils/exif';
 import { Icons } from '../ui/Icons';
 import { notify } from '../ui/Toast';
@@ -78,7 +78,9 @@ export const AppOverlays: React.FC<{
         <EventModal
           lightseed={lightseed}
           event={doors.editingEvent}
-          scope={doors.editingEvent.communityId ? 'community' : 'node'}
+          // The event's own community, or a keeper's ADOPTION of a standalone event at their
+          // own place (rules f2; ring 2026-09-21) — so an older event can be made members-only.
+          scope={eventEditScope(doors.editingEvent, place, hostStanding)}
           onClose={() => doors.setEditingEvent(null)}
           uploading={uploading}
           handleImageUpload={handleImageUpload}
@@ -87,7 +89,9 @@ export const AppOverlays: React.FC<{
             // open list merges (a second, patchless announce read as a removal
             // and made the edited event vanish from the feed).
             const editing = doors.editingEvent!;
-            await updateEvent(editing.id, data);
+            // Choosing Members on a standalone event ADOPTS it into the keeper's place — once.
+            const adopt = data.visibility === 'community' && canAdoptEvent(editing, place, hostStanding) && place ? { communityId: place.id } : {};
+            await updateEvent(editing.id, { ...data, ...adopt });
             setSelectedPulse(prev => prev && prev.id === editing.id ? { ...prev, ...data } : prev);
             doors.setEditingEvent(null);
           }}

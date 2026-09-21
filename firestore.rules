@@ -1041,6 +1041,22 @@ service cloud.firestore {
              && request.resource.data.diff(resource.data).affectedKeys()
                   .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
            )
+        // (f2) A KEEPER ADOPTS a standalone event into their place (ring 2026-09-21): an event
+        //      born at a door with no community may be given exactly ONE community — the one
+        //      rooted at the event's own domain (its place of record) — by that community's
+        //      keeper, once, forward only (communityId stays frozen after). This is what lets a
+        //      keeper make an older event members-only; the author alone cannot move an event
+        //      between places, and no one may move it to a place it does not stand in.
+        || (
+             resource.data.get('type', '') == 'event'
+             && !('communityId' in resource.data)
+             && request.resource.data.get('communityId', '') is string
+             && request.resource.data.get('communityId', '') != ''
+             && isCommunityOwner(request.resource.data.communityId)
+             && get(/databases/$(database)/documents/communities/$(request.resource.data.communityId)).data.get('domain', '') == resource.data.get('domain', '')
+             && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['communityId', 'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
+           )
 
         // (g) The guardians' veto — a guardian of the pulse's tree may append exactly their
         //     own uid to `vetoes` on a growth mint, WITHIN the 72h window, and only if their

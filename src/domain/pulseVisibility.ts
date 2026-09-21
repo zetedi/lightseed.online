@@ -170,6 +170,26 @@ export function memberEventsPlace(viewer: Viewer, standing: HostStanding, hostCo
 export function eventBirthScope(standing: HostStanding): PulseScope {
   return standing.keeper ? 'community' : 'node';
 }
+// A KEEPER may ADOPT a standalone event into their place — the community rooted at the event's
+// own domain — so an older event can be made members-only (rules branch f2). The author alone
+// cannot move an event between places; nowhere else may it go.
+export function canAdoptEvent(
+  event: Pick<Pulse, 'communityId' | 'domain'>,
+  place: { id: string; domain?: string | null } | null | undefined,
+  standing: HostStanding,
+): boolean {
+  if (!place || !standing.keeper || event.communityId) return false;
+  const norm = (d?: string | null) => (d || '').trim().toLowerCase().replace(/^www\./, '');
+  return !!norm(event.domain) && norm(event.domain) === norm(place.domain);
+}
+// The scope an EDIT form offers: the event's own community, else adoption's, else the node.
+export function eventEditScope(
+  event: Pick<Pulse, 'communityId' | 'domain'>,
+  place: { id: string; domain?: string | null } | null | undefined,
+  standing: HostStanding,
+): PulseScope {
+  return event.communityId || canAdoptEvent(event, place, standing) ? 'community' : 'node';
+}
 // The face's two answers as one list: newest first, each event once.
 export function mergeMemberEvents<T extends { id: string; createdAt?: { toMillis?: () => number } | null }>(place: T[], members: T[]): T[] {
   const seen = new Set(place.map(p => p.id));

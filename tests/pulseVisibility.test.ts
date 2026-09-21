@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canView, queryableLevels, mergeAuthored, pulseScope, eventFeedScope, eventsOnView, ownMergeUid, domainWideLevels, placeOfRecordDomain, memberEventsPlace, eventBirthScope, mergeMemberEvents } from '../src/domain/pulseVisibility';
+import { canView, queryableLevels, mergeAuthored, pulseScope, eventFeedScope, eventsOnView, ownMergeUid, domainWideLevels, placeOfRecordDomain, memberEventsPlace, eventBirthScope, mergeMemberEvents, canAdoptEvent, eventEditScope } from '../src/domain/pulseVisibility';
 
 describe('members-only events on a face (ring 2026-09-21)', () => {
   const stamp = (ms: number) => ({ toMillis: () => ms });
@@ -14,6 +14,19 @@ describe('members-only events on a face (ring 2026-09-21)', () => {
   it('a keeper\'s event is born in the community; a member\'s stays standalone', () => {
     expect(eventBirthScope({ member: true, keeper: true })).toBe('community');
     expect(eventBirthScope({ member: true, keeper: false })).toBe('node');
+  });
+  it('a keeper adopts a standalone event only into the place rooted at its own domain', () => {
+    const pa = { id: 'pa', domain: 'seed.perauset.org' };
+    const keeper = { member: true, keeper: true }; const member = { member: true, keeper: false };
+    expect(canAdoptEvent({ domain: 'seed.perauset.org' }, pa, keeper)).toBe(true);
+    expect(canAdoptEvent({ domain: 'WWW.Seed.Perauset.org' }, pa, keeper)).toBe(true);
+    expect(canAdoptEvent({ domain: 'seed.perauset.org' }, pa, member)).toBe(false);
+    expect(canAdoptEvent({ domain: 'lightseed.online' }, pa, keeper)).toBe(false);
+    expect(canAdoptEvent({ domain: 'seed.perauset.org', communityId: 'pa' }, pa, keeper)).toBe(false);
+    expect(canAdoptEvent({}, pa, keeper)).toBe(false);
+    expect(eventEditScope({ communityId: 'pa' }, null, member)).toBe('community');
+    expect(eventEditScope({ domain: 'seed.perauset.org' }, pa, keeper)).toBe('community');
+    expect(eventEditScope({ domain: 'seed.perauset.org' }, pa, member)).toBe('node');
   });
   it('the two answers merge newest first, each event once', () => {
     const place = [{ id: 'a', createdAt: stamp(3) }, { id: 'b', createdAt: stamp(1) }];
