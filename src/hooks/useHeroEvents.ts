@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Community, Lightseed, Pulse } from '../types';
-import { fetchEventPulses } from '../services/firebase';
-import { eventFeedScope, eventsOnView } from '../domain/pulseVisibility';
+import { fetchEventPulses, fetchMemberEvents } from '../services/firebase';
+import { eventFeedScope, eventsOnView, mergeMemberEvents } from '../domain/pulseVisibility';
 import { useRefreshSignal } from './useRefreshSignal';
 
 // THE HERO'S EVENTS (ring 2026-09-16, lifted out of App.tsx unchanged). Events for the
@@ -15,8 +15,10 @@ export function useHeroEvents(params: {
   isAdmin: boolean;
   activeCommunity: Community | null;
   activeDataDomain: string | undefined;
+  // The host whose members-only events this viewer may ask for, or null (ring 2026-09-21).
+  memberEventsOf?: string | null;
 }): Pulse[] {
-  const { hostCommunityResolved, authLoading, lightseed, isSuperAdmin, isAdmin, activeCommunity, activeDataDomain } = params;
+  const { hostCommunityResolved, authLoading, lightseed, isSuperAdmin, isAdmin, activeCommunity, activeDataDomain, memberEventsOf } = params;
   const [dashboardEvents, setDashboardEvents] = useState<Pulse[]>([]);
   const eventsRefresh = useRefreshSignal(['events']);
   const heroEventsSeq = useRef(0);
@@ -36,10 +38,13 @@ export function useHeroEvents(params: {
       { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin },
       { reflectsPublic: activeCommunity?.reflectsPublic, strictScope: activeCommunity?.strictScope },
     );
-    fetchEventPulses(undefined, activeDataDomain, levels, ownerUid)
-      .then(r => { if (seq === heroEventsSeq.current) setDashboardEvents(eventsOnView(r.items, { signedIn: !!lightseed, showPast: false, nowMs: Date.now() })); })
+    Promise.all([
+      fetchEventPulses(undefined, activeDataDomain, levels, ownerUid),
+      memberEventsOf ? fetchMemberEvents(memberEventsOf).catch(() => [] as Pulse[]) : Promise.resolve([] as Pulse[]),
+    ])
+      .then(([r, members]) => { if (seq === heroEventsSeq.current) setDashboardEvents(eventsOnView(mergeMemberEvents(r.items, members), { signedIn: !!lightseed, showPast: false, nowMs: Date.now() })); })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on uid + host scope + bus signal; the lightseed object changes identity without uid changing
-  }, [lightseed?.uid, isSuperAdmin, isAdmin, eventsRefresh, activeDataDomain, activeCommunity?.reflectsPublic, activeCommunity?.strictScope, hostCommunityResolved, authLoading]);
+  }, [lightseed?.uid, isSuperAdmin, isAdmin, eventsRefresh, activeDataDomain, activeCommunity?.reflectsPublic, activeCommunity?.strictScope, hostCommunityResolved, memberEventsOf, authLoading]);
   return dashboardEvents;
 }

@@ -154,6 +154,29 @@ export function eventsOnView<T extends ScopedPulse & { eventDate?: string }>(
     .filter(ev => view.showPast || !isPastEvent(ev.eventDate, view.nowMs));
 }
 
+// MEMBERS-ONLY EVENTS ON A FACE (ring 2026-09-21). Some happenings are sensitive to light, or
+// drafts. A domain-wide feed can ask only for what is provable for every record on the domain
+// (public, node), so a members-only event never reached its own face — only the community's
+// profile tab. Now: the face asks a SECOND question, the host community's events at the
+// 'community' rung, and only when the viewer STANDS there (member link, keeper, staff); the
+// rules answer it as they always did (isCommunityMember). And an event born at a face by a
+// KEEPER is born IN the host community — so the form may offer Members, and the create rule
+// (a community event is a keeper's or staff's) accepts it; a member's event stays standalone.
+export interface HostStanding { member: boolean; keeper: boolean }
+export function memberEventsPlace(viewer: Viewer, standing: HostStanding, hostCommunityId?: string | null): string | null {
+  if (!viewer.uid || !hostCommunityId) return null;
+  return (standing.member || standing.keeper || !!viewer.isStaff) ? hostCommunityId : null;
+}
+export function eventBirthScope(standing: HostStanding): PulseScope {
+  return standing.keeper ? 'community' : 'node';
+}
+// The face's two answers as one list: newest first, each event once.
+export function mergeMemberEvents<T extends { id: string; createdAt?: { toMillis?: () => number } | null }>(place: T[], members: T[]): T[] {
+  const seen = new Set(place.map(p => p.id));
+  const ms = (p: T) => p.createdAt?.toMillis?.() ?? 0;
+  return [...place, ...members.filter(m => !seen.has(m.id))].sort((a, b) => ms(b) - ms(a));
+}
+
 // Who may edit (or delete) an event: its creator, the admin (owner) of its community when it
 // is a community event, or the owner of the node (host community) when it is a node event.
 // Staff always. `community` is the event's community; `hostCommunity` is the node's.

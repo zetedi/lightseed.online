@@ -501,6 +501,14 @@ export const getPulsesByVisionId = async (visionId: string) => {
     return snap.docs.map(mapPulse).sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 };
 
+// The host's MEMBERS-ONLY events (ring 2026-09-21; domain/pulseVisibility memberEventsPlace):
+// asked only for a viewer who stands in the community, on the (communityId, visibility) index;
+// the rules refuse the list to anyone else, so an unentitled ask fails closed, not open.
+export const fetchMemberEvents = async (communityId: string): Promise<Pulse[]> => {
+    const snap = await getDocs(query(pulsesCollection, where('communityId', '==', communityId), where('visibility', 'in', ['community'])));
+    return snap.docs.map(mapPulse).filter(p => p.type === 'event');
+};
+
 // A community's own chain: the pulses scoped to it (events, decisions, offerings), newest first.
 // Reaches never carry a communityId, so the DM exclusion the tree query needs isn't required here.
 export const getPulsesByCommunity = async (communityId: string) => {

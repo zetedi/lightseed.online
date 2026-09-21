@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-21 · A face shows its members what is theirs** — Zoltán: "I would like the events to
+have a member-only visibility also, so the invitation-based door would keep the signed-in
+users from seeing them… some events could be sensitive to light or some would be just drafts."
+The rung existed: a 'community' visibility, read only by a member of its community (rules
+isCommunityMember), queried by the community's own Events tab. It stopped in two places: an
+event born at a face's door was node-scoped with no community, so the form never offered
+Members and "node" meant signed in ANYWHERE on the instance; and the face's Events page asked
+the domain-wide feed for public and node only (the levels provable for every record on a
+domain), so a members-only event never reached its own face. NOW: the shell asks where the
+viewer STANDS at the host (hooks/useHostStanding — the member link, the keeper link, the
+founding owner); a keeper's event born at a face is born IN the host community (eventBirthScope;
+the create rule already reserves community events for keepers and staff), so the form offers
+Members; and the face's Events page and the home hero ask a SECOND question — the host's
+events at the members rung (fetchMemberEvents, on the (communityId, visibility) index) — only
+for a viewer who stands there (memberEventsPlace), merged newest-first, each event once
+(mergeMemberEvents). The rules were not touched: they already said who may read; the shell
+merely learned to ask. Reflection never carries them — the hub shows the commons, not a
+place's own. DELIBERATE: at an OPEN door, Members still means the member link, so a signed-in
+visitor who has not stepped in does not see them; a member's own event stays standalone (a
+members-only birth is a keeper's hand). NOT walked in a browser (it needs a keeper's hand at
+a face); the law is tested, the query index stood already.
+
+---
+
 **2026-09-20 · A watering reaches every loaded copy; the arrows stay off the glass** —
 Zoltán: "after care opened from reaches and confirmed watering, the messages do not refresh."
 Three seams, one cause: the watering wrote the tree but announced nothing FOR the tree (the

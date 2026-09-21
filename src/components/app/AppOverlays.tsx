@@ -10,7 +10,7 @@ import {
   setLightHouseVisibility, deleteLightHouse,
 } from '../../services/firebase';
 import { announce } from '../../services/refreshBus';
-import { canEditEvent, placeOfRecordDomain } from '../../domain/pulseVisibility';
+import { canEditEvent, placeOfRecordDomain, eventBirthScope, type HostStanding } from '../../domain/pulseVisibility';
 import { readPhotoProvenance } from '../../utils/exif';
 import { Icons } from '../ui/Icons';
 import { notify } from '../ui/Toast';
@@ -37,6 +37,7 @@ export const AppOverlays: React.FC<{
   beings: BeingOverlays;
   doors: ModalDoors;
   host: HostNode;
+  hostStanding: HostStanding;
   tab: string;
   setTab: (tab: string) => void;
   arrivedInvite: CommunityInvite | null;
@@ -49,7 +50,7 @@ export const AppOverlays: React.FC<{
   handleTreeGrown: () => void;
   openTreeFromReaches: (id: string, opts?: { closeReachModal?: boolean }) => void;
   openCareFromReaches: (id: string) => void;
-}> = ({ beings, doors, host, tab, setTab, arrivedInvite, setArrivedInvite, loadContent, uploading, handleImageUpload, mintCarrying, handleGrowVision, handleTreeGrown, openTreeFromReaches, openCareFromReaches }) => {
+}> = ({ beings, doors, host, hostStanding, tab, setTab, arrivedInvite, setArrivedInvite, loadContent, uploading, handleImageUpload, mintCarrying, handleGrowVision, handleTreeGrown, openTreeFromReaches, openCareFromReaches }) => {
   const { t } = useLanguage();
   const { lightseed, myTrees, activeTree, isAdmin, isSuperAdmin, refreshTrees } = useSession();
   const { selectedTree, selectedPulse, setSelectedPulse, selectedCommunity, setSelectedCommunity, setSelectedTree, setViewingLightHouse, viewingLightHouse, onViewPulseOrAlignment, bumpMapRefresh } = beings;
@@ -217,10 +218,17 @@ export const AppOverlays: React.FC<{
           onClose={() => doors.setShowEventModal(false)}
           uploading={uploading}
           handleImageUpload={handleImageUpload}
+          // A KEEPER's event is born IN the host community (ring 2026-09-21), so the form may
+          // offer Members; a member's or a visitor's stays standalone (public / node / private).
+          scope={eventBirthScope(hostStanding)}
           onCreate={async (data: Parameters<typeof createEvent>[0]) => {
             // Stamped with the place of record — the host's canonical domain, not the
             // hostname of whichever door the hand stood at (domain/pulseVisibility).
-            await createEvent({ ...data, domain: placeOfRecordDomain(place, window.location.hostname) });
+            await createEvent({
+              ...data,
+              domain: placeOfRecordDomain(place, window.location.hostname),
+              ...(hostStanding.keeper && place ? { communityId: place.id } : {}),
+            });
             if (tab === 'events') loadContent(true);
           }}
         />

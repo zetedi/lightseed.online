@@ -1,5 +1,26 @@
 import { describe, it, expect } from 'vitest';
-import { canView, queryableLevels, mergeAuthored, pulseScope, eventFeedScope, eventsOnView, ownMergeUid, domainWideLevels, placeOfRecordDomain } from '../src/domain/pulseVisibility';
+import { canView, queryableLevels, mergeAuthored, pulseScope, eventFeedScope, eventsOnView, ownMergeUid, domainWideLevels, placeOfRecordDomain, memberEventsPlace, eventBirthScope, mergeMemberEvents } from '../src/domain/pulseVisibility';
+
+describe('members-only events on a face (ring 2026-09-21)', () => {
+  const stamp = (ms: number) => ({ toMillis: () => ms });
+  it('the face asks for the host\'s members-only events only when the viewer stands there', () => {
+    expect(memberEventsPlace({ uid: 'u' }, { member: true, keeper: false }, 'pa')).toBe('pa');
+    expect(memberEventsPlace({ uid: 'u' }, { member: false, keeper: true }, 'pa')).toBe('pa');
+    expect(memberEventsPlace({ uid: 'u', isStaff: true }, { member: false, keeper: false }, 'pa')).toBe('pa');
+    expect(memberEventsPlace({ uid: 'u' }, { member: false, keeper: false }, 'pa')).toBe(null);
+    expect(memberEventsPlace({ uid: undefined }, { member: true, keeper: true }, 'pa')).toBe(null);
+    expect(memberEventsPlace({ uid: 'u' }, { member: true, keeper: true }, undefined)).toBe(null);
+  });
+  it('a keeper\'s event is born in the community; a member\'s stays standalone', () => {
+    expect(eventBirthScope({ member: true, keeper: true })).toBe('community');
+    expect(eventBirthScope({ member: true, keeper: false })).toBe('node');
+  });
+  it('the two answers merge newest first, each event once', () => {
+    const place = [{ id: 'a', createdAt: stamp(3) }, { id: 'b', createdAt: stamp(1) }];
+    const members = [{ id: 'b', createdAt: stamp(1) }, { id: 'c', createdAt: stamp(2) }];
+    expect(mergeMemberEvents(place, members).map(e => e.id)).toEqual(['a', 'c', 'b']);
+  });
+});
 
 describe('the host\'s events are the place\'s (ring 2026-09-07)', () => {
   it('a domain-wide query carries only what is provable for every document on the domain', () => {

@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { Alignment, Lightseed, Pulse } from '../types';
 import {
   fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchOfferingPulses, fetchReachPulses, fetchVisions,
-  getPendingAlignments, treesStandingIn,
+  getPendingAlignments, treesStandingIn, fetchMemberEvents,
 } from '../services/firebase';
-import { queryableLevels, eventFeedScope, ownMergeUid } from '../domain/pulseVisibility';
+import { queryableLevels, eventFeedScope, ownMergeUid, mergeMemberEvents } from '../domain/pulseVisibility';
 import { dataDomainFor, reflectsInstancePublic } from '../domain/communityDoor';
 import { excludeBedTrees } from '../domain/bed';
 
@@ -33,8 +33,11 @@ export function useForestFeed(params: {
   // The active community's id: a scoped forest also shows the trees STANDING here through
   // grows_in edges (ring 2026-08-24) — they entered through the door, so even strict shows them.
   hostCommunityId?: string;
+  // The host community whose MEMBERS-ONLY events this viewer may ask for (domain memberEventsPlace),
+  // or null when they stand outside it (ring 2026-09-21).
+  memberEventsOf?: string | null;
 }) {
-  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments, hostReflectsPublic, hostDomain, hostStrictScope, hostCommunityId } = params;
+  const { tab, viewMode, lightseed, isSuperAdmin, isAdmin, setAlignments, hostReflectsPublic, hostDomain, hostStrictScope, hostCommunityId, memberEventsOf } = params;
 
   const [data, setData] = useState<any[]>([]);
   const [lastDoc, setLastDoc] = useState<any>(null);
@@ -142,9 +145,12 @@ export function useForestFeed(params: {
           { reflectsPublic: hostReflectsPublic, strictScope: hostStrictScope },
         );
         const res = await fetchEventPulses(currentLastDoc, currentDomain, levels, ownerUid);
+        // The face's second question, on the first page only: the host's members-only events,
+        // for a viewer who stands there (ring 2026-09-21).
+        const members = (reset && memberEventsOf) ? await fetchMemberEvents(memberEventsOf).catch(() => [] as Pulse[]) : [];
         if (stale()) return;
         setData(prev => {
-          const newItems = res.items;
+          const newItems = members.length ? mergeMemberEvents(res.items, members) : res.items;
           if (reset) return newItems;
           const existingIds = new Set(prev.map(p => p.id));
           return [...prev, ...newItems.filter(i => !existingIds.has(i.id))];

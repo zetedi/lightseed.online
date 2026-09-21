@@ -44,6 +44,8 @@ import { useCarrying } from './hooks/useCarrying';
 import { useHeroEvents } from './hooks/useHeroEvents';
 import { usePathwayInput } from './hooks/usePathwayInput';
 import { setActiveCoin } from './hooks/useCoin';
+import { useHostStanding } from './hooks/useHostStanding';
+import { memberEventsPlace } from './domain/pulseVisibility';
 import { coinOf } from './domain/coin';
 import { GDPRBanner } from './components/GDPRBanner';
 
@@ -127,6 +129,10 @@ const AppContent = () => {
     const filters = useForestFilters();
 
     const config = useConfig(activeCommunity);
+    // WHERE THE VIEWER STANDS AT THE HOST (ring 2026-09-21): decides whether the face may ask for
+    // the host's members-only events and whether an event born here is born in the community.
+    const hostStanding = useHostStanding(lightseed?.uid, activeCommunity);
+    const memberEventsOf = memberEventsPlace({ uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin }, hostStanding, activeCommunity?.id);
     // THE ACTIVE COIN (ring 2026-09-19): the face the light wears where the viewer stands.
     useEffect(() => { setActiveCoin(coinOf(activeCommunity)); }, [activeCommunity]);
     const { effectiveTheme, effectiveIsDark, configuredLogoUrl, toggleNightMode, backgroundStyle } =
@@ -145,6 +151,7 @@ const AppContent = () => {
         hostDomain: activeCommunity?.domain,
         hostStrictScope: activeCommunity?.strictScope,
         hostCommunityId: activeCommunity?.id,
+        memberEventsOf,
     });
     const { data, setData, loadContent, loadingMore } = feed;
 
@@ -196,7 +203,7 @@ const AppContent = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the tab alone; the two setters are stable
     }, [tab]);
 
-    const dashboardEvents = useHeroEvents({ hostCommunityResolved, authLoading, lightseed, isSuperAdmin, isAdmin, activeCommunity, activeDataDomain });
+    const dashboardEvents = useHeroEvents({ hostCommunityResolved, authLoading, lightseed, isSuperAdmin, isAdmin, activeCommunity, activeDataDomain, memberEventsOf });
 
     // Browser back closes overlays LAYER BY LAYER instead of leaving the app. Ordered base-first;
     // the last open layer is topmost (closed first on Back). See useHistoryLayers.
@@ -751,7 +758,7 @@ const AppContent = () => {
             <Footer community={activeCommunity || defaultCommunity} theme={effectiveTheme} isDark={effectiveIsDark} />
 
             <AppOverlays
-                beings={beings} doors={doors} host={host}
+                beings={beings} doors={doors} host={host} hostStanding={hostStanding}
                 tab={tab} setTab={setTab}
                 arrivedInvite={arrivedInvite} setArrivedInvite={setArrivedInvite}
                 loadContent={loadContent}
