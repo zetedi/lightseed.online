@@ -183,6 +183,34 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid
         && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('validated', false) == true;
     }
+    // THE CHAIN IS THE SERVER'S (ring 2026-09-23, server-held heads). A chain LINK is a pulse
+    // whose previousHash is another block's hash; a STANDALONE record is rooted in a sentinel
+    // (domain/bundle NON_CHAIN_ROOTS — events, offerings, decisions, person-reaches, water
+    // alerts, Light House care) and moves no head. Links are born only by the server's hand
+    // (functions/mintBlock and its twins), which reads the head inside its transaction and
+    // seals the block over the bytes it stores; a client births only standalone records, and
+    // names a tree as its chain only for a person's reach (the two sentinel-rooted reach kinds).
+    function isChainRoot(prev) {
+      return prev in ['0', 'PERSON_REACH', 'DECISION', 'EVENT', 'OFFERING', 'COMMUNITY_EVENT', 'WATER_ALERT', 'OFFER_NOTICE', 'LIGHT_HOUSE'];
+    }
+    // A chain block: a sealed record that names a tree or a vision as its chain (the guard the
+    // unmint ring drew for tree blocks, widened to visions), or that follows another block's
+    // hash — so a legacy block rooted at '0' or lacking its previousHash stays protected too.
+    function isChainBlock(d) {
+      return d.get('hash', '') != '' && (
+        d.get('lifetreeId', '') != '' || d.get('visionId', '') != ''
+        || (d.get('previousHash', '') != '' && !isChainRoot(d.previousHash)));
+    }
+    function clientBornStandalone() {
+      return (!('previousHash' in request.resource.data) || isChainRoot(request.resource.data.previousHash))
+        && (
+          (!('lifetreeId' in request.resource.data) && !('visionId' in request.resource.data))
+          || (request.resource.data.get('type', '') == 'reach'
+              && request.resource.data.get('previousHash', '') in ['PERSON_REACH', 'OFFER_NOTICE'])
+        )
+        // A watering is a link on a tree's chain or nothing: its light mint reads a chain block.
+        && request.resource.data.get('care', '') != 'watering';
+    }
     // A private direct message / group reach: a 'reach' pulse that names its recipients
     // (participantUids) or a single recipient (legacy recipientUid). Minted, public "reach"
     // reflections have neither and stay world-readable through the normal visibility path.
@@ -550,6 +578,12 @@ service cloud.firestore {
       // signed-in client could plant a tree wearing any uid it liked.
       allow create: if isSignedIn()
         && (isStaff() || request.resource.data.get('ownerId', '') == request.auth.uid)
+        // BORN AT ITS ROOT (ring 2026-09-23): a tree's head at birth IS its genesis, height 0 —
+        // from every hand, staff included (a data-validity invariant, like the bed's place).
+        // After birth the head moves only under the server's hand (the update freeze below).
+        && (!('latestHash' in request.resource.data)
+            || (request.resource.data.latestHash == request.resource.data.get('genesisHash', '')
+                && request.resource.data.get('blockHeight', 0) == 0))
         // Born UNVALIDATED (Lumo's review, 2026-09-07): validation is witnessed, never claimed
         // at birth. Freezing `validated`/`validatorId` on update never closed the birth path —
         // a client could plant a tree already wearing `validated: true` and an invented
@@ -634,6 +668,10 @@ service cloud.firestore {
              || hasLink('co_owner', treeId) || hasLink('steward', treeId))
           && !request.resource.data.diff(resource.data).affectedKeys()
                 .hasAny(['validated', 'validatorId', 'ownerId', 'lid', 'loveCount'])
+          // THE HEAD IS THE SERVER'S (ring 2026-09-23): latestHash / blockHeight / genesisHash
+          // move only under functions/mintBlock and its twins, never from a client hand.
+          && !request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny(['latestHash', 'blockHeight', 'genesisHash'])
           // ...and a bed never gains or alters a `domain`: the forest-exclusion invariant
           // holds for its whole life, not only at birth.
           && (resource.data.get('treeType', '') != 'BED'
@@ -669,6 +707,8 @@ service cloud.firestore {
           staffHand('tree_edit')
           && (resource.data.get('treeType', '') != 'BED'
               || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['domain']))
+          // ...and the chain head is not the staff client's either (the mend is a server script).
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['latestHash', 'blockHeight', 'genesisHash'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || (canReadLifetree() && validLoveCountChange('lifetrees', treeId))
@@ -865,21 +905,29 @@ service cloud.firestore {
       // THE BIRTH IS SIGNED: a vision wears its author's own uid (staff excepted — they
       // plant Root Visions for beings they plant trees for, and the node genesis).
       allow create: if isSignedIn()
-        && (isStaff() || request.resource.data.get('authorId', '') == request.auth.uid);
+        && (isStaff() || request.resource.data.get('authorId', '') == request.auth.uid)
+        // BORN AT ITS ROOT (ring 2026-09-23): head == genesis, height 0, from every hand.
+        && (!('latestHash' in request.resource.data)
+            || (request.resource.data.latestHash == request.resource.data.get('genesisHash', '')
+                && request.resource.data.get('blockHeight', 0) == 0));
       // Joining a vision is now a self-serve 'joined' link (see the links collection), NOT a write
       // to the vision doc — so editing the doc itself is restricted to its author or staff.
-      // The vision grows its OWN chain (growVision): its head — latestHash/blockHeight — advances
-      // freely on the author's (or staff's) write, but the GENESIS is frozen the moment it exists
-      // (like a tree's/bed's root): the birth block can be BORN once (an absent genesisHash may be
-      // set — createVision at birth, or the backfill on a legacy vision) but never REWRITTEN. So a
-      // contribution may extend the chain, and no one may forge or replace its root. `lid` stays frozen.
+      // The vision grows its OWN chain — under the SERVER'S hand (ring 2026-09-23,
+      // functions/mintBlock on: 'vision'): latestHash / blockHeight / genesisHash are frozen to
+      // every client, with ONE birth-once exception kept from the twin ring: a legacy vision
+      // without a genesis may be BORN a chain (the backfill) — genesis set, head equal to it,
+      // height 0 — but a root, once it exists, is never rewritten. `lid` stays frozen.
       allow update: if isSignedIn() && (
         (
           (resource.data.authorId == request.auth.uid || isStaff())
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount'])
           && (
-            !('genesisHash' in resource.data)
-            || request.resource.data.get('genesisHash', '') == resource.data.get('genesisHash', '')
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['latestHash', 'blockHeight', 'genesisHash'])
+            || (
+              !('genesisHash' in resource.data)
+              && request.resource.data.get('latestHash', '') == request.resource.data.get('genesisHash', '')
+              && request.resource.data.get('blockHeight', 0) == 0
+            )
           )
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
@@ -908,29 +956,23 @@ service cloud.firestore {
       allow get: if canReadPulse();
       allow list: if canListPulse();
       // THE BIRTH IS SIGNED (ring 2026-08-17): every pulse wears the uid of the hand that
-      // writes it — staff excepted (mend hands, the genesis ceremony). The one client flow
-      // that wrote ANOTHER party's name (acceptAlignment's counterpart sync block) already
-      // failed these rules at the foreign tree-head update, so it gets no carve-out here:
-      // the settlement awaits its server callable (the ROADMAP debt), not a hole.
+      // writes it — staff excepted (mend hands, the genesis ceremony).
+      // THE CHAIN IS THE SERVER'S (ring 2026-09-23): a client births only a STANDALONE record
+      // (clientBornStandalone) — never a link on a chain, never a pulse naming a tree or vision
+      // as its chain (a person's sentinel-rooted reach excepted), never a watering. The watering
+      // fork that stood here (carer-only, no self-declared witness) now lives in the server's
+      // birth law (domain/chain/birth), where the head is read and the seal is made. The
+      // alignment's counterpart sync block, once refused here, has its callable (acceptAlignment).
       allow create: if isSignedIn()
         && (isStaff() || request.resource.data.get('authorId', '') == request.auth.uid)
-        && (
-        // A WATERING pulse is the light mint's trust root (functions/witnessWatering): you author
-        // your OWN, only on a tree you CARE (owner/co_owner/steward/staff), and may never
-        // self-declare a guardian witness at creation — the confirmation is server-only. authorId
-        // is bound here so the carer the mint pays is real (Lumo's review, 2026-07-20).
-        request.resource.data.get('care', '') == 'watering'
-          ? (request.resource.data.get('authorId', '') == request.auth.uid
-             && (staffHand('tree_water') || isTreeCarer(request.resource.data.get('lifetreeId', '')))
-             && request.resource.data.get('wateringConfirmedBy', 'pending') != 'guardian')
-          : (request.resource.data.type != 'event'
-              || !('communityId' in request.resource.data)   // standalone event — anyone may plant one
-              || isStaff()
-              || isCommunityOwner(request.resource.data.communityId))
-        )
-        // The two birth laws below stand OUTSIDE the watering fork (Lumo's second look,
-        // 2026-09-07): placed inside its else-branch, a pulse wearing care: 'watering' walked
-        // past both — an addressed reach labelled public, an offering from a stranger's tree.
+        && clientBornStandalone()
+        && (request.resource.data.type != 'event'
+            || !('communityId' in request.resource.data)   // standalone event — anyone may plant one
+            || isStaff()
+            || isCommunityOwner(request.resource.data.communityId))
+        // The two birth laws below bind every standalone record (Lumo's second look,
+        // 2026-09-07: once hidden in a fork's else-branch, a labelled pulse walked past both —
+        // an addressed reach labelled public, an offering from a stranger's tree).
         // An OFFERING OF CARE (ring 2026-09-06) is born OPEN: no client writes an answer at
         // birth. Acceptance is the server's (functions/acceptOffering); withdraw and decline
         // are the flips below. And it is made FROM a tree the offerer CARES for: acceptance
@@ -1200,17 +1242,18 @@ service cloud.firestore {
       // that half of the guard is enforced by deleteDecision (domain/decision.decisionDeletable).
       // Everything shared retires by WITHDRAWING — a chain-marked status, never an erasure. Staff
       // keep the mend-anything escape (the amber-dot posture, mirrored across overlays).
-      allow delete: if isSignedIn() && (
+      // A CHAIN BLOCK IS NEVER DELETED FROM A CLIENT — not by its author, not by a keeper, not
+      // by staff (ring 2026-09-23): deleting below the head severs previousHash for every
+      // block after, and deleting the head moves it. The one exit is the server's unmint
+      // (functions/unmintBlock: only the author, only the head, nothing co-held, never a
+      // witnessed watering — domain/unmint), and the staff mend is a server script. This
+      // holds for a tree's chain and a vision's alike.
+      allow delete: if isSignedIn() && !isChainBlock(resource.data) && (
         isStaff()
         || (
              (resource.data.get('authorId', '') == request.auth.uid || isCommunityOwner(resource.data.get('communityId', '')))
-             // A REACH is never plainly deleted, not even by its author (retraction is its
-             // way) — and NO block on a tree's chain is (deleting below the head severs
-             // previousHash for every block after). The ONE exit for any chain block is the
-             // UNMINT branch below: exactly the head, with the rollback riding along. This
-             // closes the mid-chain delete for the whole tree chain (first-sight finding 2).
+             // A REACH is never plainly deleted, not even by its author (retraction is its way).
              && resource.data.get('type', '') != 'reach'
-             && !(resource.data.get('lifetreeId', '') != '' && resource.data.get('hash', '') != '')
              && (
                   resource.data.get('type', '') != 'decision'
                   || (
@@ -1222,36 +1265,6 @@ service cloud.firestore {
                        && resource.data.get('positions', []).size() == 0
                      )
                 )
-           )
-
-        // THE UNMINT (ring 2026-08-15) — an accidental LAST mint may be taken back by its
-        // author: only the HEAD block (the tree's latestHash is this hash), only in the same
-        // transaction that rolls the head back to previousHash with the height stepping down
-        // one — so the chain is never severed, only shortened by exactly its newest link.
-        // ANY block kind at the head may be unsaid this way — a growth, a tree-sent reach,
-        // an alignment — because the severing argument only binds BELOW the head (a head
-        // reach unsaid is the message fully unsent, the room's copy included; below the
-        // head, retraction remains the way). Two stand forever: a guardian-WITNESSED
-        // watering (its light is already minted; rays are append-only) and decisions
-        // (their own lifecycle law governs them).
-        || (
-             resource.data.get('authorId', '') == request.auth.uid
-             && resource.data.get('lifetreeId', '') != ''
-             && resource.data.get('type', '') != 'decision'
-             && resource.data.get('wateringConfirmedBy', '') != 'guardian'
-             // NOTHING CO-HELD CAN BE UNSAID: once another being's mark lands on the block
-             // (a read receipt, a love, a guardian's veto, an alignment's paired mint), it
-             // stops being only its author's word and stands. Mirrors domain/unmint.isCoHeld.
-             && resource.data.get('seenBy', []).hasOnly([request.auth.uid])
-             && resource.data.get('loveCount', 0) == 0
-             && resource.data.get('vetoes', []).size() == 0
-             && resource.data.get('matchId', '') == ''
-             && resource.data.get('matchedLifetreeId', '') == ''
-             && resource.data.get('offeringId', '') == ''   // an accepted offering's twin stands
-             && get(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('latestHash', '') == resource.data.get('hash', '')
-             && getAfter(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('latestHash', '') == resource.data.get('previousHash', '')
-             && getAfter(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('blockHeight', 0)
-                  == get(/databases/$(database)/documents/lifetrees/$(resource.data.lifetreeId)).data.get('blockHeight', 0) - 1
            )
       );
 

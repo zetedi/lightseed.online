@@ -9,9 +9,11 @@ import type { DomainKey } from './words';
 // unsent, the room's copy included). Two stand forever: a guardian-witnessed watering (its
 // light is already minted; rays are append-only) and decisions (their own lifecycle law).
 //
-// Plain contract — guaranteed: the refusals here mirror firestore.rules' unmint branch
-// exactly (author, tree-chain block, head-only, unwitnessed, not a decision), and the
-// service's transaction rolls the head back atomically or not at all. Not guaranteed: the
+// Plain contract — guaranteed: the refusals here are the law functions/unmintBlock applies
+// (mirrored in functions/src/birth.ts, held equal by tests/birth.test.ts; since ring
+// 2026-09-23 the head is the server's, so the rules refuse every client delete of a chain
+// block and the server's transaction rolls the head back atomically or not at all). The UI
+// asks this law first so the door is honest before the call. Not guaranteed: the
 // unmade block leaves no mark — an unmint is an erasure of the newest link by the hand that
 // just forged it, not a retraction; below the head, retraction remains the way.
 

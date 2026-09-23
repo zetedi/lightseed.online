@@ -42,6 +42,13 @@ export const DOMAIN_KEYS = [
   'paper_key_bad', 'paper_title_long',
   // unmint — taking back an accidental head mint (domain/unmint)
   'unmint_not_author', 'unmint_not_mint', 'unmint_not_last', 'unmint_witnessed', 'unmint_coheld',
+  // the birth of a block — the server's judgment on a new chain link (domain/chain/birth)
+  'block_no_bearer', 'block_field_unknown', 'block_field_bad', 'block_type_unlawful', 'block_not_carer',
+  'block_witness_forged', 'block_care_type', 'block_reach_loud', 'block_reach_stranger', 'block_visibility_bad', 'block_seen_forged',
+  // the author's signature on a block (domain/chain/birth, signed blocks)
+  'block_unsigned', 'block_signature_bad', 'block_key_stale', 'block_key_frozen', 'block_head_moved', 'block_key_restore',
+  // alignment — the target's hand settles it, on the server (functions/acceptAlignment)
+  'align_not_target', 'align_not_pending',
   // personName — the name a being wears is theirs to change; the law keeps it a name
   'name_empty', 'name_long', 'name_chars',
   // newsletter — the letter of a place: its keepers send it, to those who subscribed there

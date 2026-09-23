@@ -130,6 +130,26 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   profile's Interbeing section is the first end-to-end face. Domains are displayed as honest
   self-declared external anchors; verification remains a named future boundary. See
   `root/INTERBEING_MATRIX.md` for the plain contract.
+- **Server-held heads** (ring 2026-09-23): every link on a tree's or a vision's chain is
+  born by the server — `functions/mintBlock` (and its twins `unmintBlock`, `acceptAlignment`,
+  `acceptOffering`, the stay leaf) reads the bearer's head inside its transaction, judges the
+  birth by `domain/chain/birth` (mirrored in `functions/src/birth.ts`, held equal by
+  `tests/birth.test.ts`), seals the block canonically over the very record it stores, and
+  moves the head in the same write. A client hands over only what a hand may SAY about a
+  block (`BLOCK_BIRTH_FIELDS`); authorId, domain, mintedAt, previousHash and the hash are the
+  server's. The rules refuse every client-born chain link, every client head move
+  (`latestHash`/`blockHeight`/`genesisHash` frozen on trees and visions, staff included) and
+  every client delete of a chain block; a client births only standalone, sentinel-rooted
+  records (events, offerings, decisions, person-reaches). Trees and visions are born at
+  their root (head == genesis, height 0). The chain-seal stamp (`community.chainLocked`) no
+  longer changes what is written: every server-born block is canonical.
+- **Signed blocks** (ring 2026-09-23): a person with a published signing key signs every block
+  they mint — over the chain position and `signedContentOf` the content (the same pure
+  judgment run client-side over the bearer) under `lifeseed.block-signature.v1`; `mintBlock`
+  verifies with the PUBLISHED key from `persons/{uid}` and seals `authorSignature` into the
+  hash. A keyless person mints unsigned (no `authorSignature`); a frozen key mints nothing; a
+  device without its key speaks `block_key_restore`. Readers verify from the block alone via
+  `blockSignaturePayloadOf` + the frozen `pubkey`.
 - **The signing crystal**: first publication atomically anchors current key,
   lineage and epoch. V3 covenant/decision seals carry fingerprint + epoch and
   receive server time at rest. Routine rotation is old/new cross-signed in a
@@ -177,10 +197,29 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   deletion of some chain blocks; vision deletion attempts to remove contributions;
   and explicit care advances a tree's head without persisting the described care
   block. Draft/mint/mark/release lifecycles need one exact law per chain-bearing type
-  (first-sight ring, 2026-08-12).
+  (first-sight ring, 2026-08-12). CLOSED for care 2026-08-17 (a real block); CLOSED for the
+  chains 2026-09-23 (server-held heads): no client deletes a chain block — a tree's or a
+  vision's, head or below, staff included — and `deleteVision` lets the contributions stand;
+  the unmint is the server's (`unmintBlock`, domain/unmint). Standalone records (events,
+  offerings, decisions) keep their own draft/withdraw laws; covenants and decisions carry
+  their own chains under their own rules, not this one.
 - Ordinary block birth is client-computed and not checked by Firestore against a
   server-held head. Canonical verification proves stored-byte consistency, not by
   itself authorship, lawful creation or lived truth (first-sight ring, 2026-08-12).
+  CLOSED 2026-09-23: birth is the server's (see "Server-held heads" above) — previousHash is
+  the head the transaction read, the hash is computed over the stored record, the author is
+  the signed-in hand, the standing is read from the documents. What remains not guaranteed:
+  lived truth (a photo proves a moment), and the recomputability of blocks born before the
+  ring under the browser's legacy seal (linkage and height still verify; `verifyChain` with
+  `canonicalRecompute` reports them as hash mismatches by design).
+- **A keyless being's block is the server's word alone.** Signing is required only once a key
+  is published; planting does not yet mint a key. Making the key the default at planting (and
+  opening the restore modal from the mint doors) is the next rung of signed blocks.
+- **Covenants and decisions still seal their own marks in the browser.** A covenant's
+  seal/break hashes and a decision's enacted/withdrawn marks are client-computed
+  (`createBlock`) under their own signature-backed rules, not the server-held head of
+  ring 2026-09-23; bringing those two chains under the same server hand is the next rung
+  of "one law per chain-bearing type".
 - Load-bearing contracts remain manually mirrored across domain code, Firestore
   rules and the isolated Functions package. The light mirror test is one good seam;
   visibility, signing preimages, field sets, caps and lifecycles need equivalent

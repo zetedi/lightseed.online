@@ -3,8 +3,8 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import { judgeOfferingAccept, offeringTwinBlocks, type OfferedToKind } from "./offering";
 import { publicNameOf } from "./publicName";
-import { createBlock, computeCanonicalHash, BLOCK_HASH_VERSION } from "./chain";
 import { db, mintLid } from "./core";
+import { sealBlock } from "./blocks";
 
 // --- THE OFFERING OF CARE: acceptance -------------------------------------------------------
 // acceptOffering — a hand standing for the receiver (a tree's keeper / co-owner / steward, a
@@ -13,8 +13,8 @@ import { db, mintLid } from "./core";
 // vision's), each naming the offering and the other side — the alignment shape, on server
 // ground. Everything is server-read: the caller is the acceptor; the offering, the receiver,
 // the offerer's tree and the acceptor's standing come from the documents; the pure law
-// (judgeOfferingAccept, mirrored from domain/offering) decides; the seals follow the node's
-// lock exactly as mintPulse does in the browser (./chain mirrors the hashing). No light moves:
+// (judgeOfferingAccept, mirrored from domain/offering) decides; the seals are the server's
+// canonical ones (blocks.sealBlock, ring 2026-09-23), the same hand every chain has. No light moves:
 // acceptance seals the agreement; appreciation stays a coming rung.
 export const acceptOffering = onCall({ cors: true }, async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in to accept an offering.");
@@ -71,14 +71,7 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
         if (judgment.outcome === "reject") throw new HttpsError(judgment.code, judgment.message);
         if (!receiver || !fromTree || !toKind) throw new HttpsError("failed-precondition", "The sides of this offering could not be read.");
 
-        // The node's seal: locked nodes seal canonically, unlocked ones keep the legacy seal — the
-        // same choice mintPulse makes, read from the host community the offering was made at.
         const domain = String(o.domain || "");
-        let locked = false;
-        if (domain) {
-            const cradle = await t.get(db.collection("communities").where("domain", "==", domain).limit(1));
-            locked = !!cradle.docs[0]?.data()?.chainLocked;
-        }
 
         // The acceptor's name for the receiver-side block, by the same hand that wrote authorName elsewhere.
         const acceptorSnap = await t.get(db.doc(`users/${acceptorUid}`));
@@ -104,22 +97,19 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
             fromTreeName: String(o.offeringFromTreeName || fromTree.name || "a tree"),
         }, { uid: acceptorUid, name: acceptorName });
 
+        // The seal is the server's canonical one (blocks.sealBlock, ring 2026-09-23), on every node.
         const mintedAt = Date.now();
-        const seal = async (previousHash: string, record: Record<string, unknown>): Promise<string> =>
-            locked ? computeCanonicalHash(previousHash, mintedAt, record) : createBlock(previousHash, record, mintedAt);
-
         const fromRef = db.collection("pulses").doc();
         const toRef = db.collection("pulses").doc();
-        const fromRecord = { ...from, lid: mintLid(), id: fromRef.id, mintedAt, previousHash: String(fromTree.latestHash || ""), loveCount: 0, commentCount: 0 };
-        const toRecord = { ...to, lid: mintLid(), id: toRef.id, mintedAt, previousHash: String(receiver.latestHash || ""), loveCount: 0, commentCount: 0 };
-        const [fromHash, toHash] = await Promise.all([seal(fromRecord.previousHash, fromRecord), seal(toRecord.previousHash, toRecord)]);
-        const stamp = locked ? { hashVersion: BLOCK_HASH_VERSION } : {};
+        const fromRecord = { ...from, lid: mintLid(), id: fromRef.id, mintedAt, previousHash: String(fromTree.latestHash || fromTree.genesisHash || "0"), loveCount: 0, commentCount: 0 };
+        const toRecord = { ...to, lid: mintLid(), id: toRef.id, mintedAt, previousHash: String(receiver.latestHash || receiver.genesisHash || "0"), loveCount: 0, commentCount: 0 };
+        const [fromSeal, toSeal] = await Promise.all([sealBlock(fromRecord.previousHash, mintedAt, fromRecord), sealBlock(toRecord.previousHash, mintedAt, toRecord)]);
 
         // ── writes: both twins, both heads, the offering's answer — one transaction ──
-        t.set(fromRef, { ...fromRecord, ...stamp, hash: fromHash, createdAt: FieldValue.serverTimestamp() });
-        t.update(db.doc(`lifetrees/${fromTreeId}`), { latestHash: fromHash, blockHeight: (Number(fromTree.blockHeight) || 0) + 1 });
-        t.set(toRef, { ...toRecord, ...stamp, hash: toHash, createdAt: FieldValue.serverTimestamp() });
-        t.update(db.doc(`${toKind === "tree" ? "lifetrees" : "visions"}/${toId}`), { latestHash: toHash, blockHeight: (Number(receiver.blockHeight) || 0) + 1 });
+        t.set(fromRef, { ...fromRecord, hashVersion: fromSeal.hashVersion, hash: fromSeal.hash, createdAt: FieldValue.serverTimestamp() });
+        t.update(db.doc(`lifetrees/${fromTreeId}`), { latestHash: fromSeal.hash, blockHeight: (Number(fromTree.blockHeight) || 0) + 1 });
+        t.set(toRef, { ...toRecord, hashVersion: toSeal.hashVersion, hash: toSeal.hash, createdAt: FieldValue.serverTimestamp() });
+        t.update(db.doc(`${toKind === "tree" ? "lifetrees" : "visions"}/${toId}`), { latestHash: toSeal.hash, blockHeight: (Number(receiver.blockHeight) || 0) + 1 });
         t.update(offeringRef, {
             offeringStatus: "accepted",
             offeringAnsweredBy: acceptorUid,

@@ -24,9 +24,12 @@ describe('the record of staff hands', () => {
     }
   });
   it('every switchable hand is wired in firestore.rules, and every wired hand is recorded', () => {
-    for (const h of STAFF_HANDS.filter((x) => x.switchable)) expect(h.enforcedIn === 'functions' ? inFunctions : inRules, `${h.id} is not wired`).toContain(h.id);
+    for (const h of STAFF_HANDS.filter((x) => x.switchable)) {
+      if (h.enforcedIn === 'functions' || h.enforcedIn === 'both') expect(inFunctions, `${h.id} is not wired in functions`).toContain(h.id);
+      if (h.enforcedIn !== 'functions') expect(inRules, `${h.id} is not wired in rules`).toContain(h.id);
+    }
     for (const id of inRules) expect(staffHandById(id)?.switchable, `${id} is wired in rules but not recorded as switchable`).toBe(true);
-    for (const id of inFunctions) expect(staffHandById(id)?.enforcedIn, `${id} is wired in functions but not recorded so`).toBe('functions');
+    for (const id of inFunctions) expect(['functions', 'both'], `${id} is wired in functions but not recorded so`).toContain(staffHandById(id)?.enforcedIn);
   });
   it('a switch answers, else the default; an unknown hand is never on', () => {
     expect(staffHandOn(undefined, 'garden_stand')).toBe(true);

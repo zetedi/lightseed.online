@@ -1,13 +1,17 @@
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer, type UpdateData, type DocumentData } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { type Pulse, type Lifetree, type Vision, type ReachAudience, type Link } from '../../types';
-import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
-import { computeCanonicalHash, isChainLocked, BLOCK_HASH_VERSION } from '../../domain/chain';
-import { normalizePulseType, isTreeGrowth, type PulseVisibility } from '../../domain/pulse';
+import {
+    blockBirthOf, judgeBlockBirth, chainHeadOf, blockSignaturePayload, BLOCK_SIGNATURE_DOMAIN,
+    type ChainBearerKind, type BlockSignatureClaim,
+} from '../../domain/chain';
+import { getPublishedSigningIdentity, sign as signWithKey, SigningKeyNeedsRestoreError, SigningKeyFrozenError } from '../keys';
+import { normalizePulseType, type PulseVisibility } from '../../domain/pulse';
 import { mergeAuthored } from '../../domain/pulseVisibility';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
-import { db, auth, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
+import { db, auth, functions, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
 import { announce } from '../refreshBus';
 import { myNaming } from './accounts';
 
@@ -45,23 +49,17 @@ export const getMyHeadBlock = async (treeId: string, latestHash: string, uid: st
     return snap.empty ? null : mapPulse(snap.docs[0]);
 };
 
-// UNMINT the accidental LAST mint (domain/unmint, ring 2026-08-15): delete the head block
-// and roll the tree's head back to previousHash in ONE transaction — the rules refuse the
-// delete unless the rollback rides with it, so the chain can only ever shorten by its
-// newest link. The caller checks unmintRefusal first; the transaction re-checks the head
-// so a mint that stopped being last between click and commit refuses instead of severing.
-export const unmintLastPulse = (pulse: Pick<Pulse, 'id' | 'lifetreeId' | 'hash' | 'previousHash'>) =>
-    runTransaction(db, async (t) => {
-        const treeRef = doc(db, 'lifetrees', pulse.lifetreeId!);
-        const tree = (await t.get(treeRef)).data() as { latestHash?: string; blockHeight?: number } | undefined;
-        if (!tree || tree.latestHash !== pulse.hash) throw new Error('unmint_not_last');
-        t.delete(doc(db, 'pulses', pulse.id));
-        t.update(treeRef, {
-            latestHash: pulse.previousHash,
-            blockHeight: (tree.blockHeight || 1) - 1,
-            updatedAt: serverTimestamp(),
-        });
-    });
+// UNMINT the accidental LAST mint (domain/unmint, ring 2026-08-15) — by the SERVER's hand
+// since ring 2026-09-23 (functions/unmintBlock): the head is the server's to move, so the
+// delete and the rollback happen there, in one transaction, under the same law the UI
+// checked first (unmintRefusal); a mint that stopped being last between click and call
+// refuses instead of severing. The tree's new head is announced so every loaded copy follows.
+export const unmintLastPulse = async (pulse: Pick<Pulse, 'id' | 'lifetreeId'>): Promise<{ latestHash: string; blockHeight: number }> => {
+    const fn = httpsCallable<{ pulseId: string }, { latestHash: string; blockHeight: number }>(functions, 'unmintBlock');
+    const head = (await fn({ pulseId: pulse.id })).data;
+    if (pulse.lifetreeId) announce('trees', pulse.lifetreeId, head);
+    return head;
+};
 
 // Newest first, on the server, scoped or not: the composite indexes (domain[, type]
 // [, visibility], createdAt DESC) exist since ring 2026-09-03, so a scoped page is a real
@@ -528,81 +526,84 @@ export const getPulsesByTreeId = async (treeId: string) => {
     return pulses.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }
 
-// `extraTreeUpdate` lets a caller fold additional tree-doc fields (dotted paths allowed) into
-// the SAME transaction that appends the block — so e.g. a watering's schedule reset commits
-// atomically with its growth pulse (no window where the chain advanced but the tree is stale).
-export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string }, extraTreeUpdate?: Record<string, unknown>) => {
-    // The head after the mint — whispered on the refresh bus once the transaction commits, so
-    // every open view of this tree (its profile's chain, its forest card) follows the head
-    // without a reload (the Digital Tree's Care used to mint a leaf it never showed).
-    let head: { latestHash: string; blockHeight: number; latestGrowthUrl?: string } | null = null;
-    await runTransaction(db, async (t) => {
-        const treeRef = doc(db, 'lifetrees', pulseData.lifetreeId);
-        const treeDoc = await t.get(treeRef);
-        if (!treeDoc.exists()) throw new Error('err_tree_missing');
-        const tree = treeDoc.data() as Lifetree;
-        const newPulseRef = doc(pulsesCollection);
-        const domain = tree.domain || window.location.hostname.replace(/^www\./, '');
-        const canonicalType = normalizePulseType(pulseData.type); // write canonical lowercase
-        // A stable, client-resolved mint time — stored on the block AND used as the hash timestamp,
-        // so a locked block can be re-hashed from exactly what's persisted (createdAt is a
-        // serverTimestamp and can't be reproduced). Always stored; only hashed when locked.
-        const mintedAt = Date.now();
-        // The immutable record we persist (server-set createdAt + the hash are added after).
-        // Its lid is seeded from mintedAt so the id's embedded birth-time is the mint time; lid
-        // is canonical block content (BLOCK_CONTENT_FIELDS), so locked nodes seal it into the hash.
-        const record = {
-            lid: uuidv7(mintedAt),
-            ...pulseData,
-            type: canonicalType,
-            domain,
-            id: newPulseRef.id,
-            visibility: pulseData.visibility || 'public',
-            loveCount: pulseData.loveCount || 0,
-            commentCount: pulseData.commentCount || 0,
-            mintedAt,
-            previousHash: tree.latestHash,
-        };
-        // Locked nodes seal blocks with the canonical, reproducible hash over the stored record;
-        // unlocked nodes keep the exact legacy hash so existing chains are untouched until the
-        // node flips the stamp. (See src/domain/chain + isChainLocked.)
-        const locked = isChainLocked();
-        const newHash = locked
-            ? await computeCanonicalHash(tree.latestHash, mintedAt, record)
-            : await createBlock(tree.latestHash, pulseData, mintedAt);
-        // Mark canonically-sealed blocks so verification can recompute exactly these (legacy blocks
-        // predate the scheme). hashVersion is metadata — not in BLOCK_CONTENT_FIELDS, so it doesn't
-        // enter the hash.
-        t.set(newPulseRef, { ...record, ...(locked ? { hashVersion: BLOCK_HASH_VERSION } : {}), createdAt: serverTimestamp(), hash: newHash });
-
-        // The tree's head move: the chain fields, the growth view, the care stamp, and whatever the
-        // caller committed alongside (a watering's schedule reset) — one atomic update.
-        const blockHeight = (tree.blockHeight || 0) + 1;
-        const updateData: { latestHash: string; blockHeight: number; latestGrowthUrl?: string; lastCaredAt?: ReturnType<typeof serverTimestamp> } & Record<string, unknown> = { latestHash: newHash, blockHeight };
-        // A tree growth pulse with an image updates the tree's latest growth view, and counts
-        // as a care that keeps the tree's living validation alive.
-        if (isTreeGrowth(canonicalType)) {
-            if (pulseData.imageUrl) updateData.latestGrowthUrl = pulseData.imageUrl;
-            updateData.lastCaredAt = serverTimestamp();
-        }
-        // Caller-supplied tree fields (e.g. a watering's schedule reset) — committed atomically.
-        if (extraTreeUpdate) Object.assign(updateData, extraTreeUpdate);
-
-        t.update(treeRef, updateData as UpdateData<DocumentData>);
-        head = {
-            latestHash: newHash,
-            blockHeight,
-            ...(updateData.latestGrowthUrl ? { latestGrowthUrl: updateData.latestGrowthUrl } : {}),
-        };
-    });
-    if (head) announce('trees', pulseData.lifetreeId, head);
+// THE MINT IS THE SERVER'S (ring 2026-09-23, server-held heads). A hand says what it may about a
+// block (domain/chain/birth BLOCK_BIRTH_FIELDS — the rest is stripped here, never sent); the
+// callable reads the bearer's head inside its transaction, judges the birth, seals the block
+// canonically and moves the head — block and head in one write. authorId is the signed-in hand
+// (the server's, from request.auth), domain the bearer's own place of record, mintedAt the
+// server's clock. A watering's schedule reset rides in the same server transaction (the old
+// extraTreeUpdate). The head after the mint is whispered on the refresh bus, so every open
+// view of this tree follows it without a reload.
+export interface MintedBlock {
+    pulseId: string; lid: string; hash: string; previousHash: string; blockHeight: number; mintedAt: number;
+    latestGrowthUrl?: string;
 }
+// THE AUTHOR'S SIGNATURE (signed blocks, ring 2026-09-23): a person whose signing key is
+// published signs every block they mint — over the chain position (the head this device read)
+// and the content the server will store, reached by running the SAME pure law the server runs
+// (judgeBlockBirth) over the bearer read here. The server verifies with the published key and
+// seals the signature into the block. A person without a key mints unsigned, said plainly. A
+// device that lacks the published key cannot mint until the phrase is restored (Settings) —
+// the key IS the hand. If the head moves between read and call, the server says so and the
+// signing is done once more over the new head.
+const signatureFor = async (on: ChainBearerKind, id: string, block: Record<string, unknown>): Promise<BlockSignatureClaim | undefined> => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return undefined;
+    const identity = await getPublishedSigningIdentity(uid);
+    if (!identity) return undefined;
+    if (identity.state === 'frozen') throw new SigningKeyFrozenError();
+    const bearerSnap = await getDoc(doc(db, on === 'tree' ? 'lifetrees' : 'visions', id));
+    const bearer = (bearerSnap.data() ?? {}) as Record<string, unknown>;
+    const judged = judgeBlockBirth({
+        on, minterUid: uid, isStaff: true,   // standing is the server's to judge; here only the content is wanted
+        bearer: { exists: bearerSnap.exists(), carer: true, latestHash: bearer.latestHash, genesisHash: bearer.genesisHash, blockHeight: bearer.blockHeight, title: bearer.title, visibility: bearer.visibility },
+        block,
+    });
+    if (judged.outcome === 'reject') return undefined; // the server will name the refusal
+    const previousHash = chainHeadOf(bearer);
+    let sig: string;
+    try {
+        sig = await signWithKey(blockSignaturePayload({
+            on, bearerId: id, previousHash, content: judged.content,
+            signerUid: uid, keyFingerprint: identity.fingerprint, epochId: identity.epochId,
+        }), BLOCK_SIGNATURE_DOMAIN, uid);
+    } catch (e) {
+        if (e instanceof SigningKeyNeedsRestoreError) throw new Error('block_key_restore');
+        throw e;
+    }
+    return { sig, keyFingerprint: identity.fingerprint, epochId: identity.epochId, previousHash };
+};
 
-// Grow a VISION — mint a CONTRIBUTION pulse onto the VISION'S OWN chain (not the rooted tree's).
-// The twin of mintPulse, targeting visions/{id}: the tree grows by caring, the vision by
-// contributions, and each keeps its own append-only ledger. Mirrors mintPulse's block shape and
-// hashing (legacy hash for unsealed chains, canonical when the node's stamp is flipped) so a
-// vision's chain is verifiable exactly like a tree's. Does NOT touch mintPulse or any tree doc.
+const mintOn = async (on: ChainBearerKind, id: string, data: Record<string, unknown>): Promise<MintedBlock> => {
+    const block = blockBirthOf({ ...data, ...(data.type ? { type: normalizePulseType(String(data.type)) } : {}) });
+    const fn = httpsCallable<{ on: ChainBearerKind; id: string; block: Record<string, unknown>; signature?: BlockSignatureClaim }, MintedBlock>(functions, 'mintBlock');
+    for (let attempt = 0; ; attempt++) {
+        const signature = await signatureFor(on, id, block);
+        try {
+            return (await fn({ on, id, block, ...(signature ? { signature } : {}) })).data;
+        } catch (e) {
+            // The head moved under the signature: read it again and sign once more, once.
+            if (attempt === 0 && e instanceof Error && e.message.includes('block_head_moved')) continue;
+            throw e;
+        }
+    }
+};
+
+export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string }): Promise<MintedBlock> => {
+    const { lifetreeId, ...rest } = pulseData;
+    const head = await mintOn('tree', lifetreeId, rest as Record<string, unknown>);
+    announce('trees', lifetreeId, {
+        latestHash: head.hash,
+        blockHeight: head.blockHeight,
+        ...(head.latestGrowthUrl ? { latestGrowthUrl: head.latestGrowthUrl } : {}),
+    });
+    return head;
+};
+
+// Grow a VISION — a CONTRIBUTION block onto the VISION'S OWN chain (not the rooted tree's): the
+// twin of mintPulse, the same server hand (mintBlock on: 'vision'). The tree grows by caring,
+// the vision by contributions, and each keeps its own append-only ledger; the vision's title
+// and default visibility are the server's to read, so they are not sent.
 export const growVision = async (
     vision: Pick<Vision, 'id'>,
     data: {
@@ -610,49 +611,17 @@ export const growVision = async (
         authorId: string; authorName?: string; authorPhoto?: string;
         visibility?: Pulse['visibility'];
     },
-) => {
-    return runTransaction(db, async (t) => {
-        const visionRef = doc(db, 'visions', vision.id);
-        const visionDoc = await t.get(visionRef);
-        if (!visionDoc.exists()) throw new Error('err_vision_missing');
-        const v = visionDoc.data() as Vision;
-        const newPulseRef = doc(pulsesCollection);
-        const domain = v.domain || window.location.hostname.replace(/^www\./, '');
-        // The chain's tail — the vision's genesis (createVision) or, on a legacy vision not yet
-        // backfilled, the sentinel '0' so its first contribution still links to a root.
-        const previousHash = v.latestHash || v.genesisHash || '0';
-        const mintedAt = Date.now();
-        const record = {
-            lid: uuidv7(mintedAt),
-            type: 'vision_growth' as const,
-            visionId: vision.id,
-            visionTitle: v.title,
-            ...(data.growthCategory ? { growthCategory: data.growthCategory } : {}),
-            title: data.title?.trim() || `${v.title} growth`,
-            body: data.body || '',
-            ...(data.imageUrl ? { imageUrl: data.imageUrl } : {}),
-            authorId: data.authorId,
-            ...(data.authorName ? { authorName: data.authorName } : {}),
-            ...(data.authorPhoto ? { authorPhoto: data.authorPhoto } : {}),
-            domain,
-            id: newPulseRef.id,
-            visibility: data.visibility || v.visibility || 'public',
-            loveCount: 0,
-            commentCount: 0,
-            mintedAt,
-            previousHash,
-        };
-        // Locked nodes seal the canonical, reproducible hash; unlocked keep the legacy hash — the
-        // exact same split mintPulse uses, so tree and vision chains verify the same way.
-        const locked = isChainLocked();
-        const newHash = locked
-            ? await computeCanonicalHash(previousHash, mintedAt, record)
-            : await createBlock(previousHash, record, mintedAt);
-        t.set(newPulseRef, { ...record, ...(locked ? { hashVersion: BLOCK_HASH_VERSION } : {}), createdAt: serverTimestamp(), hash: newHash });
-        // The vision's chain advances in the SAME transaction — no window where the block exists
-        // but the vision's head is stale (the chain can never fork).
-        t.update(visionRef, { latestHash: newHash, blockHeight: (v.blockHeight || 0) + 1 });
+): Promise<MintedBlock> => {
+    const { authorId: _author, ...rest } = data;
+    void _author; // the server names the hand from request.auth; the client's word is not sent
+    const head = await mintOn('vision', vision.id, {
+        type: 'vision_growth',
+        ...rest,
+        ...(rest.title?.trim() ? { title: rest.title.trim() } : {}),
+        body: rest.body || '',
     });
+    // (No 'visions' topic on the refresh bus yet: the caller re-reads the vision — App.handleGrowVision.)
+    return head;
 };
 
 // An explicit care — the lightweight "it still lives" confirmation. A REAL block now (ring

@@ -4,11 +4,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, collection, query, where,
-  serverTimestamp, runTransaction, Timestamp,
+  serverTimestamp, runTransaction,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { uuidv7 } from '../../src/utils/id';
-import { createBlock, sha256 } from '../../src/domain/chain';
+import {
+  createBlock, sha256, verifyChain, canonicalRecompute, verifyBlockSeal,
+  judgeBlockBirth, chainHeadOf, blockSignaturePayload, blockSignaturePayloadOf, BLOCK_SIGNATURE_DOMAIN,
+} from '../../src/domain/chain';
 import { buildThreadId } from '../../src/utils/reachPermissions';
 import { linkId } from '../../src/domain/link';
 import { dataAuthorityOf } from '../../src/domain/dataAuthority';
@@ -59,25 +62,12 @@ const plant = async (p: Persona, name: string, over: Record<string, unknown> = {
   return ref.id;
 };
 
-// A client-lawful chain mint — mintPulse's transaction, faithfully: block + head, atomic.
-const mint = async (p: Persona, treeId: string, pulseData: Record<string, unknown>, extraTreeUpdate: Record<string, unknown> = {}) => {
-  const pulseRef = doc(collection(p.db, 'pulses'));
-  await runTransaction(p.db, async (t) => {
-    const treeSnap = await t.get(doc(p.db, 'lifetrees', treeId));
-    const tree = treeSnap.data() as Record<string, any>;
-    const mintedAt = Date.now();
-    const record = {
-      lid: uuidv7(mintedAt), ...pulseData, domain: tree.domain || DOMAIN, id: pulseRef.id,
-      visibility: pulseData.visibility || 'public', loveCount: 0, commentCount: 0,
-      mintedAt, previousHash: tree.latestHash,
-    };
-    const hash = await createBlock(tree.latestHash, pulseData, mintedAt);
-    t.set(pulseRef, { ...record, createdAt: serverTimestamp(), hash });
-    t.update(doc(p.db, 'lifetrees', treeId), {
-      latestHash: hash, blockHeight: (tree.blockHeight || 0) + 1, ...extraTreeUpdate,
-    });
-  });
-  return pulseRef.id;
+// A chain mint — the SERVER's hand (functions/mintBlock, ring 2026-09-23), exactly as mintPulse
+// and growVision ask for it: the hand says what it may about the block, the server reads the
+// head inside its transaction, seals the block canonically and moves the head.
+const mint = async (p: Persona, on: 'tree' | 'vision', id: string, block: Record<string, unknown>) => {
+  const res = await httpsCallable<{ on: string; id: string; block: Record<string, unknown> }, { pulseId: string; hash: string; blockHeight: number }>(p.fns, 'mintBlock')({ on, id, block });
+  return res.data;
 };
 
 beforeAll(async () => {
@@ -134,11 +124,21 @@ describe('the Grove — the living path, walked in parallel', () => {
   });
 
   it('Ana waters; Bakr witnesses through the REAL callable; REAL light is minted', async () => {
-    ids.wateringPulse = await mint(ana, ids.treeAna, {
+    // The chain is the server's: Ana's own hand is refused a leaf on her tree…
+    await expect(setDoc(doc(collection(ana.db, 'pulses')), {
+      authorId: ana.uid, type: 'tree_growth', care: 'watering', lifetreeId: ids.treeAna, title: 'Watering',
+      hash: 'forged', previousHash: '0', visibility: 'public', createdAt: serverTimestamp(),
+    })).rejects.toThrow();
+    // …and asks the server, which composes the watering's schedule reset with the block.
+    ids.wateringPulse = (await mint(ana, 'tree', ids.treeAna, {
       type: 'tree_growth', care: 'watering', title: 'Watering',
-      body: 'Watered — awaiting guardian confirmation.', authorId: ana.uid, lifetreeId: ids.treeAna,
+      body: 'Watered — awaiting guardian confirmation.',
       wateringConfirmedBy: 'pending', wateringConfirmation: { note: 'grove', confidence: 0 },
-    }, { lastCaredAt: serverTimestamp(), 'watering.lastWateredAt': Timestamp.now(), 'watering.overdue': false });
+    })).pulseId;
+    const wateredTree = (await getDoc(doc(ana.db, 'lifetrees', ids.treeAna))).data() as any;
+    expect(wateredTree.blockHeight).toBe(1);
+    expect(wateredTree.watering?.lastWateredBy).toBe(ana.uid);
+    expect(wateredTree.lastCaredAt).toBeTruthy();
 
     await waitFor(async () => (await getDoc(doc(bakr.db, 'pulses', ids.wateringPulse))).data(), 'watering pulse');
     await httpsCallable(bakr.fns, 'witnessWatering')({ pulseId: ids.wateringPulse });
@@ -197,20 +197,91 @@ describe('the Grove — the living path, walked in parallel', () => {
       lid: uuidv7(), type: 'link', rel: 'joined', from: chen.uid, to: ids.vision, createdAt: serverTimestamp(),
     });
 
-    const cRef = doc(collection(ana.db, 'pulses'));
-    await runTransaction(ana.db, async (t) => {
-      const v = (await t.get(doc(ana.db, 'visions', ids.vision))).data() as any;
-      const mintedAt = Date.now();
-      const hash = await createBlock(v.latestHash, { title: 'First contribution' }, mintedAt);
-      t.set(cRef, {
-        lid: uuidv7(mintedAt), id: cRef.id, type: 'vision_growth', title: 'First contribution',
-        body: 'A second node is a promise kept.', visionId: ids.vision, authorId: ana.uid,
-        domain: DOMAIN, visibility: 'public', mintedAt, previousHash: v.latestHash, hash,
-        createdAt: serverTimestamp(), loveCount: 0, commentCount: 0,
-      });
-      t.update(doc(ana.db, 'visions', ids.vision), { latestHash: hash, blockHeight: (v.blockHeight || 0) + 1 });
-    });
-    expect(((await getDoc(doc(ana.db, 'visions', ids.vision))).data() as any).blockHeight).toBe(1);
+    // The contribution is the server's to seal (mintBlock on: 'vision'); Chen, who joined but
+    // does not author, is refused; Ana's hand grows it.
+    await expect(mint(chen, 'vision', ids.vision, { type: 'vision_growth', title: 'Not mine' })).rejects.toThrow(/block_not_carer/);
+    const grown = await mint(ana, 'vision', ids.vision, { type: 'vision_growth', title: 'First contribution', body: 'A second node is a promise kept.' });
+    const vision = (await getDoc(doc(ana.db, 'visions', ids.vision))).data() as any;
+    expect(vision.blockHeight).toBe(1);
+    expect(vision.latestHash).toBe(grown.hash);
+    const contribution = (await getDoc(doc(ana.db, 'pulses', grown.pulseId))).data() as any;
+    expect(contribution.visionTitle).toBe('One forest, many nodes');
+    expect(contribution.authorId).toBe(ana.uid);
+  });
+
+  it('the chain verifies end to end under the canonical seal; the newest link may be unsaid, then the chain holds again', async () => {
+    // Two more leaves on Ana's tree, then the whole chain walked: every server-born block
+    // recomputes from its stored bytes (verifyBlockSeal), and linkage + height hold from the genesis.
+    const a = await mint(ana, 'tree', ids.treeAna, { type: 'tree_growth', title: 'Leaf two', body: 'grew' });
+    await mint(ana, 'tree', ids.treeAna, { type: 'standard', title: 'A minted word', body: 'said' });
+    const tree = (await getDoc(doc(ana.db, 'lifetrees', ids.treeAna))).data() as any;
+    expect(tree.blockHeight).toBe(3);
+    type Block = { id: string; hash: string; previousHash: string; mintedAt: number; [k: string]: unknown };
+    const blocks = (await getDocs(query(collection(ana.db, 'pulses'), where('lifetreeId', '==', ids.treeAna), where('visibility', 'in', ['public', 'node'])))).docs
+      .map(d => ({ id: d.id, ...(d.data() as Record<string, unknown>) }) as Block)
+      .sort((x, y) => x.mintedAt - y.mintedAt);
+    expect(blocks.length).toBe(3);
+    for (const b of blocks) expect(await verifyBlockSeal(b)).toBe(true);
+    const walk = await verifyChain(blocks, { genesisHash: tree.genesisHash, recomputeHash: canonicalRecompute });
+    expect(walk.ok, JSON.stringify(walk.issues)).toBe(true);
+    expect(walk.headHash).toBe(tree.latestHash);
+
+    // The accidental newest link, taken back by its author — on the server; a stranger is refused.
+    const head = blocks[blocks.length - 1];
+    await expect(httpsCallable(bakr.fns, 'unmintBlock')({ pulseId: head.id })).rejects.toThrow(/unmint_not_author/);
+    await expect(httpsCallable(ana.fns, 'unmintBlock')({ pulseId: a.pulseId })).rejects.toThrow(/unmint_not_last/);
+    const rolled = (await httpsCallable<{ pulseId: string }, { latestHash: string; blockHeight: number }>(ana.fns, 'unmintBlock')({ pulseId: head.id })).data;
+    expect(rolled).toEqual({ latestHash: a.hash, blockHeight: 2 });
+    expect((await adminDbA().doc(`pulses/${head.id}`).get()).exists).toBe(false); // gone — the admin's sight, since a missing doc has no rule to read it by
+    const after = (await getDoc(doc(ana.db, 'lifetrees', ids.treeAna))).data() as any;
+    expect(after.latestHash).toBe(a.hash);
+    const walkAfter = await verifyChain(blocks.slice(0, 2), { genesisHash: tree.genesisHash, recomputeHash: canonicalRecompute });
+    expect(walkAfter.ok).toBe(true);
+  });
+
+  it('a being with a published key signs every block; the server verifies with the published key and seals the signature in', async () => {
+    // Bakr publishes a signing key — the anchor the app writes (persons + keys + keyEvents), by the backend's hand.
+    const kp = await keypairFromSeed(generateSeed());
+    const fingerprint = await sha256(kp.publicKeyB64);
+    const epochId = `anchor_${fingerprint}`;
+    const now = new Date();
+    await adminDbA().doc(`persons/${bakr.uid}`).set({ publicKeyPem: kp.publicKeyB64, signingKeyFingerprint: fingerprint, signingEpochId: epochId, signingState: 'active', signingAnchoredAt: now }, { merge: true });
+    await adminDbA().doc(`persons/${bakr.uid}/keys/${fingerprint}`).set({ pubkey: kp.publicKeyB64, publishedAt: now });
+    await adminDbA().doc(`persons/${bakr.uid}/keyEvents/${epochId}`).set({ version: 1, type: 'anchor', uid: bakr.uid, lid: bakr.lid, epochId, keyFingerprint: fingerprint, recordedAt: now });
+
+    const block = { type: 'tree_growth', title: 'Signed leaf', body: 'my own hand', visibility: 'public' };
+    // The client's half of the law: the same judgment over the bearer it read, signed over the head.
+    const signFor = async (previousHash?: string) => {
+      const bearer = (await getDoc(doc(bakr.db, 'lifetrees', ids.treeBakr))).data() as Record<string, unknown>;
+      const judged = judgeBlockBirth({ on: 'tree', minterUid: bakr.uid, isStaff: true, bearer: { exists: true, carer: true, latestHash: bearer.latestHash, genesisHash: bearer.genesisHash, blockHeight: bearer.blockHeight }, block });
+      if (judged.outcome !== 'mint') throw new Error('judge');
+      const head = previousHash ?? chainHeadOf(bearer);
+      const sig = await signPayload(kp.privateKey, blockSignaturePayload({ on: 'tree', bearerId: ids.treeBakr, previousHash: head, content: judged.content, signerUid: bakr.uid, keyFingerprint: fingerprint, epochId }), BLOCK_SIGNATURE_DOMAIN);
+      return { sig, keyFingerprint: fingerprint, epochId, previousHash: head };
+    };
+    const call = (signature?: Record<string, unknown>) =>
+      httpsCallable<Record<string, unknown>, { pulseId: string; hash: string }>(bakr.fns, 'mintBlock')({ on: 'tree', id: ids.treeBakr, block, ...(signature ? { signature } : {}) });
+
+    // Unsigned, stale-headed and forged births are refused; the true signature is accepted.
+    await expect(call()).rejects.toThrow(/block_unsigned/);
+    await expect(call(await signFor('not-the-head'))).rejects.toThrow(/block_head_moved/);
+    const forged = { ...(await signFor()), sig: (await signFor()).sig.replace(/^./, c => (c === 'A' ? 'B' : 'A')) };
+    await expect(call(forged)).rejects.toThrow(/block_signature_bad/);
+    const born = (await call(await signFor())).data;
+
+    // The stored block carries the signature, the signature verifies from the block alone with the
+    // PUBLISHED key, and the seal binds it.
+    const stored = (await getDoc(doc(bakr.db, 'pulses', born.pulseId))).data() as Record<string, unknown>;
+    const a = stored.authorSignature as { sig: string; pubkey: string; keyFingerprint: string; epochId: string; version: number };
+    expect(a.version).toBe(1);
+    expect(a.pubkey).toBe(kp.publicKeyB64);
+    expect(a.keyFingerprint).toBe(fingerprint);
+    const payload = blockSignaturePayloadOf(stored)!;
+    expect(await verifyPayload(a.pubkey, a.sig, payload, BLOCK_SIGNATURE_DOMAIN)).toBe(true);
+    expect(await verifyBlockSeal({ ...stored, hash: born.hash } as { hash: string; previousHash: string })).toBe(true);
+    // Ana, keyless, still mints unsigned — plainly: no authorSignature on her block.
+    const anaBorn = (await mint(ana, 'tree', ids.treeAna, { type: 'tree_growth', title: 'Unsigned leaf' })).pulseId;
+    expect(((await getDoc(doc(ana.db, 'pulses', anaBorn))).data() as Record<string, unknown>).authorSignature).toBeUndefined();
   });
 
   it('a community forms; the door is knocked, opened, and stepped through', async () => {

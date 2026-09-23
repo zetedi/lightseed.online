@@ -747,16 +747,18 @@ describe("an addressed reach is born private (Lumo's review, 2026-09-07)", () =>
     // A reach addressed to no one — a public reflection — may still be public.
     await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'openReach'), { authorId: MALLORY, type: 'reach', visibility: 'public', body: 'a thought', loveCount: 0 }));
   });
-  it("the watering fork is no side door (Lumo's second look): the birth laws hold for care: 'watering' too", async () => {
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'lifetrees', 'treeMw'), { ownerId: MALLORY, name: 'Mallory fir', validated: false, validatorId: null, loveCount: 0 });
-    });
-    const watering = { authorId: MALLORY, care: 'watering', lifetreeId: 'treeMw', wateringConfirmedBy: 'pending', body: 'watered', loveCount: 0 };
-    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'wateringLoudReach'), { ...watering, type: 'reach', recipientUid: BOB, visibility: 'public' }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'wateringQuietReach'), { ...watering, type: 'reach', recipientUid: BOB, participantUids: [MALLORY, BOB], visibility: 'private' }));
-    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'wateringStrangerOffer'), { ...watering, type: 'offering', offeringKind: 'service', title: 'x', visibility: 'public', offeringActive: true,
+  it("the birth laws hold for every standalone record, and a labelled watering is no side door (Lumo's second look; server-held heads)", async () => {
+    // Once, a pulse wearing care: 'watering' walked past the birth laws through the watering
+    // fork's else-branch. The fork is gone (a watering is born only on the server, ring
+    // 2026-09-23) — so the label itself is now refused from every client, and the laws bind
+    // every standalone record without a fork to hide behind.
+    const standalone = { authorId: MALLORY, body: 'a word', loveCount: 0 };
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'loudReach'), { ...standalone, type: 'reach', recipientUid: BOB, visibility: 'public' }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'quietReach'), { ...standalone, type: 'reach', recipientUid: BOB, participantUids: [MALLORY, BOB], visibility: 'private' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'strangerOffer'), { ...standalone, type: 'offering', offeringKind: 'service', title: 'x', visibility: 'public', offeringActive: true,
       offeredToKind: 'tree', offeredToId: 'treeB', offeringFromTreeId: 'treeA', offeringStatus: 'open' }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'wateringPlain'), { ...watering, type: 'standard', visibility: 'public' }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'plain'), { ...standalone, type: 'standard', visibility: 'public' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'labelledWatering'), { ...standalone, type: 'standard', care: 'watering', wateringConfirmedBy: 'pending', visibility: 'public' }));
   });
 });
 
@@ -885,120 +887,110 @@ describe('retraction — the author withdraws the words; the chain keeps the blo
   });
 });
 
-describe('the unmint — only the head block, only its author, only with the rollback riding along', () => {
-  // Ring 2026-08-15: an accidental LAST mint may be taken back; the chain shortens by its
-  // newest link, never severed. Mid-chain author-deletes of tree mints are now refused
-  // outright (the first-sight review's finding 2, closed for the tree chain).
-  const TREE = 'tree-unmint';
+describe("the chain is the server's — no client births a link, moves a head, or deletes a block (ring 2026-09-23)", () => {
+  // Server-held heads: a link on a chain is born only by functions/mintBlock and its twins,
+  // which read the head inside their transaction and seal the block over its stored bytes.
+  // The rules refuse every client-born chain link, every client head move, and every client
+  // delete of a chain block — the unmint too now lives on the server (functions/unmintBlock),
+  // under the same law the ring of 2026-08-15 wrote (domain/unmint).
+  const TREE = 'tree-chain';
   const seedChain = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
     await setDoc(doc(d, 'lifetrees', TREE), { ownerId: ALICE, name: 'Chain Oak', genesisHash: 'g0', latestHash: 'h2', blockHeight: 2, validated: false, validatorId: null, loveCount: 0 });
+    await setDoc(doc(d, 'links', `${BOB}__co_owner__${TREE}`), { lid: 'x', type: 'link', rel: 'co_owner', from: BOB, to: TREE, createdAt: 1 });
     await setDoc(doc(d, 'pulses', 'b1'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, hash: 'h1', previousHash: 'g0', title: 'g1' });
     await setDoc(doc(d, 'pulses', 'b2'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, hash: 'h2', previousHash: 'h1', title: 'g2' });
   });
-
-  it('the author unmints the HEAD when the rollback rides in the same batch', async () => {
-    await seedChain();
-    const store = db(ALICE);
-    const b = writeBatch(store);
-    b.delete(doc(store, 'pulses', 'b2'));
-    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
-    await assertSucceeds(b.commit());
+  const link = (over: Record<string, unknown> = {}) => ({
+    authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, title: 'g3', body: '', visibility: 'public',
+    hash: 'h3', previousHash: 'h2', mintedAt: 3, loveCount: 0, commentCount: 0, ...over,
   });
 
-  it('without the rollback, the delete alone is refused', async () => {
+  it('no client births a chain link — not the owner, not with the head riding along, not staff', async () => {
+    await seedChain();
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'b3'), link()));
+    const store = db(ALICE);
+    const b = writeBatch(store);
+    b.set(doc(store, 'pulses', 'b3'), link());
+    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 });
+    await assertFails(b.commit());
+    await assertFails(setDoc(doc(db(STAFF), 'pulses', 'b3s'), link({ authorId: STAFF })));
+    // A link forged onto a stale head, or onto a vision, is a link all the same.
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'b3x'), link({ previousHash: 'h1' })));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'c1'), { authorId: ALICE, type: 'vision_growth', visionId: 'vision1', title: 'c', hash: 'v1', previousHash: 'g0' }));
+  });
+
+  it('no client-born pulse names a tree or a vision as its chain — except a person\'s sentinel-rooted reach', async () => {
+    await seedChain();
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'own-timeline'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, title: 'no seal', visibility: 'public' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'foreign-timeline'), { authorId: MALLORY, type: 'observation', lifetreeId: TREE, title: 'spam', visibility: 'public' }));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'own-vision'), { authorId: ALICE, type: 'vision_growth', visionId: 'vision1', title: 'no seal', visibility: 'public' }));
+    // The person who has no tree yet still speaks: a reach rooted in its sentinel, moving no head.
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'person-reach'), {
+      authorId: MALLORY, type: 'reach', lifetreeId: MALLORY, previousHash: 'PERSON_REACH', hash: 'any',
+      recipientUid: ALICE, participantUids: [MALLORY, ALICE], visibility: 'private', body: 'hello', loveCount: 0,
+    }));
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'person-growth'), {
+      authorId: MALLORY, type: 'tree_growth', lifetreeId: TREE, previousHash: 'PERSON_REACH', hash: 'any', title: 'x', visibility: 'public',
+    }));
+    // Standalone records stay the client's: an event, a decision, an observation with no chain.
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'standalone-ev'), { authorId: ALICE, type: 'event', title: 'Gathering', previousHash: 'EVENT', hash: 'e1', visibility: 'public', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'standalone-ob'), { authorId: ALICE, type: 'observation', title: 'x', body: '', visibility: 'public', loveCount: 0 }));
+  });
+
+  it('no client moves a head — not the owner, not a co-owner, not staff; the rest of the tree stays theirs', async () => {
+    await seedChain();
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', TREE), { blockHeight: 3 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', TREE), { genesisHash: 'forged' }));
+    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 }));
+    await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', TREE), { name: 'Chain Oak, older', updatedAt: 1 }));
+    await assertSucceeds(updateDoc(doc(db(STAFF), 'lifetrees', TREE), { name: 'Mended', updatedAt: 1 }));
+  });
+
+  it('a tree and a vision are born at their root: head == genesis, height 0', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'lifetrees', 'born-right'), { ownerId: ALICE, name: 'Seed', genesisHash: 'g', latestHash: 'g', blockHeight: 0, loveCount: 0 }));
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'born-mid'), { ownerId: ALICE, name: 'Seed', genesisHash: 'g', latestHash: 'h5', blockHeight: 5, loveCount: 0 }));
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'born-mid-staff'), { ownerId: ALICE, name: 'Seed', genesisHash: 'g', latestHash: 'h5', blockHeight: 5, loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'visions', 'v-born-right'), { authorId: ALICE, title: 'V', genesisHash: 'g', latestHash: 'g', blockHeight: 0, loveCount: 0 }));
+    await assertFails(setDoc(doc(db(ALICE), 'visions', 'v-born-mid'), { authorId: ALICE, title: 'V', genesisHash: 'g', latestHash: 'h5', blockHeight: 5, loveCount: 0 }));
+  });
+
+  it('no client deletes a chain block — the head, a mid-chain link, with or without a rollback, staff included', async () => {
     await seedChain();
     await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'b2')));
-  });
-
-  it('a mid-chain mint can never be deleted — not even by its author with a rollback', async () => {
-    await seedChain();
     await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'b1')));
-    const store = db(ALICE);
-    const b = writeBatch(store);
-    b.delete(doc(store, 'pulses', 'b1'));
-    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'g0', blockHeight: 1, updatedAt: 1 });
-    await assertFails(b.commit());
-  });
-
-  it("an accepted offering's twin block stands — it is co-held, and no rollback unsays it", async () => {
-    await seedChain();
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'pulses', 't3'), { authorId: ALICE, type: 'standard', lifetreeId: TREE, offeringId: 'off1', offeringRole: 'from', hash: 'h3', previousHash: 'h2', title: 'Offering accepted' });
-      await updateDoc(doc(ctx.firestore(), 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 });
-    });
-    const store = db(ALICE);
-    const b = writeBatch(store);
-    b.delete(doc(store, 'pulses', 't3'));
-    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h2', blockHeight: 2, updatedAt: 1 });
-    await assertFails(b.commit());
-  });
-
-  it('another hand cannot unmint, rollback or not', async () => {
-    await seedChain();
-    const store = db(MALLORY);
-    const b = writeBatch(store);
-    b.delete(doc(store, 'pulses', 'b2'));
-    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
-    await assertFails(b.commit());
-  });
-
-  it('a HEAD tree-sent reach may be unsaid whole — below the head, reaches stay sealed', async () => {
-    await seedChain();
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'pulses', 'r3'), { authorId: ALICE, type: 'reach', lifetreeId: TREE, participantUids: [ALICE, BOB], hash: 'h3', previousHash: 'h2', title: 'oops' });
-      await updateDoc(doc(ctx.firestore(), 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 });
-    });
-    const store = db(ALICE);
-    const b = writeBatch(store);
-    b.delete(doc(store, 'pulses', 'r3'));
-    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h2', blockHeight: 2, updatedAt: 1 });
-    await assertSucceeds(b.commit());
-    // b2 is the head again — but b1, now mid-chain, stays sealed.
-    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'b1')));
-  });
-
-  it('nothing co-held can be unsaid: a seen or loved head block stands', async () => {
-    await seedChain();
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), 'pulses', 'b2'), { seenBy: [BOB] });
-    });
     const store = db(ALICE);
     const b = writeBatch(store);
     b.delete(doc(store, 'pulses', 'b2'));
     b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
     await assertFails(b.commit());
-
-    // Loved instead of seen — same refusal.
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), 'pulses', 'b2'), { seenBy: [ALICE], loveCount: 1 });
-    });
-    const b2 = writeBatch(store);
-    b2.delete(doc(store, 'pulses', 'b2'));
-    b2.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
-    await assertFails(b2.commit());
-
-    // The author's own receipt alone does not co-hold.
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await updateDoc(doc(ctx.firestore(), 'pulses', 'b2'), { seenBy: [ALICE], loveCount: 0 });
-    });
-    const b3 = writeBatch(store);
-    b3.delete(doc(store, 'pulses', 'b3'.replace('b3', 'b2')));
-    b3.update(doc(store, 'lifetrees', TREE), { latestHash: 'h1', blockHeight: 1, updatedAt: 1 });
-    await assertSucceeds(b3.commit());
+    await assertFails(deleteDoc(doc(db(STAFF), 'pulses', 'b2')));
+    // A legacy block rooted at '0' (a first-era genesis pulse) is a chain block too.
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'pulses', 'b0'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, title: 'Genesis Pulse', hash: 'g0', previousHash: '0' }));
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'b0')));
+    // A vision's contribution is a chain block too — its author cannot erase it (deleteVision lets the chain stand).
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'pulses', 'c1'), { authorId: ALICE, type: 'vision_growth', visionId: 'vision1', title: 'c', hash: 'v1', previousHash: 'g0' }));
+    await assertFails(deleteDoc(doc(db(ALICE), 'pulses', 'c1')));
+    // A standalone record with no chain still leaves by its author's hand.
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'pulses', 'ob1'), { authorId: ALICE, type: 'observation', title: 'x', previousHash: 'EVENT', hash: 'e' }));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'pulses', 'ob1')));
   });
 
-  it('a guardian-witnessed watering stands forever', async () => {
+  it("the server's hand (admin) still writes the whole birth — block and head — as mintBlock does", async () => {
     await seedChain();
     await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'pulses', 'b3'), { authorId: ALICE, type: 'tree_growth', care: 'watering', wateringConfirmedBy: 'guardian', lifetreeId: TREE, hash: 'h3', previousHash: 'h2', title: 'w' });
-      await updateDoc(doc(ctx.firestore(), 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 });
+      const d = ctx.firestore();
+      const b = writeBatch(d);
+      b.set(doc(d, 'pulses', 'b3'), link());
+      b.update(doc(d, 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 });
+      await b.commit();
     });
-    const store = db(ALICE);
-    const b = writeBatch(store);
-    b.delete(doc(store, 'pulses', 'b3'));
-    b.update(doc(store, 'lifetrees', TREE), { latestHash: 'h2', blockHeight: 2, updatedAt: 1 });
-    await assertFails(b.commit());
+    expect((await getDoc(doc(db(ALICE), 'lifetrees', TREE))).data()?.latestHash).toBe('h3');
   });
 });
 
@@ -1594,7 +1586,8 @@ describe("lightHouses — the community's choice is LAW: membership enforced at 
 });
 
 describe('visions — the idea-twin grows its own chain; the genesis is frozen', () => {
-  // BOB authors the vision; its head advances by contributions (growVision), its root is sealed once.
+  // BOB authors the vision; its head advances by contributions (mintBlock on: 'vision', the
+  // server's hand), its root is sealed once — born a chain once, by the backfill, never rewritten.
   const seedVisions = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
     await setDoc(doc(d, 'visions', 'v1'), {
@@ -1605,9 +1598,11 @@ describe('visions — the idea-twin grows its own chain; the genesis is frozen',
     await setDoc(doc(d, 'visions', 'vLegacy'), { authorId: BOB, title: 'Old', visibility: 'public', lid: 'vL-lid' });
   });
 
-  it('the author advances the chain — latestHash/blockHeight move freely (a contribution seals)', async () => {
+  it("the head is the server's (ring 2026-09-23): not even the author advances it; the words stay the author's", async () => {
     await seedVisions();
-    await assertSucceeds(updateDoc(doc(db(BOB), 'visions', 'v1'), { latestHash: 'h1', blockHeight: 1 }));
+    await assertFails(updateDoc(doc(db(BOB), 'visions', 'v1'), { latestHash: 'h1', blockHeight: 1 }));
+    await assertFails(updateDoc(doc(db(STAFF), 'visions', 'v1'), { latestHash: 'h1', blockHeight: 1 }));
+    await assertSucceeds(updateDoc(doc(db(BOB), 'visions', 'v1'), { body: 'clearer now' }));
   });
 
   it("a stranger cannot grow (advance) someone else's vision", async () => {
@@ -2390,22 +2385,23 @@ describe('the offering of care — born open, withdrawn by its author, declined 
   });
 });
 
-describe('watering pulses — the light-mint trust root (server-mediated; Lumo review 2026-07-20)', () => {
-  // treeB is owned by BOB (a carer). ALICE/MALLORY are not carers of it.
+describe('watering pulses — the light-mint trust root (server-born since ring 2026-09-23; Lumo review 2026-07-20)', () => {
+  // treeB is owned by BOB (a carer). ALICE/MALLORY are not carers of it. A watering is a link
+  // on the tree's chain, so its birth is the server's (functions/mintBlock: carer-only, no
+  // self-declared witness — domain/chain/birth); from a client, even the carer's own is refused.
   const water = (over: Record<string, any> = {}) => ({
     type: 'tree_growth', care: 'watering', lifetreeId: 'treeB', authorId: BOB,
     title: 'W', body: 'w', wateringConfirmedBy: 'pending', createdAt: 1, ...over,
   });
 
-  it('a CARER authors their OWN watering; a non-carer cannot, and authorId is bound to the author', async () => {
-    await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'w1'), water()));                       // owner = carer, own author
-    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'w2'), water({ authorId: MALLORY })));  // not a carer of treeB
-    await assertFails(setDoc(doc(db(BOB), 'pulses', 'w3'), water({ authorId: ALICE })));        // author must be the writer
-  });
-
-  it('no client may self-declare a guardian witness at creation (that is the callable\'s job)', async () => {
+  it('no client births a watering — not the carer, not a stranger, not in another name, not without a chain', async () => {
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'w1'), water()));
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'w2'), water({ authorId: MALLORY })));
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'w3'), water({ authorId: ALICE })));
     await assertFails(setDoc(doc(db(BOB), 'pulses', 'w4'), water({ wateringConfirmedBy: 'guardian' })));
-    await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'w5'), water({ wateringConfirmedBy: 'ai' }))); // AI hint is validation-only
+    const { lifetreeId: _tree, ...chainless } = water();
+    void _tree;
+    await assertFails(setDoc(doc(db(BOB), 'pulses', 'w5'), chainless));
   });
 
   it('confirmation is SERVER-ONLY: no client — not even a carer — may write wateringConfirmedBy / wateringConfirmation', async () => {

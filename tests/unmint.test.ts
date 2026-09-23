@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../src/domain/unmint';
 
 // The unmint law (ring 2026-08-15): only the author, only a tree mint, only the HEAD block,
-// never a witnessed watering. Mirrors the rules' unmint branch — these refusals and that
-// clause must change together.
+// never a witnessed watering. Applied by functions/unmintBlock since ring 2026-09-23 (the
+// server's mirror is held equal in tests/birth.test.ts) — these refusals and that hand must
+// change together.
 
 const mint = (over: Record<string, unknown> = {}) => ({
   authorId: 'ana', type: 'tree_growth', lifetreeId: 't1', hash: 'h9', ...over,

@@ -103,6 +103,27 @@ interval is visibly disputed and stops satisfying new quorums, and later uses ar
 invalid. Re-affirmation, when it gains a face, must be a new seal rather than a
 rewrite.
 
+## Rooting into the domains (2026-09-23)
+
+Raised by Zoltán as the server took the chain's head and the hand began signing its own
+links: "With this we root into the domains. We might need the subdomain tree because too
+many domains to keep up. We need a DNS maybe?"
+
+- A being's true name is its lid; a node's address is its domain; a face's address is a
+  door. Today every door is listed in a charter by hand. Is the honest shape a SUBDOMAIN
+  TREE under each node's apex, so doors are derived and DNS is one wildcard — or does a face
+  on its own apex (theohouse.org) matter more than the keeping cost?
+- Is DNS the resolver we want, or is the LIN? `/b/<lid>` already resolves a being by name
+  inside a node. A lid-to-address record — signed by the node, readable across nodes — would
+  make a being reachable wherever it moves, without a registrar. Who signs it, and who
+  believes it?
+- OpenID: a door (someone else's identity signs in here) or an issuer (our lid, trusted
+  outward)? The block's signature proves the hand without either; the two are about reach,
+  not truth. Which one does node two actually need first?
+
+No migration follows from this; the charter, the lid index and the signing crystal already
+carry the pieces. The question is which address a being should be able to give a stranger.
+
 ## The lifetree as relation (2026-07-19)
 
 Raised by Zoltán, late at night, after the shadow chapter: we could see a lifetree

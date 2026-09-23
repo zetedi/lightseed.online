@@ -75,7 +75,8 @@ const canonicalBase64 = (value: string): boolean => {
     }
 };
 
-const verifiesEd25519 = (pubkey: string, signature: string, preimage: string): boolean => {
+// Exported for the signed block (blocks.ts): one Ed25519 verifier on the server, whatever is signed.
+export const verifiesEd25519 = (pubkey: string, signature: string, preimage: string): boolean => {
     try {
         if (!canonicalBase64(pubkey) || !canonicalBase64(signature)) return false;
         const key = createPublicKey({

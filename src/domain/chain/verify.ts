@@ -32,6 +32,9 @@ export const BLOCK_CONTENT_FIELDS = [
   // chain, so the agreement is sealed on both sides.
   'offeringId', 'offeringLid', 'offeringRole', 'offeringTwinOf', 'offeringTwinKind',
   'authorId', 'authorName', 'authorPersonName', 'authorPhoto', 'growthCategory', 'visionTitle',
+  // The author's own signature (ring 2026-09-23, signed blocks): sealed INTO the hash, so a
+  // signature can no more be swapped than a body. Absent on unsigned and server-hand blocks.
+  'authorSignature',
 ] as const;
 
 // Pick only the whitelisted, defined fields — the canonical content of a block.

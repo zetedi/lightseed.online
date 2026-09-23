@@ -3,10 +3,10 @@
 // Functions is its own TS project and cannot import src/domain, so this module MIRRORS the
 // hashing law of src/domain/chain (canonical.ts, hash.ts, and verify.ts's content fields and
 // preimage). The mirror is held true by the ROOT test suite (tests/chain.test.ts imports BOTH
-// and compares hashes of the same blocks). The first server mint that needs it is the offering
-// of care (ring 2026-09-06): the acceptance twins are sealed here exactly as mintPulse seals a
-// block in the browser — the legacy seal on unlocked nodes, the canonical seal on locked ones —
-// so verifyChain reads a server-minted block and a browser-minted one the same way.
+// and compares hashes of the same blocks). Since ring 2026-09-23 EVERY block is born on the
+// server (blocks.ts: mintBlock, unmintBlock, acceptAlignment; offeringCalls; the stay leaf) and
+// sealed canonically here — the legacy seal (createBlock) stays only so that stored legacy
+// hashes, and the genesis a tree or vision is born with, remain reproducible.
 import { webcrypto } from "node:crypto";
 
 const isTimestampLike = (v: unknown): v is { toMillis: () => number } =>
@@ -62,6 +62,9 @@ export const BLOCK_CONTENT_FIELDS = [
     // chain, so the agreement is sealed on both sides.
     'offeringId', 'offeringLid', 'offeringRole', 'offeringTwinOf', 'offeringTwinKind',
     'authorId', 'authorName', 'authorPersonName', 'authorPhoto', 'growthCategory', 'visionTitle',
+    // The author's own signature (ring 2026-09-23, signed blocks): sealed INTO the hash, so a
+    // signature can no more be swapped than a body. Absent on unsigned and server-hand blocks.
+    'authorSignature',
 ] as const;
 
 export function blockContent(pulse: Record<string, unknown>): Record<string, unknown> {

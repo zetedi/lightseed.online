@@ -6,6 +6,100 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-23 · The hand signs its own link** — Zoltán, after the server took the head: "we
+might need openID or similar on the reality facing part… Do the signed blocks please." The
+server's seal proves the head followed and the bytes are the bytes; who ASKED was still the
+server's word about a session. NOW a block carries its author's own Ed25519 signature — the
+signing crystal's key and epoch (persons/{uid}, the covenant and decision seals' v3 posture) —
+over the chain POSITION (the head this device read) and the CONTENT the server will store. The
+client reaches that content by running the same pure law the server runs (judgeBlockBirth) over
+the bearer it read, and signs signedContentOf(content) under lifeseed.block-signature.v1; the
+server reads persons/{uid} inside its transaction, verifies with the PUBLISHED key — never the
+claim's — and seals the signature INTO the hash (authorSignature is chain content), so a
+signature can no more be swapped than a body. THE LAW (domain/chain/birth, mirrored, held
+equal): a person with a published ACTIVE key mints only with a valid signature by the current
+key and epoch — unsigned, stale-key and forged births are refused (block_unsigned,
+block_key_stale, block_signature_bad); a moved head is named (block_head_moved) and the client
+signs once more over the new head; a FROZEN key mints nothing (account access may freeze,
+never replace — ring 2026-07-25); a person WITHOUT a key mints unsigned, and the block says
+so by carrying no signature. A reader rebuilds the payload from the stored block alone
+(blockSignaturePayloadOf) and verifies with the frozen pubkey — no server in the loop. The
+living walk does exactly that: Bakr publishes a key, is refused unsigned, stale-headed and
+forged, mints signed, and the block verifies from its own bytes while keyless Ana still mints
+plainly. NOT GUARANTEED: that a keyless being's block is anything but the server's word (make
+the key the default at planting, a later ring); the twin blocks and stay leaves are the
+server's own hand and unsigned by design; and a device without its published key cannot mint
+until the phrase is restored (Settings) — the key IS the hand, and the mint doors do not yet
+open the restore modal themselves (they speak block_key_restore). ON OPENID: recorded as a
+question and a rung, not built — OIDC as a door (another node's or a provider's identity
+signing in here), and lightseed as an issuer (a lid trusted outward) belong with the node-two
+rungs; the signature is the reality-facing piece that needs neither. REJECTED: signing the raw
+request (the server adds defaults, so a reader could never rebuild the bytes); a signature
+outside the seal (swappable); making the key mandatory today (DMs would stop for every
+keyless being at once).
+NOT A NEW LOCK (Zoltán asked: "are we becoming the identity server and showing a new lock
+type, or is this secret standard already?"): the secret is standard — Ed25519 (RFC 8032), keys
+in SPKI/PKCS8 DER (RFC 8410), a BIP39 recovery phrase, SHA-256 through WebCrypto — and only
+the ENVELOPE is ours: which fields are signed, in what canonical order, under which version
+and tag, and where the public key is published (persons/{uid} and its append-only lineage).
+The same keys could later be expressed as a JWS detached signature (EdDSA, RFC 8037) or a
+did:key name without changing a key or a chain. A node is thereby a key DIRECTORY for its own
+beings, not yet an identity provider: that is the OpenID rung.
+WHAT THE SECRET IS, in the guardian's words: "That secret is the lightseed it seems, and when
+two people share it, it's a covenant, online group/forum/lifetree. Through this lightseed you
+can reach a lightning path going through society. We become trees, a part of us, at least in
+the online world as intention. The identity reaching out to the cosmos." The plain contract
+beside the reading: the private key is never shared — what two beings share is their two
+signatures over one payload (the covenant's two-sided mint, the alignment's twins); the
+"lightning path" is the chain of such signed links from being to being; and a being's
+reach is bounded by what it signs, never by what a server says on its behalf.
+
+---
+
+**2026-09-23 · The chain is the server's** — Zoltán: "Let's do server side heads if the model
+holds, the graph, nodes, links." The first root of the season (ROADMAP, decided 2026-09-20). The
+model holds: a being is still a node with a chain and a circle of links; what moved is the HAND
+that may extend the chain. Before this ring a browser read a tree's head, hashed a block it
+composed itself, and moved the head in its own transaction — the rules froze fields afterwards
+but never checked that the hash was the hash of the content, that the head really followed, or
+that the hand was the chain's to move; a stranger could even set a pulse on any tree's timeline
+by naming its lifetreeId. NOW: every link on a tree's or a vision's chain is born by the server
+— functions/mintBlock (and its twins unmintBlock, acceptAlignment, beside acceptOffering and the
+stay leaf) reads the bearer's head INSIDE its transaction, judges the birth by one pure law
+(domain/chain/birth, mirrored in functions/src/birth.ts, held equal by tests/birth.test.ts),
+seals the block canonically over the very record it stores, and moves the head in the same
+write. A hand says only what a hand may say about a block (BLOCK_BIRTH_FIELDS); authorId, domain,
+mintedAt, previousHash and the hash are the server's; standing (owner / co_owner / steward, a
+vision's author, staff) is read from the documents, never from the request. THE RULES: a client
+births only a STANDALONE, sentinel-rooted record (clientBornStandalone — events, offerings,
+decisions, a person's reach), never a link, never a pulse naming a tree or vision as its chain,
+never a watering; latestHash / blockHeight / genesisHash are frozen on trees and visions to
+every client hand, STAFF INCLUDED (the mend is a server script, as unwind-head-blocks already
+was); trees and visions are born at their root (head == genesis, height 0); NO client deletes a
+chain block — a tree's or a vision's, head or below, with or without a rollback. The unmint
+moved with the head: the same law (domain/unmint), the server's transaction, the staff dot
+honoured on the two social guards only. The watering's schedule reset and the growth's care
+stamp ride in the server's transaction. deleteVision lets the contributions stand: a released
+vision leaves its chain behind, intact. THE SEAL IS CANONICAL ON EVERY NODE: the legacy seal
+hashed the browser's ad-hoc payload, which no one could recompute from the stored record — a
+server that holds the head owes every reader a hash they can check, so the chain-seal stamp
+(community.chainLocked) no longer changes what is written; it stays a face until a later ring
+retires it. THE LIVING WALK now mints through the real callable, is refused its own forged leaf,
+verifies the whole chain under the canonical seal, unmints the newest link and verifies again;
+the rules suite holds the refusals (222). The alignment's acceptance — a client twin mint the
+rules had already refused at the foreign head — became the callable it was waiting for. NOT
+GUARANTEED, said plainly: lived truth (a photo proves a moment), the recomputability of
+blocks born before this ring under the browser's seal (linkage and height still verify;
+canonicalRecompute reports them by design), and the two chains this ring did not reach —
+a covenant's seal/break and a decision's enacted/withdrawn marks still hash in the browser
+under their own signature-backed rules (ARCHITECTURE debts). REJECTED: rules-only linkage checks (getAfter on the
+head) — they can prove that a head moved with a block, never that the hash is the hash of the
+content; keeping the legacy seal for unsealed nodes (a seal only its forger could recompute is
+not a seal); leaving the staff client a head hand (power is visible, and this power is a
+script's).
+
+---
+
 **2026-09-21 · A place's words are papers; the vision is the first** — Zoltán: "merge the
 white paper into the charter object and load it lazily in the editor… a json with chapters
 like architecture, vision… the vision would also be shown on the community page… take out

@@ -24,10 +24,10 @@ export interface StaffHand {
   key: DomainKey;
   // Where the hand is enforced (a rule, a storage rule, a function, a client gate).
   enforcedBy: string[];
-  // Wired through config/staffHands — by staffHand('id') in firestore.rules, or staffHandOn('id')
-  // in functions (the mirror) — so the superadmin's switch bites wherever the hand is held.
+  // Wired through config/staffHands — by staffHand('id') in firestore.rules, staffHandOn('id')
+  // in functions (the mirror), or both — so the superadmin's switch bites wherever the hand is held.
   switchable: boolean;
-  enforcedIn?: 'rules' | 'functions';
+  enforcedIn?: 'rules' | 'functions' | 'both';
   defaultOn: boolean;
   since: string;
 }
@@ -35,8 +35,8 @@ export interface StaffHand {
 export const STAFF_HANDS: readonly StaffHand[] = [
   { id: 'link_mint', key: 'hand_link_mint', enforcedBy: ['firestore.rules links create (every rel but grows_in)'], switchable: true, defaultOn: true, since: '2026-05' },
   { id: 'garden_stand', key: 'hand_garden_stand', enforcedBy: ['firestore.rules links create grows_in', 'LifetreeDetail canEdit → TreeGardens'], switchable: true, defaultOn: true, since: '2026-09-08' },
-  { id: 'tree_edit', key: 'hand_tree_edit', enforcedBy: ['firestore.rules lifetrees update (both staff branches)'], switchable: true, defaultOn: true, since: '2026-06' },
-  { id: 'tree_water', key: 'hand_tree_water', enforcedBy: ['firestore.rules pulses create care:watering'], switchable: true, defaultOn: true, since: '2026-07-20' },
+  { id: 'tree_edit', key: 'hand_tree_edit', enforcedBy: ['firestore.rules lifetrees update (both staff branches)', 'functions mintBlock (a non-carer staff link on a tree or vision, staffHandOn)'], switchable: true, enforcedIn: 'both', defaultOn: true, since: '2026-06' },
+  { id: 'tree_water', key: 'hand_tree_water', enforcedBy: ['functions mintBlock (a non-carer staff watering, staffHandOn; the rules fork retired 2026-09-23)'], switchable: true, enforcedIn: 'functions', defaultOn: true, since: '2026-07-20' },
   { id: 'door_grant', key: 'hand_door_grant', enforcedBy: ['functions grantDoor (staffHandOn)'], switchable: true, enforcedIn: 'functions', defaultOn: true, since: '2026-09-09' },
   { id: 'community_edit', key: 'hand_community_edit', enforcedBy: ['firestore.rules communities update'], switchable: true, defaultOn: true, since: '2026-05' },
   { id: 'community_assets', key: 'hand_community_assets', enforcedBy: ['storage.rules /{allPaths=**} write (the two-document budget forbids a switch there)'], switchable: false, defaultOn: true, since: '2026-05' },

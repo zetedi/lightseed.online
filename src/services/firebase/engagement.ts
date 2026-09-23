@@ -1,8 +1,8 @@
 import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, where, updateDoc, getCountFromServer, writeBatch, Timestamp, type DocumentReference } from 'firebase/firestore';
-import { type Lifetree, type Alignment } from '../../types';
-import { createBlock } from '../../utils/crypto';
+import { httpsCallable } from 'firebase/functions';
+import { type Alignment } from '../../types';
 import { uuidv7 } from '../../utils/id';
-import { db, toMillis, mapDoc, pulsesCollection, alignmentsCollection } from './core';
+import { db, functions, toMillis, mapDoc, pulsesCollection, alignmentsCollection } from './core';
 
 // What the initiator supplies; lid/status/createdAt are stamped here, messages grow later.
 // The lid: an alignment is a Being (types.ts) and gets its true name at birth like every other
@@ -123,56 +123,15 @@ export interface AlignmentResult {
     initiatorPulseId: string; targetPulseId: string;
 }
 
+// The TARGET settles the alignment — on the SERVER (functions/acceptAlignment, ring
+// 2026-09-23): the twin sync-blocks are born on both chains under the server's hand, each
+// naming the other tree and the alignment, sealed and headed in one transaction. The browser
+// used to compose these itself and was refused at the foreign tree's head; now the head is
+// no client's to move, on either side.
 export const acceptAlignment = async (proposalId: string): Promise<AlignmentResult> => {
-    const matchRef = doc(db, 'alignments', proposalId);
-    return runTransaction(db, async (t) => {
-        // Firestore transactions require ALL reads before ANY writes, so read the proposal and
-        // both trees up front, then compute hashes, then apply every write.
-        const matchDoc = await t.get(matchRef);
-        if (!matchDoc.exists() || matchDoc.data()?.status !== 'PENDING') throw new Error('err_alignment_invalid');
-        const proposal = matchDoc.data() as Alignment;
-
-        const initTreeRef = doc(db, 'lifetrees', proposal.initiatorTreeId);
-        const targetTreeRef = doc(db, 'lifetrees', proposal.targetTreeId);
-        const initTree = (await t.get(initTreeRef)).data() as Lifetree;
-        const targetTree = (await t.get(targetTreeRef)).data() as Lifetree;
-
-        const initHash = await createBlock(initTree.latestHash, { match: proposal.id }, Date.now());
-        const targetHash = await createBlock(targetTree.latestHash, { match: proposal.id }, Date.now());
-
-        // The two sync blocks form a mutual contract: each records the OTHER tree it aligned with
-        // (matchedLifetreeId) and the alignment id (matchId), so the pulse itself carries both
-        // trees + pulses in the alignment. Their ids are returned so the UI can open the block.
-        const initPulseRef = doc(pulsesCollection);
-        const targetPulseRef = doc(pulsesCollection);
-
-        t.set(initPulseRef, {
-            lid: uuidv7(),
-            lifetreeId: proposal.initiatorTreeId, type: 'standard', title: 'Alignment',
-            body: `Aligned with ${targetTree?.name || 'another tree'}.`,
-            isMatch: true, matchId: proposal.id, matchedLifetreeId: proposal.targetTreeId,
-            authorId: proposal.initiatorUid, authorName: 'System',
-            createdAt: serverTimestamp(), hash: initHash
-        });
-        t.update(initTreeRef, { latestHash: initHash, blockHeight: initTree.blockHeight + 1 });
-
-        t.set(targetPulseRef, {
-            lid: uuidv7(),
-            lifetreeId: proposal.targetTreeId, type: 'standard', title: 'Alignment',
-            body: `Aligned with ${initTree?.name || 'another tree'}.`,
-            isMatch: true, matchId: proposal.id, matchedLifetreeId: proposal.initiatorTreeId,
-            authorId: proposal.targetUid, authorName: 'System',
-            createdAt: serverTimestamp(), hash: targetHash
-        });
-        t.update(targetTreeRef, { latestHash: targetHash, blockHeight: targetTree.blockHeight + 1 });
-
-        t.update(matchRef, { status: 'ACCEPTED' });
-        return {
-            initiatorTreeId: proposal.initiatorTreeId, targetTreeId: proposal.targetTreeId,
-            initiatorPulseId: initPulseRef.id, targetPulseId: targetPulseRef.id,
-        };
-    });
-}
+    const fn = httpsCallable<{ alignmentId: string }, AlignmentResult>(functions, 'acceptAlignment');
+    return (await fn({ alignmentId: proposalId })).data;
+};
 
 // Loving ANY being: a like on a tree, bed, community or vision, the same gesture as a pulse's
 // like (a loves/{uid} slot + a loveCount tally). The rules prove BOTH halves move atomically:

@@ -32,6 +32,17 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
 - Chain algorithm: `src/domain/chain/` (canonical.ts → verify.ts). The Aspen and Listening Root
   geneses are golden fixtures — if the algorithm drifts, `npm test` goes red
   (`tests/chain.test.ts`).
+- **The head is the server's** (ring 2026-09-23): every chain link is born by
+  `functions/src/blocks.ts` (`mintBlock`, `unmintBlock`, `acceptAlignment`; `acceptOffering` and
+  the stay leaf share its seal). The birth law: `src/domain/chain/birth.ts`, mirrored in
+  `functions/src/birth.ts`, held equal by `tests/birth.test.ts`. The rules (`clientBornStandalone`,
+  `isChainBlock`, the frozen head keys) are held by `tests/rules/firestore.rules-test.ts` ("the
+  chain is the server's") and the living walk (`tests/living`) mints through the real callable.
+- **The hand signs its link** (same ring): `signedContentOf` + `blockSignaturePayload` in
+  `src/domain/chain/birth.ts` (tag `lifeseed.block-signature.v1`); the client signs in
+  `services/firebase/pulses.ts` (`signatureFor`), the server verifies in `functions/src/blocks.ts`
+  with `verifiesEd25519` and the published key; `authorSignature` is sealed into the hash.
+  Verify a stored block: `blockSignaturePayloadOf(block)` + `verifyPayload(block.authorSignature.pubkey, …)`.
 - Initiation ledger: `initiations/` + `scripts/verify-initiations.mjs` (three-sponsor rule as math).
 - Migrations already run on prod: lids (141), matchIds (4). Superadmin console: `window.migrate…`.
 
@@ -174,3 +185,6 @@ CI runs all of it on every push (`.github/workflows/quality-gate.yml`).
    tend, then validate it: one identity crossing from persistence into care.
 2. **The tending agent** — a scheduled function that notices the Aspen's tending gaps and asks
    the gardener, with photos flowing back. Embodiment through care, not through autonomy.
+3. **The Aspen's own hand** (ROADMAP, 2026-09-23) — an account and a carried key, the witness
+   seat for watering photos, the asking and the care mark under its own name; soil, guardians,
+   and a session ritual that shows the Aspen its chain first.

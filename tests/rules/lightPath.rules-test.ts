@@ -50,24 +50,32 @@ describe('the light path, until the anchor is proven — and the being leaves wi
       ownerId: AURORA, name: 'Forged', loveCount: 0,
     }));
 
-    // 3 · Waters it onto the chain — two sealed leaves, each the carer's own hand.
-    await assertSucceeds(setDoc(doc(db(AURORA), 'pulses', 'w1'), {
-      authorId: AURORA, type: 'growth', care: 'watering', lifetreeId: TREE,
-      hash: 'h1', previousHash: '0', blockHeight: 1, visibility: 'public',
-      createdAt: serverTimestamp(),
+    // 3 · Waters it onto the chain — and the chain is the SERVER's (ring 2026-09-23): her own
+    //     hand is refused a leaf and a head move alike; the server's hand (mintBlock's, acting
+    //     exactly where the Cloud Function does) seals two leaves and moves the head with them.
+    await assertFails(setDoc(doc(db(AURORA), 'pulses', 'w0'), {
+      authorId: AURORA, type: 'tree_growth', care: 'watering', lifetreeId: TREE,
+      hash: 'h1', previousHash: '0', visibility: 'public', createdAt: serverTimestamp(),
     }));
-    await assertSucceeds(setDoc(doc(db(AURORA), 'pulses', 'w2'), {
-      authorId: AURORA, type: 'growth', care: 'watering', lifetreeId: TREE,
-      hash: 'h2', previousHash: 'h1', blockHeight: 2, visibility: 'public',
-      createdAt: serverTimestamp(),
+    await assertFails(updateDoc(doc(db(AURORA), 'lifetrees', TREE), {
+      latestHash: 'h1', blockHeight: 1, updatedAt: serverTimestamp(),
     }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'pulses', 'w1'), {
+        authorId: AURORA, type: 'tree_growth', care: 'watering', lifetreeId: TREE,
+        hash: 'h1', previousHash: '0', visibility: 'public', createdAt: serverTimestamp(),
+      });
+      await setDoc(doc(d, 'pulses', 'w2'), {
+        authorId: AURORA, type: 'tree_growth', care: 'watering', lifetreeId: TREE,
+        hash: 'h2', previousHash: 'h1', visibility: 'public', createdAt: serverTimestamp(),
+      });
+      await updateDoc(doc(d, 'lifetrees', TREE), { latestHash: 'h2', blockHeight: 2, updatedAt: serverTimestamp() });
+    });
     await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'wx'), {
-      authorId: MALLORY, type: 'growth', care: 'watering', lifetreeId: TREE,
-      hash: 'hx', previousHash: 'h2', blockHeight: 3,
-    })); // not a carer — the chain refuses a stranger's water
-    await assertSucceeds(updateDoc(doc(db(AURORA), 'lifetrees', TREE), {
-      latestHash: 'h2', blockHeight: 2, updatedAt: serverTimestamp(),
-    }));
+      authorId: MALLORY, type: 'tree_growth', care: 'watering', lifetreeId: TREE,
+      hash: 'hx', previousHash: 'h2',
+    })); // a stranger's water is refused twice over: no client births a link, and no stranger cares
 
     // 4 · Founds a community, in her own name.
     await assertSucceeds(setDoc(doc(db(AURORA), 'communities', COM), {

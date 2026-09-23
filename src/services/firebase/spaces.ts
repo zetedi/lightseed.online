@@ -4,7 +4,7 @@ import { type Pulse, type Vision, type Community, type Being, type CommunityInvi
 import type { Stamp } from '../../domain/time';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
-import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection, auth } from './core';
+import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
 import { firestoreStore } from '../../adapters/firestore';
 import { nodeCapacityGate, DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { chooseDomainClaimant } from '../../domain/communityDoor';
@@ -116,19 +116,11 @@ export const getVisionById = async (id: string): Promise<Vision | null> => {
 // pulses (visionId-tagged) and its incoming links, then the vision doc itself. Each item's delete
 // is swallowed — the actor removes what the rules permit (their own; all as staff). A stray
 // guarded-tree Root Vision has neither pulses nor links, so for it this is simply a plain delete.
+// RELEASE a vision: the being's record goes, its CHAIN STANDS (ring 2026-09-23). Contribution
+// blocks are links on the vision's chain — append-only, never erased by any client hand, the
+// rules refuse it — so they remain, each still naming the vision it grew. Only the links
+// pointing at the vision are let go, so no circle keeps a dangling edge.
 export const deleteVision = async (id: string) => {
-    try {
-        // A non-staff caller may only delete their OWN contribution pulses, so query by
-        // authorId (canListPulse-provable) and match visionId client-side; a visionId-only
-        // list is refused by the hardened rule for non-staff (ring 2026-08-25).
-        const uid = auth.currentUser?.uid;
-        const pulses = uid
-            ? await getDocs(query(pulsesCollection, where('authorId', '==', uid)))
-            : { docs: [] as QueryDocumentSnapshot[] };
-        await Promise.all(pulses.docs
-            .filter(d => (d.data() as { visionId?: string }).visionId === id)
-            .map(d => deleteDoc(d.ref).catch(() => { /* not mine to remove */ })));
-    } catch { /* contribution pulses unreadable — leave them */ }
     try {
         const links = await getDocs(query(collection(db, 'links'), where('to', '==', id)));
         await Promise.all(links.docs.map(d => deleteDoc(d.ref).catch(() => { /* not mine to remove */ })));

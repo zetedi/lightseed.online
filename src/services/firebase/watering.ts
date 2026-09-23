@@ -142,9 +142,11 @@ export const recordWatering = async ({
     const confirmedBy: 'ai' | 'pending' = analysis.watering && (analysis.confidence || 0) >= 70 ? 'ai' : 'pending';
     const note = analysis.note || (confirmedBy === 'ai' ? 'Confirmed by AI.' : 'Awaiting a guardian to confirm.');
 
-    // Reset the cadence + clear the overdue flag IN THE SAME transaction that appends the growth
-    // block, so the tree can never be left "watered on the chain but still overdue". mintPulse
-    // already sets lastCaredAt (GROWTH), so living validation re-lights automatically.
+    // The cadence reset + the cleared overdue flag ride IN THE SAME server transaction that
+    // appends the growth block (functions/mintBlock composes them, ring 2026-09-23), so the tree
+    // can never be left "watered on the chain but still overdue"; the mint sets lastCaredAt too,
+    // so living validation re-lights. The same reset is computed here only for the refresh bus,
+    // so every loaded copy of the tree follows without a reload.
     const now = Date.now();
     const naming = await myNaming();
     const interval = tree.watering?.mode === 'scheduled' ? tree.watering?.intervalDays : undefined;
@@ -170,13 +172,12 @@ export const recordWatering = async ({
             confidence: analysis.confidence || 0,
             model: analysis.model,
             provider: analysis.provider,
-            ...(confirmedBy === 'ai' ? { confirmedAt: Timestamp.fromMillis(Date.now()) } : {}),
+            // confirmedAt is the server's clock on an AI-confirmed watering (mintBlock stamps it).
         },
-        authorId: sender.uid,
         authorName: tree.name,
         authorPersonName: naming.personName,
         authorPhoto: tree.imageUrl || sender.photoURL || undefined,
-    }, wateringUpdate);
+    });
     // The mint announced the tree's new head; the watering itself reaches every loaded copy too.
     announce('trees', tree.id, wateringPatchOf(tree, wateringUpdate));
 

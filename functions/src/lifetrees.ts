@@ -2,8 +2,8 @@
 import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { FieldValue } from "firebase-admin/firestore";
-import { createHash } from "node:crypto";
 import { db, isStaffUid, mintLid } from "./core";
+import { sealBlock } from "./blocks";
 
 // --- Planting caps, enforced server-side -------------------------------------------------
 // The client gate (domain/limits + plantLifetree) is advisory — a direct Firestore write
@@ -206,18 +206,11 @@ export const onStayWritten = onDocumentWritten("stays/{stayId}", async (event) =
     }
 });
 
-// The legacy block hash — sha256(JSON.stringify(pulseData) + previousHash + mintedAt) — the exact
-// scheme mintPulse (src/services/firebase/pulses.ts) uses for an UNSEALED chain. A bed is not a
-// node, so its chain is unsealed; the same UTF-8 preimage yields the same digest in Node, so a bed
-// stays verifiable under src/domain/chain (linkage + height; legacy blocks aren't re-hashed).
-const legacyBlockHash = (pulseData: object, previousHash: string, mintedAt: number): string =>
-    createHash("sha256").update(JSON.stringify(pulseData) + previousHash + mintedAt).digest("hex");
-
 // Seal ONE completed stay as a leaf on its bed's chain — atomically and idempotently: the mint,
 // the bed's new head, and the stay's `leafed` flag ride a single transaction, so a leaf is never
 // minted twice and concurrent mints cannot fork the chain (previousHash is always the freshly-read
-// head). Mirrors mintPulse: the hashed `pulseData` is the immutable content; the stored doc adds id
-// / lid / mintedAt / previousHash / createdAt / hash around it.
+// head). The seal is the server's canonical one (blocks.sealBlock, ring 2026-09-23): a leaf is
+// recomputable from its stored record like every other server-born block.
 const mintStayLeaf = async (stayId: string): Promise<void> => {
     const stayRef = db.doc(`stays/${stayId}`);
     await db.runTransaction(async (t) => {
@@ -243,9 +236,8 @@ const mintStayLeaf = async (stayId: string): Promise<void> => {
             authorName: s.guestTreeName || "",
             ...(s.guestTreeGrowthUrl ? { imageUrl: s.guestTreeGrowthUrl } : {}),
         };
-        const hash = legacyBlockHash(pulseData, prevHash, mintedAt);
         const pulseRef = db.collection("pulses").doc();
-        t.set(pulseRef, {
+        const record = {
             ...pulseData,
             lid: mintLid(),
             id: pulseRef.id,
@@ -254,10 +246,10 @@ const mintStayLeaf = async (stayId: string): Promise<void> => {
             mintedAt,
             previousHash: prevHash,
             stayId,
-            createdAt: FieldValue.serverTimestamp(),
-            hash,
-        });
-        t.update(bedRef, { latestHash: hash, blockHeight: (bed.blockHeight || 0) + 1 });
+        };
+        const seal = await sealBlock(prevHash, mintedAt, record);
+        t.set(pulseRef, { ...record, hashVersion: seal.hashVersion, hash: seal.hash, createdAt: FieldValue.serverTimestamp() });
+        t.update(bedRef, { latestHash: seal.hash, blockHeight: (bed.blockHeight || 0) + 1 });
         t.update(stayRef, { leafed: true });
     });
 };
