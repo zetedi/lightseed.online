@@ -12,11 +12,15 @@ import { useLanguage } from '../../contexts/LanguageContext';
 //
 // On mobile the search collapses to a magnifier; tapping it opens the input FULL WIDTH over the
 // switch and CTA (an overlay on the band), so a phone keeps every control without cramping.
-export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle, children, pattern = false, collapsibleSearch = true, searchOnTablet = false, tabs, fg = '#ffffff' }: {
+export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle, children, pattern = false, collapsibleSearch = true, searchOnTablet = false, tabs, fg = '#ffffff', besideSearch }: {
     title: string;               // screen-reader name of the section (not rendered visually)
     tone?: string;               // the active menu item's colour — one pigment, two surfaces
     action?: React.ReactNode;
     footer?: React.ReactNode;    // the search box
+    // A small chip that keeps a seat BESIDE the magnifier while the search is folded (phones):
+    // the one control of the footer that must not fold away with it (the past-events switch).
+    // Rendered with the band's chip voice; hidden once the full footer unfolds.
+    besideSearch?: (chip: { className: string; style?: React.CSSProperties }) => React.ReactNode;
     toggle?: React.ReactNode;    // the density switch
     children?: React.ReactNode;
     pattern?: boolean;
@@ -71,6 +75,7 @@ export const SectionHeader = ({ title, tone = '#059669', action, footer, toggle,
                                 >
                                     <Icons.Search />
                                 </button>
+                                {besideSearch && <span className={`shrink-0 ${hideBp}`}>{besideSearch({ className: chipCls, style: chipStyle })}</span>}
                                 <span className={`flex-1 ${hideBp}`} />
                                 {/* The full search box, once there's room (md on roomy pages, else lg). */}
                                 <div className={`hidden min-w-0 flex-1 ${showBp}`}>{footer}</div>

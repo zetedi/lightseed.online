@@ -338,6 +338,18 @@ export const MainContent: React.FC<{
               </button>
             </div>
           }
+          // On phones the search (and the Past switch inside it) folds behind the magnifier;
+          // the switch keeps a seat beside it as a small clock-turned-back chip (ring 2026-09-27).
+          besideSearch={(chip) => (
+            <button
+              onClick={events.togglePast}
+              title={t('past_events_hint')} aria-label={t('past_events')} aria-pressed={events.showPast}
+              className={`flex shrink-0 items-center justify-center rounded-full p-2 backdrop-blur-sm transition-colors ${events.showPast ? 'bg-white text-emerald-700 hover:bg-white' : chip.className}`}
+              style={events.showPast ? undefined : chip.style}
+            >
+              <Icons.History />
+            </button>
+          )}
           action={lightseed && (
             <button onClick={() => doors.setShowEventModal(true)} className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
               <Icons.Plus /> <span>{t('create_event')}</span>
