@@ -261,7 +261,7 @@ export const ReachInbox = ({
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); onOpenCareById(thread.partnerId); }}
                                         title={t('care_now')}
-                                        className="shrink-0 rounded-full bg-sky-600 p-2 text-white shadow-md transition-all hover:bg-sky-700 active:scale-95"
+                                        className="shrink-0 rounded-full btn-theme p-2 text-white shadow-md transition-all active:scale-95"
                                     >
                                         <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Droplet /></span>
                                     </button>

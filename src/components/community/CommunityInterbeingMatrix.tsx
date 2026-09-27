@@ -193,7 +193,7 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
                 </div>
                 {canManage && (
                   state === 'received' ? (
-                    <button onClick={() => write(other.id, rel, true)} disabled={busyKey === key} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50">{t('interbeing_acknowledge')}</button>
+                    <button onClick={() => write(other.id, rel, true)} disabled={busyKey === key} className="rounded-xl btn-theme px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{t('interbeing_acknowledge')}</button>
                   ) : outgoing ? (
                     <button onClick={() => write(other.id, rel, false)} disabled={busyKey === key} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-300 dark:border-slate-700">{t('interbeing_withdraw')}</button>
                   ) : null

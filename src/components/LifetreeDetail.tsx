@@ -309,7 +309,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [shared, setShared] = useState(false);
    // The tree's action row — one definition, two homes (desktop name-column / mobile footer).
    // One calm green for every action: the icon differentiates, the tree stays forward.
-   const ACTION_GREEN = 'bg-emerald-600 text-white hover:bg-emerald-700';
+   const ACTION_GREEN = 'btn-theme';
    // Play stays a button of its own (a viewer's hand, not a carer's). Every other hand — Care,
    // Reach, Carry, Edit, Delete, in that order — folds into ONE dropdown, "Tree actions", where
    // the Delete pill stood (Zoltán, 2026-09-27: the hero row had grown crowded). The conditions

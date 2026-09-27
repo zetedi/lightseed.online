@@ -335,7 +335,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
 
                         {isKeeperViewer && (
                             <button type="button" onClick={() => setShowOfferBed(true)}
-                                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700">
+                                className="inline-flex items-center gap-2 rounded-full btn-theme px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors">
                                 <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Plus /></span>{t('offer_a_bed')}
                             </button>
                         )}

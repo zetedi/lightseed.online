@@ -860,7 +860,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             )}
             {currentUserId && !isMember && !inviteForHere && (
               door === 'open' ? (
-                <button onClick={handleStepIn} disabled={joining} className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
+                <button onClick={handleStepIn} disabled={joining} className="flex items-center gap-1 rounded-full btn-theme px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
                   <Icons.Users size={14} /><span>{joining ? t('stepping_in') : t('step_in')}</span>
                 </button>
               ) : door === 'closed' ? (
@@ -872,7 +872,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                   <Icons.Users size={14} /> {t('requested')}
                 </span>
               ) : (
-                <button onClick={handleJoin} disabled={joining} className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
+                <button onClick={handleJoin} disabled={joining} className="flex items-center gap-1 rounded-full btn-theme px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors disabled:opacity-50 sm:px-4 sm:py-2 sm:text-xs">
                   <Icons.Users size={14} /><span>{joining ? t('asking') : t('join')}</span>
                 </button>
               )

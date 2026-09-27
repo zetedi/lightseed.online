@@ -322,7 +322,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
 
                 {isEditing && (
                     <div className="flex space-x-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <button onClick={handleSaveClick} disabled={isSaving} className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-emerald-700">
+                        <button onClick={handleSaveClick} disabled={isSaving} className="flex-1 btn-theme text-white py-2 rounded-lg text-sm font-bold">
                             {isSaving ? t('saving') : t('save_changes')}
                         </button>
                         <button onClick={handleCancel} disabled={isSaving} className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-bold hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">

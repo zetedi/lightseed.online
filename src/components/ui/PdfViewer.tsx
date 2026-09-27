@@ -61,7 +61,7 @@ export const PdfViewer = ({ src, title, onClose }: { src: string; title: string;
                                     href={src}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700"
+                                    className="rounded-full btn-theme px-6 py-3 text-sm font-bold uppercase tracking-widest text-white shadow transition-colors"
                                 >
                                     {t('pdf_open_document')}
                                 </a>

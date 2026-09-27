@@ -320,7 +320,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
                   {org.blurb && <p className={`mt-1 leading-relaxed text-slate-600 dark:text-slate-300 ${blurbClamp}`}>{org.blurb}</p>}
                   {org.communityId ? (
                     onSelectCommunity && (
-                      <button onClick={() => handleVisit(org)} className="mt-2.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow transition-all hover:bg-emerald-700 active:scale-95">
+                      <button onClick={() => handleVisit(org)} className="mt-2.5 rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white shadow transition-all active:scale-95">
                         {t('visit_community')}
                       </button>
                     )

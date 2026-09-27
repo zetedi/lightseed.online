@@ -172,7 +172,7 @@ export const CovenantPanel = ({ covenantId, currentUserId, notify, onLoaded }: C
         <div className="flex flex-col gap-2">
           {!hasSigned && (
             <button type="button" onClick={onSignClick} disabled={busy}
-              className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+              className="w-full rounded-xl btn-theme py-3 text-sm font-bold text-white disabled:opacity-50">
               {busy ? t('covenant_signing') : t('covenant_sign')}
             </button>
           )}

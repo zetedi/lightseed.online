@@ -36,7 +36,7 @@ export const GDPRBanner = () => {
                     <button
                         onClick={handleAccept}
                         disabled={!checked}
-                        className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-full text-xs font-bold transition-colors shadow-sm"
+                        className="btn-theme disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-full text-xs font-bold transition-colors shadow-sm"
                     >
                         {t('gdpr_confirm')}
                     </button>

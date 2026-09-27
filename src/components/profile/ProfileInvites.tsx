@@ -131,7 +131,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
           <div className="rounded-2xl border border-slate-100 p-5 space-y-3 dark:border-slate-800">
             <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600 dark:text-emerald-300">{isSuperAdmin ? t('unlimited') : invitesRemaining}</span></p>
             <p className="text-xs text-slate-400">{t('invites_email_note')}</p>
-            <button onClick={() => setShowInviteModal(true)} disabled={!isSuperAdmin && invitesRemaining <= 0} className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
+            <button onClick={() => setShowInviteModal(true)} disabled={!isSuperAdmin && invitesRemaining <= 0} className="flex items-center gap-2 btn-theme text-white px-4 py-2 rounded-lg font-bold text-xs transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"><Icons.UserPlus /> <span>{t('send_invite')}</span></button>
           </div>
         )}
       </div>
@@ -186,7 +186,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
                     <div className="flex shrink-0 items-center gap-2">
                       {req.status === 'pending' ? (
                         <>
-                          <button onClick={() => handleApproveRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{requestBusyId === req.id ? '…' : t('invite_short')}</button>
+                          <button onClick={() => handleApproveRequest(req.id)} disabled={requestBusyId === req.id} className="rounded-full btn-theme px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">{requestBusyId === req.id ? '…' : t('invite_short')}</button>
                           <button onClick={() => handleDeclineRequest(req)} disabled={requestBusyId === req.id} className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">{t('decline')}</button>
                         </>
                       ) : (
@@ -226,7 +226,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
             <button
               disabled={sendingInvite}
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg transition-colors shadow-lg active:scale-95 disabled:opacity-50"
+              className="w-full btn-theme text-white font-bold py-2 rounded-lg transition-colors shadow-lg active:scale-95 disabled:opacity-50"
             >
               {sendingInvite ? t('loading') : t('send_invite')}
             </button>

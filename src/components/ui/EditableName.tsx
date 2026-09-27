@@ -79,7 +79,7 @@ export const EditableName: React.FC<EditableNameProps> = ({ name, canEdit = true
         disabled={saving}
         className="min-w-0 rounded-lg border border-white/30 bg-black/30 px-3 py-1 text-2xl font-light tracking-wide text-white placeholder-white/50 backdrop-blur focus:outline-none focus:ring-2 focus:ring-emerald-400 md:text-3xl"
       />
-      <button type="button" onClick={() => void save()} disabled={saving} aria-label={t('save')} className="rounded-full bg-emerald-500 p-1.5 text-white transition-colors hover:bg-emerald-400 disabled:opacity-50">
+      <button type="button" onClick={() => void save()} disabled={saving} aria-label={t('save')} className="rounded-full btn-theme p-1.5 transition-colors disabled:opacity-50">
         <Icons.ShieldCheck className="h-4 w-4" />
       </button>
       <button type="button" onClick={close} disabled={saving} aria-label={t('cancel')} className="rounded-full bg-white/15 p-1.5 text-white transition-colors hover:bg-white/30 disabled:opacity-50 dark:bg-slate-900/15">

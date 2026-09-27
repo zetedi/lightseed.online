@@ -89,7 +89,7 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
         <div className="mt-3 flex gap-2">
           {mayWitness && (
             <button type="button" disabled={busy} onClick={witness}
-              className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+              className="rounded-full btn-theme px-4 py-1.5 text-xs font-bold text-white transition-colors disabled:opacity-50">
               👁 {t('lh_witness_btn')}
             </button>
           )}

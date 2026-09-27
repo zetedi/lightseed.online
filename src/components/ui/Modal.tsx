@@ -18,8 +18,10 @@ export const MODAL_CLOSE = 'p-1 rounded-full transition-colors text-slate-400 ho
 export type ModalButtonKind = 'primary' | 'secondary' | 'secondary-dark' | 'danger' | 'ghost';
 export type ModalButtonHue = 'emerald' | 'sky' | 'amber' | 'indigo' | 'violet' | 'red' | 'slate';
 const HUES: Record<ModalButtonHue, string> = {
-    emerald: 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700',
-    sky: 'bg-sky-600 text-white shadow-md hover:bg-sky-700',
+    // emerald and sky both wear the theme now (index.css .btn-theme, ring 2026-09-27): the
+    // node's one action colour, whatever the action's old hue said.
+    emerald: 'btn-theme shadow-md',
+    sky: 'btn-theme shadow-md',
     amber: 'bg-amber-500 text-white shadow-md hover:bg-amber-600',
     indigo: 'bg-indigo-600 text-white shadow-md hover:bg-indigo-500',
     violet: 'bg-violet-600 text-white shadow-md hover:bg-violet-500',

@@ -255,7 +255,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
           <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('admin_email_test')}</p>
           <p className="text-xs text-slate-500">{t('admin_email_test_note')}</p>
         </div>
-        <button onClick={handleTestEmail} className="rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors">{mailStatus || t('admin_send_test')}</button>
+        <button onClick={handleTestEmail} className="rounded-full btn-theme text-white text-xs font-bold px-4 py-2 whitespace-nowrap transition-colors">{mailStatus || t('admin_send_test')}</button>
       </div>
 
       {/* Node planting limits — per-being caps, editable by node admins (config/limits). */}
@@ -276,7 +276,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
             </label>
             <div className="flex-1 text-xs text-slate-400 pb-2 whitespace-nowrap">{t('admin_limits_together').replace('{n}', String((maxLifetrees || 0) + (maxGuardedTrees || 0)))}</div>
             <button onClick={handleSaveLimits} disabled={savingLimits || maxLifetrees < 1 || maxGuardedTrees < 1}
-              className="rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 transition-colors">
+              className="rounded-lg btn-theme disabled:opacity-50 text-white text-xs font-bold px-4 py-2 transition-colors">
               {savingLimits ? t('saving') : t('admin_save_limits')}
             </button>
           </div>
@@ -383,7 +383,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
               <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider dark:text-slate-100"><Icons.Send /> {t('newsletter')}</h4>
               <p className="text-xs text-slate-500 mt-1">{t('admin_newsletter_note')}</p>
             </div>
-            <button onClick={onOpenNewsletterAdmin} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap self-start sm:self-auto"><Icons.Send /><span>{t('send_newsletter')}</span></button>
+            <button onClick={onOpenNewsletterAdmin} className="btn-theme text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap self-start sm:self-auto"><Icons.Send /><span>{t('send_newsletter')}</span></button>
           </div>
         </>
       )}

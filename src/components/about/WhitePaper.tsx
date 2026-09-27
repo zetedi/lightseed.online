@@ -91,7 +91,7 @@ export const WhitePaperSection = () => {
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">{t('white_paper')}</p>
                 <p className="mx-auto mt-2 max-w-md font-serif text-sm italic text-slate-500">{t('white_paper_note')}</p>
                 <button onClick={() => setOpen(true)}
-                    className="mt-4 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700">
+                    className="mt-4 rounded-full btn-theme px-6 py-2.5 text-sm font-bold uppercase tracking-widest text-white shadow transition-colors">
                     {t('open_the_book')}
                 </button>
             </div>
@@ -124,7 +124,7 @@ export const WhitePaperSection = () => {
                                     ? <div className="py-10 text-center">
                                         <p className="font-serif text-sm italic text-slate-500">{t('white_paper_unavailable')}</p>
                                         <button onClick={() => setFailed(f => { const { [active.file]: _gone, ...rest } = f; return rest; })}
-                                            className="mt-4 rounded-full bg-emerald-600 px-5 py-2 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors hover:bg-emerald-700">
+                                            className="mt-4 rounded-full btn-theme px-5 py-2 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors">
                                             {t('refresh')}
                                         </button>
                                       </div>

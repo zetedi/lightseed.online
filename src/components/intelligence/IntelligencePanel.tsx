@@ -233,7 +233,7 @@ export const IntelligencePanel = ({
         className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
       <p className="text-[11px] leading-snug text-slate-400">{t('intel_key_note')}</p>
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={handleConnect} disabled={busy} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+        <button type="button" onClick={handleConnect} disabled={busy} className="rounded-lg btn-theme px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
           {busy ? t('intel_connecting') : existingClaude?.connected ? t('intel_update') : t('intel_connect_claude')}
         </button>
         {existingClaude?.connected && (
@@ -387,7 +387,7 @@ export const IntelligencePanel = ({
           </div>
           <p className="mt-1 text-[11px] leading-snug text-slate-500 dark:text-slate-400">{t('intel_memory_desc')}</p>
           <textarea value={memText} onChange={e => setMemText(e.target.value)} placeholder={t('intel_memory_ph')} className="mt-2 min-h-24 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-          <button type="button" onClick={handleAddMemory} disabled={addingMem || !memText.trim()} className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{addingMem ? '…' : t('intel_add_memory')}</button>
+          <button type="button" onClick={handleAddMemory} disabled={addingMem || !memText.trim()} className="mt-2 rounded-lg btn-theme px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{addingMem ? '…' : t('intel_add_memory')}</button>
         </div>
       ) : (
         <p className="text-sm text-slate-400">{t('intel_choose_memory')}</p>

@@ -348,7 +348,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
         </div>
         {canEdit && (
           <button type="button" onClick={() => onPapersChange(prev => [...prev, { key: paperKeyFor(t('paper_title_ph'), prev), title: '', html: '' }])}
-            className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500">
+            className="shrink-0 rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white transition-colors">
             + {t('add_paper')}
           </button>
         )}
@@ -488,7 +488,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 <button
                   onClick={handleSaveName}
                   disabled={nameSaving || !nameDraft.trim() || nameDraft.trim() === community.name}
-                  className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+                  className="rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white transition-colors disabled:opacity-50">
                   {nameSaving ? t('saving') : t('save')}
                 </button>
               </div>
@@ -510,7 +510,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                 <button
                   onClick={handleSaveDomain}
                   disabled={domainSaving || normalizePlaceOfRecord(domainDraft) === (community.domain || null)}
-                  className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+                  className="rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white transition-colors disabled:opacity-50">
                   {domainSaving ? t('saving') : t('save')}
                 </button>
               </div>
@@ -561,7 +561,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                       {t('domain_verify_resume')}
                     </p>
                     <button onClick={handleCheckVerification} disabled={verifyBusy}
-                      className="mt-2 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+                      className="mt-2 rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white transition-colors disabled:opacity-50">
                       {verifyBusy ? '…' : t('domain_verify_check')}
                     </button>
                   </div>
@@ -585,7 +585,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                         <div className="flex shrink-0 items-center gap-1.5">
                           {row.state === 'waiting_proof' && (
                             <button onClick={() => handleCheckDoor(row.door)} disabled={doorBusy === row.door}
-                              className="rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">{doorBusy === row.door ? '…' : t('door_check')}</button>
+                              className="rounded-full btn-theme px-3 py-1 text-[11px] font-bold text-white transition-colors disabled:opacity-50">{doorBusy === row.door ? '…' : t('door_check')}</button>
                           )}
                           {row.state === 'waiting_grant' && isSuperAdmin && (
                             <button onClick={() => handleGrantDoor(row.door)} disabled={doorBusy === row.door}

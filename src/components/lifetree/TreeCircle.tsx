@@ -535,7 +535,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                             <button
                                                 onClick={() => handleInvite(m)}
                                                 disabled={inviting === m.id || already}
-                                                className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                                                className="shrink-0 rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white transition-colors disabled:opacity-50"
                                             >
                                                 {already ? t('invited') : inviting === m.id ? '…' : t('invite')}
                                             </button>

@@ -91,7 +91,7 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
         <SectionTitle title={t('appearance')} sub={onSave ? t('appearance_sub') : t('autosave_hint')} />
         <div className="flex shrink-0 items-center gap-2">
           {onSave ? (
-            <button onClick={onSave} disabled={saveDisabled} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
+            <button onClick={onSave} disabled={saveDisabled} className="rounded-xl btn-theme px-4 py-2 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50">
               {isSaving ? t('saving') : t('save_changes')}
             </button>
           ) : <AutosaveMark state={autosave} />}

@@ -345,7 +345,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('invitations')}</p>
             <button onClick={handleMintInvite} disabled={minting || door === 'closed'}
               title={door === 'closed' ? t('invite_waits_closed') : t('invite_mint_hint')}
-              className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+              className="rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white transition-colors disabled:opacity-50">
               {minting ? t('minting') : t('mint_invite_link')}
             </button>
           </div>
@@ -436,7 +436,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <button onClick={() => handleAccept(r.uid)} disabled={busyUid === r.uid}
-                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">
+                    className="rounded-lg btn-theme px-3 py-1.5 text-xs font-bold text-white transition-colors disabled:opacity-50">
                     {busyUid === r.uid ? '…' : t('accept')}
                   </button>
                   <button onClick={() => handleDecline(r.uid)} disabled={busyUid === r.uid}

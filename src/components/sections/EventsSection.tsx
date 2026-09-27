@@ -216,7 +216,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       <div className="mb-4 flex items-center justify-between gap-3">
         <SectionTitle title={t('events')} sub={t('events_sub')} />
         {canEdit && (
-          <button onClick={() => { const next = !showEventForm; setShowEventForm(next); if (!next) setEditingEventId(null); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-sky-700">
+          <button onClick={() => { const next = !showEventForm; setShowEventForm(next); if (!next) setEditingEventId(null); }} className="inline-flex shrink-0 items-center gap-1.5 rounded-full btn-theme px-4 py-2 text-xs font-bold text-white shadow-md transition-colors">
             {showEventForm ? <Icons.Close /> : <Icons.Plus />}<span>{editingEventId ? t('edit_event') : t('create_event')}</span>
           </button>
         )}
@@ -249,7 +249,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               <Icons.Plus />
             </ImagePicker>
           </div>
-          <button type="submit" disabled={isEventSaving || isUploadingEventImage || !eventTitle.trim()} className="w-full rounded-2xl bg-sky-600 py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-700 disabled:opacity-50">
+          <button type="submit" disabled={isEventSaving || isUploadingEventImage || !eventTitle.trim()} className="w-full rounded-2xl btn-theme py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all disabled:opacity-50">
             {isEventSaving ? t('creating') : (editingEventId ? t('save_changes') : t('create_event'))}
           </button>
         </form>

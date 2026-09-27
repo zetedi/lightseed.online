@@ -198,7 +198,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
             </div>
             <p className="text-[11px] text-slate-500">{decMode === 'consensus' ? t('council_mode_consensus_sub') : speak(spokenLine('council_mode_threshold_sub', { n: votesRequired(decNature) }))}</p>
           </div>
-          <button onClick={handlePropose} disabled={proposing || !decTitle.trim()} className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50">{proposing ? '…' : t('propose')}</button>
+          <button onClick={handlePropose} disabled={proposing || !decTitle.trim()} className="rounded-xl btn-theme px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50">{proposing ? '…' : t('propose')}</button>
         </div>
       )}
 

@@ -204,7 +204,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
           <button
             type="button"
             onClick={() => onLandingPagesChange(prev => [...prev, { id: uuidv7(), label: t('new_page_label'), html: '' }])}
-            className="shrink-0 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500"
+            className="shrink-0 rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white transition-colors"
           >
             + {t('add_page')}
           </button>

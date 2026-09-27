@@ -123,7 +123,7 @@ export const NewsletterAdmin = ({ community, onBack, embedded = false }: { commu
                     <button
                         onClick={() => setShowConfirm(true)}
                         disabled={sending}
-                        className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"
+                        className="btn-theme disabled:opacity-50 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"
                     >
                         <Icons.Send />
                         <span>{sending ? t('sending') : t('send_newsletter')}</span>

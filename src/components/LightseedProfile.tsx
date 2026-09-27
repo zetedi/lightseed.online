@@ -418,7 +418,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                             </span>
                         )}
                         {allValidated && (
-                            <button onClick={onPlant} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-1.5">
+                            <button onClick={onPlant} className="btn-theme text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-1.5">
                                 <Icons.Tree />
                                 <span>{t('plant_a_tree')}</span>
                             </button>

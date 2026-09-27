@@ -109,7 +109,7 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
               <input id="footer-subscribe" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('footer_subscribe_ph')} autoComplete="email" disabled={subscribing}
                      className={`h-9 min-w-0 flex-1 rounded-full border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 ${surface.isDark ? 'bg-white/10 text-white placeholder-white/50 dark:bg-slate-900/10' : 'bg-white text-slate-800 placeholder-slate-400 dark:bg-slate-900 dark:text-slate-100'}`}
                      style={{ borderColor: surface.border }} />
-              <button type="submit" disabled={subscribing || !email} className="h-9 shrink-0 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50">{t('footer_subscribe_cta')}</button>
+              <button type="submit" disabled={subscribing || !email} className="h-9 shrink-0 rounded-full btn-theme px-4 text-xs font-bold text-white transition-colors disabled:opacity-50">{t('footer_subscribe_cta')}</button>
             </div>
           </form>
         )}

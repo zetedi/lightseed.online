@@ -85,7 +85,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
           {onCreateVision && (
             <button
               onClick={onCreateVision}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-sm rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
+              className="btn-theme text-white px-3.5 py-2 text-sm rounded-full font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
             >
               <Icons.Plus /> <span>{t('create_vision')}</span>
             </button>

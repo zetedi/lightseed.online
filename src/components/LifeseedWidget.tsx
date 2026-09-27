@@ -146,7 +146,7 @@ export const LifeseedWidget: React.FC<Props> = ({ domain, onClose }) => {
                     href={nodeOrigin}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-full transition-colors font-medium"
+                    className="text-xs btn-theme text-white px-3 py-1.5 rounded-full transition-colors font-medium"
                 >
                     {t('widget_plant_a_tree')}
                 </a>

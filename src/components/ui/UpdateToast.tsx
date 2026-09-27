@@ -35,7 +35,7 @@ export const UpdateToast = () => {
         <button
           onClick={refresh}
           disabled={refreshing}
-          className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white transition-colors disabled:opacity-60"
         >
           {refreshing && <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
           {refreshing ? t('refreshing') : t('refresh')}

@@ -134,7 +134,7 @@ export const ObservatoryPage = ({
 
                     {/* Accept · Decline · look before deciding */}
                     <div className="flex flex-wrap items-center gap-2.5 px-4 py-4">
-                      <button onClick={() => onAcceptAlignment(a.id)} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95">{t('accept_sync')}</button>
+                      <button onClick={() => onAcceptAlignment(a.id)} className="rounded-full btn-theme px-4 py-2 text-xs font-bold text-white shadow-md transition-all active:scale-95">{t('accept_sync')}</button>
                       <button onClick={() => onRejectAlignment(a.id)} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-all hover:bg-slate-50 dark:border-slate-700">{t('decline_alignment')}</button>
                       <span className="flex-1"></span>
                       <button onClick={() => onViewAlignmentTree(a.theirTree.id)} className="truncate text-xs font-bold text-sky-600 transition-colors hover:text-sky-700 dark:text-sky-300">{t('visit_tree')} {a.theirTree.name} →</button>

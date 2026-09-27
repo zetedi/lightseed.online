@@ -219,7 +219,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                 </div>
                 {/* The primary action sits right beside the status — water this tree now. */}
                 {canWater && !selfSustaining && (
-                    <button type="button" onClick={waterOnChain ? handleWaterPick : handleWaterBypass} disabled={waterBusy} className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white shadow transition-all hover:bg-sky-700 active:scale-95 disabled:opacity-50">
+                    <button type="button" onClick={waterOnChain ? handleWaterPick : handleWaterBypass} disabled={waterBusy} className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full btn-theme px-4 py-2 text-sm font-bold text-white shadow transition-all active:scale-95 disabled:opacity-50">
                         <Icons.Droplet /> <span className="whitespace-nowrap">{t('i_watered_today')}</span>
                     </button>
                 )}
@@ -258,7 +258,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                             <span>{t('days_unit')}</span>
                         </div>
                     )}
-                    <button type="button" onClick={handleSaveSchedule} disabled={waterBusy} className="ml-auto block rounded-lg bg-sky-600 px-8 py-2 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50">{waterBusy ? t('saving') : t('save')}</button>
+                    <button type="button" onClick={handleSaveSchedule} disabled={waterBusy} className="ml-auto block rounded-lg btn-theme px-8 py-2 text-sm font-bold text-white disabled:opacity-50">{waterBusy ? t('saving') : t('save')}</button>
                 </div>
             )}
 

@@ -235,7 +235,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
             placeholder={t('stay_word_keeper_ph')}
             className="mb-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:text-slate-50" />
           <button type="button" onClick={request} disabled={!!problem || busy}
-            className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50">
+            className="w-full rounded-xl btn-theme py-3 text-sm font-bold text-white transition-colors disabled:opacity-50">
             {problem || t('request_stay')}
           </button>
           <p className="mt-2 text-center text-[11px] text-slate-400">{t('view_hold_note')}</p>
@@ -265,7 +265,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
                 {isHost && s.status === 'requested' && (
                   <div className="flex flex-none gap-1.5">
                     <button type="button" disabled={busy} onClick={() => answer(s, 'accepted')}
-                      className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">✓</button>
+                      className="rounded-full btn-theme px-3 py-1 text-xs font-bold text-white disabled:opacity-50">✓</button>
                     <button type="button" disabled={busy} onClick={() => answer(s, 'declined')}
                       className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500 hover:bg-slate-200 disabled:opacity-50 dark:bg-slate-800">✕</button>
                   </div>

@@ -87,7 +87,7 @@ export const DataModelCrystal = () => {
           <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-200 transition-colors hover:bg-white/10 dark:bg-slate-900/5">
             <Icons.Copy size={14} /> {copied ? speak('copied') : speak('copy_xml')}
           </button>
-          <button onClick={download} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-emerald-700">
+          <button onClick={download} className="inline-flex items-center gap-1.5 rounded-full btn-theme px-3 py-1.5 text-xs font-bold text-white transition-colors">
             <Icons.ArrowRight size={14} /> {speak('download_drawio')}
           </button>
         </div>

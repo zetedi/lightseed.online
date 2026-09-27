@@ -69,7 +69,7 @@ export const WitnessWaterings: React.FC<WitnessWateringsProps> = ({ treeName, pu
                                 <button
                                     onClick={() => handleWitness(p)}
                                     disabled={witnessing === p.id}
-                                    className="shrink-0 rounded-full bg-sky-600 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-sky-700 disabled:opacity-50"
+                                    className="shrink-0 rounded-full btn-theme px-3.5 py-1.5 text-xs font-bold text-white transition-colors disabled:opacity-50"
                                 >
                                     {witnessing === p.id ? '…' : t('witness')}
                                 </button>

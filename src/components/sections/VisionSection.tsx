@@ -65,7 +65,7 @@ export const VisionSection: React.FC<VisionSectionProps> = ({
         <>
           <RichTextEditor value={editValue} onChange={onChange} placeholder={editorPlaceholder} />
           <div className="mt-6 flex items-center gap-3">
-            <button onClick={() => { onSave(); setIsEditing(false); }} disabled={saveDisabled} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50">
+            <button onClick={() => { onSave(); setIsEditing(false); }} disabled={saveDisabled} className="rounded-2xl btn-theme px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50">
               {isSaving ? t('saving') : t('save_changes')}
             </button>
             <button onClick={() => setIsEditing(false)} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700">

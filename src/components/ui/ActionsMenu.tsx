@@ -1,10 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icons } from './Icons';
 import { SuperDot } from './SuperDot';
 
 // THE ACTIONS MENU (ring 2026-09-27): one dropdown where a crowded hero row stood. A trigger
-// pill in the band's voice opens a short list of the being's hands — each an icon, a word, and
-// an optional amber dot when the hand acts by staff role. Closes on a choice, outside, or Esc.
+// pill in the theme's action colour opens a short list of the being's hands — each an icon, a
+// word, and an optional amber dot when the hand acts by staff role. The list is PORTALED to
+// the body and placed by the trigger's rect, so a hero's overflow clip and the section card
+// that overlaps it can never cut it short (the phone lesson). Closes on a choice, outside, Esc,
+// a scroll or a resize.
 export interface MenuAction {
   key: string;
   label: string;
@@ -24,37 +28,54 @@ export const ActionsMenu = ({ label, actions, themeColor }: {
   themeColor?: string;
 }) => {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState<{ top: number; right: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    setPlace({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) });
+  }, [open]);
   useEffect(() => {
     if (!open) return;
-    const away = (e: MouseEvent | TouchEvent) => { if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false); };
+    const away = (e: MouseEvent | TouchEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || listRef.current?.contains(t)) return;
+      setOpen(false);
+    };
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const close = () => setOpen(false);
     document.addEventListener('mousedown', away);
     document.addEventListener('touchstart', away);
     document.addEventListener('keydown', key);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
     return () => {
       document.removeEventListener('mousedown', away);
       document.removeEventListener('touchstart', away);
       document.removeEventListener('keydown', key);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
     };
   }, [open]);
   if (actions.length === 0) return null;
   return (
-    <div ref={rootRef} className="relative">
+    <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
         title={label}
         style={themeColor ? { backgroundColor: themeColor } : undefined}
-        className="flex h-9 items-center gap-1.5 rounded-full bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm ring-1 ring-white/25 transition-all hover:brightness-110"
+        className="btn-theme flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold shadow-sm ring-1 ring-white/25 transition-all"
       >
-        <Icons.Menu /> <span className="hidden sm:inline">{label}</span>
-        <span className={`transition-transform ${open ? 'rotate-180' : ''}`}><Icons.ChevronDown size={14} /></span>
+        <span>{label}</span> <Icons.Menu />
       </button>
-      {open && (
-        <div role="menu" className="absolute right-0 z-30 mt-2 min-w-[190px] overflow-hidden rounded-2xl border border-slate-100 bg-white py-1 text-slate-800 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+      {open && place && createPortal(
+        <div ref={listRef} role="menu" style={{ top: place.top, right: place.right }}
+          className="fixed z-[70] min-w-[200px] max-w-[calc(100vw-16px)] overflow-hidden rounded-2xl border border-slate-100 bg-white py-1 text-slate-800 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
           {actions.map(a => (
             <button
               key={a.key}
@@ -73,8 +94,9 @@ export const ActionsMenu = ({ label, actions, themeColor }: {
               {a.staffDot && <SuperDot />}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   );
 };

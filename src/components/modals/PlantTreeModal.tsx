@@ -275,7 +275,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                     value={treeSeed} 
                     onChange={e=>setTreeSeed(e.target.value)} 
                   />
-                  <button type="button" onClick={handleSeedBio} disabled={uploading || isSeedingBio} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 rounded-xl disabled:opacity-50 font-bold text-xs shadow-md transition-colors flex items-center justify-center min-w-[52px]">
+                  <button type="button" onClick={handleSeedBio} disabled={uploading || isSeedingBio} className="btn-theme text-white px-4 rounded-xl disabled:opacity-50 font-bold text-xs shadow-md transition-colors flex items-center justify-center min-w-[52px]">
                     {isSeedingBio ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'AI'}
                   </button>
                 </div>

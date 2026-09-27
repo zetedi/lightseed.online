@@ -130,7 +130,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                         <div className="flex w-full flex-col items-start gap-2 pl-12 md:items-center md:pl-0">
                             {canCare && onCare && (
                                 <button onClick={onCare} title={t('care_this_tree_title')}
-                                    className="relative z-10 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_16px_rgba(250,204,21,0.5)] transition-all hover:bg-emerald-700 hover:shadow-[0_0_24px_rgba(250,204,21,0.8)] active:scale-95">
+                                    className="relative z-10 inline-flex items-center gap-1.5 rounded-full btn-theme px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white ring-2 ring-yellow-300/60 shadow-[0_0_16px_rgba(250,204,21,0.5)] transition-all hover:shadow-[0_0_24px_rgba(250,204,21,0.8)] active:scale-95">
                                     <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Drop /></span> <span>{t('care')}</span>
                                 </button>
                             )}

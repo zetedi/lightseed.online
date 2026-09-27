@@ -84,7 +84,7 @@ export const BeingQr = ({ lid, name, savedHref, canMint = false, onMint, classNa
                         <div className="flex flex-wrap justify-center gap-2">
                             {dataUrl && (
                                 <a href={dataUrl} download={`${name.replace(/[^\w-]+/g, '-').toLowerCase() || 'being'}-qr.png`}
-                                   className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700">
+                                   className="rounded-full btn-theme px-4 py-2 text-xs font-bold text-white transition-colors">
                                     {t('qr_download_png')}
                                 </a>
                             )}

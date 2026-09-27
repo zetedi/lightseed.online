@@ -241,7 +241,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
                 <button
                   onClick={send}
                   disabled={!draft.trim() || posting}
-                  className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+                  className="rounded-full btn-theme px-4 py-2 text-xs font-bold text-white shadow-md transition-all active:scale-95 disabled:opacity-50"
                 >{posting ? t('sending') : t('send')}</button>
               </div>
               <p className="mt-2 text-center text-[11px] text-slate-400">{t('align_target_note')}</p>
@@ -265,7 +265,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
               <button
                 onClick={mintCovenant}
                 disabled={minting}
-                className="mt-4 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+                className="mt-4 rounded-xl btn-theme px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
               >{minting ? t('minting') : t('covenant_to_life')}</button>
               <p className="mx-auto mt-3 max-w-sm text-xs text-slate-400">{t('align_cov_sign_note')}</p>
             </div>

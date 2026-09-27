@@ -76,6 +76,14 @@ body,
   --primary-900: color-mix(in srgb, var(--color-primary) 40%, #020617);
   --primary-950: color-mix(in srgb, var(--color-primary) 22%, #020617);
 }
+/* THE ONE ACTION COLOUR (ring 2026-09-27). Every solid action button wears the theme's own
+   primary — the colour of "Plant or stand for a tree" — on every node and face, whether or not
+   the palette reaches (the reach dial remaps a whole palette; this is the buttons alone). The
+   hover deepens the same hue; the disabled state stays the utilities' opacity. */
+.btn-theme { background-color: var(--color-primary); color: #ffffff; }
+.btn-theme:hover { background-color: color-mix(in srgb, var(--color-primary) 84%, black); }
+.btn-theme:disabled:hover { background-color: var(--color-primary); }
+
 /* The ink, by day. */
 :root[data-palette="reach"][data-mode="light"] :is(.text-slate-950, .text-slate-900, .text-slate-800) { color: var(--color-text); }
 :root[data-palette="reach"][data-mode="light"] .text-slate-700 { color: var(--ink-90); }

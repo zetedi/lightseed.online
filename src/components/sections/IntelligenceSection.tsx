@@ -226,7 +226,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
       )}
 
       <div className="mt-6 flex items-center gap-3">
-        <button onClick={handleSaveIntelligence} disabled={isSavingIntel} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 disabled:opacity-50" style={accentStyle}>
+        <button onClick={handleSaveIntelligence} disabled={isSavingIntel} className="rounded-2xl btn-theme px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50" style={accentStyle}>
           {isSavingIntel ? 'Saving...' : 'Save Intelligence'}
         </button>
         {status && <span className="text-sm text-slate-500 dark:text-slate-400">{status}</span>}

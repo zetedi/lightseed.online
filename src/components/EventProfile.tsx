@@ -306,7 +306,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDu
                                             <Icons.Users size={14} /> {forming ? '…' : t('event_circle_gather')}
                                         </button>
                                     )}
-                                    <button onClick={handleOpenCircle} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700">
+                                    <button onClick={handleOpenCircle} className="inline-flex items-center gap-1.5 rounded-full btn-theme px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors">
                                         <Icons.Users size={14} /> {t('event_circle_open')}
                                     </button>
                                 </div>
@@ -320,7 +320,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDu
                                 ) : circleRefusal === null && (
                                     <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                                         <input dir="auto" value={circleName} onChange={e => setCircleName(e.target.value)} placeholder={pulse.title ? `${pulse.title} Circle` : t('event_circle_name_ph')} className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
-                                        <button onClick={handleFormCircle} disabled={forming} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50">
+                                        <button onClick={handleFormCircle} disabled={forming} className="inline-flex items-center justify-center gap-1.5 rounded-xl btn-theme px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors disabled:opacity-50">
                                             <Icons.Users size={14} /> {forming ? '…' : t('event_circle_button')}
                                         </button>
                                     </div>

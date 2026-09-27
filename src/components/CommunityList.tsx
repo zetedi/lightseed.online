@@ -47,7 +47,7 @@ const StandingMark = ({ standing, community, onJoin, small = false }: { standing
   : standing === 'requested' ? <span className={`rounded-full bg-slate-400/60 font-black uppercase tracking-wide text-white shadow backdrop-blur ${small ? 'px-2 py-0.5 text-[9px]' : 'px-3 py-1 text-[10px]'}`}>{t('requested')}</span>
   : onJoin ? (
     <button onClick={(e) => { e.stopPropagation(); onJoin(community); }}
-      className={`rounded-full bg-emerald-600 font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:bg-emerald-500 active:scale-95 ${small ? 'px-3 py-1 text-[10px]' : `px-4 py-1.5 text-[11px] ${CTA_GLOW}`}`}>
+      className={`rounded-full btn-theme font-bold uppercase tracking-widest text-white shadow-lg transition-all active:scale-95 ${small ? 'px-3 py-1 text-[10px]' : `px-4 py-1.5 text-[11px] ${CTA_GLOW}`}`}>
       {t('join')}
     </button>
   ) : null
@@ -315,7 +315,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
             {myTrees.length > 0 && (
               <button
                 onClick={() => setShowCreate(true)}
-                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-1.5 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 ${CTA_GLOW}`}
+                className={`btn-theme text-white px-3 sm:px-4 py-1.5 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 ${CTA_GLOW}`}
               >
                 <Icons.Plus />
                 {/* Short everywhere (2026-07-25): one word keeps the band CTAs the same size. */}
@@ -328,7 +328,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
               <button
                 onClick={handleMatch}
                 disabled={isMatching}
-                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-1.5 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 disabled:opacity-60 ${CTA_GLOW}`}
+                className={`btn-theme text-white px-3 sm:px-4 py-1.5 rounded-full text-sm font-bold transition-all flex min-w-0 items-center gap-1.5 active:scale-95 disabled:opacity-60 ${CTA_GLOW}`}
               >
                 <Icons.Venn />
                 <span className="truncate">{isMatching ? t('reading') : t('match')}</span>
@@ -354,7 +354,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
               {myTrees.length > 0 ? (
                   <button
                       onClick={() => setShowCreate(true)}
-                      className="bg-emerald-600 text-white px-10 py-4 rounded-full font-bold shadow-xl hover:bg-emerald-700 transition-all flex items-center gap-2 active:scale-95"
+                      className="btn-theme text-white px-10 py-4 rounded-full font-bold shadow-xl transition-all flex items-center gap-2 active:scale-95"
                   >
                       <Icons.Plus />
                       <span>{t('start_community')}</span>
@@ -387,7 +387,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
                   </button>
                   {standingOf(m.community) === 'joinable' ? (
                     <button onClick={() => handleJoin(m.community)}
-                      className="shrink-0 rounded-full bg-emerald-600 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow transition-all hover:bg-emerald-500 active:scale-95">
+                      className="shrink-0 rounded-full btn-theme px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white shadow transition-all active:scale-95">
                       {t('join')}
                     </button>
                   ) : (

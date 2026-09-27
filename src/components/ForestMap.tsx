@@ -413,7 +413,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                     <h3 class="font-bold text-sm text-slate-800 mb-1 dark:text-slate-100">${escapeHtml(tree.name)}</h3>
                     <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${escapeHtml(tree.body)}"</p>
                     <div class="grid grid-cols-2 gap-2">
-                        <button class="view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('view'))}</button>
+                        <button class="view-btn btn-theme text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('view'))}</button>
                         <button class="reach-btn bg-amber-500 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('reach'))}</button>
                     </div>
                 </div>
@@ -441,7 +441,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                     ${s.locationName ? `<p class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(s.locationName)}</p>` : ''}
                     ${s.body ? `<p class="text-xs text-slate-500 line-clamp-2 italic mt-1">${escapeHtml(s.body)}</p>` : ''}
                     <div class="mt-2 grid ${s.splatUrl ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
-                        <button class="lightHouse-view-btn bg-emerald-600 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('view'))}</button>
+                        <button class="lightHouse-view-btn btn-theme text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('view'))}</button>
                         ${s.splatUrl ? `<a href="${safeImageUrl(s.splatUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full bg-amber-500 px-3 py-2.5 text-xs font-bold text-white">${escapeHtml(t('forest_in_3d'))}</a>` : ''}
                     </div>
                 </div>

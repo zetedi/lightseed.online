@@ -192,7 +192,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         {canGrow && onGrow && (
                             <button
                                 onClick={() => onGrow(vision)}
-                                className="flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95"
+                                className="flex items-center gap-1.5 rounded-full btn-theme px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
                             >
                                 <Icons.Drop />
                                 <span>{t('care')}</span>

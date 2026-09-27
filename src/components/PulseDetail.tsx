@@ -122,7 +122,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                     </button>
                     <div className="flex items-center gap-2">
                         {pulse.type === 'event' && canEdit && onEdit && (
-                            <button onClick={onEdit} className="flex items-center gap-1.5 rounded-full bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-sky-700">
+                            <button onClick={onEdit} className="flex items-center gap-1.5 rounded-full btn-theme px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors">
                                 <Icons.Pencil /> {t('edit')}
                             </button>
                         )}

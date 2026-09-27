@@ -181,9 +181,9 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                     {isExplicitlyValidatedTree(tree) ? (
                       <div className="mt-1 flex items-center gap-2">
                         <ValidationBadge compact lapsed={lapsedValidated(tree)} />
-                        {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                        {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                         {(lapsedValidated(tree) || fadingValidated(tree)) && (
-                          <button onClick={(e) => { e.stopPropagation(); onCare(tree); }} disabled={caringId === tree.id} className="rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                          <button onClick={(e) => { e.stopPropagation(); onCare(tree); }} disabled={caringId === tree.id} className="rounded-full btn-theme px-3 py-1 text-[10px] font-bold text-white disabled:opacity-50">
                             {caringId === tree.id ? '…' : t('care')}
                           </button>
                         )}
@@ -192,7 +192,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                         )}
                       </div>
                     ) : (
-                      <span className="inline-flex items-center gap-2"><span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full dark:bg-slate-800">{t('pending')}</span>{isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}</span>
+                      <span className="inline-flex items-center gap-2"><span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full dark:bg-slate-800">{t('pending')}</span>{isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}</span>
                     )}
                   </div>
                 </div>
@@ -236,7 +236,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                     <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Venn /> {t(roleLabelKey(role))}</span>
-                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                     </div>
                   </div>
                 </div>
@@ -269,7 +269,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                     <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold dark:bg-sky-950/40 dark:text-sky-300"><Icons.Shield /> {t('role_guardian')}</span>
-                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
                     </div>
                   </div>
                 </div>

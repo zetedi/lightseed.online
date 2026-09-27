@@ -223,7 +223,7 @@ export const MainContent: React.FC<{
             <div className="flex items-center gap-2">
               <button
                 onClick={() => doors.openPlant({ type: 'LIFETREE', step: 2 })}
-                className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
+                className={`btn-theme text-white px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
                 style={{ backgroundColor: theme.primary }}
               >
                 <Icons.Tree />
@@ -233,7 +233,7 @@ export const MainContent: React.FC<{
               {myTrees.length > 0 && (
                 <button
                   onClick={() => doors.openPlant({ type: 'GUARDED', step: 2 })}
-                  className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
+                  className={`btn-theme text-white px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all active:scale-95 ${CTA_GLOW}`}
                   style={{ backgroundColor: theme.secondary }}
                 >
                   <Icons.Shield />
@@ -351,7 +351,7 @@ export const MainContent: React.FC<{
             </button>
           )}
           action={lightseed && (
-            <button onClick={() => doors.setShowEventModal(true)} className={`bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
+            <button onClick={() => doors.setShowEventModal(true)} className={`btn-theme text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}>
               <Icons.Plus /> <span>{t('create_event')}</span>
             </button>
           )}

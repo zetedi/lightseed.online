@@ -82,7 +82,7 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
                 {inv.message && <p className="mt-1 text-xs italic text-emerald-700/80">“{inv.message}”</p>}
               </div>
               <div className="flex shrink-0 gap-2">
-                <button onClick={() => handleAcceptInvite(inv.id)} disabled={inviteBusyId === inv.id} className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-emerald-700 disabled:opacity-50">{inviteBusyId === inv.id ? '…' : t('accept')}</button>
+                <button onClick={() => handleAcceptInvite(inv.id)} disabled={inviteBusyId === inv.id} className="rounded-full btn-theme px-4 py-2 text-xs font-bold text-white shadow disabled:opacity-50">{inviteBusyId === inv.id ? '…' : t('accept')}</button>
                 <button onClick={() => handleDeclineInvite(inv.id)} disabled={inviteBusyId === inv.id} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">{t('decline')}</button>
               </div>
             </div>

@@ -600,7 +600,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                         <button
                             type="button"
                             onClick={() => onOpenCareById(partnerTreeId)}
-                            className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-sky-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-md transition-all hover:bg-sky-700 active:scale-95 ${CTA_GLOW}`}
+                            className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full btn-theme px-3 py-1.5 text-[10px] font-bold text-white shadow-md transition-all active:scale-95 ${CTA_GLOW}`}
                         >
                             <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Droplet /></span>
                             <span className="hidden sm:inline">{t('care_now')}</span>
@@ -610,7 +610,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                             onClick={handleMint}
                             disabled={isMinting}
                             title={mode === 'tree' ? t('mint_title_tree') : t('mint_title_oracle')}
-                            className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1.5 text-[10px] font-bold text-white transition-all hover:bg-emerald-700 active:scale-95 disabled:opacity-50 ${CTA_GLOW}`}
+                            className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full btn-theme px-3 py-1.5 text-[10px] font-bold text-white transition-all active:scale-95 disabled:opacity-50 ${CTA_GLOW}`}
                         >
                             {isMinting
                                 ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -695,7 +695,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                                 <button
                                     type="button"
                                     onClick={() => onOpenCareById(partnerTreeId)}
-                                    className="inline-flex items-center gap-1.5 self-start rounded-full bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-sky-700 active:scale-95"
+                                    className="inline-flex items-center gap-1.5 self-start rounded-full btn-theme px-3 py-1.5 text-xs font-bold text-white shadow-md transition-all active:scale-95"
                                 >
                                     <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Droplet /></span>{t('care_now')}
                                 </button>
@@ -829,7 +829,7 @@ export const ReachThread = ({ targetTree = null, groupThread = null, initialAudi
                         : t('reach_ask_ph').replace('{name}', aiName)}
                     className="flex-1 resize-none overflow-y-auto bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 text-[15px] leading-snug focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:bg-white dark:focus:bg-slate-800 transition-all shadow-inner placeholder:text-slate-400 placeholder:italic dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
-                <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && !selectedTree && !groupThread)} title={t('send')} className="bg-emerald-600 text-white p-4 rounded-full hover:bg-emerald-700 active:scale-95 disabled:opacity-50 transition-all shadow-lg">
+                <button type="submit" disabled={isTyping || isSending || !input.trim() || (mode === 'tree' && !selectedTree && !groupThread)} title={t('send')} className="btn-theme text-white p-4 rounded-full active:scale-95 disabled:opacity-50 transition-all shadow-lg">
                     {isSending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Icons.Send />}
                 </button>
             </form>

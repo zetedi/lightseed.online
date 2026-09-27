@@ -81,7 +81,7 @@ export const VisionsPage = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onCreateVision}
-              className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}
+              className={`btn-theme text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap ${CTA_GLOW}`}
             >
               <Icons.Plus className="text-yellow-300" /> <span className="hidden sm:inline">{t('create_vision')}</span>
             </button>
@@ -90,7 +90,7 @@ export const VisionsPage = ({
             <button
               onClick={onAnalyze}
               disabled={isAnalyzingSynergy || !canAnalyze}
-              className={`bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 whitespace-nowrap ${CTA_GLOW}`}
+              className={`btn-theme text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 whitespace-nowrap ${CTA_GLOW}`}
             >
               {isAnalyzingSynergy
                 ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
