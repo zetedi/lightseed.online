@@ -699,6 +699,8 @@ const zh = {
   mint_nothing_new: "自上次铸造以来没有新内容——链条已持有这些话语。",
   community_domain: "地址", community_domain_hint: "这个社区所在的域名。更改后其页面将按新地址取景；已盖旧地址印记的存在保留其印记。",
   community_domain_confirm: "将“{name}”迁至 {domain}？其页面将按新地址取景；现有的树与脉动保留旧印记，直到被重新安家。",
+  tree_actions: "树的操作",
+  unmint_newest_link: "撤回最新一环",
   unmint: "撤回铸造", unmint_confirm: "撤回这次铸造？链条缩短最新一环；其余一切不动。",
   unmint_not_author: "只有铸造它的手才能撤回它。",
   unmint_not_mint: "只能撤回树链上的区块。",

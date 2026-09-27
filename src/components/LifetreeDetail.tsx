@@ -9,7 +9,7 @@ import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
 import { getLightHouseById } from '../services/firebase';
 import type { LightHouse } from '../domain/lightHouse';
-import { EditPill, DeletePill } from './ui/HeroPills';
+import { ActionsMenu, type MenuAction } from './ui/ActionsMenu';
 import { LoveButton } from './ui/LoveButton';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse, getLifetreeById, exportTree, getPersonPresence } from '../services/firebase';
 import { showsPersonName } from '../domain/publicName';
@@ -310,30 +310,37 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // The tree's action row — one definition, two homes (desktop name-column / mobile footer).
    // One calm green for every action: the icon differentiates, the tree stays forward.
    const ACTION_GREEN = 'bg-emerald-600 text-white hover:bg-emerald-700';
+   // Play stays a button of its own (a viewer's hand, not a carer's). Every other hand — Care,
+   // Reach, Carry, Edit, Delete, in that order — folds into ONE dropdown, "Tree actions", where
+   // the Delete pill stood (Zoltán, 2026-09-27: the hero row had grown crowded). The conditions
+   // are the same as before: Care is a CARER's hand (owner/co_owner/steward — the rules'
+   // isTreeCarer); Reach needs a validated tree; Carry is the superadmin voice-bridge on trees
+   // they care (impersonation hides the bridge; carrying reveals it — the display author becomes
+   // the being, the carrier is named, the block stays signed by the real hand); Delete wears the
+   // amber dot when it is a staff hand.
    const actionRow = (
-                    <>
-                        <ActionBtn onClick={() => onPlayGrowth(tree.id)} title={t('play_growth')} color={ACTION_GREEN} icon={<Icons.Play />} label={t('play')} />
-                        {canReach
-                            ? <ActionBtn onClick={() => onReachTree?.(tree)} title={t('reach')} color={ACTION_GREEN} icon={<Icons.Reach />} label={t('reach')} />
-                            : <ActionBtn disabled title={t('only_if_validated')} color="bg-white/20 text-white/70 dark:bg-slate-900/20" icon={<Icons.Eye />} label={t('only_if_validated')} />}
-                        {/* Care is a CARER's hand (owner/co_owner/steward — mirrors isTreeCarer
-                            in the rules), not the owner's alone: an invited tender tends. */}
-                        {canWater && !isEditing && <ActionBtn onClick={onCreatePulse} title={t('care_this_tree_title')} color={ACTION_GREEN} icon={<Icons.Drop />} label={t('care')} />}
-                        {/* Carry this being's voice — superadmin voice-bridge, on trees they care
-                            (owner/co_owner/steward). Impersonation hides the bridge; carrying
-                            reveals it: the display author becomes the being, the carrier is named,
-                            and the block stays signed by the real uid until beings sign themselves. */}
-                        {isSuperAdmin && (isOwner || isCarer) && onCarry && !isEditing && (
-                            <ActionBtn
-                                onClick={() => onCarry(carrying ? null : tree)}
-                                title={carrying ? t('carry_stop_title') : t('carry_start_title')}
-                                color={carrying ? `${ACTION_GREEN} ring-2 ring-white/70` : ACTION_GREEN}
-                                icon={<Icons.Intelligence />}
-                                label={carrying ? t('carrying_label') : t('carry_a_pulse')}
-                            />
-                        )}
-                    </>
+                    <ActionBtn onClick={() => onPlayGrowth(tree.id)} title={t('play_growth')} color={ACTION_GREEN} icon={<Icons.Play />} label={t('play')} />
    );
+   const treeActions: MenuAction[] = [
+       ...(canWater && !isEditing ? [{ key: 'care', label: t('care'), icon: <Icons.Drop />, title: t('care_this_tree_title'), onClick: () => onCreatePulse?.() }] : []),
+       ...(canReach
+           ? [{ key: 'reach', label: t('reach'), icon: <Icons.Reach />, onClick: () => onReachTree?.(tree) }]
+           : [{ key: 'reach', label: t('reach'), icon: <Icons.Eye />, title: t('only_if_validated'), disabled: true, onClick: () => {} }]),
+       ...(isSuperAdmin && (isOwner || isCarer) && onCarry && !isEditing
+           ? [{ key: 'carry', label: carrying ? t('carrying_label') : t('carry_a_pulse'), icon: <Icons.Intelligence />, title: carrying ? t('carry_stop_title') : t('carry_start_title'), active: !!carrying, onClick: () => onCarry(carrying ? null : tree) }]
+           : []),
+       ...(canEdit ? [{ key: 'edit', label: t('edit'), icon: <Icons.Pencil />, onClick: () => { setIsEditing(true); setSection('details'); } }] : []),
+       // THE UNMINT DOOR (domain/unmint, ring 2026-08-15) lives here now (Zoltán, 2026-09-27):
+       // the newest link, named in the title, live while the word is only its author's, disabled
+       // WITH THE REASON once another being holds it; the staff hand wears the amber dot. The
+       // pill on the newest leaf stays as the door's second face; the red crown fallback is gone.
+       ...(isOwner && headBlock ? [{
+           key: 'unmint', label: t('unmint_newest_link'), icon: <Icons.Trash />,
+           title: `${headBlock.title || headBlock.type || ''}${headRefusal0 ? ` — ${t(headRefusal0)}` : ''}`,
+           disabled: !!headRefusal || unminting, staffDot: staffUnmint, onClick: handleUnmintHead,
+       }] : []),
+       ...(canDelete ? [{ key: 'delete', label: t('delete'), icon: <Icons.Trash />, title: t('delete_tree_title'), danger: true, staffDot: deleteIsStaffOnly, onClick: handleRequestDelete }] : []),
+   ];
 
    // The link is the being door (/b/<lid>): hosting serves it through beingPreview, whose card
    // wears the tree's name, words and LATEST face — the static shell's ?tree= link answered
@@ -531,8 +538,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                 actions: !isEditing ? (
                     <div className="flex flex-wrap items-center justify-end gap-2">
                         {actionRow}
-                        {canEdit && <EditPill onClick={() => { setIsEditing(true); setSection('details'); }} />}
-                        {canDelete && <DeletePill onClick={handleRequestDelete} staffDot={deleteIsStaffOnly} title={t('delete_tree_title')} />}
+                        <ActionsMenu label={t('tree_actions')} actions={treeActions} />
                     </div>
                 ) : undefined,
                 body: (

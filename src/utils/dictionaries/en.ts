@@ -701,6 +701,8 @@ const en = {
   community_domain: "The address", community_domain_hint: "The domain this community lives at. Changing it re-scopes what its pages show; beings already stamped with the old address keep their stamps.",
   community_domain_confirm: "Move \u201c{name}\u201d to {domain}? Its pages will scope to the new address; existing trees and pulses keep their old stamps until they are re-homed.",
   // The unmint (domain/unmint, ring 2026-08-15) \u2014 the accidental head mint, taken back whole.
+  tree_actions: "Tree actions",
+  unmint_newest_link: "Unmint newest link",
   unmint: "Unmint", unmint_confirm: "Take back this mint? The chain shortens by its newest link; nothing else moves.",
   unmint_not_author: "Only the hand that minted it may take it back.",
   unmint_not_mint: "Only a block on a tree's chain can be taken back.",

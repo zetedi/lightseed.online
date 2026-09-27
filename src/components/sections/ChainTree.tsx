@@ -141,23 +141,9 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                             )}
                         </div>
                     ) : null}
-                    {/* The head block has no leaf here (a tree-sent reach): the way back still
-                        shows, slim, at the crown — the law's door never silently vanishes. */}
-                    {unmint && !blocks.some(b => b.id === unmint.pulseId) && (
-                        <div className="relative z-10 flex w-full justify-end pl-12 md:pl-0">
-                            <button
-                                type="button"
-                                onClick={unmint.onUnmint}
-                                disabled={unmint.disabled || unmint.busy}
-                                title={unmint.reason || t('unmint_confirm')}
-                                className="relative inline-flex items-center gap-1.5 rounded-full bg-red-500/90 px-3 py-1.5 text-[11px] font-bold text-white shadow transition-colors hover:bg-red-600 disabled:opacity-40"
-                            >
-                                <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Trash /></span>
-                                <span className="max-w-[180px] truncate">{unmint.title}</span> · {unmint.busy ? '…' : t('unmint')}
-                                {unmint.staffDot && <SuperDot />}
-                            </button>
-                        </div>
-                    )}
+                    {/* A head block with no leaf here (a tree-sent reach) once showed a red
+                        crown fallback; the door now lives in the tree's actions menu
+                        ("Unmint newest link", ring 2026-09-27), so the crown stays calm. */}
                     {visibleChain.map((pulse, index) => {
                         // The collapsed middle renders as one clickable horizontal line.
                         if (pulse._collapsed) {
