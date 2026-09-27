@@ -22,7 +22,7 @@ import { SectionMenu, SectionItem } from './ui/SectionMenu';
 import { PulseInsightPanel } from './ui/PulseInsightPanel';
 import { TreeParticipants } from './TreeParticipants';
 import { useLanguage } from '../contexts/LanguageContext';
-import { spokenLine } from '../utils/translations';
+import { spokenLine, speak } from '../utils/translations';
 
 import { Picture } from './ui/Picture';
 import { FullViewButton } from './ui/FullView';
@@ -278,15 +278,15 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDu
                         {lineage && (pulse.descendsFromId || lineage.childCount > 0) && (
                             <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                                 {typeof pulse.generation === 'number' && pulse.generation > 0 && (
-                                    <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{spokenLine('event_lineage_generation', { n: pulse.generation + 1 })}</span>
+                                    <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{speak(spokenLine('event_lineage_generation', { n: pulse.generation + 1 }))}</span>
                                 )}
                                 {lineage.root && (
                                     <button onClick={() => onOpenEvent?.(lineage.root!)} className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300">
-                                        {spokenLine('event_lineage_root', { title: lineage.root.title || '' })}
+                                        {speak(spokenLine('event_lineage_root', { title: lineage.root.title || '' }))}
                                     </button>
                                 )}
                                 {lineage.childCount > 0 && (
-                                    <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{spokenLine('event_lineage_children', { n: lineage.childCount })}</span>
+                                    <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{speak(spokenLine('event_lineage_children', { n: lineage.childCount }))}</span>
                                 )}
                             </div>
                         )}

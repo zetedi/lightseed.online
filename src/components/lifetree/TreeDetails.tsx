@@ -223,10 +223,25 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-4">
-                            <span className="w-24 shrink-0 text-slate-500 text-sm">GPS</span>
-                            <span className="flex-1 text-left text-slate-800 font-mono text-sm dark:text-slate-100">{tree.latitude?.toFixed(4)}, {tree.longitude?.toFixed(4)}</span>
-                        </div>
+                        <>
+                            <div className="flex items-center gap-4">
+                                <span className="w-24 shrink-0 text-slate-500 text-sm">GPS</span>
+                                <span className="flex-1 text-left text-slate-800 font-mono text-sm dark:text-slate-100">{tree.latitude?.toFixed(4)}, {tree.longitude?.toFixed(4)}</span>
+                                {tree.locationName && <span dir="auto" className="hidden truncate text-xs text-emerald-700 sm:inline dark:text-emerald-300">{tree.locationName}</span>}
+                            </div>
+                            {/* The map stands right under its coordinates (Zoltán, 2026-09-27) — the same
+                                place, read twice: as numbers, and as ground. It left its own card for this row. */}
+                            {hasCoordinates && (
+                                <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <iframe
+                                        title={t('map_of').replace('{name}', tree.name)}
+                                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(tree.longitude) - 0.01}%2C${Number(tree.latitude) - 0.01}%2C${Number(tree.longitude) + 0.01}%2C${Number(tree.latitude) + 0.01}&layer=mapnik&marker=${Number(tree.latitude)}%2C${Number(tree.longitude)}`}
+                                        className="h-40 w-full"
+                                        loading="lazy"
+                                    />
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
                 <div className="flex items-center gap-4 py-2 border-b border-slate-50 dark:border-slate-800">
@@ -340,22 +355,6 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                 </div>
             </div>
 
-            {hasCoordinates && (
-                <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                    <div className="mb-2 flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('map')}</h4>
-                        {tree.locationName && <span dir="auto" className="text-xs text-emerald-700 dark:text-emerald-300">{tree.locationName}</span>}
-                    </div>
-                    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                        <iframe
-                            title={t('map_of').replace('{name}', tree.name)}
-                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(tree.longitude) - 0.01}%2C${Number(tree.latitude) - 0.01}%2C${Number(tree.longitude) + 0.01}%2C${Number(tree.latitude) + 0.01}&layer=mapnik&marker=${Number(tree.latitude)}%2C${Number(tree.longitude)}`}
-                            className="h-40 w-full"
-                            loading="lazy"
-                        />
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
