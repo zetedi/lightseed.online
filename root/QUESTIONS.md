@@ -103,6 +103,26 @@ interval is visibly disputed and stops satisfying new quorums, and later uses ar
 invalid. Re-affirmation, when it gains a face, must be a new seal rather than a
 rewrite.
 
+## Is an event a lifetree? (2026-09-27)
+
+Raised by Zoltán as the event circle was built: "Should the event be a lifetree and just a
+different path towards a community?"
+
+- Today an event is a standalone record: a lid, a root sentinel, participants as links, and
+  now a circle it can form (domain/eventCircle) — the same door a tree circle walks, from a
+  different root. It has no chain: nothing is minted onto a gathering after it happens.
+- What a tree has that an event lacks is a STORY: each watering a leaf, each stay on a bed a
+  leaf. A recurring gathering has a story too — each occurrence, who stood there, what was
+  said. Is that the duplicate (a new being each time, linked back), or a chain on one being
+  (the gathering as a lifetree whose leaves are its occurrences)?
+- If an event became a tree type (the bed is the precedent: a Lifetree that is furniture, not
+  forest), the caps, the guardians and the watering law would all reach it. Do they belong
+  there, or would the metaphor start hiding a weaker model — a gathering "watered"?
+
+No migration follows from this; the duplicate and the circle already give a gathering both a
+lineage and a community without a chain. The question is whether "chain-as-tree for every
+being" (ROADMAP) should reach events first, and what a leaf on a gathering would be.
+
 ## Rooting into the domains (2026-09-23)
 
 Raised by Zoltán as the server took the chain's head and the hand began signing its own

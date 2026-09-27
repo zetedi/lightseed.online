@@ -394,6 +394,34 @@ describe('the Grove — the living path, walked in parallel', () => {
     ids.event = eRef.id;
   });
 
+  it("a circle forms from the trees that stood at the gathering — by the host's hand, once (ring 2026-09-27)", async () => {
+    // Chen's tree stands at Bakr's event (the participant link, the client's own hand).
+    await setDoc(doc(chen.db, 'links', linkId(ids.treeChen, 'participant', ids.event)), {
+      lid: uuidv7(), type: 'link', rel: 'participant', from: ids.treeChen, to: ids.event, createdAt: serverTimestamp(),
+    });
+    const form = (p: Persona, name = '') =>
+      httpsCallable<{ eventId: string; name: string }, { communityId: string; name: string; members: number }>(p.fns, 'formCircleFromEvent')({ eventId: ids.event, name });
+    // Chen stood there but does not host: refused. Bakr hosts: the circle forms.
+    await expect(form(chen)).rejects.toThrow(/event_circle_not_hand/);
+    const formed = (await form(bakr, 'The Grove Keepers')).data;
+    expect(formed.name).toBe('The Grove Keepers');
+    expect(formed.members).toBe(2);
+    const circle = (await getDoc(doc(bakr.db, 'communities', formed.communityId))).data() as Record<string, unknown>;
+    expect(circle.formation).toBe('event');
+    expect(circle.rootEventId).toBe(ids.event);
+    expect(circle.ownerId).toBe(bakr.uid);
+    expect(circle.domain).toBe('');
+    expect(circle.bornOn).toBe(DOMAIN);
+    // Members and trees are links, server-minted; the event remembers its circle.
+    expect((await getDoc(doc(bakr.db, 'links', linkId(bakr.uid, 'member', formed.communityId)))).exists()).toBe(true);
+    expect((await getDoc(doc(chen.db, 'links', linkId(chen.uid, 'member', formed.communityId)))).exists()).toBe(true);
+    expect((await getDoc(doc(chen.db, 'links', linkId(ids.treeChen, 'participant', formed.communityId)))).exists()).toBe(true);
+    expect(((await getDoc(doc(bakr.db, 'pulses', ids.event))).data() as Record<string, unknown>).circleCommunityId).toBe(formed.communityId);
+    // Once: the second ask is refused; and no client hand writes the event's memory of it.
+    await expect(form(bakr)).rejects.toThrow(/event_circle_already/);
+    await expect(updateDoc(doc(bakr.db, 'pulses', ids.event), { circleCommunityId: 'forged' })).rejects.toThrow();
+  });
+
   const love = (p: Persona, treeId: string) => runTransaction(p.db, async (t) => {
     const parent = doc(p.db, 'lifetrees', treeId);
     const snap = await t.get(parent);

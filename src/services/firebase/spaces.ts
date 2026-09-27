@@ -636,6 +636,11 @@ export const resignKeeper = async (communityId: string): Promise<{ resigned: str
 
 // A circle graduates into a standing community (domain/treeCircle formCircleRefusal) —
 // the server is the one hand that stamps forming (bornOn/formedAt/formedBy are rules-frozen).
+// THE EVENT CIRCLE (domain/eventCircle, ring 2026-09-27): the trees that stood at a gathering
+// become a community by the event's own hand — server-born, members and trees minted as links.
+export const formCircleFromEvent = async (eventId: string, name: string): Promise<{ communityId: string; name: string; members: number }> =>
+    (await httpsCallable(functions, 'formCircleFromEvent')({ eventId, name })).data as { communityId: string; name: string; members: number };
+
 export const formCommunityFromCircle = async (communityId: string, name: string): Promise<{ communityId: string; name: string; bornOn: string | null }> =>
     (await httpsCallable(functions, 'formCommunityFromCircle')({ communityId, name })).data as { communityId: string; name: string; bornOn: string | null };
 

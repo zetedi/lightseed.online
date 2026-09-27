@@ -80,6 +80,10 @@ export interface Pulse extends Being {
   eventLocation?: string;
   // The gathering's room: how many trees may stand around this event (unset/null = unbounded).
   eventMaxParticipants?: number | null;
+  // THE EVENT CIRCLE (ring 2026-09-27): the community formed from this gathering's trees,
+  // written only by functions/formCircleFromEvent (the event-edit rules name their keys, so no
+  // client hand reaches this one). Present = formed, once.
+  circleCommunityId?: string;
   // Offerings (type 'offering'): a bed or service offered through trust. The author may name a
   // suggested appreciation in light, given AFTER the contribution and never gating access.
   offeringKind?: 'bed' | 'service' | 'code';

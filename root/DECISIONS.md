@@ -6,6 +6,38 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-27 · A gathering is copied, and a circle forms from those who stood there** — Zoltán:
+"make it possible to duplicate an event and that button to take us to the edit of the
+duplicated event. I think it would be nice to be possible to create an event circle from the
+participants of the event. Should the event be a lifetree and just a different path towards a
+community?" TWO HANDS, ONE QUESTION. (1) DUPLICATE: a copy of an event is a NEW standalone
+record — its own lid, its own root, the duplicator as its author (a copy is a new gathering
+someone hosts, not a rewrite of the old), wearing the original's words, images, place, room and
+visibility; a community event's copy stays in its community (the rules admit it only to the
+keeper or staff, the same hands that may edit). The copy opens for editing at once, on the
+event's face (the Duplicate pill) and in every events list (the copy icon beside Edit), so the
+hand changes what differs — usually the date — and saves. (2) THE EVENT CIRCLE: the trees that
+stood around an event become a community by the event's own hand — functions/formCircleFromEvent,
+the tree circle's shape from a different root: rootEventId instead of rootLifetreeId, formation
+'event', visibility 'invited', NO address of its own (domain '', the gathering's domain as its
+birthplace), the former its anchor, every participating tree's owner a member (member links,
+server-minted), the trees themselves standing in it (participant links), the event remembering
+its circle (circleCommunityId — a field the event-edit rules never name, so no client hand
+reaches it). The law (domain/eventCircle, mirrored, held equal): only the host, the keeper of
+the event's place, or staff; once; never from an empty gathering. It counts toward the node's
+144 — founded, not auto-born. THE QUESTION, answered as a reading and recorded in QUESTIONS: an
+event is not a lifetree, but it is the SAME KIND OF DOOR — a being whose circle can become a
+community. A tree circle grows from shared care of one life; an event circle from shared
+presence at one moment. Both walk to community through the same links (participant, member)
+and the same server hand. What an event lacks is a chain — every gathering a leaf, its story
+kept — and that is the ROADMAP's "chain-as-tree for every being", not a reason to make an event
+wear a tree's fields. NOT GUARANTEED: that the participants WANTED the circle — membership is
+the former's gift, the door stays 'invite', and a member may leave as from any community.
+REJECTED: duplicating as a prefilled form (the user asked for the copy to exist and its edit to
+open); the original's author on the copy (a copy hosted by another is that other's).
+
+---
+
 **2026-09-23 · The hand signs its own link** — Zoltán, after the server took the head: "we
 might need openID or similar on the reality facing part… Do the signed blocks please." The
 server's seal proves the head followed and the bytes are the bytes; who ASKED was still the

@@ -10,12 +10,14 @@ import { Picture } from './ui/Picture';
 // The trees gathered around an event or vision, plus (for signed-in owners) a picker to enlist their
 // own trees. Participation is a 'participant' link from the TREE to the entity — created/removed here
 // through the same Store port the rest of the LIN uses. Shared by EventProfile and VisionProfile.
-export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxParticipants }: {
+export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxParticipants, onCount }: {
     entityId: string;
     currentUserId?: string;
     myTrees?: Lifetree[];
     // The gathering's room (events may bound it): joining closes when the places are taken.
     maxParticipants?: number;
+    // How many trees stand here, told to the owner after each load (the event circle's gate).
+    onCount?: (n: number) => void;
 }) => {
     const { t } = useLanguage();
     const [trees, setTrees] = useState<Lifetree[]>([]);
@@ -28,9 +30,10 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
         // eslint-disable-next-line react-hooks/set-state-in-effect -- flips the loading flag synchronously before the async participants fetch below
         setLoading(true);
         getParticipatingTrees(entityId)
-            .then(ts => { if (alive) { setTrees(ts); setLoading(false); } })
+            .then(ts => { if (alive) { setTrees(ts); setLoading(false); onCount?.(ts.length); } })
             .catch(() => { if (alive) setLoading(false); });
         return () => { alive = false; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- onCount is a setter, stable by contract
     }, [entityId, nonce]);
 
     const participatingIds = new Set(trees.map(t => t.id));

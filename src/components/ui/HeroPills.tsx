@@ -46,3 +46,23 @@ export const DeletePill = ({ onClick, disabled, staffDot, title = 'Delete' }: {
     </button>
     );
 };
+
+// THE ONE DUPLICATE (ring 2026-09-27): a copy of a being's record, opened for editing at once.
+export const DuplicatePill = ({ onClick, disabled, title = 'Duplicate' }: {
+    onClick: () => void;
+    disabled?: boolean;
+    title?: string;
+}) => {
+    const { t } = useLanguage();
+    return (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        title={title}
+        aria-label={title}
+        className="flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-white/25 disabled:opacity-50 dark:bg-slate-900/10"
+    >
+        <Icons.Copy /> <span className="hidden sm:inline">{t('event_duplicate')}</span>
+    </button>
+    );
+};

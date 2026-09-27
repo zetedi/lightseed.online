@@ -1,6 +1,7 @@
 import { query, getDocs, getDoc, addDoc, setDoc, collection, serverTimestamp, doc, runTransaction, where, updateDoc, deleteDoc, Timestamp, type DocumentData } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { announce } from '../refreshBus';
+import { myNaming } from './accounts';
 import { type Pulse, type Community, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance, votesRequired } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
@@ -454,6 +455,36 @@ export const updateEvent = async (
     await updateDoc(doc(db, 'pulses', eventId), { ...data });
     // The edit whispers its patch — every open list merges it (ring 2026-08-22).
     announce('events', eventId, data as Record<string, unknown>);
+};
+
+// DUPLICATE an event (ring 2026-09-27): a new standalone record wearing the original's words,
+// images, place, room and visibility — its own lid, its own root, and the DUPLICATOR as its
+// author (a copy is a new gathering someone hosts, not a rewrite of the old one). A community
+// event's copy stays in that community (the rules admit it only to the community's keeper or
+// staff — the same hands that may edit it). The caller opens the copy's edit form at once.
+export const duplicateEvent = async (event: Pulse): Promise<Pulse> => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('err_no_identity');
+    const naming = await myNaming();
+    const draft: Partial<Pulse> & { title: string } = {
+        title: event.title || '',
+        body: event.body || '',
+        content: event.content || event.body || '',
+        imageUrl: event.imageUrl || '',
+        imageUrls: event.imageUrls?.length ? [...event.imageUrls] : (event.imageUrl ? [event.imageUrl] : []),
+        eventDate: event.eventDate || '',
+        eventLocation: event.eventLocation || '',
+        ...(event.eventMaxParticipants ? { eventMaxParticipants: event.eventMaxParticipants } : {}),
+        visibility: event.visibility || 'public',
+        authorId: user.uid,
+        authorName: naming.name || 'A being',
+        ...(user.photoURL ? { authorPhoto: user.photoURL } : {}),
+    };
+    const copy = event.communityId
+        ? await createCommunityEvent({ id: event.communityId, name: event.communityName || '', domain: event.domain || '' } as Community, draft)
+        : await createEvent({ ...draft, ...(event.domain ? { domain: event.domain } : {}) });
+    announce('events');
+    return copy;
 };
 
 // A standalone event — anyone can plant one (no community required). A community can later

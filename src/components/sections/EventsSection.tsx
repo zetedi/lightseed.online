@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
+import { notify } from '../ui/Toast';
+import { speak } from '../../utils/translations';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSession } from '../../contexts/SessionContext';
 import { announce } from '../../services/refreshBus';
@@ -179,6 +181,30 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     setIsEventSaving(false);
   };
 
+  // DUPLICATE (ring 2026-09-27): the copy is created through the same scope-bound create, then
+  // its edit form opens at once — the hand changes what differs (usually the date) and saves.
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const handleDuplicateEvent = async (ev: Pulse) => {
+    if (!currentUserId || duplicatingId) return;
+    setDuplicatingId(ev.id);
+    try {
+      const created = await onCreate({
+        title: ev.title || '', body: ev.body || '', content: ev.content || ev.body || '',
+        imageUrl: ev.imageUrl || '', imageUrls: ev.imageUrls?.length ? [...ev.imageUrls] : (ev.imageUrl ? [ev.imageUrl] : []),
+        eventDate: ev.eventDate || '', eventLocation: ev.eventLocation || '',
+        visibility: (ev.visibility as PulseVisibility) || 'public',
+        authorId: currentUserId, authorName: currentUserName || fallbackAuthorName, authorPhoto: currentUserPhoto || undefined,
+      });
+      refreshEvents();
+      announce('events');
+      const copy = created && typeof created === 'object' && 'id' in created ? (created as Pulse) : null;
+      if (copy) { startEditEvent(copy); notify(speak('event_duplicated')); }
+    } catch (error: any) {
+      showAlert(error?.message || 'err_event_save');
+    }
+    setDuplicatingId(null);
+  };
+
   // Begin editing an existing event: prefill the form and reveal it.
   const startEditEvent = (ev: Pulse) => {
     setEditingEventId(ev.id);
@@ -258,6 +284,11 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               {(canEdit || ev.authorId === currentUserId) && (
                 <button onClick={(e) => { e.stopPropagation(); startEditEvent(ev); }} title={t('edit')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-sky-50 hover:text-sky-600 sm:opacity-0 sm:group-hover:opacity-100">
                   <Icons.Pencil />
+                </button>
+              )}
+              {canEdit && (
+                <button onClick={(e) => { e.stopPropagation(); handleDuplicateEvent(ev); }} disabled={duplicatingId === ev.id} title={t('event_duplicate')} className="shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100">
+                  <Icons.Copy />
                 </button>
               )}
               {canEdit && (

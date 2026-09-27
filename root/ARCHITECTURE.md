@@ -143,6 +143,12 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   records (events, offerings, decisions, person-reaches). Trees and visions are born at
   their root (head == genesis, height 0). The chain-seal stamp (`community.chainLocked`) no
   longer changes what is written: every server-born block is canonical.
+- **The event circle** (ring 2026-09-27): `functions/formCircleFromEvent` births a community
+  from an event's participating trees — the tree circle's shape (`formation: 'event'`,
+  `rootEventId`, no address, `visibility: 'invited'`), member links for the former and every
+  tree's owner, participant links for the trees, `circleCommunityId` stamped on the event (no
+  client key set names it). Law in `domain/eventCircle`, mirrored, `tests/eventCircle.test.ts`.
+  `duplicateEvent` births a new standalone record in the duplicator's name and opens its edit.
 - **Signed blocks** (ring 2026-09-23): a person with a published signing key signs every block
   they mint — over the chain position and `signedContentOf` the content (the same pure
   judgment run client-side over the bearer) under `lifeseed.block-signature.v1`; `mintBlock`

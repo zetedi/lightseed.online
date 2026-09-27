@@ -49,6 +49,8 @@ export const DOMAIN_KEYS = [
   'block_unsigned', 'block_signature_bad', 'block_key_stale', 'block_key_frozen', 'block_head_moved', 'block_key_restore',
   // alignment — the target's hand settles it, on the server (functions/acceptAlignment)
   'align_not_target', 'align_not_pending',
+  // the event circle — a community from the trees that stood at a gathering (domain/eventCircle)
+  'event_circle_not_event', 'event_circle_not_hand', 'event_circle_already', 'event_circle_no_participants',
   // personName — the name a being wears is theirs to change; the law keeps it a name
   'name_empty', 'name_long', 'name_chars',
   // newsletter — the letter of a place: its keepers send it, to those who subscribed there

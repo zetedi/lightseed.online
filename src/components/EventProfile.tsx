@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useSession } from '../contexts/SessionContext';
 import { showAlert, showConfirm } from './ui/Dialog';
-import { deleteCommunityEvent, mendPulseDomain } from '../services/firebase';
+import { deleteCommunityEvent, mendPulseDomain, formCircleFromEvent, getCommunityById } from '../services/firebase';
+import { formEventCircleRefusal } from '../domain/eventCircle';
+import { notify } from './ui/Toast';
 import { PlaceOfRecord } from './ui/PlaceOfRecord';
 import { showsPlaceOfRecord } from '../domain/communityDoor';
 import { announce } from '../services/refreshBus';
 import { BeingQr } from './ui/BeingQr';
-import { EditPill, DeletePill } from './ui/HeroPills';
+import { EditPill, DeletePill, DuplicatePill } from './ui/HeroPills';
 import { beingPath } from '../domain/beingLink';
 import { mintBeingQr } from '../services/firebase/beings';
-import { Pulse, Lifetree } from '../types';
+import { Pulse, Lifetree, Community } from '../types';
 import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { EventWeather } from './ui/EventWeather';
@@ -34,6 +36,10 @@ interface EventProfileProps {
     onClose: () => void;
     canEdit?: boolean;
     onEdit?: () => void;
+    // A copy of this event, opened for editing at once (ring 2026-09-27).
+    onDuplicate?: () => void;
+    // Where a formed circle opens (the community's own face).
+    onOpenCommunity?: (community: Community) => void;
     currentUserId?: string;
     myTrees?: Lifetree[];
     // The community's colours: the event header links to the theme; the body stays neutral.
@@ -45,7 +51,7 @@ interface EventProfileProps {
 
 type EventSection = 'about' | 'participants' | 'reflect';
 
-export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, currentUserId, myTrees, theme, hostStrictScope }: EventProfileProps) => {
+export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDuplicate, onOpenCommunity, currentUserId, myTrees, theme, hostStrictScope }: EventProfileProps) => {
     const { t } = useLanguage();
     const { isAdmin, isSuperAdmin } = useSession();
     // Deletion mirrors the rules: the author may, and staff may. The amber dot marks the
@@ -66,6 +72,43 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
         }
     };
     const [section, setSection] = useState<EventSection>('about');
+
+    // THE EVENT CIRCLE (domain/eventCircle): the hand that may edit may form; the server is the
+    // one hand that forms (functions/formCircleFromEvent), this panel carries the ask and the
+    // name. The event remembers its circle, so the panel becomes a door once formed.
+    const [circleName, setCircleName] = useState('');
+    const [participantCount, setParticipantCount] = useState<number | null>(null);
+    const [forming, setForming] = useState(false);
+    const [formedCircleId, setFormedCircleId] = useState<string | null>(pulse.circleCommunityId || null);
+    const [duplicating, setDuplicating] = useState(false);
+    const circleRefusal = formEventCircleRefusal({
+        isEvent: pulse.type === 'event', isHand: !!canEdit, circleCommunityId: formedCircleId,
+        participantTreeCount: participantCount ?? 0,
+    });
+    const handleFormCircle = async () => {
+        if (forming) return;
+        setForming(true);
+        try {
+            const res = await formCircleFromEvent(pulse.id, circleName.trim());
+            setFormedCircleId(res.communityId);
+            announce('communities');
+            announce('events', pulse.id, { circleCommunityId: res.communityId });
+            notify(spokenLine('event_circle_formed', { name: res.name }));
+        } catch (e: any) {
+            showAlert(String(e?.message || 'err_action'));
+        }
+        setForming(false);
+    };
+    const handleOpenCircle = async () => {
+        if (!formedCircleId) return;
+        const community = await getCommunityById(formedCircleId).catch(() => null);
+        if (community && onOpenCommunity) onOpenCommunity(community);
+    };
+    const handleDuplicate = async () => {
+        if (duplicating || !onDuplicate) return;
+        setDuplicating(true);
+        try { await onDuplicate(); } finally { setDuplicating(false); }
+    };
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
     // Whether the details grid renders the place-of-record row (the row itself lives in
@@ -121,6 +164,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                         {/* One height for the whole action row (32px): the shared Edit/Delete
                             pills and the chips. The QR lives beside the name, like the tree's. */}
                         {canEdit && onEdit && <EditPill onClick={onEdit} themeColor={theme?.primary} />}
+                        {canEdit && onDuplicate && <DuplicatePill onClick={handleDuplicate} disabled={duplicating} title={t('event_duplicate')} />}
                         {canDelete && <DeletePill onClick={handleDelete} disabled={isDeleting} staffDot={!isAuthor} title={t('delete_event')} />}
                         <EventWeather location={pulse.eventLocation} dateIso={pulse.eventDate} className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-slate-100 dark:bg-slate-900/10" />
                         <span className="hidden rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-200 sm:inline-flex dark:bg-slate-900/10">{t('event_chip')}</span>
@@ -222,7 +266,30 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, curr
                 {section === 'participants' && (
                     <div>
                         <SectionTitle title={t('participants')} sub={t('event_participants_sub')} />
-                        <TreeParticipants entityId={pulse.id} currentUserId={currentUserId} myTrees={myTrees} maxParticipants={pulse.eventMaxParticipants ?? undefined} />
+                        <TreeParticipants entityId={pulse.id} currentUserId={currentUserId} myTrees={myTrees} maxParticipants={pulse.eventMaxParticipants ?? undefined} onCount={setParticipantCount} />
+                        {formedCircleId ? (
+                            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
+                                <p className="text-sm text-emerald-800 dark:text-emerald-200">{t('event_circle_already')}</p>
+                                <button onClick={handleOpenCircle} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700">
+                                    <Icons.Users size={14} /> {t('event_circle_open')}
+                                </button>
+                            </div>
+                        ) : canEdit && participantCount !== null && (
+                            <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('event_circle_title')}</p>
+                                <p className="mt-1 text-xs text-slate-500">{t('event_circle_desc')}</p>
+                                {circleRefusal === 'event_circle_no_participants' ? (
+                                    <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">{t('event_circle_no_participants')}</p>
+                                ) : circleRefusal === null && (
+                                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                                        <input dir="auto" value={circleName} onChange={e => setCircleName(e.target.value)} placeholder={pulse.title ? `${pulse.title} Circle` : t('event_circle_name_ph')} className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+                                        <button onClick={handleFormCircle} disabled={forming} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50">
+                                            <Icons.Users size={14} /> {forming ? '…' : t('event_circle_button')}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
