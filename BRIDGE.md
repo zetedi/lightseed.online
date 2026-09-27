@@ -66,12 +66,15 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
 
 ## The gathering (an event's two doors)
 
-- **Duplicate:** `duplicateEvent` (`services/firebase/governance.ts`) — a new record in the
-  duplicator's name; the Duplicate pill on `EventProfile` and the copy icon in `EventsSection`
-  open the copy's edit form at once.
+- **Duplicate = lineage:** `functions/src/circles.ts` `duplicateEvent` — a new occurrence in the
+  duplicator's name with its `descends_from` edge (server-only, append-only); the law of what a
+  lineage says is `src/domain/eventLineage.ts` (root, generation, refinement, reach;
+  `tests/eventLineage.test.ts`). The Duplicate pill on `EventProfile` and the copy icon in
+  `EventsSection` open the copy's edit form at once; the About section shows the lineage strip.
 - **The event circle:** `src/domain/eventCircle.ts` (law) ↔ `functions/src/eventCircle.ts`
   (mirror, `tests/eventCircle.test.ts`) ↔ `functions/src/circles.ts` (`formCircleFromEvent`, the
-  one hand). The panel lives under the event's Participants; the living walk forms one.
+  one hand: form at the root, gather thereafter). The panel lives under the event's
+  Participants; the living walk forms one, then gathers a newcomer from a copy.
 
 ## Nodes become real (identity → membership → commons)
 

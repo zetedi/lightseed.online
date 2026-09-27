@@ -131,6 +131,7 @@ export const linkFromIsUid = (rel: string): boolean =>
   ![
     'participant', 'rooted', 'shelters', 'grows_in',
     'collaborates_with', 'recognises', 'shares_resources_with',
+    'descends_from',
   ].includes(rel);
 
 // ── Path matching ───────────────────────────────────────────────────────────────────────

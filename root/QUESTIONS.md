@@ -123,6 +123,12 @@ No migration follows from this; the duplicate and the circle already give a gath
 lineage and a community without a chain. The question is whether "chain-as-tree for every
 being" (ROADMAP) should reach events first, and what a leaf on a gathering would be.
 
+**Answered in part the same day (ring "A gathering has a lineage"):** the story of a gathering
+is its lineage — a tree of `descends_from` edges, not a hash chain, because an event is a living
+record and a seal over a parent would break at its first edit. Refinement, lineage and reach are
+derived from the edges. What remains open is only whether a gathering ever needs a chain of its
+own beside its lineage, and the question stays.
+
 ## Rooting into the domains (2026-09-23)
 
 Raised by Zoltán as the server took the chain's head and the hand began signing its own

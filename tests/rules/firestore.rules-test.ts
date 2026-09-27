@@ -509,6 +509,28 @@ describe('grows_in — a tree enters a garden through its door (ring 2026-08-24)
   });
 });
 
+describe("descends_from — a gathering's lineage is made, never claimed (ring 2026-09-27)", () => {
+  // The edge from a copied event to its original is minted only by functions/duplicateEvent:
+  // no client hand, not even staff's link_mint, may write it; and once made it stands.
+  it('no client mints the edge — not the author of both events, not staff', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'pulses', 'gatherA'), { authorId: ALICE, type: 'event', title: 'A', previousHash: 'EVENT', hash: 'ea', visibility: 'public' });
+      await setDoc(doc(d, 'pulses', 'gatherB'), { authorId: ALICE, type: 'event', title: 'B', previousHash: 'EVENT', hash: 'eb', visibility: 'public' });
+    });
+    const edge = { lid: 'x', type: 'link', rel: 'descends_from', from: 'gatherB', to: 'gatherA', createdAt: 1 };
+    await assertFails(setDoc(doc(db(ALICE), 'links', 'gatherB__descends_from__gatherA'), edge));
+    await assertFails(setDoc(doc(db(STAFF), 'links', 'gatherB__descends_from__gatherA'), edge));
+  });
+  it('once made, the edge stands — only the staff mend removes it', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'links', 'gatherB__descends_from__gatherA'), { lid: 'x', type: 'link', rel: 'descends_from', from: 'gatherB', to: 'gatherA', createdAt: 1 }));
+    await assertFails(deleteDoc(doc(db(ALICE), 'links', 'gatherB__descends_from__gatherA')));
+    await assertSucceeds(getDoc(doc(db(), 'links', 'gatherB__descends_from__gatherA'))); // world-readable, like every edge
+    await assertSucceeds(deleteDoc(doc(db(STAFF), 'links', 'gatherB__descends_from__gatherA')));
+  });
+});
+
 describe('welcomed_by — the hand that welcomed is proven, never claimed (ring 2026-08-21)', () => {
   const seedInvite = () => env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'communityInvites', 'inv1'), { communityId: 'com1', createdBy: ALICE, createdAt: Timestamp.fromMillis(1) });

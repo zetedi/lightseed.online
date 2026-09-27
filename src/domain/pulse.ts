@@ -84,6 +84,13 @@ export interface Pulse extends Being {
   // written only by functions/formCircleFromEvent (the event-edit rules name their keys, so no
   // client hand reaches this one). Present = formed, once.
   circleCommunityId?: string;
+  // THE LINEAGE (domain/eventLineage, ring 2026-09-27): a duplicated event descends from the
+  // occurrence it was copied from. The TRUTH is the `descends_from` link; these three are the
+  // server's cached reading of it at birth (never a client's): the parent, the root of the whole
+  // lineage (absent on a root), and how many hands the copy is from the root.
+  descendsFromId?: string;
+  lineageRootId?: string;
+  generation?: number;
   // Offerings (type 'offering'): a bed or service offered through trust. The author may name a
   // suggested appreciation in light, given AFTER the contribution and never gating access.
   offeringKind?: 'bed' | 'service' | 'code';

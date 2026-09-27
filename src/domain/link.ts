@@ -44,7 +44,11 @@ import type { Being } from './being';
 // proposal; the matching reverse edge is the other community's own attestation. Reciprocity is
 // derived, never stored as status and never read for authority. The first vocabulary is limited
 // to mutual meanings so reversing an edge cannot silently change the statement.
-export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request' | 'grows_in' | 'collaborates_with' | 'recognises' | 'shares_resources_with' | 'accepts_coin_of';
+export type LinkRel = 'guardian' | 'co_owner' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request' | 'grows_in' | 'collaborates_with' | 'recognises' | 'shares_resources_with' | 'accepts_coin_of' | 'descends_from';
+// 'descends_from' (ring 2026-09-27): a duplicated EVENT names the occurrence it was copied from —
+// from = the copy, to = the original; minted only by the server's duplicate hand, append-only.
+// A lineage is a TREE of these edges (one root, many stems), never a hash chain: an event is a
+// living record its host keeps editing, and a seal over a parent would break at its first edit.
 
 export interface Link extends Being {
   type: 'link';

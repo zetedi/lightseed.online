@@ -45,7 +45,7 @@ const ids = {
   treeAna: '', treeBakr: '', treeChen: '',
   wateringPulse: '', reachThreadId: '', reachMsg: '',
   vision: '', community: '', treeInvite: '', keeperInvite: '',
-  lightHouse: '', bed: '', stay: '', event: '',
+  lightHouse: '', bed: '', stay: '', event: '', circle: '',
 };
 
 // A client-lawful planting — the exact shape plantLifetree writes, minus the browser.
@@ -417,9 +417,42 @@ describe('the Grove — the living path, walked in parallel', () => {
     expect((await getDoc(doc(chen.db, 'links', linkId(chen.uid, 'member', formed.communityId)))).exists()).toBe(true);
     expect((await getDoc(doc(chen.db, 'links', linkId(ids.treeChen, 'participant', formed.communityId)))).exists()).toBe(true);
     expect(((await getDoc(doc(bakr.db, 'pulses', ids.event))).data() as Record<string, unknown>).circleCommunityId).toBe(formed.communityId);
-    // Once: the second ask is refused; and no client hand writes the event's memory of it.
-    await expect(form(bakr)).rejects.toThrow(/event_circle_already/);
+    // Asked again with no newcomer, the circle simply stands (gathered 0); and no client hand
+    // writes the event's memory of it.
+    const again = (await form(bakr)).data as unknown as { communityId: string; members: number; gathered: boolean };
+    expect(again).toMatchObject({ communityId: formed.communityId, members: 0, gathered: true });
     await expect(updateDoc(doc(bakr.db, 'pulses', ids.event), { circleCommunityId: 'forged' })).rejects.toThrow();
+    ids.circle = formed.communityId;
+  });
+
+  it("the gathering is held again: a copy descends from the first, and its newcomers gather into the root's circle (ring 2026-09-27)", async () => {
+    // No client hand claims a lineage; the server's duplicate makes one.
+    await expect(setDoc(doc(bakr.db, 'links', linkId('someCopy', 'descends_from', ids.event)), {
+      lid: uuidv7(), type: 'link', rel: 'descends_from', from: 'someCopy', to: ids.event, createdAt: serverTimestamp(),
+    })).rejects.toThrow();
+    await expect(httpsCallable(chen.fns, 'duplicateEvent')({ eventId: ids.event })).rejects.toThrow(/event_duplicate_not_hand/);
+    const copy = (await httpsCallable<{ eventId: string }, Record<string, unknown>>(bakr.fns, 'duplicateEvent')({ eventId: ids.event })).data;
+    expect(copy.title).toBe('Grove Gathering');
+    expect(copy.authorId).toBe(bakr.uid);
+    expect(copy).toMatchObject({ descendsFromId: ids.event, lineageRootId: ids.event, generation: 1 });
+    expect(copy.circleCommunityId).toBeUndefined();
+    const edge = await getDoc(doc(bakr.db, 'links', linkId(String(copy.id), 'descends_from', ids.event)));
+    expect(edge.exists()).toBe(true);
+    // A second hand from the copy: generation two, the same root.
+    const grandchild = (await httpsCallable<{ eventId: string }, Record<string, unknown>>(bakr.fns, 'duplicateEvent')({ eventId: String(copy.id) })).data;
+    expect(grandchild).toMatchObject({ descendsFromId: copy.id, lineageRootId: ids.event, generation: 2 });
+
+    // Ana's tree stands at the copy; Bakr's ask from the copy GATHERS her into the root's circle.
+    await setDoc(doc(ana.db, 'links', linkId(ids.treeAna, 'participant', String(copy.id))), {
+      lid: uuidv7(), type: 'link', rel: 'participant', from: ids.treeAna, to: String(copy.id), createdAt: serverTimestamp(),
+    });
+    const gathered = (await httpsCallable<{ eventId: string; name: string }, { communityId: string; members: number; gathered: boolean }>(bakr.fns, 'formCircleFromEvent')({ eventId: String(copy.id), name: '' })).data;
+    expect(gathered).toMatchObject({ communityId: ids.circle, members: 1, gathered: true });
+    expect((await getDoc(doc(ana.db, 'links', linkId(ana.uid, 'member', ids.circle)))).exists()).toBe(true);
+    expect((await getDoc(doc(ana.db, 'links', linkId(ids.treeAna, 'participant', ids.circle)))).exists()).toBe(true);
+    expect(((await getDoc(doc(bakr.db, 'pulses', String(copy.id)))).data() as Record<string, unknown>).circleCommunityId).toBe(ids.circle);
+    // One circle for the whole lineage: the community count did not grow.
+    expect((await adminDbA().collection('communities').where('rootEventId', '==', ids.event).get()).size).toBe(1);
   });
 
   const love = (p: Persona, treeId: string) => runTransaction(p.db, async (t) => {

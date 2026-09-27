@@ -8,32 +8,48 @@ import type { DomainKey } from './words';
 // rootEventId), their members the beings whose trees stood there.
 //
 // Plain contract — GUARANTEED (functions/formCircleFromEvent, mirrored law, tests/eventCircle):
-// only the event's own hand forms it (its author, its community's keeper, or staff); once per
-// event (the event remembers its circle: circleCommunityId, a field no client may write — the
-// event-edit rules name their keys); never from an empty gathering; every participating tree's
-// owner and the former become members (member links, server-minted), and the trees themselves
-// stand in the circle (participant links). NOT GUARANTEED: that the participants WANTED a
+// only the event's own hand forms it (its author, its community's keeper, or staff); ONCE PER
+// LINEAGE — the root occurrence remembers the circle (circleCommunityId, a field no client may
+// write — the event-edit rules name their keys), and every later occurrence's ask GATHERS its
+// newcomers into that circle; never from an empty gathering; every participating tree's owner
+// (across the whole lineage) and the former become members (member links, server-minted), and
+// the trees themselves stand in the circle (participant links). NOT GUARANTEED: that the participants WANTED a
 // circle — membership here is a gift the former makes, and the door stays 'invite' so no one
 // else walks in unasked; a member may leave as from any community. The circle counts toward
 // the node's 144 (it is founded, not auto-born like a tree circle).
 
 export type EventCircleRefusal = Extract<DomainKey,
-  'event_circle_not_event' | 'event_circle_not_hand' | 'event_circle_already' | 'event_circle_no_participants'>;
+  'event_circle_not_event' | 'event_circle_not_hand' | 'event_circle_no_participants'>;
 
 export interface EventCircleFacts {
   isEvent: boolean;
   isHand: boolean;            // author, keeper of the event's community, or staff
-  circleCommunityId?: unknown; // already formed when a string stands here
-  participantTreeCount: number;
+  // THE CIRCLE BELONGS TO THE LINEAGE (ring 2026-09-27): the root occurrence remembers it; a
+  // string here means it stands, and the ask becomes a GATHERING of newcomers into it.
+  rootCircleCommunityId?: unknown;
+  participantTreeCount: number; // across every occurrence of the lineage
 }
 
-// The whole law, in the order the server applies it.
-export const formEventCircleRefusal = (f: EventCircleFacts): EventCircleRefusal | null =>
-  !f.isEvent ? 'event_circle_not_event'
-  : !f.isHand ? 'event_circle_not_hand'
-  : (typeof f.circleCommunityId === 'string' && f.circleCommunityId !== '') ? 'event_circle_already'
-  : f.participantTreeCount < 1 ? 'event_circle_no_participants'
-  : null;
+export type EventCircleJudgment =
+  | { outcome: 'reject'; refusal: EventCircleRefusal }
+  | { outcome: 'form' }
+  | { outcome: 'gather'; communityId: string };
+
+// The whole law, in the order the server applies it: only an event, only its hand, never an
+// empty gathering; then form the circle at the root, or gather this lineage's people into the
+// one that stands.
+export const judgeEventCircle = (f: EventCircleFacts): EventCircleJudgment =>
+  !f.isEvent ? { outcome: 'reject', refusal: 'event_circle_not_event' }
+  : !f.isHand ? { outcome: 'reject', refusal: 'event_circle_not_hand' }
+  : f.participantTreeCount < 1 ? { outcome: 'reject', refusal: 'event_circle_no_participants' }
+  : (typeof f.rootCircleCommunityId === 'string' && f.rootCircleCommunityId !== '') ? { outcome: 'gather', communityId: f.rootCircleCommunityId }
+  : { outcome: 'form' };
+
+// The refusal alone — what a face asks before it offers the door.
+export const formEventCircleRefusal = (f: EventCircleFacts): EventCircleRefusal | null => {
+  const j = judgeEventCircle(f);
+  return j.outcome === 'reject' ? j.refusal : null;
+};
 
 // The circle's name: the chosen one, else the event's title with the word Circle.
 export const eventCircleName = (chosen: string | null | undefined, eventTitle: unknown): string => {

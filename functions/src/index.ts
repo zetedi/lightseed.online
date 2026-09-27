@@ -15,5 +15,5 @@ export { beingPreview, facePreview, sitemap, faceEvents } from "./preview";
 export { deriveImageVariants, releasePicture } from "./pictures";
 export { acceptOffering } from "./offeringCalls";
 export { mintBlock, unmintBlock, acceptAlignment } from "./blocks";
-export { formCircleFromEvent } from "./circles";
+export { formCircleFromEvent, duplicateEvent } from "./circles";
 export { indexPersonLid, indexTreeLid, indexVisionLid, indexLightHouseLid, indexCommunityLid, indexPulseLid, backfillLidIndex } from "./lidIndex";

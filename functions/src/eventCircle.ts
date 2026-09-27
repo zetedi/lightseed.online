@@ -3,21 +3,41 @@
 // plumbing: read the event, its participants and the hand's standing; let this law judge;
 // write the circle, its members and its trees in one transaction.
 
-export type EventCircleRefusal = 'event_circle_not_event' | 'event_circle_not_hand' | 'event_circle_already' | 'event_circle_no_participants';
+export type EventCircleRefusal = 'event_circle_not_event' | 'event_circle_not_hand' | 'event_circle_no_participants';
 
 export interface EventCircleFacts {
     isEvent: boolean;
     isHand: boolean;
-    circleCommunityId?: unknown;
+    rootCircleCommunityId?: unknown;
     participantTreeCount: number;
 }
 
-export const formEventCircleRefusal = (f: EventCircleFacts): EventCircleRefusal | null =>
-    !f.isEvent ? 'event_circle_not_event'
-    : !f.isHand ? 'event_circle_not_hand'
-    : (typeof f.circleCommunityId === 'string' && f.circleCommunityId !== '') ? 'event_circle_already'
-    : f.participantTreeCount < 1 ? 'event_circle_no_participants'
-    : null;
+export type EventCircleJudgment =
+    | { outcome: 'reject'; refusal: EventCircleRefusal }
+    | { outcome: 'form' }
+    | { outcome: 'gather'; communityId: string };
+
+export const judgeEventCircle = (f: EventCircleFacts): EventCircleJudgment =>
+    !f.isEvent ? { outcome: 'reject', refusal: 'event_circle_not_event' }
+    : !f.isHand ? { outcome: 'reject', refusal: 'event_circle_not_hand' }
+    : f.participantTreeCount < 1 ? { outcome: 'reject', refusal: 'event_circle_no_participants' }
+    : (typeof f.rootCircleCommunityId === 'string' && f.rootCircleCommunityId !== '') ? { outcome: 'gather', communityId: f.rootCircleCommunityId }
+    : { outcome: 'form' };
+
+export const formEventCircleRefusal = (f: EventCircleFacts): EventCircleRefusal | null => {
+    const j = judgeEventCircle(f);
+    return j.outcome === 'reject' ? j.refusal : null;
+};
+
+// ── THE LINEAGE (mirror of src/domain/eventLineage.ts, the two readings a copy is born with) ──
+export interface LineageNode { id: string; lineageRootId?: string | null; generation?: number | null }
+export const lineageRootOf = (n: Pick<LineageNode, 'id' | 'lineageRootId'>): string =>
+    typeof n.lineageRootId === 'string' && n.lineageRootId ? n.lineageRootId : n.id;
+export const lineageOfCopy = (parent: LineageNode): { descendsFromId: string; lineageRootId: string; generation: number } => ({
+    descendsFromId: parent.id,
+    lineageRootId: lineageRootOf(parent),
+    generation: (Number(parent.generation) || 0) + 1,
+});
 
 export const eventCircleName = (chosen: string | null | undefined, eventTitle: unknown): string => {
     const c = String(chosen || '').trim().slice(0, 120);

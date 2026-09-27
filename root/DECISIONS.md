@@ -6,6 +6,37 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-27 · A gathering has a lineage, and its circle belongs to the root** — Zoltán, the
+same day: "The chain of the event would be its duplication / repetition, so the event would grow
+in refinement, lineage, reach maybe." Yes — with one correction that decides the shape: A
+LINEAGE IS A TREE, NOT A CHAIN. One gathering can be copied twice, by two hosts, in two places;
+a chain allows one successor, a lineage many (the Pando shape, forks welcome). And it CANNOT be
+a hash chain: an event is a living record its host keeps editing, and a seal over the parent's
+content would break at the parent's first edit. So the lineage is a LINK — `descends_from`,
+from the copy to the original — and everything it says is DERIVED (domain/eventLineage), never
+stored: lineage is the path back to the root and its length the generation; refinement is the
+diff between an occurrence and its parent (refinementOf); reach is the tree's breadth — the
+widest fork, the places, the hands (lineageReach). TWO CONSEQUENCES, BUILT: (1) the duplicate
+became the SERVER's hand (functions/duplicateEvent) so a lineage can be made but never claimed
+— the rules refuse the edge to every client hand, the staff link_mint included, and never let it
+be deleted; the copy is born with the server's reading of the edge (descendsFromId,
+lineageRootId, generation), a cache no client key set names. (2) THE CIRCLE BELONGS TO THE
+LINEAGE: it forms once, at the root occurrence, from the trees of EVERY occurrence; asked from
+a later occurrence it GATHERS that lineage's newcomers into the circle that stands (judgeEventCircle:
+form | gather), and the occurrence remembers the circle too. The ring of the morning said "once
+per event"; this one corrects it to "once per lineage, gathering thereafter" — the earlier
+refusal became the gathering's door. The living walk holds the whole of it: a copy descends,
+a grandchild counts two hands, a client's claimed edge is refused, a newcomer at the copy
+lands in the root's circle, and the node's communities do not grow. NOT GUARANTEED: that a
+lineage is one gathering "in spirit" — a host may copy anything they may edit; the lineage
+records the act of copying, and the reader judges the kinship. And the face reads only one
+hand up and one hand down (parent, root, copies of this one); the whole tree's reach is a law
+without a face yet. REJECTED: a hash chain of occurrences (frozen links over living records);
+a copy claiming descent by its own word; a circle per occurrence (a lineage's people are one
+people).
+
+---
+
 **2026-09-27 · A gathering is copied, and a circle forms from those who stood there** — Zoltán:
 "make it possible to duplicate an event and that button to take us to the edit of the
 duplicated event. I think it would be nice to be possible to create an event circle from the

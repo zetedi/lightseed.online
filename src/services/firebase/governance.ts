@@ -1,7 +1,6 @@
 import { query, getDocs, getDoc, addDoc, setDoc, collection, serverTimestamp, doc, runTransaction, where, updateDoc, deleteDoc, Timestamp, type DocumentData } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { announce } from '../refreshBus';
-import { myNaming } from './accounts';
 import { type Pulse, type Community, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance, votesRequired } from '../../types';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
@@ -457,34 +456,37 @@ export const updateEvent = async (
     announce('events', eventId, data as Record<string, unknown>);
 };
 
-// DUPLICATE an event (ring 2026-09-27): a new standalone record wearing the original's words,
-// images, place, room and visibility — its own lid, its own root, and the DUPLICATOR as its
-// author (a copy is a new gathering someone hosts, not a rewrite of the old one). A community
-// event's copy stays in that community (the rules admit it only to the community's keeper or
-// staff — the same hands that may edit it). The caller opens the copy's edit form at once.
-export const duplicateEvent = async (event: Pulse): Promise<Pulse> => {
-    const user = auth.currentUser;
-    if (!user) throw new Error('err_no_identity');
-    const naming = await myNaming();
-    const draft: Partial<Pulse> & { title: string } = {
-        title: event.title || '',
-        body: event.body || '',
-        content: event.content || event.body || '',
-        imageUrl: event.imageUrl || '',
-        imageUrls: event.imageUrls?.length ? [...event.imageUrls] : (event.imageUrl ? [event.imageUrl] : []),
-        eventDate: event.eventDate || '',
-        eventLocation: event.eventLocation || '',
-        ...(event.eventMaxParticipants ? { eventMaxParticipants: event.eventMaxParticipants } : {}),
-        visibility: event.visibility || 'public',
-        authorId: user.uid,
-        authorName: naming.name || 'A being',
-        ...(user.photoURL ? { authorPhoto: user.photoURL } : {}),
-    };
-    const copy = event.communityId
-        ? await createCommunityEvent({ id: event.communityId, name: event.communityName || '', domain: event.domain || '' } as Community, draft)
-        : await createEvent({ ...draft, ...(event.domain ? { domain: event.domain } : {}) });
+// DUPLICATE an event (ring 2026-09-27) — by the SERVER's hand (functions/duplicateEvent): a new
+// occurrence wearing the original's words, images, place, room and visibility, the duplicator as
+// its author (a copy is a new gathering someone hosts), DESCENDING from the original — the
+// descends_from edge only the server may mint, and the lineage cache (descendsFromId,
+// lineageRootId, generation) read from it at birth. The caller opens the copy's edit at once.
+export const duplicateEvent = async (event: Pick<Pulse, 'id'>): Promise<Pulse> => {
+    const fn = httpsCallable<{ eventId: string }, Pulse>(functions, 'duplicateEvent');
+    const copy = (await fn({ eventId: event.id })).data;
     announce('events');
     return copy;
+};
+
+// THE LINEAGE of a gathering, read for its face: the parent it was copied from, the root of
+// the whole lineage, and how many occurrences were copied from THIS one (the descends_from
+// edges pointing here — links are world-readable; the events themselves by their own rule).
+export interface EventLineage {
+    parent: Pulse | null;
+    root: Pulse | null;
+    childCount: number;
+}
+export const getEventLineage = async (event: Pick<Pulse, 'id' | 'descendsFromId' | 'lineageRootId'>): Promise<EventLineage> => {
+    const readEvent = async (id?: string | null): Promise<Pulse | null> => {
+        if (!id || id === event.id) return null;
+        try { const snap = await getDoc(doc(db, 'pulses', id)); return snap.exists() ? mapDoc<Pulse>(snap) : null; } catch { return null; }
+    };
+    const [parent, root, children] = await Promise.all([
+        readEvent(event.descendsFromId),
+        readEvent(event.lineageRootId),
+        getDocs(query(collection(db, 'links'), where('to', '==', event.id), where('rel', '==', 'descends_from'))).then(s => s.size).catch(() => 0),
+    ]);
+    return { parent, root, childCount: children };
 };
 
 // A standalone event — anyone can plant one (no community required). A community can later

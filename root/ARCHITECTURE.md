@@ -66,7 +66,9 @@ proof, while the person doc names only the current epoch and active/frozen state
 member, joined, participant, join_request, **rooted** (Light House→tree),
 **shelters** (Light House→community), **invited_by** (newcomer→community; append-only
 provenance, grants nothing; see domain/communityDoor), and the first **Interbeing Matrix**
-attestations (`collaborates_with`, `recognises`, `shares_resources_with`; community→community).
+attestations (`collaborates_with`, `recognises`, `shares_resources_with`; community→community),
+**descends_from** (a copied event→its original; server-minted only, never deleted; the lineage's
+one truth, `domain/eventLineage`).
 Doc id MUST equal `from__rel__to`
 (rules bind it: authority is resolved by path, so an unbound id would be forgeable).
 `visions` `communities` (bearing the **door**: open/invite/closed) `lightHouses`
@@ -148,7 +150,10 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   `rootEventId`, no address, `visibility: 'invited'`), member links for the former and every
   tree's owner, participant links for the trees, `circleCommunityId` stamped on the event (no
   client key set names it). Law in `domain/eventCircle`, mirrored, `tests/eventCircle.test.ts`.
-  `duplicateEvent` births a new standalone record in the duplicator's name and opens its edit.
+  `functions/duplicateEvent` births a new occurrence in the duplicator's name, mints its
+  `descends_from` edge and the lineage cache (`descendsFromId`, `lineageRootId`, `generation`),
+  and the face opens its edit. The circle belongs to the LINEAGE: it forms once at the root
+  from every occurrence's trees; a later occurrence's ask gathers newcomers into it.
 - **Signed blocks** (ring 2026-09-23): a person with a published signing key signs every block
   they mint — over the chain position and `signedContentOf` the content (the same pure
   judgment run client-side over the bearer) under `lifeseed.block-signature.v1`; `mintBlock`

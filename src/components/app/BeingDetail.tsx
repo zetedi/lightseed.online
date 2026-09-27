@@ -174,6 +174,7 @@ export const BeingDetail: React.FC<{
           } catch (e: any) { showAlert(String(e?.message || 'err_event_save')); }
         }}
         onOpenCommunity={(community) => { setSelectedPulse(null); beings.setSelectedCommunity(community); }}
+        onOpenEvent={(event) => setSelectedPulse(event)}
         currentUserId={lightseed?.uid}
         myTrees={myTrees}
         hostStrictScope={host?.strictScope}

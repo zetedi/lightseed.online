@@ -11,7 +11,7 @@ import { Icons } from '../ui/Icons';
 import { Pulse } from '../../types';
 // updateEvent and deleteCommunityEvent are scope-agnostic despite the latter's name: both
 // operate on a pulse id in the one ledger (events are pulses of type 'event' everywhere).
-import { updateEvent, deleteCommunityEvent, uploadImage } from '../../services/firebase';
+import { updateEvent, deleteCommunityEvent, uploadImage, duplicateEvent } from '../../services/firebase';
 import { ImagePicker } from '../ui/ImagePicker';
 import { SectionTitle } from '../ui/SectionTitle';
 import { EventWeather } from '../ui/EventWeather';
@@ -181,24 +181,18 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     setIsEventSaving(false);
   };
 
-  // DUPLICATE (ring 2026-09-27): the copy is created through the same scope-bound create, then
-  // its edit form opens at once — the hand changes what differs (usually the date) and saves.
+  // DUPLICATE (ring 2026-09-27): the copy is the SERVER's (duplicateEvent births the new
+  // occurrence and its descends_from edge); its edit form opens at once — the hand changes what
+  // differs (usually the date) and saves.
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const handleDuplicateEvent = async (ev: Pulse) => {
     if (!currentUserId || duplicatingId) return;
     setDuplicatingId(ev.id);
     try {
-      const created = await onCreate({
-        title: ev.title || '', body: ev.body || '', content: ev.content || ev.body || '',
-        imageUrl: ev.imageUrl || '', imageUrls: ev.imageUrls?.length ? [...ev.imageUrls] : (ev.imageUrl ? [ev.imageUrl] : []),
-        eventDate: ev.eventDate || '', eventLocation: ev.eventLocation || '',
-        visibility: (ev.visibility as PulseVisibility) || 'public',
-        authorId: currentUserId, authorName: currentUserName || fallbackAuthorName, authorPhoto: currentUserPhoto || undefined,
-      });
+      const copy = await duplicateEvent(ev);
       refreshEvents();
-      announce('events');
-      const copy = created && typeof created === 'object' && 'id' in created ? (created as Pulse) : null;
-      if (copy) { startEditEvent(copy); notify(speak('event_duplicated')); }
+      startEditEvent(copy);
+      notify(speak('event_duplicated'));
     } catch (error: any) {
       showAlert(error?.message || 'err_event_save');
     }

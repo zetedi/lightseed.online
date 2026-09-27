@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { formEventCircleRefusal, eventCircleName, eventCircleDraft, eventCircleMemberUids } from '../src/domain/eventCircle';
+import { formEventCircleRefusal, judgeEventCircle, eventCircleName, eventCircleDraft, eventCircleMemberUids } from '../src/domain/eventCircle';
 import {
-  formEventCircleRefusal as serverRefusal, eventCircleName as serverName,
+  formEventCircleRefusal as serverRefusal, judgeEventCircle as serverJudge, eventCircleName as serverName,
   eventCircleDraft as serverDraft, eventCircleMemberUids as serverMembers,
 } from '../functions/src/eventCircle';
 import { DOMAIN_KEYS } from '../src/domain/words';
@@ -11,10 +11,11 @@ import { DOMAIN_KEYS } from '../src/domain/words';
 // copy of the law; every judgment is asked of both and compared.
 
 const facts = (over: Partial<Parameters<typeof formEventCircleRefusal>[0]> = {}) =>
-  ({ isEvent: true, isHand: true, circleCommunityId: undefined, participantTreeCount: 2, ...over });
+  ({ isEvent: true, isHand: true, rootCircleCommunityId: undefined, participantTreeCount: 2, ...over });
 const both = (f: Parameters<typeof formEventCircleRefusal>[0]) => {
   const mine = formEventCircleRefusal(f);
   expect(serverRefusal(f)).toBe(mine);
+  expect(serverJudge(f)).toEqual(judgeEventCircle(f));
   return mine;
 };
 
@@ -25,14 +26,18 @@ describe('formEventCircleRefusal — the law, in the order the server applies it
   });
   it('only an event', () => { expect(both(facts({ isEvent: false }))).toBe('event_circle_not_event'); });
   it('only the hand', () => { expect(both(facts({ isHand: false }))).toBe('event_circle_not_hand'); });
-  it('once', () => {
-    expect(both(facts({ circleCommunityId: 'c1' }))).toBe('event_circle_already');
-    expect(both(facts({ circleCommunityId: '' }))).toBeNull();
-    expect(both(facts({ circleCommunityId: null }))).toBeNull();
+  it('forms at the root, and gathers into the circle that already stands', () => {
+    expect(judgeEventCircle(facts())).toEqual({ outcome: 'form' });
+    expect(judgeEventCircle(facts({ rootCircleCommunityId: 'c1' }))).toEqual({ outcome: 'gather', communityId: 'c1' });
+    expect(both(facts({ rootCircleCommunityId: 'c1' }))).toBeNull();
+    expect(judgeEventCircle(facts({ rootCircleCommunityId: '' }))).toEqual({ outcome: 'form' });
+    expect(judgeEventCircle(facts({ rootCircleCommunityId: null }))).toEqual({ outcome: 'form' });
+    // The refusals come before the door, gathering or forming alike.
+    expect(both(facts({ rootCircleCommunityId: 'c1', isHand: false }))).toBe('event_circle_not_hand');
   });
   it('never from an empty gathering', () => { expect(both(facts({ participantTreeCount: 0 }))).toBe('event_circle_no_participants'); });
   it('every refusal is a word the dictionary carries', () => {
-    for (const k of ['event_circle_not_event', 'event_circle_not_hand', 'event_circle_already', 'event_circle_no_participants']) {
+    for (const k of ['event_circle_not_event', 'event_circle_not_hand', 'event_circle_no_participants', 'event_duplicate_not_hand']) {
       expect(DOMAIN_KEYS as readonly string[]).toContain(k);
     }
   });
