@@ -77,8 +77,8 @@ export interface PathwayInput {
   connectionsCount: number;   // alignments + reaches — threads to other beings
   isMember: boolean;          // holds a 'member' link to any community
   followedVisionsCount: number; // 'joined' links to visions
-  circleSize: number;         // co_owner + steward links into their own trees
-  // co_owner + steward links FROM the being into others' trees: a co-owner already stands in
+  circleSize: number;         // keeper + steward links into their own trees
+  // keeper + steward links FROM the being into others' trees: a keeper already stands in
   // a tree circle, so the trail does not ask them to form one (ring 2026-09-03).
   tendedCount: number;
   sevenSustaining: number;    // planted trees both witnessed and cared for (domain/sustainingSeven)

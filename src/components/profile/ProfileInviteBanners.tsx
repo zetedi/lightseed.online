@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { showAlert } from '../ui/Dialog';
-import { type TreeOwnershipInvite, roleLabelKey } from '../../types';
+import { type TreeKeepingInvite, roleLabelKey } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSession } from '../../contexts/SessionContext';
 import { speak, spokenLine } from '../../utils/translations';
@@ -19,7 +19,7 @@ export const ProfileInviteBanners: React.FC<ProfileInviteBannersProps> = ({ uid,
   // Accepting a circle invitation changes what the profile's tree prisms show (tended /
   // guarded) — refresh the session's lists so the tree appears without a reload.
   const { refreshTrees } = useSession();
-  const [treeInvites, setTreeInvites] = useState<TreeOwnershipInvite[]>([]);
+  const [treeInvites, setTreeInvites] = useState<TreeKeepingInvite[]>([]);
   const [communityInvites, setCommunityInvites] = useState<CommunityTreeInvite[]>([]);
   // Keeper offers — shared keepership of a community, waiting for THIS being's yes
   // (domain/keeperCircle; the accept callable proves their living tree before minting).

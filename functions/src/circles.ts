@@ -124,7 +124,7 @@ export const formCircleFromEvent = onCall({ cors: true }, async (request) => {
             t.get(db.collection("config").doc("limits")),
             t.get(db.collection("communities").limit(200)),
         ]);
-        const hostedCount = all.docs.filter((d) => (d.data() as Record<string, unknown>).formation !== "tree_co_ownership").length;
+        const hostedCount = all.docs.filter((d) => (d.data() as Record<string, unknown>).formation !== "tree_keeping").length;
         const rawMax = Number(limitsSnap.exists ? (limitsSnap.data() as Record<string, unknown>)?.maxNodeCommunities : NaN);
         const max = Number.isFinite(rawMax) && rawMax >= 1 ? Math.floor(rawMax) : DEFAULT_MAX_NODE_COMMUNITIES;
         if (hostedCount >= max) throw new HttpsError("resource-exhausted", `node_full_seed::{"max":${max}}`);

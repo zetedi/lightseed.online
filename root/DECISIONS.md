@@ -6,6 +6,48 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-29 · A tree is kept, not owned** — Zoltán: "change Owner to First keeper. Change
+co-owner to co-keeper. We can't own a life I believe." THE WORDS, in every tongue: the tree's
+first hand is its FIRST KEEPER (ownerId in the data — the field name stays, a rename there is a
+migration for its own ring), a co-owner is a CO-KEEPER, and every sentence that said a tree's
+owner now says its first keeper; the `co_owner` rel keeps its name in the LIN for the same reason.
+THE LAW FOLLOWED THE WORDS: a keeper of a community is "a rooted being", and rootedness was
+"owns a living tree" — so when Zoltán's second account asked to keep and he made it a co-keeper
+of a tree to root it, the ask stayed at the door (no_tree: co-owning counted for nothing). Now a
+rooted being KEEPS a living tree — as its first keeper or as a co-keeper (a link the first
+keeper offered and they accepted; stewards, guardians and observers do not root, and a bed roots
+no one) — in domain/keeperCircle and the server's keepsLivingTree alike, for the keeper invite
+and the keeper ask both. AND THE DOOR HOLDS ITS BREATH: a shared tree link (/b/<lid>) painted
+the dashboard, began its feed loads, then opened the tree over it — the "flicker and page
+change" — and could open it twice when the session flag settled twice. The shell now holds its
+neutral loader while a being link is pending, and resolves it once. PROPOSED FOR THE ROOT, not
+written: LIN's language names *keeper* as "a community's owner"; the word now reaches trees.
+THE SAME EVENING, ZOLTÁN WENT FURTHER — "I'd like a migration please, co-owner rel and related. I
+would like the owner wording to fade out. Keeper of a being which does not have a way to sign or
+take responsibility (yet). I would also like to bring in equality there… if someone would like to
+know who is the first keeper, it's in the history." And, on the plan: "if even a small legacy
+stays now, could bite back later when it's expensive. Let's rename in code also. And let's do
+the succession of trees also." SO: KEEPERS ARE EQUAL. A tree's keepers — the hand that planted it
+and every keeper since — hold the same powers: edit, care, invite any seat (keeping included),
+enlist the tree in a gathering, ask for a guardian, sign a validation with it, release it. The
+anchor (ownerId in the data) names no rank on any face; it is the seat of ONE invariant, the
+community's own: a tree is never keeperless. A keeper by link steps down by their own hand; the
+anchor steps down only through functions/resignTreeKeeper, which hands the anchor to the
+longest-standing keeper and refuses to leave a tree alone (tree_last_keeper). THE WORD IS ONE:
+`keeper` is the rel on trees as on communities (the deterministic id carries the target, so
+nothing collides; the subgraph tries the tree, then the community), `first keeper` and
+`co-keeper` are gone from every tongue, and "owner" survives in code only as the field name
+ownerId — the anchor — with 284 readers across rules, functions and shell, a rename for a ring of
+its own. THE MIGRATION, without a legacy: scripts/keepers-not-owners.mjs renames every co_owner
+link to its keeper id (the same being, its lid travelling, renamedFrom marking the move), moves
+treeOwnershipInvites whole into treeKeepingInvites, and turns the circle token tree_co_ownership
+into tree_keeping — deployed code first, the script at once after, nothing read as legacy in
+between. LIN's language now says what a keeper is, in Zoltán's words. NOT GUARANTEED: the audience
+token 'owners' on group reaches keeps its spelling — it is sealed into reach blocks' hashes and
+cannot be rewritten; it wears the word Keepers on every face.
+
+---
+
 **2026-09-27 · A gathering has a lineage, and its circle belongs to the root** — Zoltán, the
 same day: "The chain of the event would be its duplication / repetition, so the event would grow
 in refinement, lineage, reach maybe." Yes — with one correction that decides the shape: A

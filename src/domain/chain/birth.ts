@@ -16,7 +16,7 @@ import { signingPreimage } from '../signing';
 // head the bearer carried when the transaction read it, blockHeight one above it, a canonical
 // hash reproducible from its stored fields (verifyBlockSeal), authorId equal to the signed-in
 // hand, mintedAt from the server's clock, and it was born by a carer of the tree (owner,
-// co_owner, steward — or staff) or the author of the vision. NOT GUARANTEED: that the lived
+// keeper, steward — or staff) or the author of the vision. NOT GUARANTEED: that the lived
 // event is true (a photo proves a moment, not a life), nor that legacy blocks — born before
 // this ring under the browser's seal — can be recomputed; verifyChain still walks their
 // linkage and heights, and only that. Enforced by functions/src/blocks.ts (the hand),
@@ -62,7 +62,7 @@ export type BlockBirthRefusal = Extract<DomainKey,
 
 export interface ChainBearerFacts {
   exists: boolean;
-  // Standing over the chain: a tree's owner / co_owner / steward (the rules' isTreeCarer),
+  // Standing over the chain: a tree's owner / keeper / steward (the rules' isTreeCarer),
   // a vision's author. Read by the server from the documents, never from the request.
   carer: boolean;
   latestHash?: unknown;

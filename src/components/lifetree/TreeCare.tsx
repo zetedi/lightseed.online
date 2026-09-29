@@ -36,7 +36,7 @@ interface TreeCareProps {
     // A guardian without caring powers: the card reads as the schedule's read-only face,
     // plus a door to ask the circle for stewardship (roles move only by invitation).
     canAskStewardship?: boolean;
-    // The viewer stands in the circle (keeper / co-owner / steward / guardian) and may witness
+    // The viewer stands in the circle (keeper / keeper / steward / guardian) and may witness
     // another's watering — the sun ring's mint, judged on server ground.
     canWitness?: boolean;
     onUpdate?: (updates: Partial<Lifetree>) => void;

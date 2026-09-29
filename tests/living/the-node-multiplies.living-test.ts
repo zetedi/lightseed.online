@@ -309,15 +309,15 @@ describe('the Grove — the living path, walked in parallel', () => {
   });
 
   it('the tree circle grows through the REAL acceptTreeInvite callable', async () => {
-    const invRef = doc(collection(ana.db, 'treeOwnershipInvites'));
+    const invRef = doc(collection(ana.db, 'treeKeepingInvites'));
     await setDoc(invRef, {
       lifetreeId: ids.treeAna, lifetreeName: "Ana's Olive", invitedByUserId: ana.uid,
-      invitedUserId: chen.uid, role: 'co_owner', status: 'pending', createdAt: serverTimestamp(),
+      invitedUserId: chen.uid, role: 'keeper', status: 'pending', createdAt: serverTimestamp(),
     });
     ids.treeInvite = invRef.id;
     await httpsCallable(chen.fns, 'acceptTreeInvite')({ inviteId: ids.treeInvite });
 
-    expect((await adminDbA().doc(`links/${chen.uid}__co_owner__${ids.treeAna}`).get()).exists).toBe(true);
+    expect((await adminDbA().doc(`links/${chen.uid}__keeper__${ids.treeAna}`).get()).exists).toBe(true);
     const tree = (await getDoc(doc(ana.db, 'lifetrees', ids.treeAna))).data() as any;
     expect(tree.communityId).toBeTruthy(); // the circle community, server-born
   });
@@ -487,6 +487,19 @@ describe('the Grove — the living path, walked in parallel', () => {
     expect(names).toContain("Chen's Willow");
     expect(names).not.toContain('Cedar Bed'); // domainless by construction — structurally invisible
   });
+  it("a tree's keepers are equal, and it is never keeperless: the anchor hands the anchor on (ring 2026-09-29)", async () => {
+    // Chen keeps Ana's tree (the accepted invitation above). A stranger cannot step down from
+    // what they do not keep; Ana, the anchor, steps down and Chen — the longest-standing keeper
+    // — becomes the anchor, his link folded into it; Chen, now alone, may not leave.
+    await expect(httpsCallable(bakr.fns, 'resignTreeKeeper')({ treeId: ids.treeAna })).rejects.toThrow();
+    const res = (await httpsCallable<{ treeId: string }, { resigned: string; successor: string | null }>(ana.fns, 'resignTreeKeeper')({ treeId: ids.treeAna })).data;
+    expect(res).toEqual({ resigned: ana.uid, successor: chen.uid });
+    const tree = (await getDoc(doc(chen.db, 'lifetrees', ids.treeAna))).data() as any;
+    expect(tree.ownerId).toBe(chen.uid);
+    expect((await adminDbA().doc(`links/${chen.uid}__keeper__${ids.treeAna}`).get()).exists).toBe(false);
+    await expect(httpsCallable(chen.fns, 'resignTreeKeeper')({ treeId: ids.treeAna })).rejects.toThrow(/tree_last_keeper/);
+  });
+
 });
 
 // ── The Crossing ────────────────────────────────────────────────────────────────────────

@@ -72,7 +72,7 @@ describe('the judgment: every gate of the witnessing law', () => {
   it('a watering without a server birth time cannot mint (no client picks the day)', () =>
     rejectsWith(f => { f.pulse.createdAtMs = null; }, 'failed-precondition'));
   it('no one witnesses their own care', () => rejectsWith(f => { f.witnessUid = 'alice'; }, 'failed-precondition'));
-  it('only the circle — keeper, co-owner, steward or guardian — may witness (no standing, no voice)', () =>
+  it('only the circle — keeper, keeper, steward or guardian — may witness (no standing, no voice)', () =>
     rejectsWith(f => { f.witnessSinceMs = null; }, 'permission-denied'));
   it('the standing must PREDATE the watering (tenure; a sock minted for the occasion has no voice)', () =>
     rejectsWith(f => { f.witnessSinceMs = f.pulse.createdAtMs! + 1; }, 'failed-precondition'));

@@ -10,7 +10,7 @@ import type { Link } from '../src/domain/link';
 // test, and there is no copy anywhere to drift. What these tests hold is the MEANING: a role
 // offered next to "Invite into the circle" must say what the rules actually grant.
 
-const ROLES: TreeRelationRole[] = ['owner', 'co_owner', 'guardian', 'steward', 'observer'];
+const ROLES: TreeRelationRole[] = ['keeper', 'guardian', 'steward', 'observer'];
 const label = (r: TreeRelationRole) => translations.en[roleLabelKey(r)];
 const desc = (r: TreeRelationRole) => translations.en[roleDescKey(r)];
 
@@ -28,9 +28,9 @@ describe('the roles say what they are', () => {
   });
 
   it('the descriptions state the real split: carers care, the guardian witnesses, the observer holds no power', () => {
-    // Mirrors firestore.rules isTreeCarer (owner/co_owner/steward) and functions/witnessWatering
+    // Mirrors firestore.rules isTreeCarer (keeper/steward) and functions/witnessWatering
     // (guardian-only). If the rules change, these words must change WITH them — that is the point.
-    expect(desc('co_owner')).toMatch(/cares/i);
+    expect(desc('keeper')).toMatch(/care/i);
     expect(desc('steward')).toMatch(/cares/i);
     expect(desc('guardian')).toMatch(/witness/i);
     expect(desc('guardian')).toMatch(/veto/i);
@@ -43,44 +43,45 @@ describe('the circle view groups the graph', () => {
   const link = (from: string, rel: string, to: string): Link =>
     ({ id: `${from}__${rel}__${to}`, lid: 'x', type: 'link', rel, from, to } as unknown as Link);
 
-  it('owner first, then each linked role; size counts distinct beings', () => {
+  it('keepers first — the anchor among them, unmarked — then each linked role; size counts distinct beings', () => {
     const { groups, size } = treeCircle('zoltan', [
       link('lumo', 'guardian', 't1'),
-      link('aspen', 'co_owner', 't1'),
+      link('aspen', 'keeper', 't1'),
       link('lumo', 'observer', 't1'), // one being, two seats — counted once
     ]);
-    expect(groups.map(g => g.role)).toEqual(['owner', 'co_owner', 'guardian', 'observer']);
+    expect(groups.map(g => g.role)).toEqual(['keeper', 'guardian', 'observer']);
+    expect(groups[0].members).toEqual(['zoltan', 'aspen']);
     expect(size).toBe(3);
   });
 
-  it('a relation the circle does not know is left alone, never mislabelled', () => {
-    const { groups } = treeCircle('zoltan', [link('m', 'member', 'com1')]);
-    expect(groups).toEqual([{ role: 'owner', members: ['zoltan'] }]);
+  it('a relation the circle does not know is left alone, never mislabelled; a stray anchor link is not counted twice', () => {
+    const { groups } = treeCircle('zoltan', [link('m', 'member', 'com1'), link('zoltan', 'keeper', 't1')]);
+    expect(groups).toEqual([{ role: 'keeper', members: ['zoltan'] }]);
   });
 });
 
 describe('tendedTreeRoles — the caring layer as a profile prism', () => {
   const edge = (from: string, rel: string, to: string) => ({ from, rel, to });
 
-  it('collects co_owner and steward links, one role per tree', () => {
+  it('collects keeper and steward links, one role per tree', () => {
     const roles = tendedTreeRoles([
-      edge('me', 'co_owner', 't1'),
+      edge('me', 'keeper', 't1'),
       edge('me', 'steward', 't2'),
     ], 'me');
-    expect(roles.get('t1')).toBe('co_owner');
+    expect(roles.get('t1')).toBe('keeper');
     expect(roles.get('t2')).toBe('steward');
   });
 
-  it('co_owner outranks steward when both stand, in either order', () => {
-    expect(tendedTreeRoles([edge('me', 'steward', 't'), edge('me', 'co_owner', 't')], 'me').get('t')).toBe('co_owner');
-    expect(tendedTreeRoles([edge('me', 'co_owner', 't'), edge('me', 'steward', 't')], 'me').get('t')).toBe('co_owner');
+  it('keeper outranks steward when both stand, in either order', () => {
+    expect(tendedTreeRoles([edge('me', 'steward', 't'), edge('me', 'keeper', 't')], 'me').get('t')).toBe('keeper');
+    expect(tendedTreeRoles([edge('me', 'keeper', 't'), edge('me', 'steward', 't')], 'me').get('t')).toBe('keeper');
   });
 
   it('ignores other rels and other hands', () => {
     const roles = tendedTreeRoles([
       edge('me', 'guardian', 't1'),
       edge('me', 'observer', 't2'),
-      edge('someone', 'co_owner', 't3'),
+      edge('someone', 'keeper', 't3'),
     ], 'me');
     expect(roles.size).toBe(0);
   });
@@ -88,13 +89,13 @@ describe('tendedTreeRoles — the caring layer as a profile prism', () => {
 
 describe('formCircleRefusal — a circle graduates by the hands that carry it', () => {
   const facts = (over: Partial<Parameters<typeof formCircleRefusal>[0]>) => ({
-    formation: 'tree_co_ownership', formedAtMs: null,
-    isCircleKeeper: false, isTreeCoOwner: false, ...over,
+    formation: 'tree_keeping', formedAtMs: null,
+    isCircleKeeper: false, isTreeKeeper: false, ...over,
   });
 
-  it('a circle keeper or a root-tree co-owner may form', () => {
+  it('a circle keeper or a root-tree keeper may form', () => {
     expect(formCircleRefusal(facts({ isCircleKeeper: true }))).toBeNull();
-    expect(formCircleRefusal(facts({ isTreeCoOwner: true }))).toBeNull();
+    expect(formCircleRefusal(facts({ isTreeKeeper: true }))).toBeNull();
   });
 
   it('any other hand is refused', () => {

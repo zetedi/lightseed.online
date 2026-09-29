@@ -4,7 +4,7 @@ import { announce } from '../refreshBus';
 import { LIGHT_HOUSE_ROOT, type LightHouseCareAct } from '../../domain/lightHouse';
 import { firestoreStore } from '../../adapters/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { type Lifetree, type LightHouse, type TreeOwnershipInvite, type InvitableRole, type Link } from '../../types';
+import { type Lifetree, type LightHouse, type TreeKeepingInvite, type InvitableRole, type Link } from '../../types';
 import { msOf } from '../../domain/time';
 import { tendedTreeRoles, type TendingRole } from '../../domain/treeCircle';
 import { createBlock } from '../../utils/crypto';
@@ -271,7 +271,7 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
         treeType: data.treeType || (data.isNature ? 'GUARDED' : 'LIFETREE'),
         createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
         validated: false, validatorId: null, status: 'HEALTHY'
-        // Relations (guardian/co_owner/…) live in the `links` collection — no legacy arrays.
+        // Relations (guardian/keeper/…) live in the `links` collection — no legacy arrays.
     });
     // A GUARDED (nature) tree has NO Root Vision — like a bed, it is stood-for, not dreamed
     // forward; its welcome lives in `body`. A LIFETREE's Root Vision is its idea-twin, born the
@@ -849,14 +849,14 @@ export const getGuardedTrees = async (uid: string): Promise<Lifetree[]> => {
     return trees.filter((t): t is Lifetree => t !== null && !isBedTree(t));
 };
 
-// The trees a being TENDS without owning them — its co_owner/steward links, hydrated, each
+// The trees a being TENDS without owning them — its keeper/steward links, hydrated, each
 // carrying the role so the profile can name the hand honestly (domain/treeCircle
-// tendedTreeRoles: co_owner outranks steward). Owned trees stay out: ownership needs no link.
+// tendedTreeRoles: keeper outranks steward). Owned trees stay out: ownership needs no link.
 export interface TendedTree { tree: Lifetree; role: TendingRole }
 
 export const getTendedTrees = async (uid: string): Promise<TendedTree[]> => {
     const links = await getDocs(query(collection(db, 'links'),
-        where('from', '==', uid), where('rel', 'in', ['co_owner', 'steward'])));
+        where('from', '==', uid), where('rel', 'in', ['keeper', 'steward'])));
     const roles = tendedTreeRoles(links.docs.map(d => d.data() as { from: string; rel: string; to: string }), uid);
     const trees = await Promise.all([...roles.keys()].map(async id => {
         try {
@@ -885,7 +885,7 @@ export const getParticipatingTrees = async (entityId: string): Promise<Lifetree[
 };
 
 // --- Tree Circle: shared care of a Lifetree → a rooted community ---------------
-const treeInvitesCollection = collection(db, 'treeOwnershipInvites');
+const treeInvitesCollection = collection(db, 'treeKeepingInvites');
 
 export const createTreeInvite = async (params: {
     lifetree: Lifetree;
@@ -903,7 +903,7 @@ export const createTreeInvite = async (params: {
     // Single-field query + client filter, to avoid requiring a composite index.
     const existing = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetree.id)));
     const hasPendingDupe = existing.docs.some(d => {
-        const x = d.data() as Partial<TreeOwnershipInvite>;
+        const x = d.data() as Partial<TreeKeepingInvite>;
         return x.invitedUserId === invitedUserId && x.role === role && x.status === 'pending';
     });
     if (hasPendingDupe) throw new Error('err_invite_pending_role');
@@ -922,25 +922,25 @@ export const createTreeInvite = async (params: {
     return ref.id;
 };
 
-export const getPendingTreeInvites = async (userId: string): Promise<TreeOwnershipInvite[]> => {
+export const getPendingTreeInvites = async (userId: string): Promise<TreeKeepingInvite[]> => {
     // Single-field query + client filter, to avoid requiring a composite index.
     const snap = await getDocs(query(treeInvitesCollection, where('invitedUserId', '==', userId)));
-    return snap.docs.map(d => (mapDoc(d) as TreeOwnershipInvite)).filter(i => i.status === 'pending');
+    return snap.docs.map(d => (mapDoc(d) as TreeKeepingInvite)).filter(i => i.status === 'pending');
 };
 
 // Every invitation ever sent for a tree, newest first — the circle's own ledger (rules: the
 // tree's carers may list by lifetreeId). Callers pick the pending ones to show and withdraw.
-export const getSentTreeInvites = async (lifetreeId: string): Promise<TreeOwnershipInvite[]> => {
+export const getSentTreeInvites = async (lifetreeId: string): Promise<TreeKeepingInvite[]> => {
     const snap = await getDocs(query(treeInvitesCollection, where('lifetreeId', '==', lifetreeId)));
-    return snap.docs.map(d => (mapDoc(d) as TreeOwnershipInvite))
+    return snap.docs.map(d => (mapDoc(d) as TreeKeepingInvite))
         .sort((a, b) => msOf(b.createdAt) - msOf(a.createdAt));
 };
 
 export const declineTreeInvite = (inviteId: string) =>
-    updateDoc(doc(db, 'treeOwnershipInvites', inviteId), { status: 'declined', declinedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    updateDoc(doc(db, 'treeKeepingInvites', inviteId), { status: 'declined', declinedAt: serverTimestamp(), updatedAt: serverTimestamp() });
 
 export const revokeTreeInvite = (inviteId: string) =>
-    updateDoc(doc(db, 'treeOwnershipInvites', inviteId), { status: 'revoked', revokedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    updateDoc(doc(db, 'treeKeepingInvites', inviteId), { status: 'revoked', revokedAt: serverTimestamp(), updatedAt: serverTimestamp() });
 
 // Accepting writes the tree's role arrays AND the rooted community — a protected,
 // multi-document mutation, so it runs server-side (Cloud Function) with admin rights.

@@ -42,7 +42,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
   const [busy, setBusy] = useState(false);
 
   // THE OFFERING OF CARE (ring 2026-09-06): made TO a being, answered here. The receiver's
-  // side — the tree's keeper, co-owners and stewards, the vision's author — sees a green
+  // side — the tree's keeper, keepers and stewards, the vision's author — sees a green
   // Accept (yes / not now) and a Decline; the author sees Withdraw while it is open. Accepting
   // calls the server, which mints the twin blocks on both chains (functions/acceptOffering).
   const [status, setStatus] = useState(offeringStatusOf(offering));

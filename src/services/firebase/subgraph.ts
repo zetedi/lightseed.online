@@ -12,11 +12,12 @@ type BeingKind = 'person' | 'tree' | 'community' | 'vision' | 'lightHouse' | 'pu
 
 const REL_ENDPOINTS: Record<string, { from: BeingKind; to: BeingKind }> = {
   guardian: { from: 'person', to: 'tree' },
-  co_owner: { from: 'person', to: 'tree' },
+  // keeper: a tree's or a community's (one word, one meaning — ring 2026-09-29); the tree is
+  // tried first and a miss falls to the community below.
+  keeper: { from: 'person', to: 'tree' },
   steward: { from: 'person', to: 'tree' },
   observer: { from: 'person', to: 'tree' },
   member: { from: 'person', to: 'community' },
-  keeper: { from: 'person', to: 'community' },
   joined: { from: 'person', to: 'vision' },
   participant: { from: 'tree', to: 'vision' },   // (events too — the vision miss falls to pulse below)
   rooted: { from: 'lightHouse', to: 'tree' },
@@ -56,6 +57,8 @@ const resolveBeing = async (kind: BeingKind, id: string): Promise<LoadedBeing | 
     if (first) return first;
     // participant's target may be an EVENT pulse rather than a vision.
     if (kind === 'vision') return await read('pulse');
+    // a keeper's target may be a community rather than a tree.
+    if (kind === 'tree') return await read('community');
     return null;
   } catch { return null; } // the rules refused — opaque, a wall by law
 };

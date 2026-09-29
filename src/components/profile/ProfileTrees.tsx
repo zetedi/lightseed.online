@@ -17,7 +17,7 @@ import { Picture } from '../ui/Picture';
 // `caredIds`, so re-caring a tree here must re-light the badge up there immediately.
 interface ProfileTreesProps {
   myTrees: Lifetree[];
-  // Trees tended through the circle's caring layer (co_owner/steward links) — not owned,
+  // Trees tended through the circle's caring layer (keeper/steward links) — not owned,
   // so they carry none of the owner's affordances (no delete, no default star, no seven).
   tendedTrees: TendedTree[];
   guardedOnly: Lifetree[];

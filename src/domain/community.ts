@@ -88,7 +88,7 @@ export interface Community extends Being {
   seedCradle?: boolean;
   // Membership lives in the `links` collection ('member' rel) — the legacy memberIds array
   // is gone from both the type and the data (dropLegacyArrays cleared the docs).
-  formation?: 'tree_co_ownership' | 'event' | 'project' | 'organization' | 'manual';
+  formation?: 'tree_keeping' | 'event' | 'project' | 'organization' | 'manual';
   // An EVENT CIRCLE (domain/eventCircle, ring 2026-09-27): the gathering this community grew from.
   rootEventId?: string;
   // A circle's GRADUATION into a standing community (domain/treeCircle formCircleRefusal) —

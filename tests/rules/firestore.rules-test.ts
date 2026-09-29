@@ -474,11 +474,11 @@ describe('grows_in — a tree enters a garden through its door (ring 2026-08-24)
     await assertSucceeds(setDoc(doc(db(ALICE), 'links', 'bobsTree__grows_in__garden1'), edge));
   });
 
-  it('a tree CARER (co_owner/steward), not only the owner, may stand it in an open garden', async () => {
+  it('a tree CARER (keeper/steward), not only the owner, may stand it in an open garden', async () => {
     await seedGarden('open');
     await env.withSecurityRulesDisabled(async (ctx) => {
-      // MALLORY is a co_owner (carer) of bobsTree — a keeper, not the owner.
-      await setDoc(doc(ctx.firestore(), 'links', `${MALLORY}__co_owner__bobsTree`), { from: MALLORY, rel: 'co_owner', to: 'bobsTree' });
+      // MALLORY is a keeper (carer) of bobsTree — a keeper, not the owner.
+      await setDoc(doc(ctx.firestore(), 'links', `${MALLORY}__keeper__bobsTree`), { from: MALLORY, rel: 'keeper', to: 'bobsTree' });
     });
     await assertSucceeds(setDoc(doc(db(MALLORY), 'links', 'bobsTree__grows_in__garden1'), edge));
     await assertSucceeds(deleteDoc(doc(db(MALLORY), 'links', 'bobsTree__grows_in__garden1'))); // the carer withdraws
@@ -754,7 +754,7 @@ describe("an offering is made FROM a tree the offerer holds (Lumo's review, 2026
     await env.withSecurityRulesDisabled(async (ctx) => {
       const d = ctx.firestore();
       await setDoc(doc(d, 'lifetrees', 'treeM'), { ownerId: MALLORY, name: 'Mallory pine', validated: false, validatorId: null, loveCount: 0 });
-      await setDoc(doc(d, 'links', `${MALLORY}__co_owner__treeA`), { type: 'link', rel: 'co_owner', from: MALLORY, to: 'treeA' });
+      await setDoc(doc(d, 'links', `${MALLORY}__keeper__treeA`), { type: 'link', rel: 'keeper', from: MALLORY, to: 'treeA' });
     });
     await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'offerFromOwn'), offer('treeM')));
     await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'offerFromCoOwned'), offer('treeA')));
@@ -919,7 +919,7 @@ describe("the chain is the server's — no client births a link, moves a head, o
   const seedChain = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
     await setDoc(doc(d, 'lifetrees', TREE), { ownerId: ALICE, name: 'Chain Oak', genesisHash: 'g0', latestHash: 'h2', blockHeight: 2, validated: false, validatorId: null, loveCount: 0 });
-    await setDoc(doc(d, 'links', `${BOB}__co_owner__${TREE}`), { lid: 'x', type: 'link', rel: 'co_owner', from: BOB, to: TREE, createdAt: 1 });
+    await setDoc(doc(d, 'links', `${BOB}__keeper__${TREE}`), { lid: 'x', type: 'link', rel: 'keeper', from: BOB, to: TREE, createdAt: 1 });
     await setDoc(doc(d, 'pulses', 'b1'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, hash: 'h1', previousHash: 'g0', title: 'g1' });
     await setDoc(doc(d, 'pulses', 'b2'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, hash: 'h2', previousHash: 'h1', title: 'g2' });
   });
@@ -960,7 +960,7 @@ describe("the chain is the server's — no client births a link, moves a head, o
     await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'standalone-ob'), { authorId: ALICE, type: 'observation', title: 'x', body: '', visibility: 'public', loveCount: 0 }));
   });
 
-  it('no client moves a head — not the owner, not a co-owner, not staff; the rest of the tree stays theirs', async () => {
+  it('no client moves a head — not the owner, not a keeper, not staff; the rest of the tree stays theirs', async () => {
     await seedChain();
     await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', TREE), { latestHash: 'h3', blockHeight: 3 }));
     await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', TREE), { blockHeight: 3 }));
@@ -1330,8 +1330,8 @@ describe('link id-binding — authority resolves by path, so the doc id must equ
   it('a self-serve rel cannot masquerade at a privileged path (no steward/keeper by forgery)', async () => {
     // Mallory tries to land a 'joined' link (self-serve) at the steward path for com1.
     await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__steward__com1`), link(MALLORY, 'joined', MALLORY)));
-    // And cannot forge tree-carer power by placing a self-serve rel at a co_owner path.
-    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__co_owner__treeB`), link(MALLORY, 'joined', MALLORY)));
+    // And cannot forge tree-carer power by placing a self-serve rel at a keeper path.
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__keeper__treeB`), link(MALLORY, 'joined', MALLORY)));
     // The honest self-serve write (id matches data) still succeeds.
     await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__joined__vX`), link(MALLORY, 'joined', 'vX')));
   });
@@ -2385,9 +2385,9 @@ describe('the offering of care — born open, withdrawn by its author, declined 
     await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', 'offerCode1'), answer('declined', { offeringAnsweredBy: ALICE })));
   });
 
-  it("a co-owner of the tree stands for it too", async () => {
+  it("a keeper of the tree stands for it too", async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'links', `${MALLORY}__co_owner__treeB`), { from: MALLORY, rel: 'co_owner', to: 'treeB' });
+      await setDoc(doc(ctx.firestore(), 'links', `${MALLORY}__keeper__treeB`), { from: MALLORY, rel: 'keeper', to: 'treeB' });
     });
     await assertSucceeds(updateDoc(doc(db(MALLORY), 'pulses', 'offerCare1'), answer('declined', { offeringAnsweredBy: MALLORY })));
   });
@@ -2462,8 +2462,9 @@ describe('circle graduation — the forming stamp is the server\'s alone', () =>
   });
 });
 
-describe('tree circle invitations — the circle reads its ledger, carers open the open layer, marks are one-way', () => {
+describe('tree circle invitations — the circle reads its ledger, keepers open every seat, stewards the open layer, marks are one-way', () => {
   const CAROL = 'carol-uid';
+  const DAN = 'dan-uid';
   const link = (from: string, rel: string, to: string, extra: object = {}) =>
     ({ lid: 'x', type: 'link', rel, from, to, ...extra, createdAt: 1 });
   const invite = (extra: object) => ({
@@ -2471,20 +2472,23 @@ describe('tree circle invitations — the circle reads its ledger, carers open t
     invitedUserId: MALLORY, role: 'guardian', status: 'pending', message: '', createdAt: 1, updatedAt: 1, ...extra,
   });
 
-  // treeB is BOB's (seeded above); ALICE cares beside him as a co_owner.
+  // treeB is BOB's (the anchor); ALICE keeps it beside him (a keeper link — an EQUAL, ring
+  // 2026-09-29); DAN stewards it (a carer of the open layer only).
   const seedTreeInvites = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
-    await setDoc(doc(d, 'links', `${ALICE}__co_owner__treeB`), link(ALICE, 'co_owner', 'treeB'));
-    await setDoc(doc(d, 'treeOwnershipInvites', 'tinv-owner-1'), invite({}));
-    await setDoc(doc(d, 'treeOwnershipInvites', 'tinv-staff-1'), invite({ invitedByUserId: STAFF, invitedByName: 'Staff', invitedUserId: CAROL, role: 'co_owner' }));
-    await setDoc(doc(d, 'treeOwnershipInvites', 'tinv-done-1'), invite({ invitedUserId: 'dan-uid', status: 'accepted' }));
+    await setDoc(doc(d, 'links', `${ALICE}__keeper__treeB`), link(ALICE, 'keeper', 'treeB'));
+    await setDoc(doc(d, 'links', `${DAN}__steward__treeB`), link(DAN, 'steward', 'treeB'));
+    await setDoc(doc(d, 'treeKeepingInvites', 'tinv-owner-1'), invite({}));
+    await setDoc(doc(d, 'treeKeepingInvites', 'tinv-staff-1'), invite({ invitedByUserId: STAFF, invitedByName: 'Staff', invitedUserId: CAROL, role: 'keeper' }));
+    await setDoc(doc(d, 'treeKeepingInvites', 'tinv-done-1'), invite({ invitedUserId: 'erin-uid', status: 'accepted' }));
   });
-  const byTree = (uid: string) => getDocs(query(collection(db(uid), 'treeOwnershipInvites'), where('lifetreeId', '==', 'treeB')));
+  const byTree = (uid: string) => getDocs(query(collection(db(uid), 'treeKeepingInvites'), where('lifetreeId', '==', 'treeB')));
 
-  it('the ledger (list by tree) belongs to the carers — owner and co_owner alike, staff-sent invitations included', async () => {
+  it('the ledger (list by tree) belongs to the carers — every keeper and the steward alike, staff-sent invitations included', async () => {
     await seedTreeInvites();
     await assertSucceeds(byTree(BOB));
     await assertSucceeds(byTree(ALICE));
+    await assertSucceeds(byTree(DAN));
     await assertSucceeds(byTree(STAFF));
     await assertFails(byTree(MALLORY));   // an invitee is not a carer: no ledger
     await assertFails(byTree(CAROL));
@@ -2492,36 +2496,67 @@ describe('tree circle invitations — the circle reads its ledger, carers open t
 
   it('an invitee lists and reads their own; a carer reads a single invitation of the tree; a stranger reads nothing', async () => {
     await seedTreeInvites();
-    await assertSucceeds(getDocs(query(collection(db(MALLORY), 'treeOwnershipInvites'), where('invitedUserId', '==', MALLORY))));
-    await assertSucceeds(getDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-owner-1')));
-    await assertSucceeds(getDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-staff-1')));   // co_owner, neither inviter nor invitee
-    await assertFails(getDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-staff-1')));   // someone else's invitation
-    await assertFails(getDoc(doc(db(), 'treeOwnershipInvites', 'tinv-owner-1')));           // signed out
+    await assertSucceeds(getDocs(query(collection(db(MALLORY), 'treeKeepingInvites'), where('invitedUserId', '==', MALLORY))));
+    await assertSucceeds(getDoc(doc(db(MALLORY), 'treeKeepingInvites', 'tinv-owner-1')));
+    await assertSucceeds(getDoc(doc(db(ALICE), 'treeKeepingInvites', 'tinv-staff-1')));   // a keeper, neither inviter nor invitee
+    await assertFails(getDoc(doc(db(MALLORY), 'treeKeepingInvites', 'tinv-staff-1')));   // someone else's invitation
+    await assertFails(getDoc(doc(db(), 'treeKeepingInvites', 'tinv-owner-1')));           // signed out
   });
 
-  it('the owner invites any role; a co_owner opens only the open layer; a stranger, a forged inviter or a non-pending birth are refused', async () => {
+  it('EVERY keeper invites any role — keeping included; a steward opens only the open layer; a stranger, a forged inviter or a non-pending birth are refused', async () => {
     await seedTreeInvites();
-    await assertSucceeds(setDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-new-owner'), invite({ invitedUserId: CAROL, role: 'co_owner' })));
-    await assertSucceeds(setDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-new-guard'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'guardian' })));
-    await assertSucceeds(setDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-new-obsrv'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'observer' })));
-    await assertFails(setDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-new-coown'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'co_owner' })));
-    await assertFails(setDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-new-stewd'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'steward' })));
-    await assertFails(setDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-new-mally'), invite({ invitedByUserId: MALLORY, invitedUserId: CAROL })));
-    await assertFails(setDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-new-forge'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL })));
-    await assertFails(setDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-new-accpt'), invite({ invitedUserId: CAROL, status: 'accepted' })));
+    await assertSucceeds(setDoc(doc(db(BOB), 'treeKeepingInvites', 'tinv-new-anchor'), invite({ invitedUserId: CAROL, role: 'keeper' })));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'treeKeepingInvites', 'tinv-new-keeper'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'keeper' })));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'treeKeepingInvites', 'tinv-new-stewd'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL, role: 'steward' })));
+    await assertSucceeds(setDoc(doc(db(DAN), 'treeKeepingInvites', 'tinv-new-guard'), invite({ invitedByUserId: DAN, invitedUserId: CAROL, role: 'guardian' })));
+    await assertSucceeds(setDoc(doc(db(DAN), 'treeKeepingInvites', 'tinv-new-obsrv'), invite({ invitedByUserId: DAN, invitedUserId: CAROL, role: 'observer' })));
+    await assertFails(setDoc(doc(db(DAN), 'treeKeepingInvites', 'tinv-dan-keeper'), invite({ invitedByUserId: DAN, invitedUserId: CAROL, role: 'keeper' })));
+    await assertFails(setDoc(doc(db(DAN), 'treeKeepingInvites', 'tinv-dan-stewd'), invite({ invitedByUserId: DAN, invitedUserId: CAROL, role: 'steward' })));
+    await assertFails(setDoc(doc(db(MALLORY), 'treeKeepingInvites', 'tinv-new-mally'), invite({ invitedByUserId: MALLORY, invitedUserId: CAROL })));
+    await assertFails(setDoc(doc(db(BOB), 'treeKeepingInvites', 'tinv-new-forge'), invite({ invitedByUserId: ALICE, invitedUserId: CAROL })));
+    await assertFails(setDoc(doc(db(BOB), 'treeKeepingInvites', 'tinv-new-accpt'), invite({ invitedUserId: CAROL, status: 'accepted' })));
   });
 
-  it('the invitee declines (never revokes); the inviter or the owner withdraws (never declines); only pending moves, and only its marks', async () => {
+  it('the invitee declines (never revokes); the inviter or any keeper withdraws (never declines); only pending moves, and only its marks', async () => {
     await seedTreeInvites();
     const decline = { status: 'declined', declinedAt: serverTimestamp(), updatedAt: serverTimestamp() };
     const revoke = { status: 'revoked', revokedAt: serverTimestamp(), updatedAt: serverTimestamp() };
-    await assertFails(updateDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-owner-1'), revoke));    // the invitee cannot revoke
-    await assertFails(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-owner-1'), decline));       // the inviter cannot decline
-    await assertFails(updateDoc(doc(db(ALICE), 'treeOwnershipInvites', 'tinv-owner-1'), revoke));      // a co_owner who did not invite
-    await assertFails(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-owner-1'), { ...revoke, role: 'co_owner' })); // touching more than the marks
-    await assertFails(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-done-1'), revoke));         // accepted: settled, immovable
-    await assertSucceeds(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-staff-1'), revoke));     // the owner withdraws any invitation on their tree
-    await assertSucceeds(updateDoc(doc(db(MALLORY), 'treeOwnershipInvites', 'tinv-owner-1'), decline));
-    await assertFails(updateDoc(doc(db(BOB), 'treeOwnershipInvites', 'tinv-owner-1'), { status: 'pending', updatedAt: serverTimestamp() })); // one-way
+    await assertFails(updateDoc(doc(db(MALLORY), 'treeKeepingInvites', 'tinv-owner-1'), revoke));    // the invitee cannot revoke
+    await assertFails(updateDoc(doc(db(BOB), 'treeKeepingInvites', 'tinv-owner-1'), decline));       // the inviter cannot decline
+    await assertFails(updateDoc(doc(db(DAN), 'treeKeepingInvites', 'tinv-owner-1'), revoke));        // a steward who did not invite
+    await assertFails(updateDoc(doc(db(BOB), 'treeKeepingInvites', 'tinv-owner-1'), { ...revoke, role: 'keeper' })); // touching more than the marks
+    await assertFails(updateDoc(doc(db(BOB), 'treeKeepingInvites', 'tinv-done-1'), revoke));         // accepted: settled, immovable
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'treeKeepingInvites', 'tinv-staff-1'), revoke));   // any KEEPER withdraws any invitation on the tree
+    await assertSucceeds(updateDoc(doc(db(MALLORY), 'treeKeepingInvites', 'tinv-owner-1'), decline));
+    await assertFails(updateDoc(doc(db(BOB), 'treeKeepingInvites', 'tinv-owner-1'), { status: 'pending', updatedAt: serverTimestamp() })); // one-way
+  });
+});
+
+describe('a tree is kept, not owned — every keeper is equal, and the anchor is only the history (ring 2026-09-29)', () => {
+  const seedKept = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'lifetrees', 'keptTree'), { ownerId: BOB, name: 'Kept', validated: true, validatorId: STAFF, visibility: 'public', loveCount: 0 });
+    await setDoc(doc(d, 'links', `${ALICE}__keeper__keptTree`), { lid: 'x', type: 'link', rel: 'keeper', from: ALICE, to: 'keptTree', createdAt: 1 });
+    await setDoc(doc(d, 'pulses', 'gatherK'), { authorId: MALLORY, type: 'event', title: 'G', previousHash: 'EVENT', hash: 'e', visibility: 'public' });
+  });
+  it('a keeper by link edits, enlists the tree in a gathering, and may release it — the anchor holds no more', async () => {
+    await seedKept();
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'keptTree'), { body: 'kept together', updatedAt: 1 }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'links', 'keptTree__participant__gatherK'), { lid: 'x', type: 'link', rel: 'participant', from: 'keptTree', to: 'gatherK', createdAt: 1 }));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', 'keptTree__participant__gatherK')));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', 'keptTree__participant__gatherK'), { lid: 'x', type: 'link', rel: 'participant', from: 'keptTree', to: 'gatherK', createdAt: 1 }));
+    // A keeper's validated tree is a validation credential, whichever keeper signs.
+    await env.withSecurityRulesDisabled(async (ctx) =>
+      setDoc(doc(ctx.firestore(), 'lifetrees', 'newTree'), { ownerId: MALLORY, name: 'New', validated: false, validatorId: null, visibility: 'public', loveCount: 0 }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'newTree'), { validated: true, validatorId: 'keptTree', updatedAt: 1 }));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'lifetrees', 'keptTree')));
+  });
+  it('no keeper — not even the anchor — moves the anchor from a client; a keeper link is never self-minted', async () => {
+    await seedKept();
+    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'keptTree'), { ownerId: ALICE }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'keptTree'), { ownerId: ALICE }));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__keeper__keptTree`), { lid: 'x', type: 'link', rel: 'keeper', from: MALLORY, to: 'keptTree', createdAt: 1 }));
+    // A keeper steps down by their own hand (their link); the anchor has no link to shed.
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', `${ALICE}__keeper__keptTree`)));
   });
 });

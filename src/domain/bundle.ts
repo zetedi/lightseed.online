@@ -108,7 +108,7 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   { path: 'communityInvites', mode: 'verbatim', localUidFields: ['createdBy'], deterministicIds: 'auto-id used as the shareable /i/<id> key' },
   { path: 'communityTreeInvites', mode: 'verbatim', localUidFields: ['invitedByUserId', 'invitedUserId', 'treeOwnerId'] },
   { path: 'communityKeeperInvites', mode: 'verbatim', localUidFields: ['invitedByUserId', 'invitedUserId'] },
-  { path: 'treeOwnershipInvites', mode: 'verbatim', localUidFields: ['invitedByUserId', 'invitedUserId'] },
+  { path: 'treeKeepingInvites', mode: 'verbatim', localUidFields: ['invitedByUserId', 'invitedUserId'] },
   { path: 'inviteRequests', mode: 'verbatim' },
 
   // Node fabric

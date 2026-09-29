@@ -99,7 +99,7 @@ describe('derivePathway — the ladder, stage by stage', () => {
     expect(p.next?.key).toBe('formCircle');
   });
 
-  it('a co-owner or steward of another\'s tree already stands in a circle — the trail moves on', () => {
+  it('a keeper or steward of another\'s tree already stands in a circle — the trail moves on', () => {
     const p = derivePathway(being({ circleSize: 0, tendedCount: 1, sevenSustaining: 3 }), NOW);
     expect(p.stage).toBe('sevening');
     expect(p.next?.key).toBe('plantSeven');

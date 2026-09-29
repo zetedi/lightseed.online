@@ -563,10 +563,10 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   };
 
   // A circle's GRADUATION banner (domain/treeCircle formCircleRefusal): shown to the hands
-  // that may form — the keeper circle, or a co-owner of the root tree. The server is the
+  // that may form — the keeper circle, or a keeper of the root tree. The server is the
   // one hand that stamps forming; this banner only carries the ask and the chosen name.
-  const isUnformedCircle = community.formation === 'tree_co_ownership' && !community.formedAt;
-  const [treeCoOwner, setTreeCoOwner] = useState(false);
+  const isUnformedCircle = community.formation === 'tree_keeping' && !community.formedAt;
+  const [treeKeeper, setTreeKeeper] = useState(false);
   const [formName, setFormName] = useState('');
   const [forming, setForming] = useState(false);
   const [justFormed, setJustFormed] = useState(false);
@@ -575,17 +575,17 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setFormName((community.name || '').replace(/\s*Circle\s*$/i, '')); setJustFormed(false);
   }, [community.id, community.name]);
   useEffect(() => {
-    if (!isUnformedCircle || !currentUserId || !community.rootLifetreeId) { setTreeCoOwner(false); return; }
+    if (!isUnformedCircle || !currentUserId || !community.rootLifetreeId) { setTreeKeeper(false); return; }
     let alive = true;
-    firestoreStore.linksFrom(currentUserId, 'co_owner')
-      .then(links => { if (alive) setTreeCoOwner(links.some(l => l.to === community.rootLifetreeId)); })
+    firestoreStore.linksFrom(currentUserId, 'keeper')
+      .then(links => { if (alive) setTreeKeeper(links.some(l => l.to === community.rootLifetreeId)); })
       .catch(() => {});
     return () => { alive = false; };
   }, [isUnformedCircle, currentUserId, community.rootLifetreeId]);
   const mayFormCommunity = isUnformedCircle && !justFormed && !!currentUserId
     && formCircleRefusal({
       formation: community.formation, formedAtMs: null,
-      isCircleKeeper: canEdit, isTreeCoOwner: treeCoOwner,
+      isCircleKeeper: canEdit, isTreeKeeper: treeKeeper,
     }) === null;
   const handleFormCommunity = async () => {
     const name = formName.trim();

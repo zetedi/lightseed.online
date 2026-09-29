@@ -289,15 +289,15 @@ export const markReachPulsesSeen = markReachesSeen;
 // who was unlinked. (One-time legacy data is covered by migrateArraysToLinks.)
 export const resolveCircleUids = async (tree: Lifetree, audience: ReachAudience): Promise<string[]> => {
     const owner = tree.ownerId ? [tree.ownerId] : [];
-    const byRel: Record<string, string[]> = { co_owner: [], guardian: [], steward: [], observer: [] };
+    const byRel: Record<string, string[]> = { keeper: [], guardian: [], steward: [], observer: [] };
     try {
         const links = await getDocs(query(collection(db, 'links'), where('to', '==', tree.id)));
         links.docs.forEach(d => { const x = d.data() as Partial<Link>; if (x.rel && x.from && byRel[x.rel]) byRel[x.rel].push(x.from); });
     } catch (e) { console.warn('resolveCircleUids: link read failed', e); }
     const ids =
-        audience === 'owners' ? [...owner, ...byRel.co_owner]
-        : audience === 'guardians' ? [...owner, ...byRel.co_owner, ...byRel.guardian]
-        : [...owner, ...byRel.co_owner, ...byRel.guardian, ...byRel.steward, ...byRel.observer];
+        audience === 'owners' ? [...owner, ...byRel.keeper]
+        : audience === 'guardians' ? [...owner, ...byRel.keeper, ...byRel.guardian]
+        : [...owner, ...byRel.keeper, ...byRel.guardian, ...byRel.steward, ...byRel.observer];
     return Array.from(new Set(ids.filter(Boolean)));
 };
 
@@ -342,7 +342,7 @@ export const sendReach = async ({
     isAdmin?: boolean;
     isSuperAdmin?: boolean;
 }) => {
-    // A group reach needs the target's full circle (co-owners / guardians / …), so always
+    // A group reach needs the target's full circle (keepers / guardians / …), so always
     // resolve the freshest target when an audience is set; otherwise resolve only if the
     // lightweight tree object is missing its owner + privacy flag.
     let target = toTree;

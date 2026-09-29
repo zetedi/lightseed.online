@@ -191,6 +191,8 @@ export const rotateSigningKey = onCall({ cors: true }, async (request) => {
     return { epochId: event, fingerprint: toFp };
 });
 
+// A witness is rooted in initiation or in a VALIDATED tree they KEEP — as its anchor or by a
+// keeper link (keepers are equal, ring 2026-09-29).
 const recoveryWitnessEligible = async (uid: string): Promise<boolean> => {
     const initiate = await db.collection("initiates").doc(uid).get();
     if (initiate.exists) return true;
@@ -199,7 +201,13 @@ const recoveryWitnessEligible = async (uid: string): Promise<boolean> => {
         .where("validated", "==", true)
         .limit(1)
         .get();
-    return !validatedTree.empty;
+    if (!validatedTree.empty) return true;
+    const kept = await db.collection("links").where("from", "==", uid).where("rel", "==", "keeper").limit(10).get();
+    for (const l of kept.docs) {
+        const tree = await db.collection("lifetrees").doc(String((l.data() as any).to || "")).get();
+        if (tree.exists && (tree.data() as any).validated === true && (tree.data() as any).treeType !== "BED") return true;
+    }
+    return false;
 };
 
 const recoveryClaimFrom = (uid: string, eventId: string, data: Record<string, unknown>): RecoveryClaim => ({

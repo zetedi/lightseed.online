@@ -50,8 +50,11 @@ export const successorAmong = (keeperLinks: KeeperLink[]): string | null => {
 // May this being become a keeper? The refusal reasons the server (and the UI) both speak.
 export type KeeperRefusal = 'no_tree' | 'already_keeper';
 
+// A ROOTED being KEEPS a living tree (ring 2026-09-29, "we can't own a life"): as its first
+// keeper (ownerId) or as a keeper (a keeper link the first keeper offered and they
+// accepted). Stewards, guardians and observers do not root — and a bed roots no one.
 export const keeperRefusal = (facts: {
-  ownsLivingTree: boolean;   // a LIFETREE or GUARDED tree of their own — beds don't root a being
+  keepsLivingTree: boolean;  // first keeper or keeper of a LIFETREE / GUARDED tree
   alreadyKeeper: boolean;
 }): KeeperRefusal | null =>
-  facts.alreadyKeeper ? 'already_keeper' : facts.ownsLivingTree ? null : 'no_tree';
+  facts.alreadyKeeper ? 'already_keeper' : facts.keepsLivingTree ? null : 'no_tree';

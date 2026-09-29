@@ -142,10 +142,10 @@ export const onNetworkInviteAccepted = onDocumentUpdated("networkInvites/{invite
     }
 });
 
-// --- Tree Circle: accept a co-ownership / guardianship invite -------------------
+// --- Tree Circle: accept a keeping / guardianship invite -------------------
 // Protected multi-document mutation: writes the tree's role array AND the rooted
 // community. Runs with admin rights so the invitee never writes those docs directly.
-const VALID_ROLES = ["co_owner", "guardian", "observer", "steward"];
+const VALID_ROLES = ["keeper", "guardian", "observer", "steward"];
 
 export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
@@ -158,7 +158,7 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
     }
 
     return await db.runTransaction(async (tx) => {
-        const inviteRef = db.collection("treeOwnershipInvites").doc(inviteId);
+        const inviteRef = db.collection("treeKeepingInvites").doc(inviteId);
         const inviteSnap = await tx.get(inviteRef);
         if (!inviteSnap.exists) {
             throw new HttpsError("not-found", "Invite not found.");
@@ -232,7 +232,7 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         let communityId: string = tree.communityId;
         // A GUARDIAN is a lightweight, no-privilege FOLLOW (domain/policy, the rules) — accepting a
         // guardian invitation mints only the guardian link, never a circle community or membership.
-        // The caring roles (co_owner/steward) form the circle; guardianship watches over it.
+        // The caring roles (keeper/steward) form the circle; guardianship watches over it.
         if (invite.role !== "guardian") {
             if (!communityId) {
                 const communityRef = db.collection("communities").doc();
@@ -243,7 +243,7 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
                     rootLifetreeId: invite.lifetreeId,
                     founderUserId: tree.ownerId,
                     ownerId: tree.ownerId,
-                    formation: "tree_co_ownership",
+                    formation: "tree_keeping",
                     visibility: "invited",
                     // A tree circle is a PRE-COMMUNITY: a real community Being with NO address.
                     // Its locus is rootLifetreeId; the garden stays the TREE's relation (the
@@ -291,9 +291,18 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
 // invariant these three hands defend together: a community is never keeperless.
 
 // A keeper is a rooted being: at least one living tree of their own (a BED is furniture).
-const ownsLivingTree = async (uid: string): Promise<boolean> => {
-    const snap = await db.collection("lifetrees").where("ownerId", "==", uid).limit(10).get();
-    return snap.docs.some((d) => (d.data() as any).treeType !== "BED");
+// A rooted being KEEPS a living tree (domain/keeperCircle keeperRefusal, ring 2026-09-29): as
+// its first keeper, or as a keeper — a keeper link the first keeper offered and they
+// accepted. Co-keeping counts because keeping, not owning, is what roots a being; a bed never does.
+const keepsLivingTree = async (uid: string): Promise<boolean> => {
+    const own = await db.collection("lifetrees").where("ownerId", "==", uid).limit(10).get();
+    if (own.docs.some((d) => (d.data() as any).treeType !== "BED")) return true;
+    const co = await db.collection("links").where("from", "==", uid).where("rel", "==", "keeper").limit(10).get();
+    for (const l of co.docs) {
+        const tree = await db.collection("lifetrees").doc(String((l.data() as any).to || "")).get();
+        if (tree.exists && (tree.data() as any).treeType !== "BED") return true;
+    }
+    return false;
 };
 
 const mintKeeperLinks = (tx: FirebaseFirestore.Transaction, uid: string, communityId: string) => {
@@ -320,7 +329,7 @@ export const acceptKeeperInvite = onCall({ cors: true }, async (request) => {
     const uid = request.auth.uid;
     const inviteId = String(request.data?.inviteId || "");
     if (!inviteId) throw new HttpsError("invalid-argument", "inviteId is required.");
-    if (!(await ownsLivingTree(uid))) {
+    if (!(await keepsLivingTree(uid))) {
         throw new HttpsError("failed-precondition", "no_tree"); // a keeper is a rooted being
     }
     return await db.runTransaction(async (tx) => {
@@ -355,7 +364,7 @@ export const acceptKeeperRequest = onCall({ cors: true }, async (request) => {
     const communityId = String(request.data?.communityId || "");
     const requesterUid = String(request.data?.requesterUid || "");
     if (!communityId || !requesterUid) throw new HttpsError("invalid-argument", "communityId and requesterUid are required.");
-    if (!(await ownsLivingTree(requesterUid))) {
+    if (!(await keepsLivingTree(requesterUid))) {
         throw new HttpsError("failed-precondition", "no_tree");
     }
     return await db.runTransaction(async (tx) => {
@@ -410,9 +419,43 @@ export const resignKeeper = onCall({ cors: true }, async (request) => {
     });
 });
 
+// ── A tree's keeper RESIGNS (ring 2026-09-29) — the community's law, on a tree ─────────────
+// Keepers are equal, and a tree is never keeperless: a keeper-link holder simply loses their
+// link; the ANCHOR (ownerId — the hand that planted, named by the history) hands the anchor to
+// the longest-standing keeper (oldest link, ties by uid — domain/keeperCircle.successorAmong),
+// and refuses to leave alone. The rules freeze ownerId to every client; only this hand moves it.
+export const resignTreeKeeper = onCall({ cors: true }, async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "You must be signed in.");
+    const uid = request.auth.uid;
+    const treeId = String(request.data?.treeId || "");
+    if (!treeId) throw new HttpsError("invalid-argument", "treeId is required.");
+    return await db.runTransaction(async (tx) => {
+        const treeRef = db.collection("lifetrees").doc(treeId);
+        const tree = (await tx.get(treeRef)).data() as any;
+        if (!tree) throw new HttpsError("not-found", "Lifetree not found.");
+        const linksSnap = await tx.get(db.collection("links").where("rel", "==", "keeper").where("to", "==", treeId));
+        const keeperLinks = linksSnap.docs
+            .map((d) => ({ from: (d.data() as any).from as string, createdAtMs: (d.data() as any).createdAt?.toMillis?.() || 0, ref: d.ref }))
+            .filter((l) => l.from !== tree.ownerId);
+        const isAnchor = tree.ownerId === uid;
+        const ownLink = keeperLinks.find((l) => l.from === uid);
+        if (!isAnchor && !ownLink) throw new HttpsError("permission-denied", "You are not a keeper of this tree.");
+        if (isAnchor) {
+            if (keeperLinks.length === 0) throw new HttpsError("failed-precondition", "tree_last_keeper");
+            const successor = [...keeperLinks].sort((a, b) =>
+                a.createdAtMs - b.createdAtMs || (a.from < b.from ? -1 : a.from > b.from ? 1 : 0))[0];
+            tx.update(treeRef, { ownerId: successor.from, updatedAt: FieldValue.serverTimestamp() });
+            tx.delete(successor.ref); // the successor IS the anchor now; the link would double-count them
+            return { resigned: uid, successor: successor.from };
+        }
+        tx.delete(ownLink!.ref); // ownerId remains — never keeperless by construction
+        return { resigned: uid, successor: null };
+    });
+});
+
 // ── Circle graduation (domain/treeCircle formCircleRefusal) ─────────────────────────────
 // A tree circle GRADUATES into a standing community by the hands that carry it: the keeper
-// circle, or a co-owner of the root tree. Forming chooses the name, opens visibility, and
+// circle, or a keeper of the root tree. Forming chooses the name, opens visibility, and
 // stamps provenance — bornOn = the garden where the root tree stands (presence on that
 // face's list WITHOUT claiming its domain), formedAt/formedBy by this hand alone (the
 // rules freeze both against clients). Forming grants no keepership: the anchor stays.
@@ -425,14 +468,14 @@ export const formCommunityFromCircle = onCall({ cors: true }, async (request) =>
     const communityRef = db.collection("communities").doc(communityId);
     const community = (await communityRef.get()).data();
     if (!community) throw new HttpsError("not-found", "Community not found.");
-    if (community.formation !== "tree_co_ownership") throw new HttpsError("failed-precondition", "not_circle");
+    if (community.formation !== "tree_keeping") throw new HttpsError("failed-precondition", "not_circle");
     if (community.formedAt) throw new HttpsError("failed-precondition", "already_formed");
     const rootTreeId = String(community.rootLifetreeId || "");
     const isKeeper = community.ownerId === uid
         || (await keeperLinkRef(uid, communityId).get()).exists;
-    const isCoOwner = !!rootTreeId
-        && (await db.collection("links").doc(`${uid}__co_owner__${rootTreeId}`).get()).exists;
-    if (!isKeeper && !isCoOwner) throw new HttpsError("permission-denied", "not_hand");
+    const isTreeKeeper = !!rootTreeId
+        && (await db.collection("links").doc(`${uid}__keeper__${rootTreeId}`).get()).exists;
+    if (!isKeeper && !isTreeKeeper) throw new HttpsError("permission-denied", "not_hand");
     const tree = rootTreeId ? (await db.collection("lifetrees").doc(rootTreeId).get()).data() : null;
     const bornOn = normalizeAnchorDomain(String(tree?.domain || "")); // the garden, never the claim
     await communityRef.update({

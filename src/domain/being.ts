@@ -9,7 +9,7 @@ import type { Stamp } from './time';
 //   - a STORY      — its chain: pulses keyed by the being's ids, hash-linked, unerasable.
 //                    Rendered for every being by sections/ChainTree (the digital tree).
 //   - a CIRCLE     — its links: the LIN, the relations in the `links` collection
-//                    (guardian, member, participant, co_owner, …).
+//                    (guardian, member, participant, keeper, …).
 //   - a FACE       — its profile: the shared anatomy in components/sections/ (Vision, Events,
 //                    Trees, LightHouse, Intelligence, Appearance, AlignmentView, ChainTree).
 //                    Composite beings (communities, nodes) additionally grow a Council — the

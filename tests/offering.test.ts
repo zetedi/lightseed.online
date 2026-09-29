@@ -139,7 +139,7 @@ describe('judgeOfferingAccept — the whole law of acceptance', () => {
 
   it('refuses the author, a hand without standing, a dead tree, and a vanished side', () => {
     rejects(f => { f.acceptorUid = 'ana'; }, 'failed-precondition', /your own offering/);
-    rejects(f => { f.receiver.standing = false; }, 'permission-denied', /keeper, co-owners or stewards/);
+    rejects(f => { f.receiver.standing = false; }, 'permission-denied', /keeper, keepers or stewards/);
     rejects(f => { f.receiver.exists = false; }, 'not-found', /offered to no longer exists/);
     rejects(f => { f.receiver.diedAtMs = 1; }, 'failed-precondition', /died/);
     rejects(f => { f.fromTree.exists = false; }, 'not-found', /offerer's tree/);

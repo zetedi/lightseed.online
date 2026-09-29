@@ -69,7 +69,7 @@ export const normalizeNodeLimits = (raw: any): NodeLimits => {
 };
 
 // The node's fullness gate. `hostedCount` counts the node's communities EXCLUDING the
-// auto-born tree circles (formation 'tree_co_ownership') — those are the shadow of the
+// auto-born tree circles (formation 'tree_keeping') — those are the shadow of the
 // planting caps, not social spaces someone founded; counting them would make one law eat
 // the other. `faceCount` counts communities holding a hosting face. The refusal for
 // fullness is deliberately not a "no": it says it is time to SEED.

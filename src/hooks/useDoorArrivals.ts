@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { CommunityInvite, Lightseed } from '../types';
 import type { BeingOverlays } from './useBeingOverlays';
 import { getPendingTreeInvites, getCommunityInvite, getCommunityById } from '../services/firebase';
@@ -27,6 +27,11 @@ export function useDoorArrivals(params: {
   // An invitation the visitor arrived holding (/i/<id>) — carried until used or dismissed.
   const [arrivedInvite, setArrivedInvite] = useState<CommunityInvite | null>(null);
   const [pendingTreeInvites, setPendingTreeInvites] = useState(0);
+  // A /b/<lid> arrival is PENDING from the first paint until the being resolves (ring
+  // 2026-09-29): the shell holds its neutral loader meanwhile, so a shared tree link opens
+  // straight onto the tree — not onto a dashboard that then changes under the reader.
+  const [doorPending, setDoorPending] = useState<boolean>(() => typeof window !== 'undefined' && !!lidFromPath(window.location.pathname));
+  const doorResolvedRef = useRef(false);
 
   // Pending Tree Circle invites — surfaced (separately) on the DM button.
   useEffect(() => {
@@ -54,6 +59,10 @@ export function useDoorArrivals(params: {
     if (authLoading) return;
     const lid = lidFromPath(window.location.pathname);
     if (!lid) return;
+    // ONE resolution per arrival: the session flag may settle more than once, and a second
+    // open of the same being would draw it twice (the flicker a shared link once showed).
+    if (doorResolvedRef.current) return;
+    doorResolvedRef.current = true;
     // The address is KEPT (only normalized) — /b/<lid> is a real, refreshable door now:
     // the hosting rewrite serves the shell for it, and this effect re-opens the being.
     window.history.replaceState(window.history.state, '', beingPath(lid));
@@ -63,7 +72,7 @@ export function useDoorArrivals(params: {
       else if (found.kind === 'lightHouse') beings.setViewingLightHouse(found.lightHouse);
       else if (found.kind === 'vision') beings.setSelectedVision(found.vision);
       else beings.setSelectedPulse(found.pulse);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setDoorPending(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution
   }, [authLoading]);
 
@@ -94,5 +103,5 @@ export function useDoorArrivals(params: {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the ask is consumed on first resolution
   }, [authLoading]);
 
-  return { arrivedInvite, setArrivedInvite, pendingTreeInvites };
+  return { arrivedInvite, setArrivedInvite, pendingTreeInvites, doorPending };
 }

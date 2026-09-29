@@ -7,7 +7,7 @@ import { db, mintLid } from "./core";
 import { sealBlock } from "./blocks";
 
 // --- THE OFFERING OF CARE: acceptance -------------------------------------------------------
-// acceptOffering — a hand standing for the receiver (a tree's keeper / co-owner / steward, a
+// acceptOffering — a hand standing for the receiver (a tree's keeper / keeper / steward, a
 // vision's author) accepts an OPEN offering made to it, and the agreement is minted as TWIN
 // BLOCKS: one on the offerer's tree chain, one on the receiver's own chain (a tree's, or the
 // vision's), each naming the offering and the other side — the alignment shape, on server
@@ -39,8 +39,8 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
             receiver = receiverSnap.exists ? (receiverSnap.data() as Record<string, any>) : null;
             if (receiver) {
                 if (toKind === "tree") {
-                    // The tree's carers: its keeper, and co_owner / steward links (rules' isTreeCarer).
-                    const links = await Promise.all(["co_owner", "steward"].map((rel) => t.get(db.doc(`links/${acceptorUid}__${rel}__${toId}`))));
+                    // The tree's carers: its keeper, and keeper / steward links (rules' isTreeCarer).
+                    const links = await Promise.all(["keeper", "steward"].map((rel) => t.get(db.doc(`links/${acceptorUid}__${rel}__${toId}`))));
                     standing = receiver.ownerId === acceptorUid || links.some((l) => l.exists);
                 } else {
                     standing = receiver.authorId === acceptorUid;
@@ -50,11 +50,11 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
         const fromTreeSnap = fromTreeId ? await t.get(db.doc(`lifetrees/${fromTreeId}`)) : null;
         const fromTree = fromTreeSnap?.exists ? (fromTreeSnap.data() as Record<string, any>) : null;
         // The OFFERER's standing over the source tree (Lumo's review, 2026-09-07): the twin block
-        // lands on that chain and moves its head, so the offerer must be its keeper, co-owner or
+        // lands on that chain and moves its head, so the offerer must be its keeper, keeper or
         // steward — read here, inside the transaction, never trusted from the offering's words.
         let fromStanding = false;
         if (fromTree && authorId) {
-            const fromLinks = await Promise.all(["co_owner", "steward"].map((rel) => t.get(db.doc(`links/${authorId}__${rel}__${fromTreeId}`))));
+            const fromLinks = await Promise.all(["keeper", "steward"].map((rel) => t.get(db.doc(`links/${authorId}__${rel}__${fromTreeId}`))));
             fromStanding = fromTree.ownerId === authorId || fromLinks.some((l) => l.exists);
         }
 

@@ -82,7 +82,9 @@ names what happened. The ring makes it history. Then the root grows clearer.
 ## Language
 
 *tend* (care as action) · *mint* (seal a moment onto a chain) · *water* (the
-photo-proofed care pulse) · *keeper* (a community's owner) · *guardian* (a
+photo-proofed care pulse) · *keeper* (the hand that holds responsibility for a being that
+cannot yet sign or answer for itself — a tree's, a community's; keepers are equal, and who
+planted or founded is the history's to tell, never a rank on the face) · *guardian* (a
 no-privilege follow that vows protection) · *validated = initiated* (standing
 in the web of trust) · *Light House* (a sacred place that keeps a light for others:
 a point of orientation on the map, rooted in a mother tree) ·
@@ -121,7 +123,7 @@ offering untaken is a token, and taken it becomes a token of appreciation) ·
 *offer to* (an offering of CARE made to a being — a tree or a vision — from one of
 the offerer's own trees; it lives on its own leaf and waits there: a service, a bed, or
 CODE, a pull request offered to the Code Tree) · *accept* (the receiver's hand — a
-tree's keeper, co-owner or steward, a vision's author — saying yes on the leaf: the
+tree's keeper, keeper or steward, a vision's author — saying yes on the leaf: the
 agreement is minted as TWIN BLOCKS, one on the offerer's tree chain and one on the
 receiver's own chain, each naming the other; no light moves at acceptance) ·
 *withdraw* (the offerer taking an open offering back — a mark, never a delete; an

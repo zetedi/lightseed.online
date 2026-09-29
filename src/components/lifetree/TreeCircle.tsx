@@ -6,9 +6,9 @@ import { Icons } from '../ui/Icons';
 import { firestoreStore } from '../../adapters/firestore';
 import { canCareForTree } from '../../domain/policy';
 import { SectionCard } from '../ui/SectionCard';
-import { fetchAllLifetrees, getPersonName, createTreeInvite, getSentTreeInvites, revokeTreeInvite } from '../../services/firebase';
+import { fetchAllLifetrees, getPersonName, createTreeInvite, getSentTreeInvites, revokeTreeInvite, resignTreeKeeper } from '../../services/firebase';
 import { treeCircle } from '../../domain/views/circle';
-import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole, type TreeOwnershipInvite } from '../../domain/treeCircle';
+import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole, type TreeKeepingInvite } from '../../domain/treeCircle';
 // `translations.en` feeds only the STORED invite message (data on the invite doc — the
 // invitee's language is unknown at mint time, so the record keeps the canonical English);
 // everything the VIEWER reads goes through t().
@@ -19,7 +19,7 @@ import type { Lifetree, Pulse } from '../../types';
 import { Picture } from '../ui/Picture';
 // THE CIRCLE — the whole circle of care around a Lifetree, one view (the two old tabs merged). It
 // is a prism over the tree's incoming links (domain/views/circle), which already groups owner +
-// co_owner + guardian + steward + observer. Two layers of belonging live here, kept legible, never
+// keeper + guardian + steward + observer. Two layers of belonging live here, kept legible, never
 // collapsed: CARING (owner / co-guardian / steward — power to shape and schedule) and WITNESSING
 // (guardian — a no-privilege, self-serve follow; the seat of the collective veto). Guardianship is
 // the open door anyone may enter; caring is the deeper, invited commitment. Each being is shown AS
@@ -34,11 +34,11 @@ interface TreeCircleProps {
     // The tree's growth blocks (newest first), loaded by the shell and shared with the Digital
     // Tree and Care: the waterings awaiting a witness are read from them.
     growthBlocks: Pulse[];
-    // Carer (owner / co-owner / steward / staff): may report danger and invite guardians.
+    // Carer (owner / keeper / steward / staff): may report danger and invite guardians.
     canEdit: boolean;
     // Owner / staff: may also invite the deeper CARING roles (co-guardian / steward).
     canInviteRoles: boolean;
-    // The viewer stands in the circle (keeper / co-owner / steward / guardian) and may witness.
+    // The viewer stands in the circle (keeper / keeper / steward / guardian) and may witness.
     canWitness: boolean;
     status: 'HEALTHY' | 'DANGER';
     busy: boolean;
@@ -72,7 +72,7 @@ const Avatar: React.FC<{ imageUrl?: string; seed: string; ring?: string }> = ({ 
 
 // Caring roles read warm (emerald), witnessing cool (sky) — power vs witness, at a glance.
 const ROLE_RING: Record<TreeRelationRole, string> = {
-    owner: 'ring-amber-200', co_owner: 'ring-emerald-100', steward: 'ring-emerald-100',
+    keeper: 'ring-amber-200', steward: 'ring-emerald-100',
     guardian: 'ring-sky-100', observer: 'ring-slate-100',
 };
 
@@ -99,7 +99,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     // ── The invitation ledger: who was invited into this circle, as what — and the hand to
     // withdraw an invitation still waiting. Read by the circle's carers (rules: list by
     // lifetreeId is theirs); revocation is a mark on the record, never a delete.
-    const [sentInvites, setSentInvites] = useState<TreeOwnershipInvite[]>([]);
+    const [sentInvites, setSentInvites] = useState<TreeKeepingInvite[]>([]);
     const [inviteNonce, setInviteNonce] = useState(0);
     const [revoking, setRevoking] = useState<string | null>(null);
     useEffect(() => {
@@ -145,7 +145,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         if (!(await showConfirm(spokenLine('step_down_confirm', { role: roleName(role).toLowerCase(), tree: tree.name || '—' }), { title: 'step_down', confirmText: 'confirm', danger: true }))) return;
         setSteppingDown(true);
         try {
-            await firestoreStore.unlink(currentUserId, role, treeId);
+            // A KEEPER steps down by the server's hand (resignTreeKeeper): a link holder simply
+            // leaves; the anchor hands the anchor on, and never leaves the tree keeperless.
+            if (role === 'keeper') await resignTreeKeeper(treeId);
+            else await firestoreStore.unlink(currentUserId, role, treeId);
             onGuardianChange(); // the shell re-reads the circle
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setSteppingDown(false);
@@ -226,31 +229,31 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     };
 
     // OFFERING CO-OWNERSHIP TO A GUARDIAN (ring 2026-09-19): the same one door — an invitation
-    // in the co-owner role, confirmed by the guardian — opened from their row, so a keeper who
+    // in the keeper role, confirmed by the guardian — opened from their row, so a keeper who
     // has watched a guardian witness need not search for them in the invite box.
     const [offeringTo, setOfferingTo] = useState<string | null>(null);
     const pendingFor = (uid: string) => sentInvites.find(i => i.invitedUserId === uid);
-    const handleOfferCoOwnership = async (uid: string) => {
+    const handleOfferKeeping = async (uid: string) => {
         if (!currentUserId || !canInviteRoles) return;
         setOfferingTo(uid);
         try {
             await createTreeInvite({
                 lifetree: tree as Lifetree,
                 invitedUserId: uid,
-                role: 'co_owner',
+                role: 'keeper',
                 invitedByUserId: currentUserId,
                 invitedByName: currentUserName || undefined,
-                message: `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey('co_owner')].toLowerCase()}?`,
+                message: `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey('keeper')].toLowerCase()}?`,
             });
             setInviteNonce(n => n + 1);
-            notify(speak(spokenLine('circle_invite_sent', { name: labelFor(uid, faceFromForest(uid, forest)), role: roleName('co_owner').toLowerCase(), tree: tree.name || '—' })));
+            notify(speak(spokenLine('circle_invite_sent', { name: labelFor(uid, faceFromForest(uid, forest)), role: roleName('keeper').toLowerCase(), tree: tree.name || '—' })));
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setOfferingTo(null);
     };
 
     // Withdrawing an invitation that still waits: the inviter's own hand, or the keeper's for
     // any invitation on their tree (rules). The record stays, marked revoked.
-    const handleRevokeInvite = async (inv: TreeOwnershipInvite) => {
+    const handleRevokeInvite = async (inv: TreeKeepingInvite) => {
         const who = names[inv.invitedUserId] || faceFromForest(inv.invitedUserId, forest).name || `${inv.invitedUserId.slice(0, 8)}…`;
         if (!(await showConfirm(spokenLine('circle_invite_revoke_confirm', { name: who }), { title: 'invite_revoke', confirmText: 'revoke', danger: true }))) return;
         setRevoking(inv.id);
@@ -336,15 +339,15 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                             {/* A keeper offers a guardian the deeper seat — an invitation they confirm. */}
                                             {canInviteRoles && g.role === 'guardian' && uid !== currentUserId && (
                                                 pendingFor(uid) ? (
-                                                    <span className="ml-auto shrink-0 rounded-lg border border-emerald-100 bg-emerald-50/50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-500 dark:border-emerald-900 dark:bg-emerald-950/30">{t('co_owner_offered')}</span>
+                                                    <span className="ml-auto shrink-0 rounded-lg border border-emerald-100 bg-emerald-50/50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-500 dark:border-emerald-900 dark:bg-emerald-950/30">{t('keeping_offered')}</span>
                                                 ) : (
-                                                    <button onClick={() => void handleOfferCoOwnership(uid)} disabled={offeringTo === uid}
+                                                    <button onClick={() => void handleOfferKeeping(uid)} disabled={offeringTo === uid}
                                                         className="ml-auto shrink-0 rounded-lg border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">
-                                                        {offeringTo === uid ? '…' : t('offer_co_ownership')}
+                                                        {offeringTo === uid ? '…' : t('offer_keeping')}
                                                     </button>
                                                 )
                                             )}
-                                            {uid === currentUserId && g.role !== 'owner' && (
+                                            {uid === currentUserId && (
                                                 <button onClick={() => handleStepDown(g.role as InvitableRole)} disabled={steppingDown}
                                                     className="ml-auto shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-900 dark:border-slate-700">
                                                     {t('step_down')}
@@ -409,7 +412,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                         {canInviteRoles && (
                             <select value={askRole} onChange={e => setAskRole(e.target.value as InvitableRole)}
                                 className="h-8 rounded-lg border border-violet-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-900 dark:text-slate-300 dark:border-violet-900">
-                                {(['guardian', 'co_owner', 'steward', 'observer'] as InvitableRole[]).map(r => (
+                                {(['keeper', 'steward', 'guardian', 'observer'] as InvitableRole[]).map(r => (
                                     <option key={r} value={r}>{t('invite_as_role').replace('{role}', roleName(r))}</option>
                                 ))}
                             </select>
@@ -499,7 +502,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                         {canInviteRoles && (
                             <select value={inviteRole} onChange={e => setInviteRole(e.target.value as InvitableRole)}
                                 className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
-                                {(['guardian', 'co_owner', 'steward', 'observer'] as InvitableRole[]).map(r => (
+                                {(['keeper', 'steward', 'guardian', 'observer'] as InvitableRole[]).map(r => (
                                     <option key={r} value={r}>{t('invite_as_role').replace('{role}', roleName(r))}</option>
                                 ))}
                             </select>

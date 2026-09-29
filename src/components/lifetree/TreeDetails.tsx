@@ -46,6 +46,8 @@ interface TreeDetailsProps {
     // 'anonymous' when they chose to be unnamed, 'nameless' when they simply never wrote a name,
     // null while it is still being read. The envelope stands beside a name the viewer may reach.
     ownerLine?: { name: string } | 'anonymous' | 'nameless' | null;
+    // The other keepers' public names (ring 2026-09-29: keepers are equal; the anchor is merely first).
+    keeperLines?: Array<{ name: string } | 'anonymous' | 'nameless'>;
     onReachOwner?: () => void;
 }
 
@@ -64,6 +66,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
     onVisibilityChange,
     onConvertType,
     ownerLine,
+    keeperLines = [],
     onReachOwner,
 }) => {
     const { t } = useLanguage();
@@ -163,21 +166,29 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">{t('tree_details')}</h3>
 
                 <div className="flex items-start gap-4 py-2 border-b border-slate-50 dark:border-slate-800">
-                    <span className="w-24 shrink-0 text-slate-500 text-sm">{isNature ? t('steward') : t('owner')}</span>
+                    <span className="w-24 shrink-0 text-slate-500 text-sm">{isNature ? t('steward') : t('keepers')}</span>
                     {isNature ? (
                         <span className="flex-1 text-left text-slate-800 text-sm dark:text-slate-100">{t('nature_system')}</span>
-                    ) : typeof ownerLine === 'object' && ownerLine ? (
-                        <span className="flex flex-1 items-center gap-2 text-left text-slate-800 text-sm dark:text-slate-100">
-                            <span dir="auto">{ownerLine.name}</span>
-                            {onReachOwner && (
+                    ) : (
+                        // Every keeper on one line, the anchor first and unmarked (ring 2026-09-29:
+                        // keepers are equal; who planted is the history's to tell). The reach door
+                        // reaches the TREE, so it rides once, beside the names.
+                        <span className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-left text-slate-800 text-sm dark:text-slate-100">
+                            {[ownerLine ?? '…', ...keeperLines].map((line, i) => (
+                                <span key={i} className="inline-flex items-center gap-1">
+                                    {i > 0 && <span className="text-slate-300 dark:text-slate-600">·</span>}
+                                    {typeof line === 'object'
+                                        ? <span dir="auto">{line.name}</span>
+                                        : <span className="italic text-slate-400">{line === 'anonymous' ? t('anonymous_keeper') : line === 'nameless' ? t('unnamed_keeper') : '…'}</span>}
+                                </span>
+                            ))}
+                            {onReachOwner && typeof ownerLine === 'object' && ownerLine && (
                                 <button type="button" onClick={onReachOwner} title={t('reach_owner').replace('{name}', ownerLine.name)} aria-label={t('reach_owner').replace('{name}', ownerLine.name)}
                                     className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 [&>svg]:h-3.5 [&>svg]:w-3.5">
                                     <Icons.Reach />
                                 </button>
                             )}
                         </span>
-                    ) : (
-                        <span className="flex-1 text-left text-slate-400 text-sm italic">{ownerLine === 'anonymous' ? t('anonymous_keeper') : ownerLine === 'nameless' ? t('unnamed_keeper') : '…'}</span>
                     )}
                 </div>
                 <div className="flex items-center gap-4 py-2 border-b border-slate-50 dark:border-slate-800">

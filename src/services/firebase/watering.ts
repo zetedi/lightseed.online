@@ -189,7 +189,7 @@ export const recordWatering = async ({
 
 // The circle WITNESSES a watering — the light mint (the sun ring). SERVER-MEDIATED: the
 // witnessWatering callable derives the witness from the authenticated caller, verifies their
-// standing on the tree (keeper, co-owner, steward or guardian — never the carer) + tenure, and
+// standing on the tree (keeper, keeper, steward or guardian — never the carer) + tenure, and
 // kindles the carer's ray + the witness's seventh atomically. The witness is never a
 // client-passed field, so it can't be forged or aimed (Lumo's review, 2026-07-20). Also stamps the
 // pulse confirmed for the validation display.

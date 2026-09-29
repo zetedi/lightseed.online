@@ -33,7 +33,7 @@ export const useLifeseed = () => {
     const [lightseed, setLightseed] = useState<Lightseed | null>(null);
     const [myTrees, setMyTrees] = useState<Lifetree[]>([]);
     const [guardedTrees, setGuardedTrees] = useState<Lifetree[]>([]);
-    // Trees tended through the circle's caring layer (co_owner/steward links) — not owned,
+    // Trees tended through the circle's caring layer (keeper/steward links) — not owned,
     // not guarded: the third prism, so an accepted invitation shows on the profile.
     const [tendedTrees, setTendedTrees] = useState<TendedTree[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);

@@ -82,7 +82,7 @@ export interface WitnessFacts {
         treeId: string;              // pulse.lifetreeId
         createdAtMs: number | null;  // the server birth time; null = cannot mint
     };
-    // The birth of the witness's STANDING on the tree: the earliest of their guardian / co_owner /
+    // The birth of the witness's STANDING on the tree: the earliest of their guardian / keeper /
     // steward links, or the tree's own birth for its keeper; null = no standing at all.
     witnessSinceMs: number | null;
     tree: {
@@ -112,7 +112,7 @@ export type WitnessJudgment =
 
 // The complete law of witnessing, in the order the server applies it. Mirrors
 // src/domain/light.kindleRays: light enters ONLY through a human's witnessed care of the living —
-// a human who STANDS in the tree's circle (keeper, co-owner, steward or guardian; ring
+// a human who STANDS in the tree's circle (keeper, keeper, steward or guardian; ring
 // 2026-09-03 widened it from guardians alone, since the invited carers are the more trusted
 // hands and their role blurb had promised "confirms its care"); AI validation lights the tree
 // but holds no light and kindles none (the ring, 2026-07-20); no one witnesses their own care;
@@ -130,7 +130,7 @@ export function judgeWitness(f: WitnessFacts): WitnessJudgment {
     if (!f.pulse.carerUid || !f.pulse.treeId) return reject("failed-precondition", "That watering is malformed.");
     if (f.pulse.createdAtMs === null) return reject("failed-precondition", "That watering carries no birth time.");
     if (f.witnessUid === f.pulse.carerUid) return reject("failed-precondition", "You cannot witness your own care.");
-    if (f.witnessSinceMs === null) return reject("permission-denied", "Only the tree's circle — its keeper, co-owners, stewards and guardians — may witness it.");
+    if (f.witnessSinceMs === null) return reject("permission-denied", "Only the tree's circle — its keeper, keepers, stewards and guardians — may witness it.");
     if (f.witnessSinceMs > f.pulse.createdAtMs) return reject("failed-precondition", "Your standing on this tree began after this watering.");
     if (!f.tree.exists) return reject("not-found", "That tree no longer exists.");
     if (f.tree.treeType === "BED") return reject("failed-precondition", "A bed is not cared for for light.");

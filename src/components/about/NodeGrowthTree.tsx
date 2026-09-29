@@ -9,7 +9,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 // (chain height) read at a glance. A community running on the node's domain drives this growth.
 
 // Role edges live in the `links` collection (the LIN) — the legacy per-role arrays are gone.
-const CIRCLE_RELS: LinkRel[] = ['guardian', 'co_owner', 'steward', 'observer'];
+const CIRCLE_RELS: LinkRel[] = ['guardian', 'keeper', 'steward', 'observer'];
 interface TreeEdges { links: number; guardians: number }
 
 // A tree's weight: its chain growth (blockHeight = pulses) + its links (weighted) + a validated
@@ -29,7 +29,7 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
   const accent = community.theme?.primary || '#10b981';
   const CX = 400, CY = 400;
 
-  // Role-edge counts per tree, read from the LIN ('guardian'/'co_owner'/'steward'/'observer'
+  // Role-edge counts per tree, read from the LIN ('guardian'/'keeper'/'steward'/'observer'
   // links pointing INTO each tree) — the single source of truth for the circle.
   const [edges, setEdges] = useState<Map<string, TreeEdges>>(new Map());
   useEffect(() => {

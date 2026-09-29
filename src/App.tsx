@@ -186,7 +186,7 @@ const AppContent = () => {
     }, [tab, lightseed?.uid, isSuperAdmin, isAdmin, viewMode, hostCommunityResolved, authLoading, activeCommunity?.reflectsPublic, activeCommunity?.domain, activeCommunity?.strictScope]);
 
     const carrying = useCarrying({ isSuperAdmin, carrierName: lightseed?.displayName });
-    const { arrivedInvite, setArrivedInvite, pendingTreeInvites } = useDoorArrivals({
+    const { arrivedInvite, setArrivedInvite, pendingTreeInvites, doorPending } = useDoorArrivals({
         authLoading, lightseed, isStaff: isSuperAdmin || isAdmin, tab, inviteParam, beings,
         openAuth: () => doors.setShowAuthModal(true),
     });
@@ -486,8 +486,10 @@ const AppContent = () => {
     );
 
     // Custom-domain visitors wait a breath on neutral ground instead of seeing the seed flash
-    // before the organisation's page takes over.
-    if (!hostResolved) return (
+    // before the organisation's page takes over — and so does anyone arriving through a being's
+    // link (/b/<lid>), until the being resolves: the tree opens from the loader, not over a
+    // dashboard that had already begun to draw (ring 2026-09-29).
+    if (!hostResolved || doorPending) return (
         <div className="flex h-screen w-full items-center justify-center bg-[#faf6ec]">
             <Loading />
         </div>

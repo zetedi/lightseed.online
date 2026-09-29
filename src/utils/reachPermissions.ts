@@ -12,7 +12,7 @@ export const buildThreadId = (treeIdA: string, treeIdB: string) =>
   [treeIdA, treeIdB].sort().join('__');
 
 export const reachAudienceLabels: Record<ReachAudience, string> = {
-  owners: 'Owners',
+  owners: 'Keepers',   // the audience token stays 'owners' — it is sealed into reach blocks (ring 2026-09-29)
   guardians: 'Guardians',
   everyone: 'Everyone',
 };

@@ -1,13 +1,15 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { showAlert, showConfirm } from "./ui/Dialog";
+import { notify } from './ui/Toast';
+import { speak, spokenLine } from '../utils/translations';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
 import { SuperDot } from './ui/SuperDot';
 import { BeingQr } from './ui/BeingQr';
 import { mintBeingQr } from '../services/firebase/beings';
-import { getLightHouseById } from '../services/firebase';
+import { getLightHouseById, resignTreeKeeper } from '../services/firebase';
 import type { LightHouse } from '../domain/lightHouse';
 import { ActionsMenu, type MenuAction } from './ui/ActionsMenu';
 import { LoveButton } from './ui/LoveButton';
@@ -74,7 +76,11 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const currentUser = lightseed;
    const currentUserId = lightseed?.uid;
    const myActiveTree = activeTree;
+   // The ANCHOR (ownerId) — a keeper like any other on the face (ring 2026-09-29); the word
+   // stays in the code only for the succession invariant (a tree is never keeperless).
    const isOwner = currentUserId === tree.ownerId;
+   const [isKeeperLink, setIsKeeperLink] = useState(false);
+   const isKeeper = isOwner || isKeeperLink;
 
    // LightHouses rooted IN this tree (lightHouse __rooted__ tree): holding even one makes
    // this a MOTHER TREE. Read-only here — rooting is done from the lightHouse's page.
@@ -90,15 +96,15 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const isMotherTree = holdingLightHouses.length > 0;
    const isNature = tree.isNature;
    // Guardianship is a lightweight public follow with no powers — caring vests in the invited
-   // roles (co_owner/steward), tracked as `isCarer` (see the circle effect below). The guardian
+   // roles (keeper/steward), tracked as `isCarer` (see the circle effect below). The guardian
    // list itself lives in the Circle view; the nonce re-reads the circle when it changes there.
    const [guardianNonce, setGuardianNonce] = useState(0);
    const [isCarer, setIsCarer] = useState(false);
    const [isGuardian, setIsGuardian] = useState(false);
-   const canDelete = isOwner || isAdmin || isSuperAdmin;
+   const canDelete = isKeeper || isAdmin || isSuperAdmin;
    // The amber dot: this viewer may delete ONLY through staff privilege, not ownership.
    const deleteIsStaffOnly = !isOwner && (isAdmin || isSuperAdmin);
-   // Caring powers vest in the owner, invited co_owners/stewards, or staff — not lightweight
+   // Caring powers vest in the keepers, invited stewards, or staff — not lightweight
    // guardians (mirrors isTreeCarer in firestore.rules).
    const canEdit = isOwner || isCarer || isAdmin || isSuperAdmin;
    const hasValidationBadge = isExplicitlyValidatedTree(tree);
@@ -107,24 +113,6 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const targetProfile = targetUserProfile ?? { onlyValidatedCanReach: tree.onlyValidatedCanReach };
    const canReach = canReachTree({ targetTree: tree, targetUserProfile: targetProfile, myActiveTree, currentUserId, isAdmin, isSuperAdmin });
    const [isEditing, setIsEditing] = useState(false);
-   // THE OWNER LINE (ring 2026-09-10): the owner's public name — null when they are anonymous
-   // or unnamed (domain/publicName), undefined until the person doc has answered.
-   const [ownerLine, setOwnerLine] = useState<{ name: string } | 'anonymous' | 'nameless' | null>(null);
-   useEffect(() => {
-       let live = true;
-       // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the owner line per tree
-       setOwnerLine(null);
-       if (tree.isNature) return;
-       getPersonPresence(tree.ownerId)
-           .then(p => {
-               if (!live) return;
-               if (p && showsPersonName(p)) setOwnerLine({ name: p.displayName });
-               else if (p?.anonymous) setOwnerLine('anonymous');
-               else setOwnerLine('nameless');
-           })
-           .catch(() => { if (live) setOwnerLine(null); });
-       return () => { live = false; };
-   }, [tree.ownerId, tree.isNature]);
    // Deleting asks through the one Dialog (the same confirm every destructive act uses).
    const handleRequestDelete = async () => {
        if (!(await showConfirm('tree_delete_confirm', { title: 'delete_lifetree_title', confirmText: 'delete', danger: true }))) return;
@@ -265,7 +253,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
 
    // Tree Circle — shared care of this Lifetree. When someone accepts an invite a
    // community circle forms around the tree (see acceptTreeInvite Cloud Function).
-   const canInviteToCircle = isOwner || isSuperAdmin;
+   const canInviteToCircle = isKeeper || isSuperAdmin;
    // The Tree Circle is now a prism over the LIN: fetch the tree's incoming links through the
    // Store port: the circle is a prism over this tree's incoming links. Re-reads when a
    // guardian joins/leaves (guardianNonce) so the circle stays in step with the toggle.
@@ -276,8 +264,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            .then(links => {
                if (!alive) return;
                setCircle(treeCircle(tree.ownerId, links));
-               // A carer holds an invited co_owner/steward role link (guardian/observer don't care).
-               setIsCarer(!!currentUserId && links.some(l => l.from === currentUserId && (l.rel === 'co_owner' || l.rel === 'steward')));
+               // A carer holds an invited keeper/steward role link (guardian/observer don't care).
+               setIsCarer(!!currentUserId && links.some(l => l.from === currentUserId && (l.rel === 'keeper' || l.rel === 'steward')));
+               setIsKeeperLink(!!currentUserId && links.some(l => l.from === currentUserId && l.rel === 'keeper'));
                // A guardian follows the tree's care without powers — Care shows them the
                // schedule read-only, with a door to ask for stewardship.
                setIsGuardian(!!currentUserId && links.some(l => l.from === currentUserId && l.rel === 'guardian'));
@@ -286,11 +275,31 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        return () => { alive = false; };
    }, [tree.id, tree.ownerId, currentUserId, guardianNonce]);
 
-   // Watering powers vest in the circle (owner / co-owner / steward / staff — rules allow
+   // THE KEEPERS LINE (ring 2026-09-10, widened 2026-09-29): every keeper's public name — the
+   // anchor first, then the keeper links — each null when anonymous or unnamed (domain/publicName).
+   const [ownerLine, setOwnerLine] = useState<{ name: string } | 'anonymous' | 'nameless' | null>(null);
+   const [keeperLines, setKeeperLines] = useState<Array<{ name: string } | 'anonymous' | 'nameless'>>([]);
+   const keeperUids = useMemo(() => circle.groups.find(g => g.role === 'keeper')?.members.filter(u => u !== tree.ownerId) || [], [circle, tree.ownerId]);
+   useEffect(() => {
+       let live = true;
+       // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the keepers line per tree
+       setOwnerLine(null); setKeeperLines([]);
+       if (tree.isNature) return;
+       const lineOf = (p: Awaited<ReturnType<typeof getPersonPresence>>): { name: string } | 'anonymous' | 'nameless' =>
+           p && showsPersonName(p) ? { name: p.displayName } : p?.anonymous ? 'anonymous' : 'nameless';
+       getPersonPresence(tree.ownerId)
+           .then(p => { if (live) setOwnerLine(lineOf(p)); })
+           .catch(() => { if (live) setOwnerLine(null); });
+       Promise.all(keeperUids.map(uid => getPersonPresence(uid).then(lineOf).catch(() => 'nameless' as const)))
+           .then(lines => { if (live) setKeeperLines(lines); });
+       return () => { live = false; };
+   }, [tree.ownerId, tree.isNature, keeperUids]);
+
+   // Watering powers vest in the circle (owner / keeper / steward / staff — rules allow
    // the same set); the schedule editor is gated exactly like editing.
    const canWater = !!currentUserId && (isCarer || isOwner || isAdmin || isSuperAdmin);
    const canManageSchedule = canEdit;
-   // Witnessing is the circle's act — keeper, co-owner, steward or guardian (never one's own
+   // Witnessing is the circle's act — keeper, keeper, steward or guardian (never one's own
    // care; the server judges standing + tenure). Staff privilege alone is not a standing.
    const canWitness = !!currentUserId && (isOwner || isCarer || isGuardian);
 
@@ -313,7 +322,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    // Play stays a button of its own (a viewer's hand, not a carer's). Every other hand — Care,
    // Reach, Carry, Edit, Delete, in that order — folds into ONE dropdown, "Tree actions", where
    // the Delete pill stood (Zoltán, 2026-09-27: the hero row had grown crowded). The conditions
-   // are the same as before: Care is a CARER's hand (owner/co_owner/steward — the rules'
+   // are the same as before: Care is a CARER's hand (owner/keeper/steward — the rules'
    // isTreeCarer); Reach needs a validated tree; Carry is the superadmin voice-bridge on trees
    // they care (impersonation hides the bridge; carrying reveals it — the display author becomes
    // the being, the carrier is named, the block stays signed by the real hand); Delete wears the
@@ -321,6 +330,18 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const actionRow = (
                     <ActionBtn onClick={() => onPlayGrowth(tree.id)} title={t('play_growth')} color={ACTION_GREEN} icon={<Icons.Play />} label={t('play')} />
    );
+   const handleStepDownKeeper = async () => {
+       if (!(await showConfirm(spokenLine('step_down_confirm', { role: t('role_keeper').toLowerCase(), tree: tree.name || '—' }), { title: 'step_down', confirmText: 'confirm', danger: true }))) return;
+       try {
+           const res = await resignTreeKeeper(tree.id);
+           notify(speak('keeper_stepped_down'));
+           if (res.successor) onUpdate?.({ ownerId: res.successor });
+           setGuardianNonce(n => n + 1);
+       } catch (e) {
+           const m = e instanceof Error ? e.message : String(e);
+           showAlert(m.includes('tree_last_keeper') ? 'tree_last_keeper' : m || 'err_action');
+       }
+   };
    const treeActions: MenuAction[] = [
        ...(canWater && !isEditing ? [{ key: 'care', label: t('care'), icon: <Icons.Drop />, title: t('care_this_tree_title'), onClick: () => onCreatePulse?.() }] : []),
        ...(canReach
@@ -339,6 +360,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            title: `${headBlock.title || headBlock.type || ''}${headRefusal0 ? ` — ${t(headRefusal0)}` : ''}`,
            disabled: !!headRefusal || unminting, staffDot: staffUnmint, onClick: handleUnmintHead,
        }] : []),
+       // STEP DOWN AS KEEPER (ring 2026-09-29): the server's hand — a link holder leaves, the
+       // anchor hands the anchor on; a tree is never keeperless (tree_last_keeper refuses).
+       ...(isKeeper && !isEditing ? [{ key: 'step_down_keeper', label: t('step_down_keeper'), icon: <Icons.Users />, onClick: handleStepDownKeeper }] : []),
        ...(canDelete ? [{ key: 'delete', label: t('delete'), icon: <Icons.Trash />, title: t('delete_tree_title'), danger: true, staffDot: deleteIsStaffOnly, onClick: handleRequestDelete }] : []),
    ];
 
@@ -408,6 +432,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                    onCancelEdit={handleCancelEdit}
                    onRequestDelete={handleRequestDelete}
                    ownerLine={ownerLine}
+                   keeperLines={keeperLines}
                    onReachOwner={canReach && onReachTree && !isOwner ? () => onReachTree(tree) : undefined}
                    onVisibilityChange={async (visibility) => {
                        try {

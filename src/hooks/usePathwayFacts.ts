@@ -15,7 +15,7 @@ export interface PathwayFacts {
   isMember: boolean;
   followedVisionsCount: number;
   circleSize: number;
-  // The circles the being stands in on OTHERS' trees (their co_owner / steward links out).
+  // The circles the being stands in on OTHERS' trees (their keeper / steward links out).
   tendedCount: number;
   // The guardian edges into my trees (rel 'guardian' from the same linksTo sweep) — the
   // sustaining seven's witnesses; App derives sevenSustaining from these + the live trees.
@@ -57,18 +57,22 @@ export const usePathwayFacts = (lightseed: Lightseed | null, myTrees: Lifetree[]
       firestoreStore.linksFrom(uid, 'joined').catch(() => []),
       Promise.all(treeIds.map(id => firestoreStore.linksTo(id).catch(() => []))),
       getMyCommunities(uid).catch(() => []),
-      firestoreStore.linksFrom(uid, 'co_owner').catch(() => []),
+      firestoreStore.linksFrom(uid, 'keeper').catch(() => []),
       firestoreStore.linksFrom(uid, 'steward').catch(() => []),
-    ]).then(([memberLinks, joinedLinks, perTreeLinks, communities, coOwnerLinks, stewardLinks]) => {
+    ]).then(async ([memberLinks, joinedLinks, perTreeLinks, communities, keeperLinksAll, stewardLinks]) => {
       if (!alive) return;
+      // A keeper link may point at a community or a tree (one word, one meaning); only the
+      // trees count as tending. Communities kept are already in `communities`.
+      const communityIds = new Set(communities.map(c => c.id));
+      const keeperLinks = keeperLinksAll.filter(l => !communityIds.has(l.to));
       const flatLinks = perTreeLinks.flat();
-      const circleSize = flatLinks.filter(l => l.rel === 'co_owner' || l.rel === 'steward').length;
+      const circleSize = flatLinks.filter(l => l.rel === 'keeper' || l.rel === 'steward').length;
       setFacts({
         loaded: true,
         isMember: memberLinks.length > 0,
         followedVisionsCount: joinedLinks.length,
         circleSize,
-        tendedCount: coOwnerLinks.length + stewardLinks.length,
+        tendedCount: keeperLinks.length + stewardLinks.length,
         guardianEdges: flatLinks.filter(l => l.rel === 'guardian').map(l => ({ from: l.from, to: l.to })),
         ownsCommunity: communities.length > 0,
         // With several communities, ANY of them counts — the path asks whether the walker

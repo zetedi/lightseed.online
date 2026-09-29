@@ -1,15 +1,17 @@
 import type { Stamp } from './time';
 
-// Tree Circle — communities form when people share care of a Lifetree.
+// Tree Circle — communities form when people share the keeping of a Lifetree.
 // The tree is the living anchor; the circle (community) grows around shared care.
 
-export type TreeRelationRole = 'owner' | 'co_owner' | 'guardian' | 'observer' | 'steward';
+// A tree is KEPT, not owned (ring 2026-09-29): its keepers are equal — the hand that planted it
+// (ownerId, the anchor in the data, named only by the history) and every keeper link since.
+export type TreeRelationRole = 'keeper' | 'guardian' | 'observer' | 'steward';
 export type TreeRelationStatus = 'pending' | 'accepted' | 'declined' | 'revoked';
 
-// Roles that can be invited (everyone but the founding owner).
-export type InvitableRole = Exclude<TreeRelationRole, 'owner'>;
+// Every role is invited — keeping included (a keeper offers keeping; the invitee confirms).
+export type InvitableRole = TreeRelationRole;
 
-export interface TreeOwnershipInvite {
+export interface TreeKeepingInvite {
   id: string;
   lifetreeId: string;
   lifetreeName?: string;        // denormalised so the invitee's inbox can read it
@@ -39,16 +41,16 @@ export const roleLabelKey = (role: TreeRelationRole) => `role_${role}` as const;
 export const roleDescKey = (role: TreeRelationRole) => `role_${role}_desc` as const;
 
 // A CIRCLE GRADUATES into a standing community by the hands that carry it: the keeper
-// circle (ownerId + keeper links), or a co-owner of the ROOT TREE — the caring layer that
+// circle (ownerId + keeper links), or a keeper of the ROOT TREE — the caring layer that
 // formed the circle in the first place. Forming chooses a name, stamps provenance
 // (bornOn = the garden where the root tree stands, formedAt/formedBy by the server's hand
 // alone — the rules freeze both), and never mints a domain: an address is claimed later,
 // through the Vision tab's own law. Forming grants no keepership — the circle's anchor
-// stays who it was; a co-owner who forms still tends, not owns.
+// stays who it was; a keeper who forms still tends, not owns.
 // The UI's one question: is this community still the pre-community stage? A circle wears
 // its own mark (never the domain line it does not have) until the forming stamp lands.
 export const isTreeCircle = (c: { formation?: string; formedAt?: unknown }): boolean =>
-  c.formation === 'tree_co_ownership' && !c.formedAt;
+  c.formation === 'tree_keeping' && !c.formedAt;
 
 export type FormCircleRefusal = 'not_circle' | 'already_formed' | 'not_hand';
 
@@ -56,17 +58,17 @@ export const formCircleRefusal = (facts: {
   formation?: string;
   formedAtMs: number | null;
   isCircleKeeper: boolean;
-  isTreeCoOwner: boolean;
+  isTreeKeeper: boolean;
 }): FormCircleRefusal | null =>
-  facts.formation !== 'tree_co_ownership' ? 'not_circle'
+  facts.formation !== 'tree_keeping' ? 'not_circle'
     : facts.formedAtMs !== null ? 'already_formed'
-      : facts.isCircleKeeper || facts.isTreeCoOwner ? null : 'not_hand';
+      : facts.isCircleKeeper || facts.isTreeKeeper ? null : 'not_hand';
 
-// The trees a being TENDS through the circle's caring layer: its co_owner/steward links,
-// one role per tree (co_owner outranks steward when both stand). Guardianship is the
-// witnessing layer and stays its own prism; the founding owner needs no link at all —
-// which is why an accepted invitation must surface HERE, not in the owned list.
-export type TendingRole = 'co_owner' | 'steward';
+// The trees a being TENDS through the circle's caring layer: its keeper/steward links,
+// one role per tree (keeper outranks steward when both stand). Guardianship is the
+// witnessing layer and stays its own prism; the anchor keeper needs no link at all —
+// which is why an accepted invitation must surface HERE, not in the planted list.
+export type TendingRole = 'keeper' | 'steward';
 
 export const tendedTreeRoles = (
   links: readonly { from: string; rel: string; to: string }[],
@@ -75,8 +77,8 @@ export const tendedTreeRoles = (
   const roles = new Map<string, TendingRole>();
   for (const l of links) {
     if (l.from !== uid) continue;
-    if (l.rel !== 'co_owner' && l.rel !== 'steward') continue;
-    if (l.rel === 'co_owner' || !roles.has(l.to)) roles.set(l.to, l.rel);
+    if (l.rel !== 'keeper' && l.rel !== 'steward') continue;
+    if (l.rel === 'keeper' || !roles.has(l.to)) roles.set(l.to, l.rel);
   }
   return roles;
 };

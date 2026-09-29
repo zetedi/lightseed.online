@@ -48,7 +48,7 @@ export const KINDLE_UNITS_PER_WITNESSED_CARE = RAY_UNITS;
 
 // ── The sun: what kindles ─────────────────────────────────────────────────────────────────
 // A care act kindles ONLY when a HUMAN of the tree's circle witnesses it (its keeper, a
-// co-owner, a steward or a guardian — never the carer; ring 2026-09-03), and only for the living.
+// keeper, a steward or a guardian — never the carer; ring 2026-09-03), and only for the living.
 // AI validation is a hint for the witness's eye (it lights the tree's validation display),
 // never a witness: it holds no light and kindles none (ring 2026-07-20, "The mint stands on
 // server ground"; a trustworthy server-side AI witness is a coming rung). Unwitnessed care

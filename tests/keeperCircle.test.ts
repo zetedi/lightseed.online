@@ -29,7 +29,7 @@ describe('canResign — resignation needs company', () => {
   it('the last keeper may never leave', () => {
     expect(canResign('zoltan', 'zoltan', [])).toBe(false);
   });
-  it('with a co-keeper, either may step down', () => {
+  it('with a keeper, either may step down', () => {
     const links = [link('anna', 1)];
     expect(canResign('zoltan', 'zoltan', links)).toBe(true);
     expect(canResign('anna', 'zoltan', links)).toBe(true);
@@ -59,12 +59,12 @@ describe('successorAmong — the longest-standing keeper inherits, deterministic
 
 describe('keeperRefusal — a keeper is a rooted being', () => {
   it('a being with their own living tree may keep', () => {
-    expect(keeperRefusal({ ownsLivingTree: true, alreadyKeeper: false })).toBeNull();
+    expect(keeperRefusal({ keepsLivingTree: true, alreadyKeeper: false })).toBeNull();
   });
   it('no tree, no keeping', () => {
-    expect(keeperRefusal({ ownsLivingTree: false, alreadyKeeper: false })).toBe('no_tree');
+    expect(keeperRefusal({ keepsLivingTree: false, alreadyKeeper: false })).toBe('no_tree');
   });
   it('a sitting keeper is not invited twice', () => {
-    expect(keeperRefusal({ ownsLivingTree: true, alreadyKeeper: true })).toBe('already_keeper');
+    expect(keeperRefusal({ keepsLivingTree: true, alreadyKeeper: true })).toBe('already_keeper');
   });
 });

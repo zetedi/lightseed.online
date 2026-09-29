@@ -11,7 +11,7 @@ import { FullViewButton } from '../ui/FullView';
 // The waterings of a tree no human has witnessed yet, and the circle's hand to witness them —
 // the sun ring's mint, judged on server ground (witnessWatering). One face, shown wherever
 // care is read: the Care tab beside "last watered", and the Circle. Who may witness is the
-// circle minus the carer: the keeper, a co-owner, a steward or a guardian — never one's own
+// circle minus the carer: the keeper, a keeper, a steward or a guardian — never one's own
 // care (ring 2026-09-03, "the circle witnesses"). The server judges standing and tenure; this
 // only offers the button where it can succeed, and names the state of each watering honestly.
 export const awaitingWitness = (pulses: Pulse[]): Pulse[] =>
@@ -22,7 +22,7 @@ interface WitnessWateringsProps {
     // The tree's growth blocks (newest first); the un-witnessed waterings are read from them.
     pulses: Pulse[];
     currentUserId?: string;
-    // The viewer stands in the circle (owner / co-owner / steward / guardian).
+    // The viewer stands in the circle (owner / keeper / steward / guardian).
     canWitness: boolean;
     // Reload the chain after a witness landed (the block now carries its confirmation).
     onWitnessed?: () => void;

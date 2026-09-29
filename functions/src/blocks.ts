@@ -75,11 +75,11 @@ const domainOf = (bearerDomain: unknown, request: CallableRequest): string => {
 const bearerPath = (on: ChainBearerKind, id: string) => `${on === "tree" ? "lifetrees" : "visions"}/${id}`;
 
 // The hand's standing over a chain, read from the documents inside the transaction: a tree's
-// owner / co_owner / steward (the rules' isTreeCarer), a vision's author.
+// owner / keeper / steward (the rules' isTreeCarer), a vision's author.
 const readStanding = async (t: Transaction, on: ChainBearerKind, id: string, bearer: Record<string, unknown>, uid: string): Promise<boolean> => {
     if (on === "vision") return bearer.authorId === uid;
     if (bearer.ownerId === uid) return true;
-    const links = await Promise.all(["co_owner", "steward"].map((rel) => t.get(db.doc(`links/${uid}__${rel}__${id}`))));
+    const links = await Promise.all(["keeper", "steward"].map((rel) => t.get(db.doc(`links/${uid}__${rel}__${id}`))));
     return links.some((l) => l.exists);
 };
 

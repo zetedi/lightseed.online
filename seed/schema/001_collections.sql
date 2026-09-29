@@ -55,7 +55,7 @@ create table if not exists network_invites         (id text primary key, doc jso
 create table if not exists community_invites       (id text primary key, doc jsonb not null);
 create table if not exists community_tree_invites  (id text primary key, doc jsonb not null);
 create table if not exists community_keeper_invites (id text primary key, doc jsonb not null);
-create table if not exists tree_ownership_invites  (id text primary key, doc jsonb not null);
+create table if not exists tree_keeping_invites  (id text primary key, doc jsonb not null);
 create table if not exists invite_requests         (id text primary key, doc jsonb not null);
 
 -- Node fabric

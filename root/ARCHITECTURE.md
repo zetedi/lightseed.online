@@ -62,7 +62,7 @@ proof, while the person doc names only the current epoch and active/frozen state
 `lifetrees`: the seed beings; chain fields frozen; provenance (`plantedAt`+coords).
 `pulses`: one ledger for growth/care/events/decisions/reaches/offerings; an offering may carry
 `offeringAppreciationLight` (suggested after-gift, never admission).
-`links`: the LIN: `from__rel__to`; rels: guardian, co_owner, steward, observer,
+`links`: the LIN: `from__rel__to`; rels: guardian, keeper, steward, observer,
 member, joined, participant, join_request, **rooted** (Light House→tree),
 **shelters** (Light House→community), **invited_by** (newcomer→community; append-only
 provenance, grants nothing; see domain/communityDoor), and the first **Interbeing Matrix**
@@ -75,7 +75,7 @@ Doc id MUST equal `from__rel__to`
 `stays` `alignments` `supports` (server-only)
 `intelligences` `personas` `memories` `providerCredentials`: the intelligence commons.
 `networkInvites` `communityInvites` (shareable /i/ door keys; revoked, never deleted)
-`treeOwnershipInvites` `communityTreeInvites` `inviteRequests`.
+`treeKeepingInvites` `communityTreeInvites` `inviteRequests`.
 
 ## Rules philosophy
 

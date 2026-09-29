@@ -155,32 +155,34 @@ service cloud.firestore {
     }
     // Tree roles split by privilege. A `guardian` link is a LIGHTWEIGHT, self-serve public follow
     // (any signed-in user may add one) and grants NO privileges — it is deliberately excluded from
-    // every check below. Caring and circle access vest only in the invited roles (co_owner /
+    // every check below. Caring and circle access vest only in the invited roles (keeper /
     // steward / observer), whose links are minted server-side by acceptTreeInvite (never self-serve).
-    function isTreeOwner(treeId) {
-      return treeId is string && treeId != '' &&
-        exists(/databases/$(database)/documents/lifetrees/$(treeId)) &&
-        get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid;
-    }
-    // CARERS may edit a tree and confirm its watering: owner, co_owner, or steward.
-    function isTreeCarer(treeId) {
+    // A TREE IS KEPT, NOT OWNED (ring 2026-09-29): its keepers are EQUAL — the anchor (ownerId, the
+    // hand that planted it, the field the "never keeperless" invariant lives in) and every keeper
+    // link holder hold the same powers. Nothing below reads the anchor alone; only resignTreeKeeper
+    // (server) moves it, by succession.
+    function isTreeKeeper(treeId) {
       return treeId is string && treeId != '' && (
-        hasLink('co_owner', treeId) || hasLink('steward', treeId) || isTreeOwner(treeId));
+        hasLink('keeper', treeId)
+        || (exists(/databases/$(database)/documents/lifetrees/$(treeId))
+            && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid));
+    }
+    // CARERS may edit a tree and confirm its watering: keepers and stewards.
+    function isTreeCarer(treeId) {
+      return treeId is string && treeId != '' && (isTreeKeeper(treeId) || hasLink('steward', treeId));
     }
     // The CIRCLE may read a tree's private (circle-visibility) pulses: carers plus observers.
     function isTreeCircle(treeId) {
-      return treeId is string && treeId != '' && (
-        hasLink('co_owner', treeId) || hasLink('steward', treeId)
-        || hasLink('observer', treeId) || isTreeOwner(treeId));
+      return treeId is string && treeId != '' && (isTreeCarer(treeId) || hasLink('observer', treeId));
     }
-    // The credential a peer needs to pass validation on: a lifetree the caller OWNS that is itself
+    // The credential a peer needs to pass validation on: a lifetree the caller KEEPS that is itself
     // validated (the web-of-trust root is a staff/GENESIS-validated tree). Mirrors canValidateTree
     // in src/utils/validation.ts, minus its time-based "live" freshness check (still enforced in the
     // UI/service layer). Blocks self-validation: an unvalidated tree cannot be its own validator.
-    function isOwnedValidatedTree(treeId) {
+    function isKeptValidatedTree(treeId) {
       return treeId is string && treeId != ''
         && exists(/databases/$(database)/documents/lifetrees/$(treeId))
-        && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid
+        && isTreeKeeper(treeId)
         && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('validated', false) == true;
     }
     // THE CHAIN IS THE SERVER'S (ring 2026-09-23, server-held heads). A chain LINK is a pulse
@@ -628,7 +630,7 @@ service cloud.firestore {
           )
         )
       );
-      // Carers (owner/co_owner/steward) or staff may edit a tree — but `validated`/`validatorId`
+      // Carers (keepers/stewards) or staff may edit a tree — but `validated`/`validatorId`
       // and `ownerId` are FROZEN on the edit path, so a tree can neither self-validate (the flag
       // that bypasses onlyValidatedCanReach) nor transfer its own ownership from the client.
       // `lightHouseId` is SOFT, not frozen (a loose bed may one day graduate or join a house) —
@@ -664,8 +666,7 @@ service cloud.firestore {
         )
         && (
         (
-          (resource.data.ownerId == request.auth.uid || isStaff()
-             || hasLink('co_owner', treeId) || hasLink('steward', treeId))
+          (isTreeCarer(treeId) || isStaff())
           && !request.resource.data.diff(resource.data).affectedKeys()
                 .hasAny(['validated', 'validatorId', 'ownerId', 'lid', 'loveCount'])
           // THE HEAD IS THE SERVER'S (ring 2026-09-23): latestHash / blockHeight / genesisHash
@@ -685,11 +686,11 @@ service cloud.firestore {
         )
         // Peer validation (web of trust): a validator signs ANOTHER tree with a validated tree it
         // owns. Only the validation fields may change here; self-validation is blocked because an
-        // unvalidated tree fails isOwnedValidatedTree.
+        // unvalidated tree fails isKeptValidatedTree.
         || (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validated', 'validatorId', 'updatedAt'])
           && request.resource.data.get('validated', false) == true
-          && isOwnedValidatedTree(request.resource.data.get('validatorId', ''))
+          && isKeptValidatedTree(request.resource.data.get('validatorId', ''))
         )
         // Initiate validation: a member of the initiated layer (git ledger, mirrored to
         // /initiates/{uid}) signs in their own name. Same validation-fields-only constraint;
@@ -713,7 +714,8 @@ service cloud.firestore {
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || (canReadLifetree() && validLoveCountChange('lifetrees', treeId))
       );
-      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      // Releasing a tree is every keeper's hand (equal keepers), or staff's.
+      allow delete: if isSignedIn() && (isTreeKeeper(treeId) || isStaff());
 
       // Loves: own-slot privacy plus atomic coupling to the public tally above.
       match /loves/{loveId} {
@@ -1181,7 +1183,7 @@ service cloud.firestore {
            )
 
         // (i4) DECLINE — a hand that STANDS for the receiver answers no (canAnswerOffering): a
-        //      tree's carer (keeper / co-owner / steward), a vision's author; never the offering's
+        //      tree's carer (keeper / keeper / steward), a vision's author; never the offering's
         //      own author. 'accepted' is NOT writable here — acceptance mints twin blocks on both
         //      chains and is the server's alone (functions/acceptOffering).
         || (
@@ -1521,7 +1523,8 @@ service cloud.firestore {
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || (canReadLightHouse() && validLoveCountChange('lightHouses', lightHouseId))
       );
-      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      // Releasing a tree is every keeper's hand (equal keepers), or staff's.
+      allow delete: if isSignedIn() && (isTreeKeeper(treeId) || isStaff());
 
       // Loves: own-slot privacy plus atomic coupling to the public tally above.
       // Own-slot read is why a Light House CAN wear a heart even when its own read is member-gated:
@@ -1587,9 +1590,9 @@ service cloud.firestore {
     // can read theirs; the invitee declines and the inviter revokes. Acceptance (which
     // also writes the tree's role arrays + the rooted community) goes through the
     // acceptTreeInvite Cloud Function with admin rights — never a direct client write.
-    match /treeOwnershipInvites/{inviteId} {
+    match /treeKeepingInvites/{inviteId} {
       // A single invitation: its invitee and its inviter (and staff). The LEDGER of a tree's
-      // invitations (list by lifetreeId) belongs to the tree's CARERS — owner, co_owner, steward —
+      // invitations (list by lifetreeId) belongs to the tree's CARERS — owner, keeper, steward —
       // so the circle can see who was invited, as what, and withdraw; the invitee lists their own.
       allow get: if isSignedIn() && (
         resource.data.invitedUserId == request.auth.uid ||
@@ -1603,22 +1606,22 @@ service cloud.firestore {
         resource.data.invitedByUserId == request.auth.uid ||
         isTreeCarer(resource.data.lifetreeId)
       );
-      // The owner (or staff) invites any role; a carer (co_owner / steward) may open only the
+      // A KEEPER (or staff) invites any role — keeping included; a steward may open only the
       // OPEN layer — guardian / observer — never the deeper caring roles. Every invitation is
       // born pending and self-attributed.
       allow create: if isSignedIn() &&
         request.resource.data.invitedByUserId == request.auth.uid &&
         request.resource.data.get('status', '') == 'pending' &&
-        (isStaff() || isTreeOwner(request.resource.data.lifetreeId) ||
+        (isStaff() || isTreeKeeper(request.resource.data.lifetreeId) ||
           (isTreeCarer(request.resource.data.lifetreeId) && request.resource.data.get('role', '') in ['guardian', 'observer']));
-      // Decline (the invitee) / revoke (the inviter, or the tree's owner for any invitation on
-      // their tree). One-way marks on a PENDING invitation, touching only the status and its
+      // Decline (the invitee) / revoke (the inviter, or any keeper of the tree for any invitation
+      // on it). One-way marks on a PENDING invitation, touching only the status and its
       // stamp. Acceptance is server-only (acceptTreeInvite, admin SDK).
       allow update: if isSignedIn() &&
         resource.data.get('status', '') == 'pending' &&
         (
           (resource.data.invitedUserId == request.auth.uid && request.resource.data.status == 'declined') ||
-          ((resource.data.invitedByUserId == request.auth.uid || isTreeOwner(resource.data.lifetreeId) || isStaff())
+          ((resource.data.invitedByUserId == request.auth.uid || isTreeKeeper(resource.data.lifetreeId) || isStaff())
             && request.resource.data.status == 'revoked')
         ) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'declinedAt', 'revokedAt', 'updatedAt']);
@@ -1689,7 +1692,7 @@ service cloud.firestore {
       // The doc id MUST equal `from__rel__to` (domain/link.ts linkId). Authority is resolved
       // by PATH elsewhere (hasLink/isCommunityKeeper/isTreeCarer do exists() on a computed
       // path), and exists() is blind to a doc's data — so without this binding a self-serve
-      // link (rel 'joined') placed at a privileged path (…__steward__…, …__co_owner__…) would
+      // link (rel 'joined') placed at a privileged path (…__steward__…, …__keeper__…) would
       // be read as that role. Binding id to data closes the whole forgery class; every real
       // writer already uses linkId(), so nothing legitimate breaks.
       allow create: if linkId == request.resource.data.from + '__' + request.resource.data.rel + '__' + request.resource.data.to
@@ -1714,14 +1717,14 @@ service cloud.firestore {
             && (exists(/databases/$(database)/documents/communities/$(request.resource.data.to))
                 || exists(/databases/$(database)/documents/lifetrees/$(request.resource.data.to))))
         || (isSignedIn() && request.resource.data.rel == 'participant'
-            && isTreeOwner(request.resource.data.from))
+            && isTreeKeeper(request.resource.data.from))
         // A tree stands in ANOTHER community's forest (ring 2026-08-24) — through the
         // community's own door: OPEN, the tree's owner steps in self-serve; any door, the
         // keeper welcomes the tree. Grants nothing; the forest queries alone read it.
         || (isSignedIn() && request.resource.data.rel == 'grows_in'
             && exists(/databases/$(database)/documents/lifetrees/$(request.resource.data.from))
             && (
-              // A tree CARER (owner/co_owner/steward) steps into an open-door garden;
+              // A tree CARER (owner/keeper/steward) steps into an open-door garden;
               // any door, the community's keeper welcomes the tree (ring 2026-08-25); and the
               // node's STAFF may stand any tree in any garden (2026-09-08) — the stewards'
               // hand while places move between domains, as staff may already withdraw one.
@@ -1812,7 +1815,7 @@ service cloud.firestore {
           && resource.data.get('rel', '') != 'accepts_coin_of'
           && resource.data.get('rel', '') != 'descends_from')
         || isStaff()
-        || (resource.data.get('rel', '') == 'participant' && isTreeOwner(resource.data.from))
+        || (resource.data.get('rel', '') == 'participant' && isTreeKeeper(resource.data.from))
         // grows_in: a tree carer withdraws their tree, or the keeper curates their garden.
         || (resource.data.get('rel', '') == 'grows_in'
             && (isTreeCarer(resource.data.from) || isCommunityKeeper(resource.data.to)))
@@ -1826,12 +1829,12 @@ service cloud.firestore {
         // A door-keeper (owner or steward) can decline requests and remove members.
         || (resource.data.get('rel', '') in ['member', 'join_request']
             && isCommunityKeeper(resource.data.to))
-        // A keepership knock is declined by the target's keeper (community) or owner (tree).
+        // A keepership knock is declined by the target's keeper (community or tree).
         // (Its author withdraws it via the from == uid clause above.) NOTE: `keeper` links
         // themselves are NOT listed here — a peer cannot remove a peer; a keeper leaves only
         // by their own hand (from == uid) or by staff mend. Never keeperless: ownerId remains.
         || (resource.data.get('rel', '') == 'keeper_request'
-            && (isCommunityKeeper(resource.data.to) || isTreeOwner(resource.data.to)))
+            && (isCommunityKeeper(resource.data.to) || isTreeKeeper(resource.data.to)))
         // The owner can remove a steward they appointed.
         || (resource.data.get('rel', '') == 'steward'
             && isCommunityOwner(resource.data.to)));

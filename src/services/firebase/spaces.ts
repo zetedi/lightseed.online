@@ -192,7 +192,7 @@ export const createCommunity = async (data: Partial<Community> & { ownerId: stri
         getDocs(query(communitiesCollection, limit(200))),
         getNodeLimits().catch(() => DEFAULT_NODE_LIMITS),
     ]);
-    const hostedCount = existing.docs.filter(d => (d.data() as { formation?: string }).formation !== 'tree_co_ownership').length;
+    const hostedCount = existing.docs.filter(d => (d.data() as { formation?: string }).formation !== 'tree_keeping').length;
     const refusal = nodeCapacityGate({ hostedCount, faceCount: 0 }, 'community', limits);
     if (refusal) throw new Error(refusal);
 
@@ -358,7 +358,7 @@ export const migrateArraysToLinks = async (): Promise<Record<string, number>> =>
     };
     (await getDocs(lifetreesCollection)).forEach(d => {
         const t = d.data() as { coOwnerIds?: string[]; guardians?: string[]; stewardIds?: string[]; observerIds?: string[] };
-        (t.coOwnerIds || []).forEach((u: string) => add(u, 'co_owner', d.id));
+        (t.coOwnerIds || []).forEach((u: string) => add(u, 'keeper', d.id));
         (t.guardians || []).forEach((u: string) => add(u, 'guardian', d.id));
         (t.stewardIds || []).forEach((u: string) => add(u, 'steward', d.id));
         (t.observerIds || []).forEach((u: string) => add(u, 'observer', d.id));
@@ -629,6 +629,11 @@ export const declineKeeperRequest = (requesterUid: string, targetId: string) =>
 // The three server hands — the ONLY writers of keeper links and the ownerId anchor.
 export const acceptKeeperInvite = async (inviteId: string): Promise<{ communityId: string }> =>
     (await httpsCallable(functions, 'acceptKeeperInvite')({ inviteId })).data as { communityId: string };
+// A tree's keeper steps down (functions/resignTreeKeeper): a link holder simply leaves; the
+// anchor hands the anchor to the longest-standing keeper and refuses to leave alone.
+export const resignTreeKeeper = async (treeId: string): Promise<{ resigned: string; successor: string | null }> =>
+    (await httpsCallable(functions, 'resignTreeKeeper')({ treeId })).data as { resigned: string; successor: string | null };
+
 export const acceptKeeperRequest = async (communityId: string, requesterUid: string): Promise<{ keeperUid: string }> =>
     (await httpsCallable(functions, 'acceptKeeperRequest')({ communityId, requesterUid })).data as { keeperUid: string };
 export const resignKeeper = async (communityId: string): Promise<{ resigned: string; successor: string | null }> =>

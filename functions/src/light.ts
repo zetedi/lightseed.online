@@ -39,7 +39,7 @@ const rayDoc = (
 
 // witnessWatering — the CIRCLE witnesses a watering, kindling the light. Everything is server-derived
 // or server-verified: the witness is the authenticated caller; the carer is the pulse's (create-time
-// auth-bound) author; the witness's standing (a guardian / co_owner / steward link, or keepership)
+// auth-bound) author; the witness's standing (a guardian / keeper / steward link, or keepership)
 // must exist AND predate the watering (tenure — a sock account minted for the occasion has no voice,
 // mirroring the guardian veto); the day is the
 // watering's own; and the carer's ray, the witness's seventh, and the pulse's confirmation all ride
@@ -74,7 +74,7 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
             // birth time predates the pulse by convention (old links).
             const msOf = (v: any): number => (v && typeof v.toMillis === "function") ? v.toMillis() : 0;
             const standing = (since: number) => { witnessSinceMs = witnessSinceMs === null ? since : Math.min(witnessSinceMs, since); };
-            const linkSnaps = await Promise.all(["guardian", "co_owner", "steward"].map((rel) =>
+            const linkSnaps = await Promise.all(["guardian", "keeper", "steward"].map((rel) =>
                 t.get(db.doc(`links/${witnessUid}__${rel}__${treeId}`))));
             for (const snap of linkSnaps) if (snap.exists) standing(msOf((snap.data() as any)?.createdAt));
             const treeSnap = await t.get(db.doc(`lifetrees/${treeId}`));
@@ -161,7 +161,7 @@ const resolveGuardianUids = async (treeId: string): Promise<string[]> => {
     const links = await db.collection("links").where("to", "==", treeId).get();
     const fromLinks = links.docs
         .map((d) => d.data())
-        .filter((x: any) => x.rel === "guardian" || x.rel === "co_owner")
+        .filter((x: any) => x.rel === "guardian" || x.rel === "keeper")
         .map((x: any) => x.from as string);
     return Array.from(new Set(fromLinks.filter(Boolean)));
 };

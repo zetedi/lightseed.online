@@ -64,6 +64,17 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   aliveness (only a real tend). UI: Members tab (door panel, invitations, stewards) +
   `/i/<inviteId>` arrival in `src/App.tsx`.
 
+## The keepers (a tree is kept, not owned)
+
+- **Law:** `src/domain/treeCircle.ts` (roles: keeper / guardian / steward / observer — the anchor
+  is a keeper), `src/domain/views/circle.ts` (the circle prism), `src/domain/keeperCircle.ts`
+  (rooted = keeps a living tree). **Rules:** `isTreeKeeper` / `isTreeCarer` / `isKeptValidatedTree`.
+- **Hands:** `functions/src/invites.ts` — `acceptTreeInvite` (mints the role link), `resignTreeKeeper`
+  (a link holder leaves; the anchor hands the anchor on; never keeperless). Faces: the Tree Actions
+  menu ("Step down as keeper"), `TreeCircle`, the Keepers line in `TreeDetails`.
+- **Migration:** `scripts/keepers-not-owners.mjs` (dry run / `--apply`) — links, invitations, the
+  circle token. Deploy first, then run.
+
 ## The gathering (an event's two doors)
 
 - **Duplicate = lineage:** `functions/src/circles.ts` `duplicateEvent` — a new occurrence in the

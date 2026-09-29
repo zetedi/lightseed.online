@@ -238,14 +238,14 @@ export const DATA_MODEL: ModelEntity[] = [
 
   // --- Invitations ----------------------------------------------------------
   {
-    key: 'TreeInvite', label: 'Tree Invite', collection: 'treeOwnershipInvites', x: 1280, y: 40,
+    key: 'TreeInvite', label: 'Tree Invite', collection: 'treeKeepingInvites', x: 1280, y: 40,
     note: 'invite to a tree circle role',
     fields: [
       { name: 'id', type: 'string', pk: true },
       { name: 'lifetreeId', type: 'id', ref: 'Lifetree' },
       { name: 'invitedByUserId', type: 'uid', ref: 'Person' },
       { name: 'invitedUserId', type: 'uid', ref: 'Person' },
-      { name: 'role', type: 'co_owner|steward|observer' },
+      { name: 'role', type: 'keeper|guardian|steward|observer' },
       { name: 'status', type: 'enum' },
     ],
   },

@@ -25,7 +25,7 @@ export interface Lifetree extends Being {
   imageUrl?: string;
   latestGrowthUrl?: string; // URL of the most recent growth pulse image
   
-  // Tree Circle roles (guardian / co_owner / steward / observer) live in the `links`
+  // Tree Circle roles (guardian / keeper / steward / observer) live in the `links`
   // collection (the LIN) — see src/domain/link.ts. The legacy per-role arrays are gone
   // from both the type and the data (dropLegacyArrays cleared the docs).
   communityId?: string; // The Tree Circle community rooted in this tree, once formed.

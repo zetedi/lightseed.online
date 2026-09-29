@@ -58,8 +58,8 @@ const MessageLike = ({ pulseId, initialCount }: { pulseId: string; initialCount:
 
 // The audience options offered when starting a reach to a tree. `undefined` is the classic
 // 1:1 message to the owner; the others fan out to a shared group thread with the circle.
-const AUDIENCE_OPTIONS: { value: ReachAudience | undefined; labelKey: 'role_owner' | 'audience_guardians' | 'audience_everyone' }[] = [
-    { value: undefined, labelKey: 'role_owner' },
+const AUDIENCE_OPTIONS: { value: ReachAudience | undefined; labelKey: 'role_keeper' | 'audience_guardians' | 'audience_everyone' }[] = [
+    { value: undefined, labelKey: 'role_keeper' },
     { value: 'guardians', labelKey: 'audience_guardians' },
     { value: 'everyone', labelKey: 'audience_everyone' },
 ];
