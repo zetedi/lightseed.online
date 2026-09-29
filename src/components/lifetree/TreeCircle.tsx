@@ -449,9 +449,11 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                         disabled={isBusy}
                         className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 disabled:opacity-50 ${status === 'DANGER' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300'}`}
                     >
-                        {status === 'DANGER' ? <span>{t('danger_resolve')}</span> : <><span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Siren /></span><span>{t('danger_report')}</span></>}
+                        {status === 'DANGER' ? <span>{t('danger_resolve')}</span> : <><span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Siren /></span><span>{speak(spokenLine('danger_report_tree', { tree: tree.name || '—' }))}</span></>}
                     </button>
                 )}
+                {/* What danger means, and what the button does (Zoltán, 2026-09-29). */}
+                {canEdit && <p className="basis-full text-xs text-slate-400">{t('danger_hint')}</p>}
 
                 {/* Ask to help KEEP — a knock at the circle (keeper_request). */}
                 {currentUserId && !circleSet.has(currentUserId) && (

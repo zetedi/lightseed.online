@@ -464,6 +464,8 @@ const en = {
   guard_leave: "Leave guardianship", guard_this_tree: "Guard this tree",
   signin_guard: "Sign in to guard this tree.",
   danger_resolve: "Resolve danger", danger_report: "Report danger",
+  danger_report_tree: "Alert guardians of danger to {tree}",
+  danger_hint: "Danger means the tree needs hands now — a dry spell, a storm, a broken branch, a threat to its place. Reporting it marks the tree red on every face and alerts each guardian; resolve it once the tree is safe again.",
   witness_waterings: "Waterings to witness", a_watering: "A watering", witness: "Witness",
   last_watered: "Last watered {date}.", last_watered_by: "Last watered {date} by {name}.",
   witness_hint: "The circle witnesses care — keepers, stewards and guardians, never one's own. A witnessed watering kindles light.",

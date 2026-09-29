@@ -469,6 +469,8 @@ const zh = {
   guard_leave: "离开守护", guard_this_tree: "守护这棵树",
   signin_guard: "登录以守护这棵树。",
   danger_resolve: "解除危险", danger_report: "报告危险",
+  danger_report_tree: "向守望者报告 {tree} 面临的危险",
+  danger_hint: "危险意味着这棵树现在需要人手——干旱、风暴、断枝，或它所在之处受到威胁。报告会在每个页面把树标为红色并提醒每位守望者；树安全后请解除危险。",
   witness_waterings: "待见证的浇水", a_watering: "一次浇水", witness: "见证",
   last_watered: "上次浇水：{date}。", last_watered_by: "上次浇水：{date}，由 {name} 完成。",
   witness_hint: "圈子见证照料——守护者、管家和守望者，从不见证自己的。有见证的浇灌点燃光。",
