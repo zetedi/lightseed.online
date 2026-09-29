@@ -73,7 +73,7 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
                                 <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{tree.name}</p>
                                 {tree.shortTitle && <p className="truncate text-xs text-slate-400">{tree.shortTitle}</p>}
                             </div>
-                            {currentUserId && tree.ownerId === currentUserId && (
+                            {currentUserId && tree.anchorUid === currentUserId && (
                                 <button
                                     onClick={() => toggle(tree, false)}
                                     disabled={busyId === tree.id}

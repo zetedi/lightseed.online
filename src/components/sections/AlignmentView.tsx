@@ -22,7 +22,7 @@ import { speak } from '../../utils/translations';
 // alignments will also bind decisions, community events, and node pulses — so the framing here
 // stays entity-generic ("side"/"party") where cheap, and only the leaf rendering assumes trees.
 
-interface Side { tree: Lifetree | null; ownerName?: string; pulse?: { title?: string; body?: string } | null; }
+interface Side { tree: Lifetree | null; anchorName?: string; pulse?: { title?: string; body?: string } | null; }
 
 interface AlignmentViewProps {
   alignment: Alignment;
@@ -54,7 +54,7 @@ const PartySide = ({ side, tone, onView }: { side: Side; tone: 'sky' | 'emerald'
         ? <Picture src={img} alt="" referrerPolicy="no-referrer" className={`h-20 w-20 rounded-full object-cover ring-2 ${ring} ring-offset-2 ring-offset-white`} />
         : <div className={`flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br ${bg} text-3xl text-white ring-2 ${ring} ring-offset-2 ring-offset-white`}>{(t?.name || '·').charAt(0).toUpperCase()}</div>}
       <div className="truncate max-w-full text-lg font-semibold text-slate-800 dark:text-slate-100">{t?.name || say('a_tree')}</div>
-      {side.ownerName && <div className="truncate max-w-full text-xs text-slate-500">{say('cared_for_by')} {side.ownerName}</div>}
+      {side.anchorName && <div className="truncate max-w-full text-xs text-slate-500">{say('cared_for_by')} {side.anchorName}</div>}
     </button>
   );
 };
@@ -103,8 +103,8 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
       if (!alive) return;
       setCovenantId(covenant?.id ?? null);
       if (live) { setMessages(live.messages || []); setLiveStatus(live.status); }
-      setInitiator({ tree: iTree, ownerName: iName, pulse: iPulse ? { title: (iPulse as any).title, body: (iPulse as any).body } : null });
-      setTarget({ tree: tTree, ownerName: tName, pulse: tPulse ? { title: (tPulse as any).title, body: (tPulse as any).body } : null });
+      setInitiator({ tree: iTree, anchorName: iName, pulse: iPulse ? { title: (iPulse as any).title, body: (iPulse as any).body } : null });
+      setTarget({ tree: tTree, anchorName: tName, pulse: tPulse ? { title: (tPulse as any).title, body: (tPulse as any).body } : null });
       setLoading(false);
     })();
     return () => { alive = false; };
@@ -114,7 +114,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
   const status = STATUS[liveStatus] || STATUS.PENDING;
   const isParticipant = !!currentUserId && (alignment.initiatorUid === currentUserId || alignment.targetUid === currentUserId);
   const canSpeak = isParticipant && liveStatus === 'PENDING';
-  const nameFor = (uid: string) => (uid === alignment.initiatorUid ? initiator.ownerName : target.ownerName) || t('someone');
+  const nameFor = (uid: string) => (uid === alignment.initiatorUid ? initiator.anchorName : target.anchorName) || t('someone');
 
   const send = async () => {
     if (!currentUserId || !draft.trim() || posting) return;
@@ -199,7 +199,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
           <ol className="space-y-3">
             <li className="flex items-start gap-2.5">
               <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-400" />
-              <p className="text-sm text-slate-600 dark:text-slate-300"><span className="font-semibold text-slate-800 dark:text-slate-100">{initiator.ownerName || t('a_tree')}</span> {t('align_reached_toward')} <span className="font-semibold text-slate-800 dark:text-slate-100">{target.ownerName || t('another_tree')}</span>{t('align_match_ack')}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300"><span className="font-semibold text-slate-800 dark:text-slate-100">{initiator.anchorName || t('a_tree')}</span> {t('align_reached_toward')} <span className="font-semibold text-slate-800 dark:text-slate-100">{target.anchorName || t('another_tree')}</span>{t('align_match_ack')}</p>
             </li>
             {messages.map((m, i) => {
               const mine = m.by === currentUserId;

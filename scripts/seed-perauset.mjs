@@ -57,14 +57,14 @@ async function run() {
   const db = admin.firestore();
 
   const superadmin = await db.collection('config').doc('superadmin').get();
-  const ownerId = (superadmin.exists && superadmin.data().uid) || 'GENESIS_SYSTEM';
+  const anchorUid = (superadmin.exists && superadmin.data().uid) || 'GENESIS_SYSTEM';
 
   await db.collection('communities').doc('per-auset').set({
     name: 'Per Auset',
     domain: DOMAIN,
     papers: [{ key: 'vision', title: '', html: 'The house of Auset — a vision, a community, a garden of souls.' }],
     imageUrls: [],
-    ownerId,
+    anchorUid,
     theme: THEME,
     heroImageUrl: '/custom/per-auset/hero.webp',
     customLanding: true,
@@ -74,7 +74,7 @@ async function run() {
   }, { merge: true });
 
   console.log(`Project: ${projectId}`);
-  console.log(`✓ communities/per-auset  →  domain ${DOMAIN}, customLanding on, ibis palette (owner: ${ownerId})`);
+  console.log(`✓ communities/per-auset  →  domain ${DOMAIN}, customLanding on, ibis palette (owner: ${anchorUid})`);
   console.log('\nNext: firebase hosting:sites:create perauset && firebase target:apply hosting perauset perauset && firebase deploy --only hosting');
   process.exit(0);
 }

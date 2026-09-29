@@ -128,7 +128,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
     // guest reserves them on the bed's own page. (The old whole-house count offer is retired.)
     const { lightseed } = useSession();
     const viewerUid = lightseed?.uid;
-    const isKeeperViewer = !!viewerUid && lightHouse.ownerId === viewerUid;
+    const isKeeperViewer = !!viewerUid && lightHouse.anchorUid === viewerUid;
     const bedsBump = useRefreshSignal(['beds']);
     const [bedList, setBedList] = useState<Lifetree[]>([]);
     const [showOfferBed, setShowOfferBed] = useState(false);

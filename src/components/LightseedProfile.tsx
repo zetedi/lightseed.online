@@ -298,8 +298,8 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                 lightseed?.uid ? (
                     <IntelligencePanel
                         scope="user"
-                        credentialOwnerId={lightseed.uid}
-                        intelligenceOwnerUid={lightseed.uid}
+                        credentialHolderUid={lightseed.uid}
+                        intelligenceAuthorUid={lightseed.uid}
                         viewerUid={lightseed.uid}
                         canManageAll={isSuperAdmin}
                         selectedIntelligenceId={preferredIntelligenceId}

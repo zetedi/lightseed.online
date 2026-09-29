@@ -73,7 +73,8 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   (a link holder leaves; the anchor hands the anchor on; never keeperless). Faces: the Tree Actions
   menu ("Step down as keeper"), `TreeCircle`, the Keepers line in `TreeDetails`.
 - **Migration:** `scripts/keepers-not-owners.mjs` (dry run / `--apply`) — links, invitations, the
-  circle token. Deploy first, then run.
+  circle token. Deploy first, then run. **The field:** `scripts/anchor-not-owner.mjs` (`--write`,
+  deploy, `--strip`) — ownerId → anchorUid on kept beings, → authorId on made things.
 
 ## The gathering (an event's two doors)
 

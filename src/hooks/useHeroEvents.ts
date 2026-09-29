@@ -34,12 +34,12 @@ export function useHeroEvents(params: {
     // 2026-09-03) — and only the newest fetch may land.
     if (!hostCommunityResolved || authLoading) return;
     const seq = ++heroEventsSeq.current;
-    const { levels, ownerUid } = eventFeedScope(
+    const { levels, anchorUid } = eventFeedScope(
       { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin },
       { reflectsPublic: activeCommunity?.reflectsPublic, strictScope: activeCommunity?.strictScope },
     );
     Promise.all([
-      fetchEventPulses(undefined, activeDataDomain, levels, ownerUid),
+      fetchEventPulses(undefined, activeDataDomain, levels, anchorUid),
       memberEventsOf ? fetchMemberEvents(memberEventsOf).catch(() => [] as Pulse[]) : Promise.resolve([] as Pulse[]),
     ])
       .then(([r, members]) => { if (seq === heroEventsSeq.current) setDashboardEvents(eventsOnView(mergeMemberEvents(r.items, members), { signedIn: !!lightseed, showPast: false, nowMs: Date.now() })); })

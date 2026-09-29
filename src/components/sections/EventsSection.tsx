@@ -64,14 +64,14 @@ interface EventsSectionProps {
   placeholderColor?: string;
   // Who owns the scope these events live in (community keeper / profile owner). Used only
   // to decide whether a staff viewer's delete right is privilege (amber dot) or their own.
-  scopeOwnerId?: string;
+  scopeAnchorUid?: string;
 }
 
 // Events section — list, create and edit events for any entity (community, node, personal).
 export const EventsSection: React.FC<EventsSectionProps> = ({
   scope,
   canEdit,
-  scopeOwnerId,
+  scopeAnchorUid,
   currentUserId,
   currentUserName,
   currentUserPhoto,
@@ -288,7 +288,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               {canEdit && (
                 <button onClick={(e) => { e.stopPropagation(); handleDeleteEvent(ev.id); }} title={t('delete')} className="relative shrink-0 rounded-full p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100">
                   <Icons.Trash />
-                  {isStaff && ev.authorId !== currentUserId && scopeOwnerId !== currentUserId && <SuperDot />}
+                  {isStaff && ev.authorId !== currentUserId && scopeAnchorUid !== currentUserId && <SuperDot />}
                 </button>
               )}
             </div>

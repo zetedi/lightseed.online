@@ -76,7 +76,7 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   // validatorId is DUAL-TYPED (staff/initiates sign as their uid; peers sign as their
   // validated TREE's id — the Grove proved a tree id lands there), so it stays OUT of the
   // automatic uid census: re-anchoring inspects it by hand.
-  { path: 'lifetrees', mode: 'verbatim', localUidFields: ['ownerId'] },
+  { path: 'lifetrees', mode: 'verbatim', localUidFields: ['anchorUid'] },
   { path: 'lifetrees/*/loves', mode: 'verbatim', idIsLocalUid: true, localUidFields: ['uid'] },
   { path: 'lifetrees/*/occupancy', mode: 'verbatim', deterministicIds: 'the stays/{stayId} doc id it mirrors' },
   { path: 'lifetrees/*/holds', mode: 'excluded', reason: 'ephemeral soft locks (TTL ~2min); a hold has no meaning on a node that did not see the intent' },
@@ -88,9 +88,9 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   { path: 'pulses/*/witnesses', mode: 'verbatim', idIsLocalUid: true, localUidFields: ['uid'], deterministicIds: 'witness uid — the body carries the LID, the true name that survives the crossing' },
   { path: 'covenants', mode: 'verbatim', localUidFields: ['proposedBy'] },
   { path: 'covenants/*/signatures', mode: 'verbatim', idIsLocalUid: true, deterministicIds: 'party uid; carries the pinned pubkey for portable verification' },
-  { path: 'communities', mode: 'verbatim', localUidFields: ['ownerId', 'founderUserId'] },
+  { path: 'communities', mode: 'verbatim', localUidFields: ['anchorUid'] },
   { path: 'communities/*/loves', mode: 'verbatim', idIsLocalUid: true, localUidFields: ['uid'] },
-  { path: 'lightHouses', mode: 'verbatim', localUidFields: ['ownerId'] },
+  { path: 'lightHouses', mode: 'verbatim', localUidFields: ['anchorUid'] },
   { path: 'lightHouses/*/loves', mode: 'verbatim', idIsLocalUid: true, localUidFields: ['uid'] },
 
   // The graph
@@ -106,14 +106,14 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   // Doors & invitations (auto-ids that ARE unguessable keys — preserved verbatim)
   { path: 'networkInvites', mode: 'verbatim', localUidFields: ['invitedByUserId', 'acceptedByUserId'], deterministicIds: 'auto-id used as the invitation token' },
   { path: 'communityInvites', mode: 'verbatim', localUidFields: ['createdBy'], deterministicIds: 'auto-id used as the shareable /i/<id> key' },
-  { path: 'communityTreeInvites', mode: 'verbatim', localUidFields: ['invitedByUserId', 'invitedUserId', 'treeOwnerId'] },
+  { path: 'communityTreeInvites', mode: 'verbatim', localUidFields: ['invitedByUserId', 'invitedUserId', 'treeAnchorUid'] },
   { path: 'communityKeeperInvites', mode: 'verbatim', localUidFields: ['invitedByUserId', 'invitedUserId'] },
   { path: 'treeKeepingInvites', mode: 'verbatim', localUidFields: ['invitedByUserId', 'invitedUserId'] },
   { path: 'inviteRequests', mode: 'verbatim' },
 
   // Node fabric
   { path: 'collabs', mode: 'verbatim', localUidFields: ['createdBy'] },
-  { path: 'intelligences', mode: 'verbatim', localUidFields: ['ownerId', 'credentialOwnerId'] },
+  { path: 'intelligences', mode: 'verbatim', localUidFields: ['anchorUid', 'credentialHolderUid'] },
   { path: 'personas', mode: 'verbatim' }, // createPersona writes no owner field (verified 2026-08-15)
   { path: 'memories', mode: 'verbatim' }, // createMemory writes no owner field (verified 2026-08-15)
   { path: 'subscriptions', mode: 'verbatim', deterministicIds: 'encodeURIComponent(email) — prototype-unsafe keys; never load into plain objects keyed by id' },

@@ -174,7 +174,7 @@ if (tree.exists) {
 } else {
   await treeRef.create({
     lid: TREE_LID,
-    ownerId: keeperUid,
+    anchorUid: keeperUid,
     name: 'Listening Root',
     shortTitle: 'A sacred fig that listens before it answers',
     body: GENESIS_CONTENT.body,

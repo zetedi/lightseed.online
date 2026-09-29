@@ -9,7 +9,7 @@ import type { Lifetree } from '../src/domain/lifetree';
 // facts a map marker wears. Pure functions — the map renders on top of these rules.
 
 const tree = (over: Partial<Lifetree> & Record<string, unknown> = {}): Lifetree =>
-  ({ id: 't1', name: 'Oak', ownerId: 'u1', latitude: 47.5, longitude: 19.0, ...over }) as Lifetree;
+  ({ id: 't1', name: 'Oak', anchorUid: 'u1', latitude: 47.5, longitude: 19.0, ...over }) as Lifetree;
 
 describe('treeCoordinates', () => {
   it('reads latitude/longitude', () => {

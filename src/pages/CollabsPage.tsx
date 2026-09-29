@@ -160,7 +160,7 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
         imageUrls: [],
         ...(org.logoUrl ? { logoUrl: org.logoUrl } : {}),
         theme: communityThemePresets[0],
-        ownerId: lightseed.uid,
+        anchorUid: lightseed.uid,
       });
       await updateOrgCollab(org.id, { communityId: created.id });
       setOrgs(prev => (prev || []).map(o => o.id === org.id ? { ...o, communityId: created.id } : o));

@@ -40,14 +40,14 @@ service firebase.storage {
     }
 
     // A community's assets — logo, hero, gallery, events, pages — are written by the hands that
-    // KEEP it: the founding ownerId, or any `keeper` link holder (ring 2026-08-12, the same peers
+    // KEEP it: the founding anchorUid, or any `keeper` link holder (ring 2026-08-12, the same peers
     // firestore.rules lets edit the community document). ONE document: the community, whose
     // `keeperUids` is the server-kept mirror of its keeper links (functions mintKeeperLinks /
     // resignKeeper; frozen against clients in firestore.rules) — with the staff lookup above,
     // exactly the two the budget allows. Reading the link itself was a third, and denied.
     match /communities/{communityId}/{allPaths=**} {
       allow write: if request.auth != null && (
-        firestore.get(/databases/(default)/documents/communities/$(communityId)).data.ownerId == request.auth.uid
+        firestore.get(/databases/(default)/documents/communities/$(communityId)).data.anchorUid == request.auth.uid
         || request.auth.uid in firestore.get(/databases/(default)/documents/communities/$(communityId)).data.get('keeperUids', [])
       );
     }

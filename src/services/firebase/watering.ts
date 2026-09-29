@@ -61,12 +61,12 @@ const postWateredNotice = async (
     text: string,
 ) => {
     try {
-        if (!tree.ownerId) return;
+        if (!tree.anchorUid) return;
         const participantUids = await resolveCircleUids(tree, 'guardians');
         if (participantUids.length > 1) {
             await sendThreadMessage({
                 thread: {
-                    threadId: buildGroupThreadId(tree.id, 'guardians', tree.ownerId),
+                    threadId: buildGroupThreadId(tree.id, 'guardians', tree.anchorUid),
                     participantUids,
                     reachTreeId: tree.id,
                     reachTreeName: tree.name,
@@ -207,13 +207,13 @@ export const requestStewardship = async (
     tree: Lifetree,
     sender: { uid: string; displayName?: string | null; photoURL?: string | null },
 ): Promise<void> => {
-    if (!tree.ownerId) throw new Error('err_tree_no_owner');
+    if (!tree.anchorUid) throw new Error('err_tree_no_keeper');
     const participantUids = await resolveCircleUids(tree, 'guardians');
     // Only a circle participant (a guardian) can knock — mirrors the thread's own rules.
     if (!participantUids.includes(sender.uid)) throw new Error('err_guard_before_steward');
     await sendThreadMessage({
         thread: {
-            threadId: buildGroupThreadId(tree.id, 'guardians', tree.ownerId),
+            threadId: buildGroupThreadId(tree.id, 'guardians', tree.anchorUid),
             participantUids,
             reachTreeId: tree.id,
             reachTreeName: tree.name,
@@ -235,9 +235,9 @@ export const sendWateringAlert = async (
     tree: Lifetree,
     sender: { uid: string; displayName?: string | null },
 ): Promise<boolean> => {
-    if (!tree.ownerId) return false;
+    if (!tree.anchorUid) return false;
     const participantUids = await resolveCircleUids(tree, 'guardians');
-    if (participantUids.filter(u => u !== tree.ownerId).length === 0) return false; // no one but the owner yet
+    if (participantUids.filter(u => u !== tree.anchorUid).length === 0) return false; // no one but the owner yet
     // Authorization: only a circle member (owner / co-guardian / guardian) may ping the circle —
     // a non-member calling this would otherwise create an orphaned alert pulse before the tree
     // update is rejected by the rules. Enforced here in addition to the UI gate.
@@ -251,7 +251,7 @@ export const sendWateringAlert = async (
     const text = over <= 0
         ? `I'm ready for watering 💧 — could a guardian care me today?`
         : `I'm thirsty 💧 — ${over} day${over > 1 ? 's' : ''} past my watering. Could a guardian care me?`;
-    const threadId = buildGroupThreadId(tree.id, 'guardians', tree.ownerId);
+    const threadId = buildGroupThreadId(tree.id, 'guardians', tree.anchorUid);
 
     // Mark the tree alerted FIRST: this write is gated by the lifetrees rule (owner/guardian/staff),
     // so an unauthorized caller is rejected here before any alert pulse is created (no orphan).

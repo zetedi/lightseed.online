@@ -81,7 +81,7 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
             if (treeSnap.exists) {
                 const tree = treeSnap.data() as Record<string, any>;
                 // The keeper stands in the circle from the tree's birth.
-                if (tree.ownerId === witnessUid) standing(msOf(tree.createdAt));
+                if (tree.anchorUid === witnessUid) standing(msOf(tree.createdAt));
                 treeFacts = {
                     exists: true,
                     treeType: tree.treeType,
@@ -204,13 +204,13 @@ export const checkWateringSchedules = onSchedule({
 
             // At most one ping per tree per day (shared idempotency with the client check).
             if (!sameUtcDay(tsToMs(w.lastAlertAt), now)) {
-                const ownerUid = tree.ownerId as string;
+                const anchorUid = tree.anchorUid as string;
                 const guardianUids = await resolveGuardianUids(docSnap.id);
-                const participantUids = Array.from(new Set([ownerUid, ...guardianUids].filter(Boolean)));
+                const participantUids = Array.from(new Set([anchorUid, ...guardianUids].filter(Boolean)));
 
                 // Only ping if someone other than the author (the owner) will receive it.
-                if (participantUids.filter((u) => u !== ownerUid).length > 0) {
-                    const threadId = ["grp", docSnap.id, "guardians", ownerUid].join("__");
+                if (participantUids.filter((u) => u !== anchorUid).length > 0) {
+                    const threadId = ["grp", docSnap.id, "guardians", anchorUid].join("__");
                     const daysOver = Math.max(0, Math.floor((now - nextDue) / WATER_DAY_MS));
                     const text = waterMeText(tree.name, daysOver, w.stage);
 
@@ -253,7 +253,7 @@ export const checkWateringSchedules = onSchedule({
                         audience: "guardians",
                         isGroup: true,
                         seenBy: [],
-                        authorId: ownerUid,            // the tree speaks through its principal
+                        authorId: anchorUid,            // the tree speaks through its principal
                         authorName: tree.name,         // the conversation face is the tree
                         authorPhoto: tree.imageUrl || null,
                         domain: tree.domain || "",
@@ -286,7 +286,7 @@ export const resetLight = onCall({ cors: true }, async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
     const superadmin = await db.collection("config").doc("superadmin").get();
     if (!(superadmin.exists && superadmin.data()?.uid === request.auth.uid)) {
-        throw new HttpsError("permission-denied", "Only the node owner may reset the light.");
+        throw new HttpsError("permission-denied", "Only the node's keeper may reset the light.");
     }
     const burn = async (coll: string): Promise<{ docs: number; units: number }> => {
         const qs = await db.collection(coll).get();

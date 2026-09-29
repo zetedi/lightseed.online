@@ -21,10 +21,10 @@ import type { Being } from './being';
 // power on its own — the crypto lives in the covenants/{id}/signatures subcollection, where each
 // party signs ONLY their own slot. The party link is the immutable statement of who; the signature
 // doc is the proof they signed. (Links are immutable, so a signature can't live on the link.)
-// 'keeper': a community keeper — FULL PEER of the founding ownerId (domain/keeperCircle).
+// 'keeper': a community keeper — FULL PEER of the founding anchorUid (domain/keeperCircle).
 // Never self-serve: minted only server-side (acceptKeeperInvite / acceptKeeperRequest) after
 // proving the newcomer owns a living tree. Holder may step down (own-link delete) because
-// ownerId always remains — the circle is never keeperless.
+// anchorUid always remains — the circle is never keeperless.
 // 'keeper_request': a knock for keepership — at a community (a sitting keeper answers,
 // server mints) or at a LIFETREE (the owner answers through the tree-circle invite, choosing
 // the role). Grants nothing; deletable by its author or the target's keeper/owner.

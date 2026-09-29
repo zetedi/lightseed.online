@@ -55,7 +55,7 @@ describe('the circle record — the tree circle\'s shape, rooted in an event', (
     const p = { eventId: 'ev1', eventTitle: 'Grove Gathering', eventDomain: 'WWW.Lightseed.online', eventImageUrl: 'https://x/y.webp', formerUid: 'bakr', name: '' };
     const d = eventCircleDraft(p);
     expect(d).toEqual({
-      name: 'Grove Gathering Circle', rootEventId: 'ev1', founderUserId: 'bakr', ownerId: 'bakr',
+      name: 'Grove Gathering Circle', rootEventId: 'ev1', anchorUid: 'bakr',
       formation: 'event', visibility: 'invited', domain: '', bornOn: 'lightseed.online', papers: [], imageUrls: ['https://x/y.webp'],
     });
     expect(serverDraft(p)).toEqual(d);

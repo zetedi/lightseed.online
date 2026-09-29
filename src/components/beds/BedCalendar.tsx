@@ -29,7 +29,7 @@ export const BedCalendar: React.FC<{ bed: Lifetree; onViewTree?: (t: Lifetree) =
   const { t } = useLanguage();
   const { lightseed, activeTree, nameAs } = useSession();
   const uid = lightseed?.uid;
-  const isHost = !!uid && bed.ownerId === uid;
+  const isHost = !!uid && bed.anchorUid === uid;
   const bump = useRefreshSignal(['beds']);
   // Captured once — a calendar needs a day, not a ticking clock (and render stays pure).
   const [nowMs] = useState(() => Date.now());

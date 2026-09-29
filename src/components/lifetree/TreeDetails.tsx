@@ -45,10 +45,10 @@ interface TreeDetailsProps {
     // THE OWNER LINE (ring 2026-09-10): the owner's public name when they are not anonymous,
     // 'anonymous' when they chose to be unnamed, 'nameless' when they simply never wrote a name,
     // null while it is still being read. The envelope stands beside a name the viewer may reach.
-    ownerLine?: { name: string } | 'anonymous' | 'nameless' | null;
+    anchorLine?: { name: string } | 'anonymous' | 'nameless' | null;
     // The other keepers' public names (ring 2026-09-29: keepers are equal; the anchor is merely first).
     keeperLines?: Array<{ name: string } | 'anonymous' | 'nameless'>;
-    onReachOwner?: () => void;
+    onReachAnchor?: () => void;
 }
 
 // Details section — the tree's vision, facts (steward/location/GPS/planted/validator/website/
@@ -65,9 +65,9 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
     onRequestDelete,
     onVisibilityChange,
     onConvertType,
-    ownerLine,
+    anchorLine,
     keeperLines = [],
-    onReachOwner,
+    onReachAnchor,
 }) => {
     const { t } = useLanguage();
     const isNature = tree.isNature;
@@ -174,7 +174,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                         // keepers are equal; who planted is the history's to tell). The reach door
                         // reaches the TREE, so it rides once, beside the names.
                         <span className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-left text-slate-800 text-sm dark:text-slate-100">
-                            {[ownerLine ?? '…', ...keeperLines].map((line, i) => (
+                            {[anchorLine ?? '…', ...keeperLines].map((line, i) => (
                                 <span key={i} className="inline-flex items-center gap-1">
                                     {i > 0 && <span className="text-slate-300 dark:text-slate-600">·</span>}
                                     {typeof line === 'object'
@@ -182,8 +182,8 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                                         : <span className="italic text-slate-400">{line === 'anonymous' ? t('anonymous_keeper') : line === 'nameless' ? t('unnamed_keeper') : '…'}</span>}
                                 </span>
                             ))}
-                            {onReachOwner && typeof ownerLine === 'object' && ownerLine && (
-                                <button type="button" onClick={onReachOwner} title={t('reach_owner').replace('{name}', ownerLine.name)} aria-label={t('reach_owner').replace('{name}', ownerLine.name)}
+                            {onReachAnchor && typeof anchorLine === 'object' && anchorLine && (
+                                <button type="button" onClick={onReachAnchor} title={t('reach_keeper').replace('{name}', anchorLine.name)} aria-label={t('reach_keeper').replace('{name}', anchorLine.name)}
                                     className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 [&>svg]:h-3.5 [&>svg]:w-3.5">
                                     <Icons.Reach />
                                 </button>

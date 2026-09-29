@@ -249,7 +249,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                                 aria-label={t('delete_draft')}
                                 className="relative rounded-full px-1.5 py-0.5 text-[10px] font-bold text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
                               >
-                                {currentUserId !== community.ownerId && !d.isProposer && <SuperDot />}
+                                {currentUserId !== community.anchorUid && !d.isProposer && <SuperDot />}
                                 ✕
                               </button>
                             )}

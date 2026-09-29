@@ -41,7 +41,7 @@ export const audienceOf = <T extends SubscriptionLike>(subscriptions: readonly T
   });
 };
 
-// Who may send a place's letter: its keepers (the founding ownerId or a keeper link — the
+// Who may send a place's letter: its keepers (the founding anchorUid or a keeper link — the
 // server's fact), and the node's staff for the node's own place only.
 export const newsletterSendRefusal = (f: { isKeeper: boolean; isStaff: boolean; isNodePlace: boolean; audience: number }): DomainKey | null => {
   if (!f.isKeeper && !(f.isStaff && f.isNodePlace)) return 'newsletter_not_keeper';

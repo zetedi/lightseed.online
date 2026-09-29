@@ -22,7 +22,7 @@ const DOMAIN_CHALLENGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const communityKeptBy = async (communityId: string, uid: string) => {
     const community = (await db.collection("communities").doc(communityId).get()).data();
     if (!community) throw new HttpsError("not-found", "Community not found.");
-    const isKeeper = community.ownerId === uid
+    const isKeeper = community.anchorUid === uid
         || (await keeperLinkRef(uid, communityId).get()).exists;
     if (!isKeeper) throw new HttpsError("permission-denied", "Only a keeper verifies the anchor.");
     return community;

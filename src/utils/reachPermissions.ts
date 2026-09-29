@@ -53,7 +53,7 @@ export const canReachTree = ({
 
   if (!currentUserId) return false;
   // Contacting yourself is always allowed.
-  if (targetTree?.ownerId && targetTree.ownerId === currentUserId) return true;
+  if (targetTree?.anchorUid && targetTree.anchorUid === currentUserId) return true;
   if (isAdmin || isSuperAdmin) return true;
 
   return Boolean(myActiveTree && isExplicitlyValidatedTree(myActiveTree));

@@ -9,7 +9,7 @@ import { getLifetreeById, getPulseById, getPersonName } from '../services/fireba
 export interface AlignmentCard {
   id: string;
   createdAt?: Alignment['createdAt'];
-  theirTree: { id: string; name: string; imageUrl?: string; ownerName?: string };
+  theirTree: { id: string; name: string; imageUrl?: string; anchorName?: string };
   yourTree: { id: string; name: string; imageUrl?: string };
   theirPulse?: { title?: string; body?: string };
   yourPulse?: { title?: string; body?: string };
@@ -42,7 +42,7 @@ export const useAlignmentCards = (alignments: Alignment[], myTrees: Lifetree[]):
     let alive = true;
     (async () => {
       const entries = await Promise.all(alignments.map(async (a): Promise<[string, AlignmentCard]> => {
-        const [theirTree, theirPulse, yourPulse, ownerName] = await Promise.all([
+        const [theirTree, theirPulse, yourPulse, anchorName] = await Promise.all([
           getLifetreeById(a.initiatorTreeId).catch(() => null),
           getPulseById(a.initiatorPulseId).catch(() => null),
           getPulseById(a.targetPulseId).catch(() => null),
@@ -52,7 +52,7 @@ export const useAlignmentCards = (alignments: Alignment[], myTrees: Lifetree[]):
         return [a.id, {
           id: a.id,
           createdAt: a.createdAt,
-          theirTree: { id: a.initiatorTreeId, name: theirTree?.name || 'A tree', imageUrl: treeImage(theirTree), ownerName },
+          theirTree: { id: a.initiatorTreeId, name: theirTree?.name || 'A tree', imageUrl: treeImage(theirTree), anchorName },
           yourTree: { id: a.targetTreeId, name: yourTree?.name || 'Your tree', imageUrl: treeImage(yourTree) },
           theirPulse: theirPulse ? { title: theirPulse.title, body: theirPulse.body } : undefined,
           yourPulse: yourPulse ? { title: yourPulse.title, body: yourPulse.body } : undefined,

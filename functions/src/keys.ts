@@ -197,7 +197,7 @@ const recoveryWitnessEligible = async (uid: string): Promise<boolean> => {
     const initiate = await db.collection("initiates").doc(uid).get();
     if (initiate.exists) return true;
     const validatedTree = await db.collection("lifetrees")
-        .where("ownerId", "==", uid)
+        .where("anchorUid", "==", uid)
         .where("validated", "==", true)
         .limit(1)
         .get();

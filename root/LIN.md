@@ -84,7 +84,9 @@ names what happened. The ring makes it history. Then the root grows clearer.
 *tend* (care as action) · *mint* (seal a moment onto a chain) · *water* (the
 photo-proofed care pulse) · *keeper* (the hand that holds responsibility for a being that
 cannot yet sign or answer for itself — a tree's, a community's; keepers are equal, and who
-planted or founded is the history's to tell, never a rank on the face) · *guardian* (a
+planted or founded is the history's to tell, never a rank on the face) · *anchor* (the one
+keeper seat of a kept being that is never empty — `anchorUid` in the data; it moves only by
+succession, and it grants nothing the other keepers lack) · *guardian* (a
 no-privilege follow that vows protection) · *validated = initiated* (standing
 in the web of trust) · *Light House* (a sacred place that keeps a light for others:
 a point of orientation on the map, rooted in a mother tree) ·

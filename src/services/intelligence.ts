@@ -70,7 +70,7 @@ const anthropicProvider: IntelligenceProvider = {
       systemInstruction,
       model: intelligence.model || 'claude-sonnet-5',
       credential: intelligence.credentialScope && intelligence.credentialScope !== 'node'
-        ? { scope: intelligence.credentialScope, ownerId: intelligence.credentialOwnerId }
+        ? { scope: intelligence.credentialScope, holderId: intelligence.credentialHolderUid }
         : undefined,
     });
     return (result.data as { text?: string } | undefined)?.text || '';
@@ -105,7 +105,7 @@ export type CredentialScope = 'user' | 'community';
 
 export const saveProviderCredential = async (params: {
   scope: CredentialScope;
-  ownerId: string;
+  holderId: string;
   provider: IntelligenceProviderId;
   key: string;
   intelligenceId?: string;
@@ -116,7 +116,7 @@ export const saveProviderCredential = async (params: {
 };
 
 export const disconnectProviderCredential = (params: {
-  scope: CredentialScope; ownerId: string; provider: IntelligenceProviderId; intelligenceId?: string;
+  scope: CredentialScope; holderId: string; provider: IntelligenceProviderId; intelligenceId?: string;
 }) => saveProviderCredential({ ...params, key: '' });
 
 export const getProvider = (id: IntelligenceProviderId): IntelligenceProvider => providers[id] || googleProvider;
@@ -201,7 +201,7 @@ export const createMemory = async (data: { name: string; text: string; visibilit
     text: data.text,
     // The birth is signed (ring 2026-08-17): a memory carries its writer's uid — the
     // rules refuse an unsigned one.
-    ownerId: auth.currentUser?.uid || '',
+    authorId: auth.currentUser?.uid || '',
     visibility: data.visibility || 'private',
     ...(data.communityId ? { communityId: data.communityId } : {}),
     sourceIds: [],
@@ -234,12 +234,12 @@ export const resolveIntelligenceMemoryText = async (intelligence?: Pick<Intellig
 
 // Intelligences an admin may pick from for a community: every public one, plus any
 // they own privately.
-export const getSelectableIntelligences = async (ownerUid?: string): Promise<Intelligence[]> => {
+export const getSelectableIntelligences = async (authorId?: string): Promise<Intelligence[]> => {
   const byId = new Map<string, Intelligence>();
   const pub = await getDocs(query(intelligencesCol, where('public', '==', true)));
   pub.docs.forEach(d => byId.set(d.id, mapDoc<Intelligence>(d)));
-  if (ownerUid) {
-    const mine = await getDocs(query(intelligencesCol, where('ownerId', '==', ownerUid)));
+  if (authorId) {
+    const mine = await getDocs(query(intelligencesCol, where('authorId', '==', authorId)));
     mine.docs.forEach(d => byId.set(d.id, mapDoc<Intelligence>(d)));
   }
   return Array.from(byId.values())
@@ -249,12 +249,12 @@ export const getSelectableIntelligences = async (ownerUid?: string): Promise<Int
 
 // Like getSelectableIntelligences but KEEPS disabled ones — so a management UI can show
 // them and offer to re-enable. (The selectable variant hides disabled by design.)
-export const getManageableIntelligences = async (ownerUid?: string): Promise<Intelligence[]> => {
+export const getManageableIntelligences = async (authorId?: string): Promise<Intelligence[]> => {
   const byId = new Map<string, Intelligence>();
   const pub = await getDocs(query(intelligencesCol, where('public', '==', true)));
   pub.docs.forEach(d => byId.set(d.id, mapDoc<Intelligence>(d)));
-  if (ownerUid) {
-    const mine = await getDocs(query(intelligencesCol, where('ownerId', '==', ownerUid)));
+  if (authorId) {
+    const mine = await getDocs(query(intelligencesCol, where('authorId', '==', authorId)));
     mine.docs.forEach(d => byId.set(d.id, mapDoc<Intelligence>(d)));
   }
   return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -390,7 +390,7 @@ export const promoteToDefaultVoice = async (intel: Intelligence): Promise<void> 
     provider: intel.provider,
     model: intel.model,
     credentialScope: intel.credentialScope,
-    credentialOwnerId: intel.credentialOwnerId,
+    credentialHolderUid: intel.credentialHolderUid,
     connected: intel.connected ?? true,
     keyHint: intel.keyHint,
     enabled: true,
@@ -402,7 +402,7 @@ export const promoteToDefaultVoice = async (intel: Intelligence): Promise<void> 
   }
 };
 
-export const ensureIntelligenceCommons = async (ownerId?: string): Promise<void> => {
+export const ensureIntelligenceCommons = async (authorId?: string): Promise<void> => {
   try {
     for (const persona of DEFAULT_PERSONAS) {
       const ref = doc(db, 'personas', persona.id);
@@ -416,7 +416,7 @@ export const ensureIntelligenceCommons = async (ownerId?: string): Promise<void>
         const { id, ...rest } = intelligence;
         // The seeded voices are Beings like the created ones: a lid at birth (createIntelligence
         // already stamps one; the seed path went nameless until the 2026-07-21 lid audit).
-        await setDoc(ref, { ...rest, lid: uuidv7(), ownerId: ownerId || 'GENESIS_SYSTEM', createdAt: serverTimestamp() });
+        await setDoc(ref, { ...rest, lid: uuidv7(), authorId: authorId || 'GENESIS_SYSTEM', createdAt: serverTimestamp() });
       }
     }
   } catch (e) {

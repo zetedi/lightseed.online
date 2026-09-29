@@ -595,7 +595,7 @@ const AppContent = () => {
                     onOffer={() => {
                         doors.setCareModalOpen(false);
                         doors.setShowReachModal(false);
-                        if (careTarget) doors.openOffer({ kind: 'tree', id: careTarget.id, lid: careTarget.lid, name: careTarget.name, keeperUid: careTarget.ownerId });
+                        if (careTarget) doors.openOffer({ kind: 'tree', id: careTarget.id, lid: careTarget.lid, name: careTarget.name, keeperUid: careTarget.anchorUid });
                     }}
                 />
             )}

@@ -33,7 +33,7 @@ export interface Intelligence extends Being {
   // Node-funded: runs on the node's own credential (credentialScope 'node'), paid from the
   // care economy's node share (domain/support.ts) — members need no key of their own.
   hosted?: boolean;
-  ownerId?: string;
+  authorId?: string;
   communityIds?: string[];
   memoryIds?: string[];
   personaId?: string;
@@ -43,7 +43,7 @@ export interface Intelligence extends Being {
   connected?: boolean;
   keyHint?: string;                                  // e.g. "…aB3z"
   credentialScope?: 'user' | 'community' | 'node';   // which key this intelligence draws on
-  credentialOwnerId?: string;                        // uid or communityId for that key
+  credentialHolderUid?: string;                        // uid or communityId for that key
   createdAt: Stamp;
 }
 
@@ -91,7 +91,7 @@ export interface MemoryContext {
 
 // Every provider implements the same contract. Adding Claude, DeepSeek or a local
 // model later is just another implementation of this interface — no call site changes.
-export type IntelligenceRef = Pick<Intelligence, 'provider' | 'model' | 'credentialScope' | 'credentialOwnerId'>;
+export type IntelligenceRef = Pick<Intelligence, 'provider' | 'model' | 'credentialScope' | 'credentialHolderUid'>;
 
 export interface IntelligenceProvider {
   id: IntelligenceProviderId;

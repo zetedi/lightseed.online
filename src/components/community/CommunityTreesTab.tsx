@@ -34,7 +34,7 @@ export const CommunityTreesTab: React.FC<CommunityTreesTabProps> = ({
   const searchInvitable = useCallback(async (term: string) => {
     // Provable levels only, or the whole query is rejected the moment one private tree exists
     // (mirrors getTreesByDomain / fetchLifetrees). A member invites VISIBLE trees — public + node
-    // when signed in, public when not — plus their own (ownerUid merge, always rule-provable).
+    // when signed in, public when not — plus their own (anchorUid merge, always rule-provable).
     const all = await fetchAllLifetrees(
       undefined,
       currentUserId,
@@ -48,7 +48,7 @@ export const CommunityTreesTab: React.FC<CommunityTreesTabProps> = ({
     if (!currentUserId) throw new Error('err_signin_invite_tree');
     await inviteTreeToCommunity({
       communityId: community.id, communityName: community.name || community.domain,
-      lifetreeId: tree.id, lifetreeName: tree.name || 'A tree', treeOwnerId: tree.ownerId,
+      lifetreeId: tree.id, lifetreeName: tree.name || 'A tree', treeAnchorUid: tree.anchorUid,
       invitedByUserId: currentUserId,
     });
   }, [community, currentUserId]);

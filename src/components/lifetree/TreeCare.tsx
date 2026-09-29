@@ -30,7 +30,7 @@ interface TreeCareProps {
     currentUserId?: string;
     currentUserName?: string | null;
     currentUserPhoto?: string | null;
-    isOwner: boolean;
+    isAnchor: boolean;
     canWater: boolean;
     canManageSchedule: boolean;
     // A guardian without caring powers: the card reads as the schedule's read-only face,
@@ -51,7 +51,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
     currentUserId,
     currentUserName,
     currentUserPhoto,
-    isOwner,
+    isAnchor,
     canWater,
     canManageSchedule,
     canAskStewardship,
@@ -278,7 +278,7 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                                 <span className="block">{t('water_photo_mints')}</span>
                             </span>
                         </label>
-                        {isOwner && overdue && !wateringAlertedToday(tree) && (
+                        {isAnchor && overdue && !wateringAlertedToday(tree) && (
                             <button type="button" onClick={handleRemindGuardians} disabled={waterBusy} className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50 dark:bg-slate-900 dark:text-sky-300">{t('remind_guardians')} 💧</button>
                         )}
                     </div>

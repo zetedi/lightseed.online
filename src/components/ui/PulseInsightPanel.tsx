@@ -52,7 +52,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
             let context: string | undefined;
             if (depth >= 4) {
                 try {
-                    const g = await loadSubgraphAround({ id: activeTree.id, kind: 'tree', ownerUid: activeTree.ownerId || null, name: activeTree.name, lid: activeTree.lid });
+                    const g = await loadSubgraphAround({ id: activeTree.id, kind: 'tree', anchorUid: activeTree.anchorUid || null, name: activeTree.name, lid: activeTree.lid });
                     const walk = subgraphOf(activeTree.id, { nodes: g.nodes, edges: g.edges }, { personDepth: 1 });
                     const names = walk.beings.filter(b => b.id !== activeTree.id)
                         .map(b => g.display.get(b.id)?.name).filter(Boolean).slice(0, 24);

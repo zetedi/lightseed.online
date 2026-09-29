@@ -108,9 +108,9 @@ describe('doc hashes and the census', () => {
   const doc = (path: string, data: Record<string, unknown>): BundleDoc => ({ path, data });
 
   it('hashing is canonical: key order never matters, the path always does', async () => {
-    const a = await docContentHash(doc('lifetrees/x', { name: 'Oak', ownerId: 'u1' }));
-    const b = await docContentHash(doc('lifetrees/x', { ownerId: 'u1', name: 'Oak' }));
-    const c = await docContentHash(doc('lifetrees/y', { name: 'Oak', ownerId: 'u1' }));
+    const a = await docContentHash(doc('lifetrees/x', { name: 'Oak', anchorUid: 'u1' }));
+    const b = await docContentHash(doc('lifetrees/x', { anchorUid: 'u1', name: 'Oak' }));
+    const c = await docContentHash(doc('lifetrees/y', { name: 'Oak', anchorUid: 'u1' }));
     expect(a).toBe(b);
     expect(a).not.toBe(c);
   });
@@ -157,7 +157,7 @@ describe('verifyBundle — the whole structural verdict', () => {
   };
 
   const docs = [
-    { path: 'lifetrees/t1', data: { lid: LID_A, ownerId: 'u1', name: 'Oak' } },
+    { path: 'lifetrees/t1', data: { lid: LID_A, anchorUid: 'u1', name: 'Oak' } },
     { path: 'lifetrees/t1/loves/u2', data: { uid: 'u2' } },
     { path: 'links/u2__guardian__t1', data: { rel: 'guardian', from: 'u2', to: 't1' } },
   ];
@@ -262,7 +262,7 @@ describe('the beings index is rebuilt, never trusted', () => {
 describe('the re-anchoring census — every mortal uid, none twice, no impostors', () => {
   it('collects marked fields, uid-keyed ids, arrays, and person-edges only', () => {
     const docs: BundleDoc[] = [
-      { path: 'lifetrees/t1', data: { ownerId: 'zoltan', validatorId: 'chris' } },
+      { path: 'lifetrees/t1', data: { anchorUid: 'zoltan', validatorId: 'chris' } },
       { path: 'lifetrees/t1/loves/lumo', data: { uid: 'lumo' } },
       { path: 'pulses/p1', data: { authorId: 'zoltan', participantUids: ['zoltan', 'chris'] } },
       { path: 'links/lumo__guardian__t1', data: { rel: 'guardian', from: 'lumo', to: 't1' } },

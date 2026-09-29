@@ -41,7 +41,7 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
                 if (toKind === "tree") {
                     // The tree's carers: its keeper, and keeper / steward links (rules' isTreeCarer).
                     const links = await Promise.all(["keeper", "steward"].map((rel) => t.get(db.doc(`links/${acceptorUid}__${rel}__${toId}`))));
-                    standing = receiver.ownerId === acceptorUid || links.some((l) => l.exists);
+                    standing = receiver.anchorUid === acceptorUid || links.some((l) => l.exists);
                 } else {
                     standing = receiver.authorId === acceptorUid;
                 }
@@ -55,7 +55,7 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
         let fromStanding = false;
         if (fromTree && authorId) {
             const fromLinks = await Promise.all(["keeper", "steward"].map((rel) => t.get(db.doc(`links/${authorId}__${rel}__${fromTreeId}`))));
-            fromStanding = fromTree.ownerId === authorId || fromLinks.some((l) => l.exists);
+            fromStanding = fromTree.anchorUid === authorId || fromLinks.some((l) => l.exists);
         }
 
         const judgment = judgeOfferingAccept({

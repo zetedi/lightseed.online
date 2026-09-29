@@ -41,13 +41,13 @@ describe('the light path, until the anchor is proven — and the being leaves wi
     await env.withSecurityRulesDisabled(async (ctx) =>
       setDoc(doc(ctx.firestore(), 'persons', AURORA), { lid: 'aurora-lid', name: 'Aurora' }));
 
-    // 2 · Plants a tree — the birth is signed (ownerId must be the planter's own).
+    // 2 · Plants a tree — the birth is signed (anchorUid must be the planter's own).
     await assertSucceeds(setDoc(doc(db(AURORA), 'lifetrees', TREE), {
-      ownerId: AURORA, name: 'Dawn Cedar', treeType: 'LIFETREE', visibility: 'public',
+      anchorUid: AURORA, name: 'Dawn Cedar', treeType: 'LIFETREE', visibility: 'public',
       validated: false, validatorId: null, loveCount: 0, createdAt: serverTimestamp(),
     }));
     await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'forged'), {
-      ownerId: AURORA, name: 'Forged', loveCount: 0,
+      anchorUid: AURORA, name: 'Forged', loveCount: 0,
     }));
 
     // 3 · Waters it onto the chain — and the chain is the SERVER's (ring 2026-09-23): her own
@@ -79,7 +79,7 @@ describe('the light path, until the anchor is proven — and the being leaves wi
 
     // 4 · Founds a community, in her own name.
     await assertSucceeds(setDoc(doc(db(AURORA), 'communities', COM), {
-      ownerId: AURORA, name: 'Aurora Commons', domain: '', vision: '', imageUrls: [],
+      anchorUid: AURORA, name: 'Aurora Commons', domain: '', vision: '', imageUrls: [],
       loveCount: 0, createdAt: serverTimestamp(),
     }));
 

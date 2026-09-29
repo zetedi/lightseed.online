@@ -17,7 +17,7 @@ import { Picture } from '../ui/Picture';
 // CommunityLightHouse is a thin wrapper over this.
 
 // What a keeper consecrates: the fields createLightHouse persists (minus scope, which the
-// owner shell supplies — domain / communityIds / ownerId).
+// owner shell supplies — domain / communityIds / anchorUid).
 export interface LightHouseDraft {
   name: string;
   body: string;

@@ -25,14 +25,14 @@ export const sendNewsletterEmails = onCall({ timeoutSeconds: 300, memory: "512Mi
     if (!communityId) throw new HttpsError("invalid-argument", "A place is required.");
 
     // THE LETTER OF A PLACE (ring 2026-09-08, domain/newsletter mirrored in ./newsletter): the
-    // letter is the community's; its keepers (the founding ownerId or a keeper link) send it,
+    // letter is the community's; its keepers (the founding anchorUid or a keeper link) send it,
     // the node's staff send the node's own; the audience is those who SUBSCRIBED at the place.
     const communitySnap = await db.collection("communities").doc(communityId).get();
     if (!communitySnap.exists) throw new HttpsError("not-found", "That place does not exist.");
     const community = communitySnap.data() as Record<string, any>;
     const home = String(community.domain || "").toLowerCase();
     const keeperLink = await db.collection("links").doc(`${uid}__keeper__${communityId}`).get();
-    const isKeeper = community.ownerId === uid || keeperLink.exists;
+    const isKeeper = community.anchorUid === uid || keeperLink.exists;
     const isStaff = await isStaffUid(uid);
     const isNodePlace = charterOwnDomains(charter).includes(home);
 

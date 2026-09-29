@@ -136,7 +136,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
     const lightHouseBeings = useMemo<MapBeing[]>(() => lightHouses.map(s => ({
         id: `lightHouse__${s.id}`,
         name: s.name,
-        ownerId: s.ownerId || '',
+        anchorUid: s.anchorUid || '',
         latitude: s.latitude,
         longitude: s.longitude,
         imageUrl: s.imageUrl || '/lighthouse.webp',

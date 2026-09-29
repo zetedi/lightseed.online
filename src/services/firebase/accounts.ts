@@ -55,9 +55,9 @@ const ownedTreeName = async (uid: string, defaultTreeId?: string): Promise<strin
     if (defaultTreeId) {
         const t = await getDoc(doc(db, 'lifetrees', defaultTreeId));
         const tree = t.exists() ? (t.data() as Partial<Lifetree>) : null;
-        if (tree && tree.ownerId === uid) return String(tree.name || '') || null;
+        if (tree && tree.anchorUid === uid) return String(tree.name || '') || null;
     }
-    const first = await getDocs(query(lifetreesCollection, where('ownerId', '==', uid), limit(1)));
+    const first = await getDocs(query(lifetreesCollection, where('anchorUid', '==', uid), limit(1)));
     return first.empty ? null : (String((first.docs[0].data() as Partial<Lifetree>).name || '') || null);
 };
 
@@ -340,7 +340,7 @@ export const renamePerson = async (name: string): Promise<string> => {
 export const setOnlyValidatedCanReach = async (userId: string, value: boolean) => {
     await setDoc(doc(db, 'users', userId), { onlyValidatedCanReach: value, updatedAt: serverTimestamp() }, { merge: true });
     try {
-        const mine = await getDocs(query(lifetreesCollection, where('ownerId', '==', userId)));
+        const mine = await getDocs(query(lifetreesCollection, where('anchorUid', '==', userId)));
         if (!mine.empty) {
             const batch = writeBatch(db);
             mine.docs.forEach(d => batch.update(d.ref, { onlyValidatedCanReach: value }));

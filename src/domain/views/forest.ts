@@ -32,19 +32,19 @@ export function treeCoordinates(tree: Pick<Lifetree, 'latitude' | 'longitude'>):
 // client must not greenlight what the law denies. `guardedIds` is still accepted for call-site
 // symmetry with the pulse gates, but it never widens tree visibility.
 export function canViewTree(
-  tree: Pick<Lifetree, 'ownerId' | 'visibility'> & { id?: string },
+  tree: Pick<Lifetree, 'anchorUid' | 'visibility'> & { id?: string },
   viewer: { uid?: string; isStaff?: boolean; guardedIds?: Set<string> },
 ): boolean {
   const v = tree.visibility || 'public';
   if (v === 'public') return true;
   if (viewer.isStaff) return true;
-  if (viewer.uid && tree.ownerId === viewer.uid) return true;
+  if (viewer.uid && tree.anchorUid === viewer.uid) return true;
   if (v === 'node') return !!viewer.uid;
   return false; // private, and not owner / staff (a guardian gets nothing — matches the rule)
 }
 
 // Can this viewer see a vision, given its visibility? Mirrors canViewTree, but the author is the
-// owner (visions have no ownerId/guardians). 'public' = everyone; 'node' = any signed-in member;
+// owner (visions have no anchorUid/guardians). 'public' = everyone; 'node' = any signed-in member;
 // 'private' = author or staff. (Client-side gate; firestore.rules is the hardening counterpart.)
 export function canViewVision(
   vision: { authorId?: string; visibility?: 'public' | 'node' | 'private' },

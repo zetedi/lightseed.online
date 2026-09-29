@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { ensureIntelligenceCommons } from '../services/intelligence';
 import {
-  backfillPulseVisibility, migrateArraysToLinks, migratePulseTypeCasing, dropLegacyArrays, migrateTreeVisibility,
+  backfillPulseVisibility, migratePulseTypeCasing, migrateTreeVisibility,
   migrateBackfillLids, migrateBackfillMatchIds, backfillVisionChains, migrateAlignmentsToCovenants,
   migrateDecisionsToSignatures,
 } from '../services/firebase';
@@ -26,12 +26,6 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       return n;
     };
     // LIN migration (stage 3): relationship arrays → links. Idempotent.
-    w.migrateArraysToLinks = async () => {
-      console.log('[lightseed] migrating relationship arrays → links…');
-      const r = await migrateArraysToLinks();
-      console.log('[lightseed] done — links created:', r);
-      return r;
-    };
     // Pulse type casing → canonical lowercase. Run once after deploy. Idempotent.
     w.migratePulseTypeCasing = async () => {
       console.log('[lightseed] migrating pulse type casing → lowercase…');
@@ -40,12 +34,6 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
       return n;
     };
     // LIN migration (stage 5): drop legacy arrays — ONLY after links are live + verified.
-    w.dropLegacyArrays = async () => {
-      console.log('[lightseed] dropping legacy relationship arrays…');
-      const n = await dropLegacyArrays();
-      console.log(`[lightseed] done — cleared arrays on ${n} doc(s).`);
-      return n;
-    };
     // Backfill tree visibility → 'public'. Run ONCE after deploying indexes, BEFORE the tightened rules.
     w.migrateTreeVisibility = async () => {
       console.log('[lightseed] backfilling tree visibility → public…');
@@ -107,8 +95,8 @@ export function useSuperAdminConsole(isSuperAdmin: boolean, uid?: string) {
     };
     w.lightseedChain = { canonicalize, computeCanonicalHash, blockContent, verifyChain };
     return () => {
-      delete w.backfillPulseVisibility; delete w.migrateArraysToLinks; delete w.migratePulseTypeCasing;
-      delete w.dropLegacyArrays; delete w.migrateTreeVisibility; delete w.setChainLocked; delete w.lightseedChain;
+      delete w.backfillPulseVisibility; delete w.migratePulseTypeCasing;
+      delete w.migrateTreeVisibility; delete w.setChainLocked; delete w.lightseedChain;
       delete w.migrateBackfillLids; delete w.migrateBackfillMatchIds; delete w.backfillVisionChains;
       delete w.migrateAlignmentsToCovenants; delete w.migrateDecisionsToSignatures;
     };

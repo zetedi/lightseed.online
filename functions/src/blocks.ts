@@ -78,7 +78,7 @@ const bearerPath = (on: ChainBearerKind, id: string) => `${on === "tree" ? "life
 // owner / keeper / steward (the rules' isTreeCarer), a vision's author.
 const readStanding = async (t: Transaction, on: ChainBearerKind, id: string, bearer: Record<string, unknown>, uid: string): Promise<boolean> => {
     if (on === "vision") return bearer.authorId === uid;
-    if (bearer.ownerId === uid) return true;
+    if (bearer.anchorUid === uid) return true;
     const links = await Promise.all(["keeper", "steward"].map((rel) => t.get(db.doc(`links/${uid}__${rel}__${id}`))));
     return links.some((l) => l.exists);
 };

@@ -117,7 +117,7 @@ for (const treeDoc of trees.docs) {
           title: 'Care',
           body: '',
           visibility: 'public',
-          authorId: tree.ownerId || null,
+          authorId: tree.anchorUid || null,
           domain: tree.domain || '',
           mintedAt: found.ts,
           previousHash: found.prev,

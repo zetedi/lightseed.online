@@ -4,7 +4,7 @@ import { subgraphOf, pathTo, type SubgraphNode, type SubgraphEdge } from '../src
 // The longitudinal walk (ring 2026-08-25): depth counts PERSON-CROSSINGS, not records —
 // "not the same person's trees, but the tree of his next person."
 
-const N = (id: string, ownerUid?: string | null, kind = 'tree'): SubgraphNode => ({ id, kind, ownerUid });
+const N = (id: string, anchorUid?: string | null, kind = 'tree'): SubgraphNode => ({ id, kind, anchorUid });
 const E = (from: string, to: string, rel = 'points'): SubgraphEdge => ({ from, rel, to });
 
 // Ana's cluster: two trees + a vision. Bakr's tree joins Ana's vision. Chen's tree

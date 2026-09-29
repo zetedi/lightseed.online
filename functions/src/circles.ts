@@ -19,7 +19,7 @@ const readHand = async (t: Transaction, ev: Record<string, unknown>, uid: string
     const communityId = typeof ev.communityId === "string" ? ev.communityId : "";
     if (!communityId) return false;
     const [c, k] = await Promise.all([t.get(db.doc(`communities/${communityId}`)), t.get(keeperLinkRef(uid, communityId))]);
-    return c.exists && (c.data()?.ownerId === uid || k.exists);
+    return c.exists && (c.data()?.anchorUid === uid || k.exists);
 };
 
 // The fields a copy carries from its parent: the gathering's own words and frame, never its
@@ -100,7 +100,7 @@ export const formCircleFromEvent = onCall({ cors: true }, async (request) => {
         if (judgment.outcome === "reject") {
             throw new HttpsError(judgment.refusal === "event_circle_not_hand" ? "permission-denied" : judgment.refusal === "event_circle_not_event" ? "not-found" : "failed-precondition", judgment.refusal);
         }
-        const owners = standing.map((s) => (s.data() as Record<string, unknown>).ownerId as string | undefined);
+        const owners = standing.map((s) => (s.data() as Record<string, unknown>).anchorUid as string | undefined);
         const members = eventCircleMemberUids(uid, owners);
 
         if (judgment.outcome === "gather") {

@@ -27,7 +27,7 @@ import { Picture } from '../ui/Picture';
 type TreeCircleView = ReturnType<typeof treeCircle>;
 
 interface TreeCircleProps {
-    tree: Pick<Lifetree, 'id' | 'name' | 'ownerId'>;
+    tree: Pick<Lifetree, 'id' | 'name' | 'anchorUid'>;
     currentUserId?: string;
     currentUserName?: string | null;
     circle: TreeCircleView;
@@ -55,7 +55,7 @@ interface Face { name?: string; imageUrl?: string }
 // is private (users doc), so this public freshest tree is the honest public stand-in.
 const faceFromForest = (uid: string, forest: Lifetree[]): Face => {
     const mine = forest
-        .filter(t => t.ownerId === uid && t.treeType !== 'BED')
+        .filter(t => t.anchorUid === uid && t.treeType !== 'BED')
         .sort((a, b) => ((b.updatedAt as any)?.toMillis?.() || (b.createdAt as any)?.toMillis?.() || 0)
             - ((a.updatedAt as any)?.toMillis?.() || (a.createdAt as any)?.toMillis?.() || 0));
     const withImage = mine.find(t => t.latestGrowthUrl || t.imageUrl) || mine[0];
@@ -321,15 +321,15 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             .filter(t => t.treeType !== 'BED' && t.id !== treeId && (t.name || '').toLowerCase().includes(q))
             .map(t => ({
                 tree: t,
-                reason: t.ownerId === tree.ownerId
+                reason: t.anchorUid === tree.anchorUid
                     ? ('invite_reason_own' as const)
-                    : circleSet.has(t.ownerId)
+                    : circleSet.has(t.anchorUid)
                         ? ('invite_reason_in_circle' as const)
                         : null,
             }))
             .sort((a, b) => Number(!!a.reason) - Number(!!b.reason)) // invitable first
             .slice(0, 6);
-    }, [term, forest, treeId, tree.ownerId, circleSet]);
+    }, [term, forest, treeId, tree.anchorUid, circleSet]);
 
     const handleInvite = async (candidate: Lifetree) => {
         if (!currentUserId) return;
@@ -337,13 +337,13 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         try {
             await createTreeInvite({
                 lifetree: tree as Lifetree,
-                invitedUserId: candidate.ownerId,
+                invitedUserId: candidate.anchorUid,
                 role: inviteRole,
                 invitedByUserId: currentUserId,
                 invitedByName: currentUserName || undefined,
                 message: inviteRole === 'guardian' ? translations.en.guard_ask : `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(inviteRole)].toLowerCase()}?`,
             });
-            setInvited(prev => new Set(prev).add(candidate.ownerId));
+            setInvited(prev => new Set(prev).add(candidate.anchorUid));
             setInviteNonce(n => n + 1); // the ledger below shows it at once
             notify(speak(spokenLine('circle_invite_sent', { name: candidate.name || '—', role: roleName(inviteRole).toLowerCase(), tree: tree.name || '—' })));
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
@@ -351,7 +351,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     };
 
     const isBusy = busy || toggleBusy;
-    const isOwner = !!currentUserId && currentUserId === tree.ownerId;
+    const isAnchor = !!currentUserId && currentUserId === tree.anchorUid;
 
     return (
         <SectionCard title={t('circle')} icon={<Icons.Venn />}>
@@ -517,7 +517,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                         <div className="space-y-1.5">
                             {sentInvites.map(inv => {
                                 const face = faceFromForest(inv.invitedUserId, forest);
-                                const mayRevoke = canInviteRoles || isOwner || inv.invitedByUserId === currentUserId;
+                                const mayRevoke = canInviteRoles || isAnchor || inv.invitedByUserId === currentUserId;
                                 return (
                                     <div key={inv.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-2 dark:bg-slate-900/50 dark:border-slate-800">
                                         <Avatar imageUrl={face.imageUrl} seed={labelFor(inv.invitedUserId, face)} ring={ROLE_RING[inv.role]} />
@@ -590,7 +590,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     {matches.length > 0 && (
                         <div className="mt-2 space-y-1.5">
                             {matches.map(({ tree: m, reason }) => {
-                                const already = invited.has(m.ownerId) || sentInvites.some(i => i.invitedUserId === m.ownerId && i.role === inviteRole);
+                                const already = invited.has(m.anchorUid) || sentInvites.some(i => i.invitedUserId === m.anchorUid && i.role === inviteRole);
                                 return (
                                     <div key={m.id} className={`flex items-center gap-3 rounded-xl border border-slate-100 p-2 shadow-sm dark:border-slate-800 ${reason ? 'bg-slate-50/60 dark:bg-slate-900/60' : 'bg-white dark:bg-slate-900'}`}>
                                         <Avatar imageUrl={m.latestGrowthUrl || m.imageUrl} seed={m.name || '?'} ring={reason ? 'ring-slate-100' : 'ring-emerald-100'} />

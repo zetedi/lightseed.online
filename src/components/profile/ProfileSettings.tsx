@@ -108,7 +108,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       .then(rays => { if (alive) setLightUnits(rays.reduce((sum, r) => sum + r.units, 0)); })
       .catch(() => { if (alive) setLightUnits(0); });
     fetchAllLifetrees(undefined, undefined, ['public', 'node'])
-      .then(f => { if (alive) setHeirForest(f.filter(tr => tr.ownerId && tr.ownerId !== uid)); })
+      .then(f => { if (alive) setHeirForest(f.filter(tr => tr.anchorUid && tr.anchorUid !== uid)); })
       .catch(() => {});
     return () => { alive = false; };
   }, [showDeleteConfirm, uid]);
@@ -169,7 +169,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
-      await deleteUserAccount(heirTree?.ownerId);
+      await deleteUserAccount(heirTree?.anchorUid);
       await logout();
       notify(t('delete_goodbye'));
       window.location.reload();

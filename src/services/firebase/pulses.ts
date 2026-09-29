@@ -134,7 +134,7 @@ export const getMyEvents = async (uid: string): Promise<Pulse[]> =>
         orderBy('createdAt', 'desc'),
     ))).docs.map(mapPulse);
 
-export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], ownerUid?: string) => {
+export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], anchorUid?: string) => {
     // Server-side type filter (the composite indexes exist since ring 2026-08-28): every
     // page is pure events, so pagination is real instead of a widened window's leftovers.
     const res = await fetchPulsesRaw(lastD, domainFilter, levels, 24, 'event');
@@ -143,7 +143,7 @@ export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilt
     // the levels that would carry them, so merge the viewer's own in on the first page, exactly as
     // the forest merges a creator's own trees. Their absence is what hid a node-visible event from
     // its own maker on a reflecting hub.
-    const mine = (ownerUid && !lastD) ? await getMyEvents(ownerUid).catch(() => []) : [];
+    const mine = (anchorUid && !lastD) ? await getMyEvents(anchorUid).catch(() => []) : [];
     return {
         items: mergeAuthored(items, mine, p => p.createdAt?.toMillis?.() || 0),
         lastDoc: res.lastDoc
@@ -286,18 +286,18 @@ export const markReachPulsesSeen = markReachesSeen;
 // source of truth (also what the Firestore rules check). The owner is always in their own
 // circle. Audiences nest: owners ⊂ guardians ⊂ everyone. We deliberately do NOT read the legacy
 // role arrays: writes are links-only now, so a stale array could otherwise re-include someone
-// who was unlinked. (One-time legacy data is covered by migrateArraysToLinks.)
+// who was unlinked.
 export const resolveCircleUids = async (tree: Lifetree, audience: ReachAudience): Promise<string[]> => {
-    const owner = tree.ownerId ? [tree.ownerId] : [];
+    const anchor = tree.anchorUid ? [tree.anchorUid] : [];
     const byRel: Record<string, string[]> = { keeper: [], guardian: [], steward: [], observer: [] };
     try {
         const links = await getDocs(query(collection(db, 'links'), where('to', '==', tree.id)));
         links.docs.forEach(d => { const x = d.data() as Partial<Link>; if (x.rel && x.from && byRel[x.rel]) byRel[x.rel].push(x.from); });
     } catch (e) { console.warn('resolveCircleUids: link read failed', e); }
     const ids =
-        audience === 'owners' ? [...owner, ...byRel.keeper]
-        : audience === 'guardians' ? [...owner, ...byRel.keeper, ...byRel.guardian]
-        : [...owner, ...byRel.keeper, ...byRel.guardian, ...byRel.steward, ...byRel.observer];
+        audience === 'owners' ? [...anchor, ...byRel.keeper]
+        : audience === 'guardians' ? [...anchor, ...byRel.keeper, ...byRel.guardian]
+        : [...anchor, ...byRel.keeper, ...byRel.guardian, ...byRel.steward, ...byRel.observer];
     return Array.from(new Set(ids.filter(Boolean)));
 };
 
@@ -347,16 +347,16 @@ export const sendReach = async ({
     // lightweight tree object is missing its owner + privacy flag.
     let target = toTree;
     let personPartner = false;
-    if (audience || !target.ownerId) {
+    if (audience || !target.anchorUid) {
         const full = await getLifetreeById(toTree.id);
         if (full) target = full;
         // No such tree → the "tree" id is a person's uid (replying to a tree-less sender).
-        else if (!target.ownerId) personPartner = true;
+        else if (!target.anchorUid) personPartner = true;
     }
-    const ownerUid = target.ownerId || (personPartner ? target.id : null);
+    const anchorUid = target.anchorUid || (personPartner ? target.id : null);
 
     const protectedTarget = target.onlyValidatedCanReach === true;
-    const isSelf = !!ownerUid && ownerUid === sender.uid;
+    const isSelf = !!anchorUid && anchorUid === sender.uid;
     if (protectedTarget && !isSelf && !isAdmin && !isSuperAdmin && !(fromTree && isExplicitlyValidatedTree(fromTree))) {
         throw new Error('err_dm_validated_only');
     }
@@ -407,11 +407,11 @@ export const sendReach = async ({
     }
 
     // Classic 1:1 reach to the target's owner.
-    const participantUids = Array.from(new Set([sender.uid, ownerUid].filter(Boolean) as string[]));
+    const participantUids = Array.from(new Set([sender.uid, anchorUid].filter(Boolean) as string[]));
     return write({
         ...base,
         title: `Reach: ${fromName} -> ${target.name}`,
-        recipientUid: ownerUid,
+        recipientUid: anchorUid,
         participantUids,
         threadId: buildThreadId(fromId, target.id),
     });

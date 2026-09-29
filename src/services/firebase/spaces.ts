@@ -180,11 +180,11 @@ export const getCommunityById = async (id: string): Promise<Community | null> =>
 };
 
 export const getMyCommunities = async (uid: string) => 
-    (await getDocs(query(communitiesCollection, where('ownerId', '==', uid)))).docs.map(d => (mapDoc(d) as Community));
+    (await getDocs(query(communitiesCollection, where('anchorUid', '==', uid)))).docs.map(d => (mapDoc(d) as Community));
 
 export const COMMUNITY_INVITE_ALLOTMENT = 144;
 
-export const createCommunity = async (data: Partial<Community> & { ownerId: string; name: string; domain: string }) => {
+export const createCommunity = async (data: Partial<Community> & { anchorUid: string; name: string; domain: string }) => {
     // THE FULLNESS GATE (domain/limits nodeCapacityGate): a node hosts at most 144
     // communities (auto-born tree circles excluded — they are the planting caps' shadow).
     // The refusal is not a "no": it says the node is full and it is time to SEED.
@@ -206,10 +206,10 @@ export const createCommunity = async (data: Partial<Community> & { ownerId: stri
         updatedAt: serverTimestamp()
     });
     // A community manager gets a 144-invite allotment (raise, never lower).
-    if (data.ownerId) {
+    if (data.anchorUid) {
         try {
             await runTransaction(db, async (t) => {
-                const uref = doc(db, 'users', data.ownerId);
+                const uref = doc(db, 'users', data.anchorUid);
                 const us = await t.get(uref);
                 const cur = us.exists() ? (us.data().invitesRemaining || 0) : 0;
                 if (cur < COMMUNITY_INVITE_ALLOTMENT) t.update(uref, { invitesRemaining: COMMUNITY_INVITE_ALLOTMENT });
@@ -343,58 +343,6 @@ export const migrateTreeVisibility = async (): Promise<{ updated: number }> => {
     return { updated: toFix.length };
 };
 
-// --- LIN migration: legacy relationship arrays → the `links` collection ---------------------
-// Stage 3 of the crystal. Create one link doc per relationship (deterministic id → idempotent).
-// Run from the superadmin console AFTER the links rules are deployed; safe to re-run.
-const linkDocId = (from: string, rel: string, to: string) => `${from}__${rel}__${to}`;
-
-export const migrateArraysToLinks = async (): Promise<Record<string, number>> => {
-    const counts: Record<string, number> = {};
-    const queued: { id: string; data: Record<string, unknown> }[] = [];
-    const add = (from: string, rel: string, to: string) => {
-        if (!from || !to) return;
-        queued.push({ id: linkDocId(from, rel, to), data: { lid: uuidv7(), type: 'link', rel, from, to, createdAt: serverTimestamp() } });
-        counts[rel] = (counts[rel] || 0) + 1;
-    };
-    (await getDocs(lifetreesCollection)).forEach(d => {
-        const t = d.data() as { coOwnerIds?: string[]; guardians?: string[]; stewardIds?: string[]; observerIds?: string[] };
-        (t.coOwnerIds || []).forEach((u: string) => add(u, 'keeper', d.id));
-        (t.guardians || []).forEach((u: string) => add(u, 'guardian', d.id));
-        (t.stewardIds || []).forEach((u: string) => add(u, 'steward', d.id));
-        (t.observerIds || []).forEach((u: string) => add(u, 'observer', d.id));
-    });
-    (await getDocs(communitiesCollection)).forEach(d => {
-        ((d.data() as { memberIds?: string[] }).memberIds || []).forEach((u: string) => add(u, 'member', d.id));
-    });
-    (await getDocs(visionsCollection)).forEach(d => {
-        ((d.data() as { joinedUserIds?: string[] }).joinedUserIds || []).forEach((u: string) => add(u, 'joined', d.id));
-    });
-    for (let i = 0; i < queued.length; i += 400) {
-        const batch = writeBatch(db);
-        queued.slice(i, i + 400).forEach(q => batch.set(doc(db, 'links', q.id), q.data));
-        await batch.commit();
-    }
-    return { ...counts, total: queued.length };
-};
-
-// Stage 5: remove the now-redundant legacy arrays. Run ONLY after the app + rules are fully on
-// links and verified. Idempotent.
-export const dropLegacyArrays = async (): Promise<number> => {
-    let n = 0;
-    const clear = async (coll: typeof lifetreesCollection, fields: string[]) => {
-        const docs = (await getDocs(coll)).docs.filter(d => fields.some(f => (d.data() as Record<string, unknown>)[f] !== undefined));
-        for (let i = 0; i < docs.length; i += 400) {
-            const batch = writeBatch(db);
-            docs.slice(i, i + 400).forEach(d => { const upd: Record<string, ReturnType<typeof deleteField>> = {}; fields.forEach(f => (upd[f] = deleteField())); batch.update(d.ref, upd); });
-            await batch.commit();
-            n += Math.min(400, docs.length - i);
-        }
-    };
-    await clear(lifetreesCollection, ['guardians', 'coOwnerIds', 'stewardIds', 'observerIds']);
-    await clear(communitiesCollection, ['memberIds']);
-    await clear(visionsCollection, ['joinedUserIds']);
-    return n;
-};
 
 // The twin awakens: initialise a genesis chain on every existing vision that lacks one, so the
 // idea-twin can grow its own contribution chain (the 2026-07-17 ring). ADDITIVE ONLY — no field
@@ -528,7 +476,7 @@ const communityTreeInvitesCollection = collection(db, 'communityTreeInvites');
 
 export const inviteTreeToCommunity = async (params: {
     communityId: string; communityName: string;
-    lifetreeId: string; lifetreeName: string; treeOwnerId: string;
+    lifetreeId: string; lifetreeName: string; treeAnchorUid: string;
     invitedByUserId: string;
 }): Promise<string> => {
     // One pending invite per tree+community.
@@ -543,7 +491,7 @@ export const inviteTreeToCommunity = async (params: {
     const ref = await addDoc(communityTreeInvitesCollection, {
         communityId: params.communityId, communityName: params.communityName,
         lifetreeId: params.lifetreeId, lifetreeName: params.lifetreeName,
-        invitedUserId: params.treeOwnerId, invitedByUserId: params.invitedByUserId,
+        invitedUserId: params.treeAnchorUid, invitedByUserId: params.invitedByUserId,
         status: 'pending', createdAt: serverTimestamp(),
     });
     return ref.id;
@@ -584,9 +532,9 @@ export interface KeeperInvite {
 
 // The circle as stored: the anchor plus every keeper link, distinct, anchor first
 // (mirrors domain/keeperCircle.keepersOf on live links).
-export const keepersOfCommunity = async (community: Pick<Community, 'id' | 'ownerId'>): Promise<string[]> => {
+export const keepersOfCommunity = async (community: Pick<Community, 'id' | 'anchorUid'>): Promise<string[]> => {
     const links = await firestoreStore.linksTo(community.id, 'keeper');
-    const out = [community.ownerId];
+    const out = [community.anchorUid];
     for (const l of links) if (l.from && !out.includes(l.from)) out.push(l.from);
     return out;
 };
@@ -626,7 +574,7 @@ export const fetchKeeperRequests = (targetId: string) =>
 export const declineKeeperRequest = (requesterUid: string, targetId: string) =>
     firestoreStore.unlink(requesterUid, 'keeper_request', targetId);
 
-// The three server hands — the ONLY writers of keeper links and the ownerId anchor.
+// The three server hands — the ONLY writers of keeper links and the anchorUid anchor.
 export const acceptKeeperInvite = async (inviteId: string): Promise<{ communityId: string }> =>
     (await httpsCallable(functions, 'acceptKeeperInvite')({ inviteId })).data as { communityId: string };
 // A tree's keeper steps down (functions/resignTreeKeeper): a link holder simply leaves; the

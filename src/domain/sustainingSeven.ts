@@ -48,7 +48,7 @@ const isGuardedTree = (t: Pick<Lifetree, 'treeType' | 'isNature'>): boolean =>
   t.treeType === 'GUARDED' || (!t.treeType && t.isNature === true);
 
 const plantedBy = (t: Lifetree, uid: string): boolean =>
-  !isBedTree(t) && !isGuardedTree(t) && t.ownerId === uid;
+  !isBedTree(t) && !isGuardedTree(t) && t.anchorUid === uid;
 
 const toMs = (t: any): number => (t?.toMillis ? t.toMillis() : 0);
 

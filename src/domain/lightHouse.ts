@@ -48,7 +48,7 @@ export interface LightHouse extends Being {
   shortTitle?: string;
   body: string;
   imageUrl?: string;
-  ownerId?: string;        // who consecrated it (rules: owner or staff may edit)
+  anchorUid?: string;        // the anchor — who consecrated it (rules: the anchor or staff may edit)
   kind?: string;           // temple | ashram | sanctuary | a kind minted later (see LIGHT_HOUSE_KINDS)
   lastCaredAt?: Stamp;     // refreshed by every care pulse (consecration, step-in, plain care)
   domain?: string;         // the domain it is rooted in (map + tab scoping)
@@ -77,14 +77,14 @@ export const lightHouseVisibility = (s: Pick<LightHouse, 'visibility'>): LightHo
 // `homes` = the communities sheltering this lightHouse, read from its LIN edges
 // (lightHouse __shelters__ community); when absent, the primary communityId stands alone.
 export function canViewLightHouse(
-  s: Pick<LightHouse, 'visibility' | 'ownerId' | 'communityId'>,
+  s: Pick<LightHouse, 'visibility' | 'anchorUid' | 'communityId'>,
   viewer: { uid?: string; isStaff?: boolean; memberCommunityIds?: Set<string> },
   homes?: string[],
 ): boolean {
   const v = lightHouseVisibility(s);
   if (v === 'public') return true;
   if (viewer.isStaff) return true;
-  if (viewer.uid && s.ownerId === viewer.uid) return true;
+  if (viewer.uid && s.anchorUid === viewer.uid) return true;
   if (v === 'node') return !!viewer.uid;
   const circle = homes?.length ? homes : (s.communityId ? [s.communityId] : []);
   return !!viewer.uid && circle.some(id => viewer.memberCommunityIds?.has(id));

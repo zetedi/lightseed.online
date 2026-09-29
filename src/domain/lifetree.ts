@@ -18,7 +18,7 @@ export interface Lifetree extends Being {
   plantedLongitude?: number;
   plantedAltitudeM?: number;
   id: string;
-  ownerId: string; // canonical owner — load-bearing (rules + queries)
+  anchorUid: string; // THE ANCHOR (ring 2026-09-30): the keeper seat that is never empty — load-bearing (rules + queries); a keeper like the others on every face
   name: string;
   shortTitle?: string;
   body: string; // the tree's vision text (canonical)

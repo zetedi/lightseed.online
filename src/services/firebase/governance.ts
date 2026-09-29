@@ -293,7 +293,7 @@ const isDecisionMember = async (communityId: string, uid: string): Promise<boole
   const linkSnap = await getDoc(doc(db, 'links', `${uid}__member__${communityId}`));
   if (linkSnap.exists()) return true;
   const comSnap = await getDoc(doc(db, 'communities', communityId));
-  return comSnap.exists() && (comSnap.data() as DocumentData).ownerId === uid;
+  return comSnap.exists() && (comSnap.data() as DocumentData).anchorUid === uid;
 };
 
 // ── Migration (BUILT, NOT RUN) ─────────────────────────────────────────────────────────────────────

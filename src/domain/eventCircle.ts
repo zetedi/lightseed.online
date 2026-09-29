@@ -63,8 +63,7 @@ export const eventCircleName = (chosen: string | null | undefined, eventTitle: u
 export interface EventCircleDraft {
   name: string;
   rootEventId: string;
-  founderUserId: string;
-  ownerId: string;
+  anchorUid: string;
   formation: 'event';
   visibility: 'invited';
   domain: '';
@@ -79,8 +78,7 @@ export const eventCircleDraft = (p: {
 }): EventCircleDraft => ({
   name: eventCircleName(p.name, p.eventTitle),
   rootEventId: p.eventId,
-  founderUserId: p.formerUid,
-  ownerId: p.formerUid,
+  anchorUid: p.formerUid,
   formation: 'event',
   visibility: 'invited',
   domain: '',
@@ -90,5 +88,5 @@ export const eventCircleDraft = (p: {
 });
 
 // Who becomes a member: the former, and the owner of every participating tree — each once.
-export const eventCircleMemberUids = (formerUid: string, treeOwnerUids: readonly (string | null | undefined)[]): string[] =>
-  Array.from(new Set([formerUid, ...treeOwnerUids.filter((u): u is string => typeof u === 'string' && u !== '')]));
+export const eventCircleMemberUids = (formerUid: string, treeAnchorUids: readonly (string | null | undefined)[]): string[] =>
+  Array.from(new Set([formerUid, ...treeAnchorUids.filter((u): u is string => typeof u === 'string' && u !== '')]));

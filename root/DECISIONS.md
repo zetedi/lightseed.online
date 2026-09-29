@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-30 · The anchor, not the owner** — Zoltán: "I'd like the ownerId field to fade out
+also." The last "owner" left the model. THE FIELD: the kept beings — lifetrees, communities,
+Light Houses — carry `anchorUid`: the one keeper seat that is never empty, the place the
+never-keeperless invariant lives, naming no rank (who planted or founded is the history's — the
+planting block, the genesis, the anchor field itself when the record is read). The made things
+— intelligences, memories — carry `authorId`, the word visions and pulses already use. Two
+aliases retired: `founderUserId` (circles already have formedBy; the founder is the anchor's
+history) and `credentialOwnerId` → `credentialHolderUid` (and the server-only provider
+credentials' `ownerId` → `holderId`: a key has a holder, not an owner). THE WORD: every
+identifier and dictionary key that carried "owner" followed — isCommunityOwner → keepsCommunity,
+isOwner → isAnchor, the reach and guard keys, the node's "owner" chips now "node keeper" — and
+the dead legacy-array migration that still named coOwnerIds was deleted rather than renamed.
+What stays: the reach audience token 'owners' (sealed into block hashes, labelled Keepers), and
+the rings, which are history. THE MOVE, without a legacy read: scripts/anchor-not-owner.mjs
+writes the new field beside the old on 50 documents (--write), the three lifetree indexes are
+declared on anchorUid and built, rules → functions → hosting deploy reading only the new names,
+then --strip adds the new field to anything born in between and removes the old. LIN's
+language gains *anchor*. NOT GUARANTEED: a document born by a stale bundle between the deploy
+and the strip is caught by the strip's own first pass — but a stale bundle's OTHER writes (an
+old client editing a tree) are refused by the rules until it reloads, as with every field the
+rules name.
+
+---
+
 **2026-09-29 · A tree is kept, not owned** — Zoltán: "change Owner to First keeper. Change
 co-owner to co-keeper. We can't own a life I believe." THE WORDS, in every tongue: the tree's
 first hand is its FIRST KEEPER (ownerId in the data — the field name stays, a rename there is a

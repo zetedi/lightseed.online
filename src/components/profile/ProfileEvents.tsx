@@ -31,7 +31,7 @@ export const ProfileEvents: React.FC<ProfileEventsProps> = ({ uid, name, photo, 
     <EventsSection
       scope="personal"
       canEdit
-      scopeOwnerId={uid}
+      scopeAnchorUid={uid}
       currentUserId={uid}
       currentUserName={publicName || name}
       currentUserPhoto={photo}

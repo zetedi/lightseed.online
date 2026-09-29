@@ -60,7 +60,7 @@ export const releasePicture = onCall({ cors: true }, async (request) => {
         const snap = await db.collection("communities").doc(release.holder.id).get();
         holderDoc = snap.exists ? (snap.data() as Record<string, unknown>) : null;
         const keeperLink = await db.collection("links").doc(`${uid}__keeper__${release.holder.id}`).get();
-        const may = (holderDoc?.ownerId === uid) || keeperLink.exists || (await isStaffUid(uid));
+        const may = (holderDoc?.anchorUid === uid) || keeperLink.exists || (await isStaffUid(uid));
         if (!may) throw new HttpsError("permission-denied", "picture_not_yours");
     } else {
         if (release.holder.uid !== uid && !(await isStaffUid(uid))) throw new HttpsError("permission-denied", "picture_not_yours");

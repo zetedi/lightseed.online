@@ -77,9 +77,9 @@ function initAdmin() {
   return PROJECT_ID;
 }
 
-async function findCommunityOwner(db, domain) {
+async function findCommunityAnchor(db, domain) {
   const snap = await db.collection('communities').where('domain', '==', domain).limit(1).get();
-  return snap.empty ? null : (snap.docs[0].data().ownerId || null);
+  return snap.empty ? null : (snap.docs[0].data().anchorUid || null);
 }
 
 async function run() {
@@ -94,13 +94,13 @@ async function run() {
   // Phoenix — the first lifetree. ONE being, rooted on the hub (the first domain).
   const hubDomain = DOMAINS[0];
   const hubSlug = hubDomain.replace(/[^a-z0-9]/gi, '-');
-  const hubOwnerId = (await findCommunityOwner(db, hubDomain)) || 'GENESIS_SYSTEM';
+  const hubAnchorUid = (await findCommunityAnchor(db, hubDomain)) || 'GENESIS_SYSTEM';
   await db.collection('lifetrees').doc(`phoenix-${hubSlug}`).set({
     name: 'Phoenix',
     shortTitle: 'The First Living Lifetree',
     body: PHOENIX_BODY,
     imageUrl: '/phoenix.webp',
-    domain: hubDomain, ownerId: hubOwnerId,
+    domain: hubDomain, anchorUid: hubAnchorUid,
     isNature: true,
     validated: true,
     validatorId: 'SYSTEM',
@@ -108,11 +108,11 @@ async function run() {
     genesisHash: 'PHOENIX', latestHash: 'PHOENIX', blockHeight: 0,
     createdAt: plantedAt,
   }, { merge: true });
-  console.log(`✓ ${hubDomain}  →  lifetrees/phoenix-${hubSlug}  (owner: ${hubOwnerId})`);
+  console.log(`✓ ${hubDomain}  →  lifetrees/phoenix-${hubSlug}  (owner: ${hubAnchorUid})`);
 
   for (const domain of DOMAINS) {
     const slug = domain.replace(/[^a-z0-9]/gi, '-');
-    const ownerId = (await findCommunityOwner(db, domain)) || 'GENESIS_SYSTEM';
+    const anchorUid = (await findCommunityAnchor(db, domain)) || 'GENESIS_SYSTEM';
 
     // Remove the per-domain Phoenix duplicates the old seeding minted (all but the hub's).
     if (slug !== hubSlug) {
@@ -129,12 +129,12 @@ async function run() {
       shortTitle: 'Sacred Platform',
       body: SECRET_SUN_BODY,
       imageUrl: '/tss.webp',
-      domain, ownerId,
+      domain, anchorUid,
       latitude: 44.0606, longitude: 1.9536, locationName: 'Hridaya, France',
       createdAt: plantedAt,
     }, { merge: true });
 
-    console.log(`✓ ${domain}  →  lightHouses/secret-sun-${slug}  (owner: ${ownerId})`);
+    console.log(`✓ ${domain}  →  lightHouses/secret-sun-${slug}  (owner: ${anchorUid})`);
   }
 
   console.log('\nDone. One Phoenix under "First Tree"; The Secret Sun under "The Light House".');

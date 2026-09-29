@@ -98,7 +98,7 @@ const runText = async (prompt: string, opts?: { json?: boolean; intelligenceId?:
             if (intel && intel.enabled !== false && intel.provider !== 'google') {
                 const persona = opts?.persona ?? (intel.personaId ? await getPersona(intel.personaId) : null);
                 const reply = await sendIntelligenceMessage(
-                    { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId },
+                    { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialHolderUid: intel.credentialHolderUid },
                     [{ role: 'user', text: prompt }],
                     { persona },
                 );
@@ -227,7 +227,7 @@ export const sendMessageToOracle = async (
     {
       const intel = await getIntelligence(idToUse).catch(() => null);
       if (intel && intel.enabled !== false) {
-        ref = { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId };
+        ref = { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialHolderUid: intel.credentialHolderUid };
         if (intel.personaId) {
           const p = await getPersona(intel.personaId);
           if (p) persona = p;
@@ -270,7 +270,7 @@ export const testIntelligenceConnection = async (intelligenceId?: string): Promi
     const intel = await getIntelligence(intelligenceId);
     if (!intel) throw new Error('err_intelligence_not_found');
     if (intel.enabled === false) throw new Error('err_intelligence_disabled');
-    ref = { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId };
+    ref = { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialHolderUid: intel.credentialHolderUid };
     if (intel.personaId) {
       const p = await getPersona(intel.personaId);
       if (p) persona = p;
@@ -305,7 +305,7 @@ export const sendMessageToTree = async (message: string, history: {role: 'user' 
         if (intel && intel.enabled !== false && intel.provider !== 'google') {
             const persona: Persona = { id: 'tree-voice', name: tree.name, description: '', systemPrompt: systemInstruction };
             const reply = await sendIntelligenceMessage(
-                { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialOwnerId: intel.credentialOwnerId },
+                { provider: intel.provider, model: intel.model, credentialScope: intel.credentialScope, credentialHolderUid: intel.credentialHolderUid },
                 [...history, { role: 'user' as const, text: message }],
                 { persona },
             );
@@ -377,7 +377,7 @@ Return ONLY a JSON object, no prose, no markdown:
                 messages: [{ role: 'user', text: prompt, image: { mimeType: image.mimeType, data: image.data } }],
                 model: intel.model || 'claude-sonnet-5',
                 credential: intel.credentialScope && intel.credentialScope !== 'node'
-                    ? { scope: intel.credentialScope, ownerId: intel.credentialOwnerId }
+                    ? { scope: intel.credentialScope, anchorUid: intel.credentialHolderUid }
                     : undefined,
             });
             const parsed = parseJsonObject<WateringAnalysis>((res.data as { text?: string } | undefined)?.text || '');

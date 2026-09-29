@@ -27,7 +27,7 @@ export const requestStay = async (
         guestTreeId: guest.tree?.id || '',
         guestTreeName: guest.tree?.name || '',
         guestTreeGrowthUrl: guest.tree?.growthUrl || '',
-        hostUid: bed.ownerId, // the rules verify this equals the bed's ownerId
+        hostUid: bed.anchorUid, // the rules verify this equals the bed's anchorUid
         fromDate: draft.fromDate,
         toDate: draft.toDate,
         nights: nightsBetween(draft.fromDate, draft.toDate),

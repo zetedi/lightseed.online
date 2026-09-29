@@ -33,10 +33,10 @@ const countBedsInHouse = async (houseId: string): Promise<number> => {
 
 // LOOSE beds: the field may be absent or '', so count the keeper's beds and keep only
 // the houseless ones.
-const countLooseBedsOfKeeper = async (ownerId: string): Promise<number> => {
+const countLooseBedsOfKeeper = async (anchorUid: string): Promise<number> => {
     const mine = await db.collection("lifetrees")
         .where("treeType", "==", "BED")
-        .where("ownerId", "==", ownerId)
+        .where("anchorUid", "==", anchorUid)
         .get();
     return mine.docs.filter((d) => !d.data().lightHouseId).length;
 };
@@ -45,10 +45,10 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
     const snap = event.data;
     if (!snap) return;
     const tree = snap.data() as any;
-    const ownerId = tree.ownerId as string;
-    if (!ownerId || ownerId === "GENESIS_SYSTEM") return;
+    const anchorUid = tree.anchorUid as string;
+    if (!anchorUid || anchorUid === "GENESIS_SYSTEM") return;
     try {
-        if (await isStaffUid(ownerId)) return;
+        if (await isStaffUid(anchorUid)) return;
 
         const isBedTree = (t: any) => t.treeType === "BED";
 
@@ -63,10 +63,10 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
         if (isBedTree(tree)) {
             const houseId = String(tree.lightHouseId ?? "");
             if (houseId === "") {
-                const loose = await countLooseBedsOfKeeper(ownerId);
+                const loose = await countLooseBedsOfKeeper(anchorUid);
                 if (loose > MAX_LOOSE_BEDS_PER_KEEPER) {
                     await snap.ref.delete();
-                    console.warn(`Loose-bed cap enforced: uprooted ${snap.id} (keeper ${ownerId}, ${loose} loose beds vs ${MAX_LOOSE_BEDS_PER_KEEPER}).`);
+                    console.warn(`Loose-bed cap enforced: uprooted ${snap.id} (keeper ${anchorUid}, ${loose} loose beds vs ${MAX_LOOSE_BEDS_PER_KEEPER}).`);
                 }
                 return;
             }
@@ -80,7 +80,7 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
 
         const [limitsSnap, mine] = await Promise.all([
             db.collection("config").doc("limits").get(),
-            db.collection("lifetrees").where("ownerId", "==", ownerId).get(),
+            db.collection("lifetrees").where("anchorUid", "==", anchorUid).get(),
         ]);
         const num = (v: any, fallback: number) => {
             const n = Number(v);
@@ -98,7 +98,7 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
         if (!over) return;
 
         await snap.ref.delete();
-        console.warn(`Planting cap enforced: uprooted ${snap.id} (owner ${ownerId}, ${lifetrees} lifetrees / ${guarded} guarded vs ${maxLifetrees}/${maxGuardedTrees}).`);
+        console.warn(`Planting cap enforced: uprooted ${snap.id} (owner ${anchorUid}, ${lifetrees} lifetrees / ${guarded} guarded vs ${maxLifetrees}/${maxGuardedTrees}).`);
     } catch (e) {
         console.error(`Planting cap check failed for ${snap.id}:`, e);
     }
@@ -125,14 +125,14 @@ export const onBedHomeMoved = onDocumentUpdated("lifetrees/{treeId}", async (eve
     const afterHouse = String(after.lightHouseId ?? "");
     if (beforeHouse === afterHouse) return; // no home-move — nothing to guard
 
-    const ownerId = String(after.ownerId ?? "");
-    if (!ownerId || ownerId === "GENESIS_SYSTEM") return;
+    const anchorUid = String(after.anchorUid ?? "");
+    if (!anchorUid || anchorUid === "GENESIS_SYSTEM") return;
     try {
-        if (await isStaffUid(ownerId)) return; // staff stay exempt, mirroring every quota
+        if (await isStaffUid(anchorUid)) return; // staff stay exempt, mirroring every quota
 
         // Is the DESTINATION over its ceiling, with this bed now counted inside it?
         const overCap = afterHouse === ""
-            ? (await countLooseBedsOfKeeper(ownerId)) > MAX_LOOSE_BEDS_PER_KEEPER
+            ? (await countLooseBedsOfKeeper(anchorUid)) > MAX_LOOSE_BEDS_PER_KEEPER
             : (await countBedsInHouse(afterHouse)) > MAX_BEDS_PER_LIGHT_HOUSE;
         if (!overCap) return;
 
@@ -143,12 +143,12 @@ export const onBedHomeMoved = onDocumentUpdated("lifetrees/{treeId}", async (eve
         if (afterHouse === "" && sourceWouldBreach) {
             // Both homes breach and the bed already stands loose: leave it under open
             // stars and say so — a write would only ping-pong between two full homes.
-            console.warn(`Bed cap: both homes of ${event.params.treeId} breach; left loose (keeper ${ownerId}).`);
+            console.warn(`Bed cap: both homes of ${event.params.treeId} breach; left loose (keeper ${anchorUid}).`);
             return;
         }
         const revertTo = sourceWouldBreach ? "" : beforeHouse;
         await event.data!.after.ref.update({ lightHouseId: revertTo });
-        console.warn(`Bed cap enforced on home-move: ${event.params.treeId} sent home to ${revertTo === "" ? "the open stars (loose)" : revertTo} — destination ${afterHouse === "" ? "loose" : afterHouse} is over its ceiling (keeper ${ownerId}).`);
+        console.warn(`Bed cap enforced on home-move: ${event.params.treeId} sent home to ${revertTo === "" ? "the open stars (loose)" : revertTo} — destination ${afterHouse === "" ? "loose" : afterHouse} is over its ceiling (keeper ${anchorUid}).`);
     } catch (e) {
         console.error(`Bed home-move cap check failed for ${event.params.treeId}:`, e);
     }

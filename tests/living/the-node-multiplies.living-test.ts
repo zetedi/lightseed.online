@@ -53,7 +53,7 @@ const plant = async (p: Persona, name: string, over: Record<string, unknown> = {
   const genesisHash = await createBlock('0', { msg: 'Birth' }, Date.now());
   const ref = doc(collection(p.db, 'lifetrees'));
   await setDoc(ref, {
-    lid: uuidv7(), ownerId: p.uid, name, domain: DOMAIN, visibility: 'public',
+    lid: uuidv7(), anchorUid: p.uid, name, domain: DOMAIN, visibility: 'public',
     treeType: 'LIFETREE', onlyValidatedCanReach: false,
     createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
     validated: false, validatorId: null, status: 'HEALTHY', loveCount: 0,
@@ -287,7 +287,7 @@ describe('the Grove — the living path, walked in parallel', () => {
   it('a community forms; the door is knocked, opened, and stepped through', async () => {
     const cRef = doc(collection(ana.db, 'communities'));
     await setDoc(cRef, {
-      lid: uuidv7(), ownerId: ana.uid, name: 'Grove Circle', domain: 'grove.demo',
+      lid: uuidv7(), anchorUid: ana.uid, name: 'Grove Circle', domain: 'grove.demo',
       door: 'invite', visibility: 'public', loveCount: 0, createdAt: serverTimestamp(),
     });
     ids.community = cRef.id;
@@ -342,14 +342,14 @@ describe('the Grove — the living path, walked in parallel', () => {
     // The anchor resigns; the longest-standing keeper inherits; never keeperless.
     const res = (await httpsCallable(ana.fns, 'resignKeeper')({ communityId: ids.community })).data as any;
     expect(res.successor).toBe(chen.uid);
-    expect(((await getDoc(doc(chen.db, 'communities', ids.community))).data() as any).ownerId).toBe(chen.uid);
+    expect(((await getDoc(doc(chen.db, 'communities', ids.community))).data() as any).anchorUid).toBe(chen.uid);
     expect((await adminDbA().doc(`links/${bakr.uid}__keeper__${ids.community}`).get()).exists).toBe(true);
   });
 
   it('a light house is consecrated, rooted in a mother tree; a bed hosts a REAL stay', async () => {
     const lhRef = doc(collection(ana.db, 'lightHouses'));
     await setDoc(lhRef, {
-      lid: uuidv7(), ownerId: ana.uid, name: 'The First Hearth', visibility: 'public',
+      lid: uuidv7(), anchorUid: ana.uid, name: 'The First Hearth', visibility: 'public',
       loveCount: 0, createdAt: serverTimestamp(),
     });
     ids.lightHouse = lhRef.id;
@@ -361,7 +361,7 @@ describe('the Grove — the living path, walked in parallel', () => {
     const bedRef = doc(collection(ana.db, 'lifetrees'));
     const bedGenesis = await createBlock('0', { msg: 'Birth' }, Date.now());
     await setDoc(bedRef, {
-      lid: uuidv7(), ownerId: ana.uid, name: 'Cedar Bed', domain: '', lightHouseId: ids.lightHouse,
+      lid: uuidv7(), anchorUid: ana.uid, name: 'Cedar Bed', domain: '', lightHouseId: ids.lightHouse,
       treeType: 'BED', visibility: 'node', createdAt: serverTimestamp(),
       genesisHash: bedGenesis, latestHash: bedGenesis, blockHeight: 0,
       validated: false, validatorId: null, status: 'HEALTHY', loveCount: 0,
@@ -409,7 +409,7 @@ describe('the Grove — the living path, walked in parallel', () => {
     const circle = (await getDoc(doc(bakr.db, 'communities', formed.communityId))).data() as Record<string, unknown>;
     expect(circle.formation).toBe('event');
     expect(circle.rootEventId).toBe(ids.event);
-    expect(circle.ownerId).toBe(bakr.uid);
+    expect(circle.anchorUid).toBe(bakr.uid);
     expect(circle.domain).toBe('');
     expect(circle.bornOn).toBe(DOMAIN);
     // Members and trees are links, server-minted; the event remembers its circle.
@@ -495,7 +495,7 @@ describe('the Grove — the living path, walked in parallel', () => {
     const res = (await httpsCallable<{ treeId: string }, { resigned: string; successor: string | null }>(ana.fns, 'resignTreeKeeper')({ treeId: ids.treeAna })).data;
     expect(res).toEqual({ resigned: ana.uid, successor: chen.uid });
     const tree = (await getDoc(doc(chen.db, 'lifetrees', ids.treeAna))).data() as any;
-    expect(tree.ownerId).toBe(chen.uid);
+    expect(tree.anchorUid).toBe(chen.uid);
     expect((await adminDbA().doc(`links/${chen.uid}__keeper__${ids.treeAna}`).get()).exists).toBe(false);
     await expect(httpsCallable(chen.fns, 'resignTreeKeeper')({ treeId: ids.treeAna })).rejects.toThrow(/tree_last_keeper/);
   });

@@ -24,7 +24,7 @@
 export interface SubgraphNode {
   id: string;              // the being's id (any kind: tree, vision, community, offering…)
   kind: string;            // 'tree' | 'vision' | 'community' | 'pulse' | 'lightHouse' | …
-  ownerUid?: string | null; // the person it belongs to; null/absent = ownerless (see contract)
+  anchorUid?: string | null; // the person who anchors it; null/absent = anchorless (see contract)
 }
 
 export interface SubgraphEdge {
@@ -34,7 +34,7 @@ export interface SubgraphEdge {
 }
 
 export interface WalkedBeing extends SubgraphNode {
-  distance: number;        // person-crossings from the start being's owner (0 = same owner)
+  distance: number;        // person-crossings from the start being's anchor (0 = same anchor)
   // The step that first reached this being at its minimal distance — parent pointers, so
   // a path (the reach-through-connections provenance of a later rung) can be rebuilt.
   via?: { beingId: string; rel: string };
@@ -69,7 +69,7 @@ export function subgraphOf(
   // Crossing cost: 0 inside one person's cluster; 1 onto another person's being.
   // An ownerless being is ALWAYS a crossing (conservative — see the contract).
   const crossCost = (a: SubgraphNode, b: SubgraphNode): 0 | 1 =>
-    (a.ownerUid && b.ownerUid && a.ownerUid === b.ownerUid) ? 0 : 1;
+    (a.anchorUid && b.anchorUid && a.anchorUid === b.anchorUid) ? 0 : 1;
 
   // 0-1 BFS: a deque where cost-0 steps go to the front, cost-1 to the back — every being
   // settles at its minimal person distance without a full priority queue.

@@ -43,7 +43,7 @@ export function defaultVisibility(_scope: PulseScope): PulseVisibility {
 export interface Viewer {
   uid?: string | null;
   isStaff?: boolean;
-  communityIds?: string[];   // communities the viewer belongs to (member or owner)
+  communityIds?: string[];   // communities the viewer belongs to (member or anchor)
   guardedTreeIds?: string[]; // trees the viewer guards, owns or stewards
 }
 
@@ -101,11 +101,11 @@ export function mergeAuthored<T extends { id: string }>(
 export function eventFeedScope(
   viewer: Viewer,
   host: { reflectsPublic?: boolean | null; strictScope?: boolean | null },
-): { levels: PulseVisibility[]; ownerUid: string | undefined } {
+): { levels: PulseVisibility[]; anchorUid: string | undefined } {
   const reflects = reflectsInstancePublic(host.reflectsPublic);
   return {
     levels: reflects ? queryableLevels({}) : queryableLevels(viewer),
-    ownerUid: ownMergeUid(viewer.uid, host),
+    anchorUid: ownMergeUid(viewer.uid, host),
   };
 }
 
@@ -208,6 +208,6 @@ export function canEditEvent(
   if (!viewer.uid) return false;
   if (viewer.isStaff) return true;
   if (event.authorId === viewer.uid) return true;                  // the creator
-  if (event.communityId) return ctx?.community?.ownerId === viewer.uid; // community admin
-  return ctx?.hostCommunity?.ownerId === viewer.uid;               // node owner
+  if (event.communityId) return ctx?.community?.anchorUid === viewer.uid; // community admin
+  return ctx?.hostCommunity?.anchorUid === viewer.uid;               // the node's anchor
 }

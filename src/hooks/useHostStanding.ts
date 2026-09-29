@@ -13,7 +13,7 @@ import type { HostStanding } from '../domain/pulseVisibility';
 export function useHostStanding(uid: string | undefined, host: Community | null | undefined): HostStanding {
   const [standing, setStanding] = useState<HostStanding>({ member: false, keeper: false });
   const hostId = host?.id;
-  const ownerId = host?.ownerId;
+  const anchorUid = host?.anchorUid;
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout (or no host) before the async reads below, the shell's own convention
     if (!uid || !hostId) { setStanding({ member: false, keeper: false }); return; }
@@ -22,9 +22,9 @@ export function useHostStanding(uid: string | undefined, host: Community | null 
       getDoc(doc(db, 'links', linkId(uid, 'member', hostId))).then(s => s.exists()).catch(() => false),
       getDoc(doc(db, 'links', linkId(uid, 'keeper', hostId))).then(s => s.exists()).catch(() => false),
     ]).then(([member, keeperLink]) => {
-      if (alive) setStanding({ member: member || keeperLink || ownerId === uid, keeper: keeperLink || ownerId === uid });
+      if (alive) setStanding({ member: member || keeperLink || anchorUid === uid, keeper: keeperLink || anchorUid === uid });
     });
     return () => { alive = false; };
-  }, [uid, hostId, ownerId]);
+  }, [uid, hostId, anchorUid]);
   return standing;
 }

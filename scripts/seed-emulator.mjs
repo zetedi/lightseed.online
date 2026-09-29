@@ -60,7 +60,7 @@ batch.set(db.doc(`users/${demoUid}`), { uid: demoUid, email: 'gardener@demo.loca
 // A community with an open door.
 const com = db.collection('communities').doc();
 batch.set(com, {
-  lid: uuidv7(), ownerId: demoUid, name: 'Riverside Grove', domain: 'grove.local',
+  lid: uuidv7(), anchorUid: demoUid, name: 'Riverside Grove', domain: 'grove.local',
   papers: [{ key: 'vision', title: '', html: 'A small grove by the river where every tree is known by name.' }],
   door: 'open', reflectsPublic: false, createdAt: now, updatedAt: now, loveCount: 0,
 });
@@ -76,7 +76,7 @@ for (const t of trees) {
   const ref = db.collection('lifetrees').doc();
   treeIds.push(ref.id);
   batch.set(ref, {
-    lid: uuidv7(), ownerId: demoUid, name: t.name, body: t.body,
+    lid: uuidv7(), anchorUid: demoUid, name: t.name, body: t.body,
     latitude: t.lat, longitude: t.lng, locationName: 'Demo grove',
     communityId: com.id, visibility: 'public', validated: false, validatorId: null,
     genesisHash: 'demo', latestHash: 'demo', blockHeight: 0, status: 'HEALTHY',

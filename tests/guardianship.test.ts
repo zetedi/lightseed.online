@@ -7,7 +7,7 @@ import { guardianAnswerOutcome as sGuardianAnswerOutcome, isLivingLifetree as sI
 
 // Guardians of light (ring 2026-09-09): validation as a relationship, light through a human hand.
 const DAY = 24 * 3600 * 1000;
-const tree = { id: 'oak', ownerId: 'ana', treeType: 'LIFETREE', diedAtMs: null, lastCaredAtMs: 0 };
+const tree = { id: 'oak', anchorUid: 'ana', treeType: 'LIFETREE', diedAtMs: null, lastCaredAtMs: 0 };
 const ask = (over: Partial<Parameters<typeof guardianRequestRefusal>[0]> = {}) => guardianRequestRefusal({
   askerUid: 'ana', tree, invitee: { uid: 'bo', ownsLivingLifetree: true }, alreadyGuardian: false, pendingRequest: false, ...over,
 });
@@ -17,7 +17,7 @@ describe('guardianRequestRefusal — who may be asked, by whom', () => {
     expect(ask()).toBeNull();
   });
   it('names each refusal by a domain key', () => {
-    expect(ask({ askerUid: 'mallory' })).toBe('guard_not_owner');
+    expect(ask({ askerUid: 'mallory' })).toBe('guard_not_keeper');
     expect(ask({ tree: { ...tree, treeType: 'BED' } })).toBe('guard_not_lifetree');
     expect(ask({ tree: { ...tree, isNature: true } })).toBe('guard_not_lifetree');
     expect(ask({ tree: { ...tree, diedAtMs: 1 } })).toBe('guard_tree_dead');
@@ -25,7 +25,7 @@ describe('guardianRequestRefusal — who may be asked, by whom', () => {
     expect(ask({ invitee: { uid: 'bo', ownsLivingLifetree: false } })).toBe('guard_no_living_tree');
     expect(ask({ alreadyGuardian: true })).toBe('guard_already');
     expect(ask({ pendingRequest: true })).toBe('guard_pending');
-    for (const k of ['guard_not_owner', 'guard_not_lifetree', 'guard_tree_dead', 'guard_self', 'guard_no_living_tree', 'guard_already', 'guard_pending', 'guard_ask', 'guard_accept', 'guard_decline'] as const) expect(DOMAIN_KEYS).toContain(k);
+    for (const k of ['guard_not_keeper', 'guard_not_lifetree', 'guard_tree_dead', 'guard_self', 'guard_no_living_tree', 'guard_already', 'guard_pending', 'guard_ask', 'guard_accept', 'guard_decline'] as const) expect(DOMAIN_KEYS).toContain(k);
   });
 });
 

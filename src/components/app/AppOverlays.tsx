@@ -146,8 +146,8 @@ export const AppOverlays: React.FC<{
             // detail comes to the foreground (selectedTree renders in-flow, beneath the
             // fixed DetailWrapper — without this it opens in the background).
             onViewTree={(tr) => { setViewingLightHouse(null); setSelectedTree(tr); }}
-            canEdit={isSuperAdmin || isAdmin || viewingLightHouse.ownerId === lightseed?.uid}
-            editIsStaffOnly={viewingLightHouse.ownerId !== lightseed?.uid && (isSuperAdmin || isAdmin)}
+            canEdit={isSuperAdmin || isAdmin || viewingLightHouse.anchorUid === lightseed?.uid}
+            editIsStaffOnly={viewingLightHouse.anchorUid !== lightseed?.uid && (isSuperAdmin || isAdmin)}
             onDelete={async (id) => {
               await deleteLightHouse(id);
               setViewingLightHouse(null);

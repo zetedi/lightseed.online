@@ -56,17 +56,17 @@ const seed = async () => {
       initiatorPulseId: 'p1', targetPulseId: 'p2',
       status: 'PENDING', messages: [],
     });
-    await setDoc(doc(d, 'lifetrees', 'treeB'), { ownerId: BOB, name: 'Bobs tree', validated: false, validatorId: null, loveCount: 0 });
+    await setDoc(doc(d, 'lifetrees', 'treeB'), { anchorUid: BOB, name: 'Bobs tree', validated: false, validatorId: null, loveCount: 0 });
     await setDoc(doc(d, 'initiates', ALICE), { handle: 'alice', name: 'Alice', lid: 'x', pubkey: 'y', initiatedAt: '2026-07-07' });
-    await setDoc(doc(d, 'communities', 'com1'), { ownerId: ALICE, name: 'Com', domain: 'com.online', loveCount: 0 });
-    await setDoc(doc(d, 'lightHouses', 'lh1'), { ownerId: ALICE, name: 'The Hearth', lid: 'lh1-lid', visibility: 'public', loveCount: 0 });
-    await setDoc(doc(d, 'lifetrees', 'bedStay'), { ownerId: ALICE, name: 'Cedar', treeType: 'BED', lightHouseId: 'lh1', visibility: 'node', validated: false, validatorId: null, loveCount: 0 });
+    await setDoc(doc(d, 'communities', 'com1'), { anchorUid: ALICE, name: 'Com', domain: 'com.online', loveCount: 0 });
+    await setDoc(doc(d, 'lightHouses', 'lh1'), { anchorUid: ALICE, name: 'The Hearth', lid: 'lh1-lid', visibility: 'public', loveCount: 0 });
+    await setDoc(doc(d, 'lifetrees', 'bedStay'), { anchorUid: ALICE, name: 'Cedar', treeType: 'BED', lightHouseId: 'lh1', visibility: 'node', validated: false, validatorId: null, loveCount: 0 });
     await setDoc(doc(d, 'visions', 'vision1'), { authorId: ALICE, title: 'A clearing', visibility: 'public', loveCount: 0 });
     await setDoc(doc(d, 'pulses', 'pulseLove'), { authorId: BOB, type: 'standard', title: 'A pulse', visibility: 'public', loveCount: 0, validationScore: 0 });
     await setDoc(doc(d, 'pulses', 'offer1'), { authorId: ALICE, type: 'offering', offeringKind: 'service', title: 'Herbal walk', visibility: 'public', offeringActive: true });
     // The offering of care (ring 2026-09-06): ALICE offers a night of song to BOB's treeB from her own treeA;
     // BOB offers a pull request to ALICE's vision1 from treeB. Both born open.
-    await setDoc(doc(d, 'lifetrees', 'treeA'), { ownerId: ALICE, name: 'Alices oak', validated: false, validatorId: null, loveCount: 0 });
+    await setDoc(doc(d, 'lifetrees', 'treeA'), { anchorUid: ALICE, name: 'Alices oak', validated: false, validatorId: null, loveCount: 0 });
     await setDoc(doc(d, 'pulses', 'offerCare1'), { authorId: ALICE, type: 'offering', offeringKind: 'service', title: 'A night of song', visibility: 'public', offeringActive: true,
       offeredToKind: 'tree', offeredToId: 'treeB', offeredToKeeperUid: BOB, offeringFromTreeId: 'treeA', offeringStatus: 'open' });
     await setDoc(doc(d, 'pulses', 'offerCode1'), { authorId: BOB, type: 'offering', offeringKind: 'code', title: 'Fix the door', offeringUrl: 'https://github.com/x/y/pull/7', visibility: 'public', offeringActive: true,
@@ -151,7 +151,7 @@ describe('lifetrees validation — initiates sign in their own name, on only', (
   it('an initiate cannot name someone else as validator, un-validate, or smuggle other fields', async () => {
     await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'treeB'), { validated: true, validatorId: BOB, updatedAt: 1 }));
     await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'treeB'), { validated: false, validatorId: ALICE, updatedAt: 1 }));
-    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'treeB'), { validated: true, validatorId: ALICE, ownerId: ALICE, updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'treeB'), { validated: true, validatorId: ALICE, anchorUid: ALICE, updatedAt: 1 }));
   });
 });
 
@@ -310,24 +310,24 @@ describe('the letter of a place — a subscription names its place (ring 2026-09
   });
   it('the doors (domainAliases) are claimed by proof or granted — never typed by a keeper (ring 2026-09-09)', async () => {
     await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { domainAliases: ['stolen.door.org'] }));
-    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'bornWithDoors'), { ownerId: MALLORY, name: 'Mine', domain: 'm.org', domainAliases: ['x.org'], loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'bornWithDoors'), { anchorUid: MALLORY, name: 'Mine', domain: 'm.org', domainAliases: ['x.org'], loveCount: 0 }));
   });
 });
 
 describe("the keeper mirror is the server's alone (ring 2026-09-07)", () => {
   it('no client hand writes keeperUids — not at birth, not after, not even staff; the server alone', async () => {
-    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'bornWithKeepers'), { ownerId: MALLORY, name: 'Mine', domain: 'm.org', keeperUids: [MALLORY], loveCount: 0 }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'communities', 'bornPlain'), { ownerId: MALLORY, name: 'Mine', domain: 'm.org', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'bornWithKeepers'), { anchorUid: MALLORY, name: 'Mine', domain: 'm.org', keeperUids: [MALLORY], loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'communities', 'bornPlain'), { anchorUid: MALLORY, name: 'Mine', domain: 'm.org', loveCount: 0 }));
     await assertFails(updateDoc(doc(db(MALLORY), 'communities', 'bornPlain'), { keeperUids: [MALLORY, BOB] }));
     await assertSucceeds(updateDoc(doc(db(MALLORY), 'communities', 'bornPlain'), { name: 'Renamed' }));
-    await assertFails(updateDoc(doc(db(STAFF), 'communities', 'bornPlain'), { keeperUids: [BOB] })); // frozen like ownerId — the Admin SDK's hand only
+    await assertFails(updateDoc(doc(db(STAFF), 'communities', 'bornPlain'), { keeperUids: [BOB] })); // frozen like anchorUid — the Admin SDK's hand only
   });
 });
 
 describe('papers — a community\'s chapters are a bounded list (ring 2026-09-21)', () => {
   it('the keeper writes a list of chapters; a string, or too many, is refused', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'communities', 'com-papers'), { name: 'Papers', ownerId: ALICE, domain: 'papers.org' });
+      await setDoc(doc(ctx.firestore(), 'communities', 'com-papers'), { name: 'Papers', anchorUid: ALICE, domain: 'papers.org' });
     });
     await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com-papers'), { papers: [{ key: 'vision', title: '', html: '<p>a garden</p>' }] }));
     await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com-papers'), { papers: 'a garden' }));
@@ -351,7 +351,7 @@ describe('Interbeing Matrix — communities attest independently, reciprocity is
   beforeEach(async () => {
     await env.withSecurityRulesDisabled(async (ctx) =>
       setDoc(doc(ctx.firestore(), 'communities', 'com2'), {
-        ownerId: BOB, name: 'Other community', domain: 'other.online', loveCount: 0,
+        anchorUid: BOB, name: 'Other community', domain: 'other.online', loveCount: 0,
       }));
   });
 
@@ -396,7 +396,7 @@ describe('Interbeing Matrix — communities attest independently, reciprocity is
   it('a uid that happens to equal a community id still cannot bypass keeper authority', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       const d = ctx.firestore();
-      await setDoc(doc(d, 'communities', MALLORY), { ownerId: BOB, name: 'Collision', domain: 'collision.online' });
+      await setDoc(doc(d, 'communities', MALLORY), { anchorUid: BOB, name: 'Collision', domain: 'collision.online' });
       await setDoc(doc(d, 'links', `${MALLORY}__recognises__com1`), edge(MALLORY, 'recognises', 'com1'));
     });
     await assertFails(deleteDoc(doc(db(MALLORY), 'links', `${MALLORY}__recognises__com1`)));
@@ -457,8 +457,8 @@ describe('the keeper\'s observation — a consecration witnessed, never claimed 
 describe('grows_in — a tree enters a garden through its door (ring 2026-08-24)', () => {
   const seedGarden = (door?: string) => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
-    await setDoc(doc(d, 'communities', 'garden1'), { ownerId: ALICE, name: 'Garden', domain: 'garden.online', loveCount: 0, ...(door ? { door } : {}) });
-    await setDoc(doc(d, 'lifetrees', 'bobsTree'), { ownerId: BOB, name: 'Bobs Oak', loveCount: 0 });
+    await setDoc(doc(d, 'communities', 'garden1'), { anchorUid: ALICE, name: 'Garden', domain: 'garden.online', loveCount: 0, ...(door ? { door } : {}) });
+    await setDoc(doc(d, 'lifetrees', 'bobsTree'), { anchorUid: BOB, name: 'Bobs Oak', loveCount: 0 });
   });
   const edge = { from: 'bobsTree', rel: 'grows_in', to: 'garden1' };
 
@@ -571,7 +571,7 @@ describe('welcomed_by — the hand that welcomed is proven, never claimed (ring 
 describe('bornOn — the birthplace is frozen (ring 2026-08-21)', () => {
   it('a founding carries its portal; no later hand may move it', async () => {
     await assertSucceeds(setDoc(doc(db(MALLORY), 'communities', 'bornCom'),
-      { ownerId: MALLORY, name: 'X', domain: 'x.online', bornOn: 'perauset.web.app', loveCount: 0 }));
+      { anchorUid: MALLORY, name: 'X', domain: 'x.online', bornOn: 'perauset.web.app', loveCount: 0 }));
     await assertFails(updateDoc(doc(db(MALLORY), 'communities', 'bornCom'), { bornOn: 'lightseed.online' }));
     await assertFails(updateDoc(doc(db(STAFF), 'communities', 'bornCom'), { bornOn: 'lightseed.online' }));
     await assertSucceeds(updateDoc(doc(db(MALLORY), 'communities', 'bornCom'), { vision: 'a clearing' }));
@@ -583,10 +583,10 @@ describe('the births are bound — every being is born signed by its own hand (r
   const CAROL = 'carol-uid';
 
   it('a lifetree cannot be planted wearing another uid — staff plant for others', async () => {
-    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'forgedTree'), { ownerId: BOB, name: 'Forged', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'forgedTree'), { anchorUid: BOB, name: 'Forged', loveCount: 0 }));
     await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'unsignedTree'), { name: 'Unsigned', loveCount: 0 }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'ownTree'), { ownerId: MALLORY, name: 'Mine', loveCount: 0 }));
-    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'plantedFor'), { ownerId: BOB, name: 'For Bob', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'ownTree'), { anchorUid: MALLORY, name: 'Mine', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'plantedFor'), { anchorUid: BOB, name: 'For Bob', loveCount: 0 }));
   });
 
   it('a pulse cannot be minted in another name — nor an unsigned one', async () => {
@@ -601,15 +601,14 @@ describe('the births are bound — every being is born signed by its own hand (r
     await assertSucceeds(setDoc(doc(db(MALLORY), 'visions', 'ownVision'), { authorId: MALLORY, title: 'x', visibility: 'public', loveCount: 0 }));
   });
 
-  it('a community is founded in the founder\'s own name — both identity fields', async () => {
-    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'forgedCom'), { ownerId: BOB, name: 'X', domain: 'x.online', loveCount: 0 }));
-    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'forgedFounder'), { ownerId: MALLORY, founderUserId: BOB, name: 'X', domain: 'x.online', loveCount: 0 }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'communities', 'ownCom'), { ownerId: MALLORY, name: 'X', domain: 'x.online', loveCount: 0 }));
+  it('a community is founded in the founder\'s own name — the anchor', async () => {
+    await assertFails(setDoc(doc(db(MALLORY), 'communities', 'forgedCom'), { anchorUid: BOB, name: 'X', domain: 'x.online', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'communities', 'ownCom'), { anchorUid: MALLORY, name: 'X', domain: 'x.online', loveCount: 0 }));
   });
 
   it('a lightHouse is consecrated in the consecrator\'s own name', async () => {
-    await assertFails(setDoc(doc(db(MALLORY), 'lightHouses', 'forgedLh'), { ownerId: BOB, name: 'X', visibility: 'public', loveCount: 0 }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'lightHouses', 'ownLh'), { ownerId: MALLORY, name: 'X', visibility: 'public', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'lightHouses', 'forgedLh'), { anchorUid: BOB, name: 'X', visibility: 'public', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'lightHouses', 'ownLh'), { anchorUid: MALLORY, name: 'X', visibility: 'public', loveCount: 0 }));
   });
 
   it('an alignment is proposed in the proposer\'s own name', async () => {
@@ -621,21 +620,21 @@ describe('the births are bound — every being is born signed by its own hand (r
     await env.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'links', `${BOB}__steward__com1`), { from: BOB, rel: 'steward', to: 'com1' });
     });
-    await assertFails(setDoc(doc(db(MALLORY), 'intelligences', 'forgedInt'), { ownerId: BOB, name: 'X', enabled: true }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'intelligences', 'ownInt'), { ownerId: MALLORY, name: 'X', enabled: true }));
-    // BOB is com1's steward: he may wire the community intelligence in the OWNER's name…
-    await assertSucceeds(setDoc(doc(db(BOB), 'intelligences', 'comInt'), { ownerId: ALICE, name: 'X', enabled: true, credentialScope: 'community', credentialOwnerId: 'com1' }));
-    // …but a non-keeper may not, and even a keeper may not pick an arbitrary owner.
-    await assertFails(setDoc(doc(db(MALLORY), 'intelligences', 'comIntForged'), { ownerId: ALICE, name: 'X', enabled: true, credentialScope: 'community', credentialOwnerId: 'com1' }));
-    await assertFails(setDoc(doc(db(BOB), 'intelligences', 'comIntWrongOwner'), { ownerId: MALLORY, name: 'X', enabled: true, credentialScope: 'community', credentialOwnerId: 'com1' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'intelligences', 'forgedInt'), { authorId: BOB, name: 'X', enabled: true }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'intelligences', 'ownInt'), { authorId: MALLORY, name: 'X', enabled: true }));
+    // BOB is com1's steward: he may wire the community intelligence in the community ANCHOR's name…
+    await assertSucceeds(setDoc(doc(db(BOB), 'intelligences', 'comInt'), { authorId: ALICE, name: 'X', enabled: true, credentialScope: 'community', credentialHolderUid: 'com1' }));
+    // …but a non-keeper may not, and even a keeper may not pick an arbitrary anchor.
+    await assertFails(setDoc(doc(db(MALLORY), 'intelligences', 'comIntForged'), { authorId: ALICE, name: 'X', enabled: true, credentialScope: 'community', credentialHolderUid: 'com1' }));
+    await assertFails(setDoc(doc(db(BOB), 'intelligences', 'comIntWrongAnchor'), { authorId: MALLORY, name: 'X', enabled: true, credentialScope: 'community', credentialHolderUid: 'com1' }));
   });
 
   it('a memory is born signed; a community memory needs that community\'s keeper', async () => {
     await assertFails(setDoc(doc(db(MALLORY), 'memories', 'unsignedMem'), { name: 'x', text: 'x', visibility: 'private' }));
-    await assertFails(setDoc(doc(db(MALLORY), 'memories', 'forgedMem'), { ownerId: BOB, name: 'x', text: 'x', visibility: 'private' }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'memories', 'ownMem'), { ownerId: MALLORY, name: 'x', text: 'x', visibility: 'private' }));
-    await assertFails(setDoc(doc(db(MALLORY), 'memories', 'comMemForged'), { ownerId: MALLORY, communityId: 'com1', name: 'x', text: 'x', visibility: 'community' }));
-    await assertSucceeds(setDoc(doc(db(ALICE), 'memories', 'comMem'), { ownerId: ALICE, communityId: 'com1', name: 'x', text: 'x', visibility: 'community' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'memories', 'forgedMem'), { authorId: BOB, name: 'x', text: 'x', visibility: 'private' }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'memories', 'ownMem'), { authorId: MALLORY, name: 'x', text: 'x', visibility: 'private' }));
+    await assertFails(setDoc(doc(db(MALLORY), 'memories', 'comMemForged'), { authorId: MALLORY, communityId: 'com1', name: 'x', text: 'x', visibility: 'community' }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'memories', 'comMem'), { authorId: ALICE, communityId: 'com1', name: 'x', text: 'x', visibility: 'community' }));
   });
 
   it('a hold\'s payload cannot dress it in another being\'s name', async () => {
@@ -696,7 +695,7 @@ describe('the lid is frozen — the true name is load-bearing (QR links stand on
   });
   it('a lightHouse keeper and a community keeper hit the same wall', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'lightHouses', 'sanc1'), { ownerId: ALICE, name: 'S', lid: 'true-name' });
+      await setDoc(doc(ctx.firestore(), 'lightHouses', 'sanc1'), { anchorUid: ALICE, name: 'S', lid: 'true-name' });
     });
     await assertSucceeds(updateDoc(doc(db(ALICE), 'lightHouses', 'sanc1'), { name: 'S2' }));
     await assertFails(updateDoc(doc(db(ALICE), 'lightHouses', 'sanc1'), { lid: 'forged' }));
@@ -709,20 +708,20 @@ describe("the lifetree LIST leak — the pulse lesson, heard for trees (Lumo's r
   beforeEach(async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       const d = ctx.firestore();
-      await setDoc(doc(d, 'lifetrees', 'treePublic'), { ownerId: BOB, name: 'Open oak', visibility: 'public', validated: false, validatorId: null, loveCount: 0 });
-      await setDoc(doc(d, 'lifetrees', 'treePrivate'), { ownerId: ALICE, name: 'Hidden fig', visibility: 'private', validated: false, validatorId: null, loveCount: 0 });
+      await setDoc(doc(d, 'lifetrees', 'treePublic'), { anchorUid: BOB, name: 'Open oak', visibility: 'public', validated: false, validatorId: null, loveCount: 0 });
+      await setDoc(doc(d, 'lifetrees', 'treePrivate'), { anchorUid: ALICE, name: 'Hidden fig', visibility: 'private', validated: false, validatorId: null, loveCount: 0 });
     });
   });
   it('an unconstrained or over-wide anonymous list is refused whole', async () => {
     await assertFails(getDocs(query(collection(db(), 'lifetrees'))));
     await assertFails(getDocs(query(collection(db(), 'lifetrees'), where('visibility', 'in', ['public', 'node'])))); // node needs a name
-    await assertFails(getDocs(query(collection(db(MALLORY), 'lifetrees'), where('ownerId', '==', ALICE)))); // another's trees, unpinned
+    await assertFails(getDocs(query(collection(db(MALLORY), 'lifetrees'), where('anchorUid', '==', ALICE)))); // another's trees, unpinned
     await assertFails(getDocs(query(collection(db(MALLORY), 'lifetrees'), where('visibility', 'in', ['public', 'private']))));
   });
   it('a pinned list is allowed: public to anyone, node to the signed-in, one\'s own to oneself, all to staff', async () => {
     await assertSucceeds(getDocs(query(collection(db(), 'lifetrees'), where('visibility', '==', 'public'))));
     await assertSucceeds(getDocs(query(collection(db(MALLORY), 'lifetrees'), where('visibility', 'in', ['public', 'node']))));
-    await assertSucceeds(getDocs(query(collection(db(ALICE), 'lifetrees'), where('ownerId', '==', ALICE))));
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'lifetrees'), where('anchorUid', '==', ALICE))));
     await assertSucceeds(getDocs(query(collection(db(STAFF), 'lifetrees'))));
   });
   it('a single GET keeps its own gate — a legacy tree without visibility still reads as public', async () => {
@@ -734,13 +733,13 @@ describe("the lifetree LIST leak — the pulse lesson, heard for trees (Lumo's r
 
 describe("a tree is born unvalidated — validation is witnessed, never claimed (Lumo's review, 2026-09-07)", () => {
   it('a client cannot plant a tree already wearing validated:true or a witness', async () => {
-    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'selfValidated'), { ownerId: MALLORY, name: 'Mine', validated: true, validatorId: 'someone', loveCount: 0 }));
-    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'selfWitnessed'), { ownerId: MALLORY, name: 'Mine', validated: false, validatorId: 'someone', loveCount: 0 }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'bornPlain'), { ownerId: MALLORY, name: 'Mine', validated: false, validatorId: null, loveCount: 0 }));
-    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'bornBare'), { ownerId: MALLORY, name: 'Mine', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'selfValidated'), { anchorUid: MALLORY, name: 'Mine', validated: true, validatorId: 'someone', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'selfWitnessed'), { anchorUid: MALLORY, name: 'Mine', validated: false, validatorId: 'someone', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'bornPlain'), { anchorUid: MALLORY, name: 'Mine', validated: false, validatorId: null, loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'lifetrees', 'bornBare'), { anchorUid: MALLORY, name: 'Mine', loveCount: 0 }));
   });
   it('staff alone may plant a tree that stands validated (the genesis ceremony, nature trees)', async () => {
-    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'natureTree'), { ownerId: BOB, name: 'Old yew', validated: true, validatorId: 'SYSTEM', loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'natureTree'), { anchorUid: BOB, name: 'Old yew', validated: true, validatorId: 'SYSTEM', loveCount: 0 }));
   });
 });
 
@@ -753,7 +752,7 @@ describe("an offering is made FROM a tree the offerer holds (Lumo's review, 2026
   it('naming one\'s own tree, or a tree one co-owns, is allowed', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       const d = ctx.firestore();
-      await setDoc(doc(d, 'lifetrees', 'treeM'), { ownerId: MALLORY, name: 'Mallory pine', validated: false, validatorId: null, loveCount: 0 });
+      await setDoc(doc(d, 'lifetrees', 'treeM'), { anchorUid: MALLORY, name: 'Mallory pine', validated: false, validatorId: null, loveCount: 0 });
       await setDoc(doc(d, 'links', `${MALLORY}__keeper__treeA`), { type: 'link', rel: 'keeper', from: MALLORY, to: 'treeA' });
     });
     await assertSucceeds(setDoc(doc(db(MALLORY), 'pulses', 'offerFromOwn'), offer('treeM')));
@@ -918,7 +917,7 @@ describe("the chain is the server's — no client births a link, moves a head, o
   const TREE = 'tree-chain';
   const seedChain = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
-    await setDoc(doc(d, 'lifetrees', TREE), { ownerId: ALICE, name: 'Chain Oak', genesisHash: 'g0', latestHash: 'h2', blockHeight: 2, validated: false, validatorId: null, loveCount: 0 });
+    await setDoc(doc(d, 'lifetrees', TREE), { anchorUid: ALICE, name: 'Chain Oak', genesisHash: 'g0', latestHash: 'h2', blockHeight: 2, validated: false, validatorId: null, loveCount: 0 });
     await setDoc(doc(d, 'links', `${BOB}__keeper__${TREE}`), { lid: 'x', type: 'link', rel: 'keeper', from: BOB, to: TREE, createdAt: 1 });
     await setDoc(doc(d, 'pulses', 'b1'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, hash: 'h1', previousHash: 'g0', title: 'g1' });
     await setDoc(doc(d, 'pulses', 'b2'), { authorId: ALICE, type: 'tree_growth', lifetreeId: TREE, hash: 'h2', previousHash: 'h1', title: 'g2' });
@@ -972,9 +971,9 @@ describe("the chain is the server's — no client births a link, moves a head, o
   });
 
   it('a tree and a vision are born at their root: head == genesis, height 0', async () => {
-    await assertSucceeds(setDoc(doc(db(ALICE), 'lifetrees', 'born-right'), { ownerId: ALICE, name: 'Seed', genesisHash: 'g', latestHash: 'g', blockHeight: 0, loveCount: 0 }));
-    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'born-mid'), { ownerId: ALICE, name: 'Seed', genesisHash: 'g', latestHash: 'h5', blockHeight: 5, loveCount: 0 }));
-    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'born-mid-staff'), { ownerId: ALICE, name: 'Seed', genesisHash: 'g', latestHash: 'h5', blockHeight: 5, loveCount: 0 }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'lifetrees', 'born-right'), { anchorUid: ALICE, name: 'Seed', genesisHash: 'g', latestHash: 'g', blockHeight: 0, loveCount: 0 }));
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'born-mid'), { anchorUid: ALICE, name: 'Seed', genesisHash: 'g', latestHash: 'h5', blockHeight: 5, loveCount: 0 }));
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'born-mid-staff'), { anchorUid: ALICE, name: 'Seed', genesisHash: 'g', latestHash: 'h5', blockHeight: 5, loveCount: 0 }));
     await assertSucceeds(setDoc(doc(db(ALICE), 'visions', 'v-born-right'), { authorId: ALICE, title: 'V', genesisHash: 'g', latestHash: 'g', blockHeight: 0, loveCount: 0 }));
     await assertFails(setDoc(doc(db(ALICE), 'visions', 'v-born-mid'), { authorId: ALICE, title: 'V', genesisHash: 'g', latestHash: 'h5', blockHeight: 5, loveCount: 0 }));
   });
@@ -1058,8 +1057,8 @@ describe('a keeper adopts a standalone event into their place (ring 2026-09-21)'
   const EV2 = 'ev-standalone';
   const seed = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
-    await setDoc(doc(d, 'communities', 'com-pa'), { name: 'Per Auset', ownerId: ALICE, domain: 'seed.perauset.org' });
-    await setDoc(doc(d, 'communities', 'com-other'), { name: 'Other', ownerId: BOB, domain: 'other.org' });
+    await setDoc(doc(d, 'communities', 'com-pa'), { name: 'Per Auset', anchorUid: ALICE, domain: 'seed.perauset.org' });
+    await setDoc(doc(d, 'communities', 'com-other'), { name: 'Other', anchorUid: BOB, domain: 'other.org' });
     await setDoc(doc(d, 'pulses', EV2), { authorId: MALLORY, type: 'event', title: 'Dance', domain: 'seed.perauset.org', visibility: 'public' });
   });
 
@@ -1123,8 +1122,8 @@ describe('guardian veto — window and tenure live in the rules, not only the cl
 
 describe('the keeper circle — peers by link, minted only by the server, never keeperless', () => {
   // Ring 2026-08-12 (domain/keeperCircle): `keeper` links make FULL PEERS of the founding
-  // ownerId — but no client may mint one (only the callables do, after the living-tree
-  // proof), the anchor (ownerId) is frozen against client hands, and a peer cannot remove
+  // anchorUid — but no client may mint one (only the callables do, after the living-tree
+  // proof), the anchor (anchorUid) is frozen against client hands, and a peer cannot remove
   // a peer. Knocks (`keeper_request`) are self-serve and grant nothing.
   const keeperLink = (uid: string) => ({
     lid: 'x', type: 'link', rel: 'keeper', from: uid, to: 'com1',
@@ -1146,8 +1145,8 @@ describe('the keeper circle — peers by link, minted only by the server, never 
   it('the anchor is frozen against every client hand — even the owner, even a peer', async () => {
     await env.withSecurityRulesDisabled(async (ctx) =>
       setDoc(doc(ctx.firestore(), 'links', `${BOB}__keeper__com1`), keeperLink(BOB)));
-    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { ownerId: BOB, updatedAt: 1 }));
-    await assertFails(updateDoc(doc(db(BOB), 'communities', 'com1'), { ownerId: BOB, updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { anchorUid: BOB, updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(BOB), 'communities', 'com1'), { anchorUid: BOB, updatedAt: 1 }));
   });
 
   it('a peer cannot remove a peer — a keeper leaves only by their own hand', async () => {
@@ -1198,8 +1197,8 @@ describe('the door — open lets beings in, closed closes ALL ways, keepers are 
   // Door fixtures beside the seeded com1 (door absent = 'invite').
   const seedDoors = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
-    await setDoc(doc(d, 'communities', 'open1'), { ownerId: ALICE, name: 'Open', domain: 'o', door: 'open' });
-    await setDoc(doc(d, 'communities', 'closed1'), { ownerId: ALICE, name: 'Closed', domain: 'c', door: 'closed' });
+    await setDoc(doc(d, 'communities', 'open1'), { anchorUid: ALICE, name: 'Open', domain: 'o', door: 'open' });
+    await setDoc(doc(d, 'communities', 'closed1'), { anchorUid: ALICE, name: 'Closed', domain: 'c', door: 'closed' });
     await setDoc(doc(d, 'links', `${SAM}__steward__com1`), link(SAM, 'steward', 'com1'));
   });
 
@@ -1245,7 +1244,7 @@ describe('community invitations — the shareable key: live opens, revoked/expir
 
   const seedInvites = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
-    await setDoc(doc(d, 'communities', 'closed1'), { ownerId: ALICE, name: 'Closed', domain: 'c', door: 'closed' });
+    await setDoc(doc(d, 'communities', 'closed1'), { anchorUid: ALICE, name: 'Closed', domain: 'c', door: 'closed' });
     await setDoc(doc(d, 'links', `${SAM}__steward__com1`), link(SAM, 'steward', 'com1'));
     await setDoc(doc(d, 'communityInvites', 'inv-live-0001'), { communityId: 'com1', createdBy: ALICE, createdAt: 1 });
     await setDoc(doc(d, 'communityInvites', 'inv-revoked-1'), { communityId: 'com1', createdBy: ALICE, createdAt: 1, revokedAt: Timestamp.fromMillis(1000) });
@@ -1339,7 +1338,7 @@ describe('link id-binding — authority resolves by path, so the doc id must equ
 
 describe("beds — housed by a keeper or loose at a place; a bed never forges into a house", () => {
   const bed = (over: object = {}) => ({
-    ownerId: ALICE, name: 'Cedar bed', body: 'Welcome, traveller.',
+    anchorUid: ALICE, name: 'Cedar bed', body: 'Welcome, traveller.',
     treeType: 'BED', lightHouseId: 'lh1', visibility: 'node',
     createdAt: 1, genesisHash: 'g0', latestHash: 'g0', blockHeight: 0,
     validated: false, validatorId: null, ...over,
@@ -1352,33 +1351,33 @@ describe("beds — housed by a keeper or loose at a place; a bed never forges in
 
   it('the keeper plants a bed in their own house; staff may too', async () => {
     await assertSucceeds(setDoc(doc(db(ALICE), 'lifetrees', 'bed1'), bed()));
-    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bed2'), bed({ ownerId: STAFF })));
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bed2'), bed({ anchorUid: STAFF })));
   });
 
   it("a stranger cannot plant a bed in someone else's house — nor the keeper in another's name", async () => {
-    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'bedX'), bed({ ownerId: MALLORY }))); // not lh1's keeper
-    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bedY'), bed({ ownerId: BOB })));       // forged owner
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'bedX'), bed({ anchorUid: MALLORY }))); // not lh1's keeper
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bedY'), bed({ anchorUid: BOB })));       // forged owner
   });
 
   it('a loose bed at a coordinate is welcome — anyone, in their own name, no house needed', async () => {
-    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedL1'), looseBed({ ownerId: BOB })));
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedL1'), looseBed({ anchorUid: BOB })));
     await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedL2'),
-      looseBed({ ownerId: BOB, lightHouseId: '' }))); // an explicit '' is loose too
-    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedLf'), looseBed({ ownerId: ALICE }))); // forged owner
+      looseBed({ anchorUid: BOB, lightHouseId: '' }))); // an explicit '' is loose too
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedLf'), looseBed({ anchorUid: ALICE }))); // forged owner
   });
 
   it('a loose bed at a NON-place is refused: NaN, Infinity, and off-Earth coordinates are nowhere', async () => {
-    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedN'), looseBed({ ownerId: BOB, latitude: NaN, longitude: NaN })));
-    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedI'), looseBed({ ownerId: BOB, latitude: Infinity })));
-    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedJ'), looseBed({ ownerId: BOB, longitude: -Infinity })));
-    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedO'), looseBed({ ownerId: BOB, latitude: 91 })));
-    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedP'), looseBed({ ownerId: BOB, longitude: 181 })));
-    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedQ'), looseBed({ ownerId: BOB, latitude: 999, longitude: -999 })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedN'), looseBed({ anchorUid: BOB, latitude: NaN, longitude: NaN })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedI'), looseBed({ anchorUid: BOB, latitude: Infinity })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedJ'), looseBed({ anchorUid: BOB, longitude: -Infinity })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedO'), looseBed({ anchorUid: BOB, latitude: 91 })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedP'), looseBed({ anchorUid: BOB, longitude: 181 })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedQ'), looseBed({ anchorUid: BOB, latitude: 999, longitude: -999 })));
     // The edges of the map are still places — the poles and the antimeridian welcome a bed.
-    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedR'), looseBed({ ownerId: BOB, latitude: 90, longitude: -180 })));
-    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedT'), looseBed({ ownerId: BOB, latitude: -90, longitude: 180 })));
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedR'), looseBed({ anchorUid: BOB, latitude: 90, longitude: -180 })));
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedT'), looseBed({ anchorUid: BOB, latitude: -90, longitude: 180 })));
     // And zero is a real place (the equator, the meridian).
-    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedU'), looseBed({ ownerId: BOB, latitude: 0, longitude: 0 })));
+    await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'bedU'), looseBed({ anchorUid: BOB, latitude: 0, longitude: 0 })));
   });
 
   it('a bed with NEITHER a house NOR a place is still refused', async () => {
@@ -1389,22 +1388,22 @@ describe("beds — housed by a keeper or loose at a place; a bed never forges in
     await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bedS'), looseBed({ latitude: '6.03' }))); // a string is no place
     // An ordinary tree still plants freely, house or no house.
     await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'tree2'),
-      { ownerId: BOB, name: 'Oak', treeType: 'LIFETREE', createdAt: 1, validated: false, validatorId: null }));
+      { anchorUid: BOB, name: 'Oak', treeType: 'LIFETREE', createdAt: 1, validated: false, validatorId: null }));
   });
 
   it('a bed never carries a domain — housed or loose, at birth (keeper or staff) or by edit', async () => {
     await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bedD'), bed({ domain: 'lh.online' })));
-    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'bedE'), bed({ ownerId: STAFF, domain: 'lh.online' })));
-    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedF'), looseBed({ ownerId: BOB, domain: 'lh.online' })));
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'bedE'), bed({ anchorUid: STAFF, domain: 'lh.online' })));
+    await assertFails(setDoc(doc(db(BOB), 'lifetrees', 'bedF'), looseBed({ anchorUid: BOB, domain: 'lh.online' })));
     await env.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'lifetrees', 'bed1'), bed());
-      await setDoc(doc(ctx.firestore(), 'lifetrees', 'bedL1'), looseBed({ ownerId: BOB }));
+      await setDoc(doc(ctx.firestore(), 'lifetrees', 'bedL1'), looseBed({ anchorUid: BOB }));
     });
     await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { domain: 'lh.online' }));
     await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'bedL1'), { domain: 'lh.online' }));
     // An ordinary tree still carries and changes a domain freely — the exclusion is the bed's alone.
     await assertSucceeds(setDoc(doc(db(BOB), 'lifetrees', 'tree3'),
-      { ownerId: BOB, name: 'Elm', treeType: 'LIFETREE', domain: 'com.online', createdAt: 1, validated: false, validatorId: null }));
+      { anchorUid: BOB, name: 'Elm', treeType: 'LIFETREE', domain: 'com.online', createdAt: 1, validated: false, validatorId: null }));
     await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'tree3'), { domain: 'other.online' }));
   });
 
@@ -1431,7 +1430,7 @@ describe("beds — housed by a keeper or loose at a place; a bed never forges in
   it("containment is soft: a bed may go loose or come home, but never into a house its writer doesn't keep", async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'lifetrees', 'bed1'), bed({ latitude: 6.03, longitude: 81.33 }));
-      await setDoc(doc(ctx.firestore(), 'lightHouses', 'lh2'), { ownerId: BOB, name: "Bob's Light", lid: 'lh2-lid' });
+      await setDoc(doc(ctx.firestore(), 'lightHouses', 'lh2'), { anchorUid: BOB, name: "Bob's Light", lid: 'lh2-lid' });
     });
     // The owner may clear the house — the bed goes loose, chain intact.
     await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'bed1'), { lightHouseId: '' }));
@@ -1444,7 +1443,7 @@ describe("beds — housed by a keeper or loose at a place; a bed never forges in
 
   it('a loose bed keeps its REAL place for LIFE — no edit may strand it at a non-place', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'lifetrees', 'bedL1'), looseBed({ ownerId: BOB }));
+      await setDoc(doc(ctx.firestore(), 'lifetrees', 'bedL1'), looseBed({ anchorUid: BOB }));
       await setDoc(doc(ctx.firestore(), 'lifetrees', 'bed1'), bed()); // housed — carries no coordinate
     });
     // The owner may not push their own loose bed off the map, into NaN, or into nowhere.
@@ -1478,11 +1477,11 @@ describe("beds — housed by a keeper or loose at a place; a bed never forges in
   });
 
   it('the place gate binds staff at birth too — no hand may plant a placeless loose bed', async () => {
-    const { latitude: _lat, longitude: _lng, ...nowhere } = looseBed({ ownerId: STAFF });
+    const { latitude: _lat, longitude: _lng, ...nowhere } = looseBed({ anchorUid: STAFF });
     await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'bedSA'), nowhere));                                  // no coordinate
-    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'bedSB'), looseBed({ ownerId: STAFF, latitude: NaN }))); // a non-place
-    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bedSC'), looseBed({ ownerId: STAFF })));          // a real place
-    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bedSD'), bed({ ownerId: STAFF })));               // housed — no coordinate needed
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'bedSB'), looseBed({ anchorUid: STAFF, latitude: NaN }))); // a non-place
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bedSC'), looseBed({ anchorUid: STAFF })));          // a real place
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'bedSD'), bed({ anchorUid: STAFF })));               // housed — no coordinate needed
   });
 });
 
@@ -1563,11 +1562,11 @@ describe("lightHouses — the community's choice is LAW: membership enforced at 
   const seedHouses = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
     await setDoc(doc(d, 'links', `${BOB}__member__com1`), { lid: 'x', type: 'link', rel: 'member', from: BOB, to: 'com1', createdAt: 1 });
-    await setDoc(doc(d, 'lightHouses', 'lhPublic'),  { ownerId: CAROL,   name: 'Beacon',    lid: 'lhp',  communityId: 'com1', visibility: 'public' });
-    await setDoc(doc(d, 'lightHouses', 'lhNode'),    { ownerId: CAROL,   name: 'Nodehouse', lid: 'lhn',  communityId: 'com1', visibility: 'node' });
-    await setDoc(doc(d, 'lightHouses', 'lhComm'),    { ownerId: CAROL,   name: 'Hearth',    lid: 'lhc',  communityId: 'com1', visibility: 'community' });
-    await setDoc(doc(d, 'lightHouses', 'lhDefault'), { ownerId: CAROL,   name: 'Old',       lid: 'lhd',  communityId: 'com1' }); // absent visibility
-    await setDoc(doc(d, 'lightHouses', 'lhMallory'), { ownerId: MALLORY, name: 'Mine',      lid: 'lhm',  communityId: 'com1', visibility: 'community' });
+    await setDoc(doc(d, 'lightHouses', 'lhPublic'),  { anchorUid: CAROL,   name: 'Beacon',    lid: 'lhp',  communityId: 'com1', visibility: 'public' });
+    await setDoc(doc(d, 'lightHouses', 'lhNode'),    { anchorUid: CAROL,   name: 'Nodehouse', lid: 'lhn',  communityId: 'com1', visibility: 'node' });
+    await setDoc(doc(d, 'lightHouses', 'lhComm'),    { anchorUid: CAROL,   name: 'Hearth',    lid: 'lhc',  communityId: 'com1', visibility: 'community' });
+    await setDoc(doc(d, 'lightHouses', 'lhDefault'), { anchorUid: CAROL,   name: 'Old',       lid: 'lhd',  communityId: 'com1' }); // absent visibility
+    await setDoc(doc(d, 'lightHouses', 'lhMallory'), { anchorUid: MALLORY, name: 'Mine',      lid: 'lhm',  communityId: 'com1', visibility: 'community' });
   });
 
   it('public houses are readable by everyone, signed-in or not', async () => {
@@ -2251,10 +2250,10 @@ describe('loves: the private slot and public tally are one atomic gesture', () =
   it('a known private id is not a side door: only someone allowed to see the being may love it', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       const store = ctx.firestore();
-      await setDoc(doc(store, 'lifetrees', 'hiddenTree'), { ownerId: BOB, visibility: 'private', loveCount: 0 });
+      await setDoc(doc(store, 'lifetrees', 'hiddenTree'), { anchorUid: BOB, visibility: 'private', loveCount: 0 });
       await setDoc(doc(store, 'visions', 'hiddenVision'), { authorId: BOB, visibility: 'private', loveCount: 0 });
       await setDoc(doc(store, 'lightHouses', 'hiddenHouse'), {
-        ownerId: BOB, communityId: 'com1', visibility: 'community', loveCount: 0,
+        anchorUid: BOB, communityId: 'com1', visibility: 'community', loveCount: 0,
       });
       await setDoc(doc(store, 'pulses', 'hiddenPulse'), {
         authorId: BOB, type: 'standard', visibility: 'circle', treeId: 'treeB',
@@ -2535,7 +2534,7 @@ describe('tree circle invitations — the circle reads its ledger, keepers open 
 describe('a tree is kept, not owned — every keeper is equal, and the anchor is only the history (ring 2026-09-29)', () => {
   const seedKept = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
-    await setDoc(doc(d, 'lifetrees', 'keptTree'), { ownerId: BOB, name: 'Kept', validated: true, validatorId: STAFF, visibility: 'public', loveCount: 0 });
+    await setDoc(doc(d, 'lifetrees', 'keptTree'), { anchorUid: BOB, name: 'Kept', validated: true, validatorId: STAFF, visibility: 'public', loveCount: 0 });
     await setDoc(doc(d, 'links', `${ALICE}__keeper__keptTree`), { lid: 'x', type: 'link', rel: 'keeper', from: ALICE, to: 'keptTree', createdAt: 1 });
     await setDoc(doc(d, 'pulses', 'gatherK'), { authorId: MALLORY, type: 'event', title: 'G', previousHash: 'EVENT', hash: 'e', visibility: 'public' });
   });
@@ -2547,14 +2546,14 @@ describe('a tree is kept, not owned — every keeper is equal, and the anchor is
     await assertFails(setDoc(doc(db(MALLORY), 'links', 'keptTree__participant__gatherK'), { lid: 'x', type: 'link', rel: 'participant', from: 'keptTree', to: 'gatherK', createdAt: 1 }));
     // A keeper's validated tree is a validation credential, whichever keeper signs.
     await env.withSecurityRulesDisabled(async (ctx) =>
-      setDoc(doc(ctx.firestore(), 'lifetrees', 'newTree'), { ownerId: MALLORY, name: 'New', validated: false, validatorId: null, visibility: 'public', loveCount: 0 }));
+      setDoc(doc(ctx.firestore(), 'lifetrees', 'newTree'), { anchorUid: MALLORY, name: 'New', validated: false, validatorId: null, visibility: 'public', loveCount: 0 }));
     await assertSucceeds(updateDoc(doc(db(ALICE), 'lifetrees', 'newTree'), { validated: true, validatorId: 'keptTree', updatedAt: 1 }));
     await assertSucceeds(deleteDoc(doc(db(ALICE), 'lifetrees', 'keptTree')));
   });
   it('no keeper — not even the anchor — moves the anchor from a client; a keeper link is never self-minted', async () => {
     await seedKept();
-    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'keptTree'), { ownerId: ALICE }));
-    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'keptTree'), { ownerId: ALICE }));
+    await assertFails(updateDoc(doc(db(BOB), 'lifetrees', 'keptTree'), { anchorUid: ALICE }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'keptTree'), { anchorUid: ALICE }));
     await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__keeper__keptTree`), { lid: 'x', type: 'link', rel: 'keeper', from: MALLORY, to: 'keptTree', createdAt: 1 }));
     // A keeper steps down by their own hand (their link); the anchor has no link to shed.
     await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', `${ALICE}__keeper__keptTree`)));

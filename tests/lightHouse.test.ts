@@ -5,7 +5,7 @@ import { canViewLightHouse, lightHouseVisibility } from '../src/domain/lightHous
 // The three levels — community (members), node (anyone signed in), public (the world).
 
 const sanctum = (over: Record<string, unknown> = {}) =>
-  ({ ownerId: 'keeper', communityId: 'per-auset', ...over }) as any;
+  ({ anchorUid: 'keeper', communityId: 'per-auset', ...over }) as any;
 
 describe('lightHouseVisibility', () => {
   it('absent visibility means community — private by default', () => {

@@ -169,7 +169,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
     try {
         await onPlant({
-            ownerId: lightseed.uid,
+            anchorUid: lightseed.uid,
             name: finalName,
             shortTitle: treeShortTitle,
             body: treeBio,

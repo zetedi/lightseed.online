@@ -74,7 +74,7 @@ export interface Alignment extends Being {
 
   targetPulseId: string; // The pulse being matched WITH
   targetTreeId: string;
-  targetUid: string; // The owner who needs to accept
+  targetUid: string; // The target tree's anchor, who accepts
 
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   // The discussion thread: whoever the match reached first acknowledges (initiates), the other

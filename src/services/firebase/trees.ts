@@ -63,7 +63,7 @@ export const ensureGenesis = async () => {
             const genesisHash = await createBlock("0", { message: "Genesis Pulse" }, Date.now());
             await setDoc(genesisRef, {
                 lid: uuidv7(),
-                ownerId: 'GENESIS_SYSTEM', name: 'Mahameru', shortTitle: 'Live Light', body: genesisBody,
+                anchorUid: 'GENESIS_SYSTEM', name: 'Mahameru', shortTitle: 'Live Light', body: genesisBody,
                 imageUrl: MAHAMERU_IMAGE,
                 latitude: GENESIS_PLACE.latitude, longitude: GENESIS_PLACE.longitude, locationName: GENESIS_PLACE.name,
                 createdAt: Timestamp.fromMillis(GENESIS_MOMENT_MS),
@@ -89,7 +89,7 @@ export const ensureGenesis = async () => {
                     domain: 'lightseed.online',
                     vision: 'Universal connection through nature and digital roots.',
                     imageUrls: [],
-                    ownerId: user.uid,
+                    anchorUid: user.uid,
                     theme: {
                         primary: '#059669',
                         secondary: '#0284c7',
@@ -107,7 +107,7 @@ export const ensureGenesis = async () => {
                     domain: 'lifeseed.online',
                     vision: 'A lively network for seeding growth and vitality.',
                     imageUrls: [],
-                    ownerId: user.uid,
+                    anchorUid: user.uid,
                     theme: { ...oldEmeraldEarthThemeValues }
                 }
             ];
@@ -232,10 +232,10 @@ export const setNodeLimits = (limits: Partial<NodeLimits>) =>
 export const setNodeAiValidatedOnly = (value: boolean) =>
     setDoc(doc(db, 'config', 'limits'), { nodeAiValidatedOnly: value }, { merge: true });
 
-export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string; name: string; body?: string }) => {
+export const plantLifetree = async (data: Partial<Lifetree> & { anchorUid: string; name: string; body?: string }) => {
     // Quality, not quantity: the node's caps (or the 12 + 132 = 144 defaults) per being.
     const plantingType: 'LIFETREE' | 'GUARDED' = (data.treeType as 'LIFETREE' | 'GUARDED' | undefined) || (data.isNature ? 'GUARDED' : 'LIFETREE');
-    const [mine, limits] = await Promise.all([getMyLifetrees(data.ownerId), getNodeLimits()]);
+    const [mine, limits] = await Promise.all([getMyLifetrees(data.anchorUid), getNodeLimits()]);
     const refusal = treePlantingGate(mine, plantingType, limits);
     if (refusal) throw new Error(refusal);
 
@@ -253,9 +253,9 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
     // New trees inherit the owner's contact-privacy preference so the mirror stays consistent.
     let onlyValidatedCanReach = false;
     try {
-        if (data.ownerId) {
-            const ownerSnap = await getDoc(doc(db, 'users', data.ownerId));
-            onlyValidatedCanReach = ownerSnap.exists() && ownerSnap.data()?.onlyValidatedCanReach === true;
+        if (data.anchorUid) {
+            const anchorSnap = await getDoc(doc(db, 'users', data.anchorUid));
+            onlyValidatedCanReach = anchorSnap.exists() && anchorSnap.data()?.onlyValidatedCanReach === true;
         }
     } catch { /* default false */ }
 
@@ -280,7 +280,7 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
         const visionGenesis = await createBlock('0', { msg: 'Birth' }, Date.now());
         await addDoc(visionsCollection, {
             lid: uuidv7(),
-            lifetreeId: treeDoc.id, authorId: data.ownerId, title: "Root Vision", body: data.body,
+            lifetreeId: treeDoc.id, authorId: data.anchorUid, title: "Root Vision", body: data.body,
             genesisHash: visionGenesis, latestHash: visionGenesis, blockHeight: 0,
             createdAt: serverTimestamp(), domain,
         });
@@ -288,8 +288,8 @@ export const plantLifetree = async (data: Partial<Lifetree> & { ownerId: string;
     // A guarded (nature) tree is GUARDED, not worn: its planter is its first guardian —
     // the edge lives in the LIN, and the session lists it under guarded trees, not avatars.
     if (plantingType === 'GUARDED') {
-        await setDoc(doc(db, 'links', `${data.ownerId}__guardian__${treeDoc.id}`),
-            { lid: uuidv7(), type: 'link', rel: 'guardian', from: data.ownerId, to: treeDoc.id, createdAt: serverTimestamp() }).catch(() => {});
+        await setDoc(doc(db, 'links', `${data.anchorUid}__guardian__${treeDoc.id}`),
+            { lid: uuidv7(), type: 'link', rel: 'guardian', from: data.anchorUid, to: treeDoc.id, createdAt: serverTimestamp() }).catch(() => {});
     }
     return treeDoc;
 };
@@ -311,7 +311,7 @@ export const plantBed = async (draft: {
         // HOUSED: only the Light House's keeper offers its beds.
         const house = await getLightHouseById(draft.lightHouseId);
         if (!house) throw new Error('err_lighthouse_gone');
-        if (house.ownerId !== user.uid) throw new Error('err_bed_keeper_only');
+        if (house.anchorUid !== user.uid) throw new Error('err_bed_keeper_only');
     }
 
     // Only a REAL place is written (NaN / Infinity / off-Earth coordinates are nowhere).
@@ -319,7 +319,7 @@ export const plantBed = async (draft: {
     const genesisHash = await createBlock("0", { msg: "Birth" }, Date.now());
     return addDoc(lifetreesCollection, {
         lid: uuidv7(),
-        ownerId: user.uid, // housed: the house's keeper; loose: whoever stands it — bound by the rules
+        anchorUid: user.uid, // housed: the house's keeper; loose: whoever stands it — bound by the rules
         name: draft.name.trim(),
         ...(draft.imageUrl ? { imageUrl: draft.imageUrl } : {}),
         body: draft.body?.trim() || '',
@@ -340,7 +340,7 @@ export const plantBed = async (draft: {
 // The beds a being owns (BED trees they planted) — for offering one for light. Beds are excluded
 // from the normal `myTrees` list, so this reads them directly.
 export const getMyBeds = async (uid: string): Promise<Lifetree[]> => {
-    const snap = await getDocs(query(lifetreesCollection, where('ownerId', '==', uid), where('treeType', '==', BED_TREE_TYPE)));
+    const snap = await getDocs(query(lifetreesCollection, where('anchorUid', '==', uid), where('treeType', '==', BED_TREE_TYPE)));
     return snap.docs.map(d => mapDoc(d) as Lifetree).filter(isBedTree)
         .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
 };
@@ -357,7 +357,7 @@ export const getBedsForLightHouse = async (lightHouseId: string, publicOnly = fa
     if (uid) {
         (await getDocs(query(lifetreesCollection,
             where('lightHouseId', '==', lightHouseId),
-            where('ownerId', '==', uid)))).docs.forEach(add);
+            where('anchorUid', '==', uid)))).docs.forEach(add);
     }
     return [...byId.values()]
         .filter(isBedTree)
@@ -388,7 +388,7 @@ export const deleteLifetree = (id: string) => deleteDoc(doc(db, 'lifetrees', id)
 export const validateLifetree = (targetId: string, validatorId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: true, validatorId });
 export const unvalidateLifetree = (targetId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: false, validatorId: null });
 
-export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, ownerUid?: string, levels?: string[] | null) => {
+export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, anchorUid?: string, levels?: string[] | null) => {
     const scopedDomain = domainFilter?.replace(/^www\./, '');
     const communityScoped = !!scopedDomain;
     // Only return trees this viewer may read (visibility levels), matching the rules — else the
@@ -442,8 +442,8 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
     if (communityScoped) {
         // The creator always sees their own trees on a community/custom domain,
         // even if those trees point at a different domain. Merge on the first page.
-        if (ownerUid && !lastD) {
-            const mine = await getDocs(query(lifetreesCollection, where('ownerId', '==', ownerUid)));
+        if (anchorUid && !lastD) {
+            const mine = await getDocs(query(lifetreesCollection, where('anchorUid', '==', anchorUid)));
             const seen = new Set(items.map(t => t.id));
             mine.docs.forEach(d => {
                 if (!seen.has(d.id)) items.push(mapDoc(d) as Lifetree);
@@ -470,7 +470,7 @@ export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter
 
 // Whole forest at once (no pagination) — used by the map so every tree appears,
 // not just the first page. Includes the creator's own trees and Genesis while reflecting.
-export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string, levels?: string[] | null): Promise<Lifetree[]> => {
+export const fetchAllLifetrees = async (domainFilter?: string, anchorUid?: string, levels?: string[] | null): Promise<Lifetree[]> => {
     const scopedDomain = domainFilter?.replace(/^www\./, '');
     const communityScoped = !!scopedDomain;
     const visCons = (levels && levels.length) ? [where('visibility', 'in', levels)] : [];
@@ -505,8 +505,8 @@ export const fetchAllLifetrees = async (domainFilter?: string, ownerUid?: string
     }
 
     // The creator always sees their own trees, even pointed at another domain.
-    if (ownerUid) {
-        (await getDocs(query(lifetreesCollection, where('ownerId', '==', ownerUid)))).docs.forEach(add);
+    if (anchorUid) {
+        (await getDocs(query(lifetreesCollection, where('anchorUid', '==', anchorUid)))).docs.forEach(add);
     }
 
     if (!communityScoped) {
@@ -543,12 +543,12 @@ export const treesStandingIn = async (communityId: string): Promise<Lifetree[]> 
 };
 
 export const getMyLifetrees = async (uid: string) =>
-    excludeBedTrees((await getDocs(query(lifetreesCollection, where('ownerId', '==', uid)))).docs.map(d => (mapDoc(d) as Lifetree)));
+    excludeBedTrees((await getDocs(query(lifetreesCollection, where('anchorUid', '==', uid)))).docs.map(d => (mapDoc(d) as Lifetree)));
 
 export const normalizeDomain = (domain: string) =>
     domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
 
-export const getTreesByDomain = async (domain: string, ownerUid?: string): Promise<Lifetree[]> => {
+export const getTreesByDomain = async (domain: string, anchorUid?: string): Promise<Lifetree[]> => {
     const normalized = normalizeDomain(domain);
     // Only return trees this viewer may READ, matching the rules (firestore.rules /lifetrees):
     // a signed-out reader gets public only, any signed-in member gets public + node — else the
@@ -582,8 +582,8 @@ export const getTreesByDomain = async (domain: string, ownerUid?: string): Promi
 
     // The creator always sees their own trees here, even if they pointed a tree at a different
     // domain than this community. An owner-scoped query is always rule-provable (owner reads own).
-    if (ownerUid) {
-        const mine = await getDocs(query(lifetreesCollection, where('ownerId', '==', ownerUid)));
+    if (anchorUid) {
+        const mine = await getDocs(query(lifetreesCollection, where('anchorUid', '==', anchorUid)));
         mine.docs.forEach(add);
     }
 
@@ -610,7 +610,7 @@ const chunk10 = <T>(a: T[]): T[][] => {
 
 // The communities this being has a `member` link to (mirrors the rules' isCommunityMember,
 // membership branch). Community ownership also grants read at the rule, but a keeper's OWN houses
-// are already caught by the ownerId sub-query below, so the member set is enough for the union.
+// are already caught by the anchorUid sub-query below, so the member set is enough for the union.
 const memberCommunityIdsOf = async (uid: string): Promise<string[]> =>
     (await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'member'))))
         .docs.map(d => (d.data() as { to: string }).to);
@@ -621,7 +621,7 @@ const memberCommunityIdsOf = async (uid: string): Promise<string[]> =>
 //   • node            — visibility == 'node'              [signed-in; the node branch]
 //   • my community    — visibility == 'community' AND communityId in <my member communities>
 //                       chunked ≤10 per 'in'              [isCommunityMember proves each]
-//   • my own          — ownerId == me                     [the owner branch]
+//   • my own          — anchorUid == me                     [the owner branch]
 // Signed-out (or publicOnly) collapses to public alone. The belt (canViewLightHouse) still runs
 // in the hook. NOTE: absent-visibility legacy houses (default 'community') are only surfaced to
 // their community's members through the owner sub-query if theirs; today's create form always
@@ -638,7 +638,7 @@ const fetchVisibleLightHouses = async (opts?: VisibleLightHouseOpts): Promise<Li
     const snaps = await Promise.all([
         getDocs(query(lightHousesCollection, where('visibility', '==', 'public'))),
         getDocs(query(lightHousesCollection, where('visibility', '==', 'node'))),
-        getDocs(query(lightHousesCollection, where('ownerId', '==', uid))),
+        getDocs(query(lightHousesCollection, where('anchorUid', '==', uid))),
         ...chunk10(mine).map(ids =>
             getDocs(query(lightHousesCollection, where('visibility', '==', 'community'), where('communityId', 'in', ids)))),
     ]);
@@ -686,7 +686,7 @@ export const getAllLightHouses = (opts?: VisibleLightHouseOpts): Promise<LightHo
     fetchVisibleLightHouses(opts);
 
 // Consecrate a lightHouse — community keepers do this from the LightHouse tab.
-export const createLightHouse = async (data: Partial<LightHouse> & { name: string; ownerId: string }) => {
+export const createLightHouse = async (data: Partial<LightHouse> & { name: string; anchorUid: string }) => {
     const ref = await addDoc(lightHousesCollection, {
         ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined && v !== '')),
         lid: uuidv7(),
@@ -865,7 +865,7 @@ export const getTendedTrees = async (uid: string): Promise<TendedTree[]> => {
         } catch { return null; } // a tended tree drawn back beyond this viewer's sight
     }));
     return trees
-        .filter((t): t is Lifetree => t !== null && !isBedTree(t) && t.ownerId !== uid)
+        .filter((t): t is Lifetree => t !== null && !isBedTree(t) && t.anchorUid !== uid)
         .map(tree => ({ tree, role: roles.get(tree.id)! }));
 };
 
@@ -897,7 +897,7 @@ export const createTreeInvite = async (params: {
 }): Promise<string> => {
     const { lifetree, invitedUserId, role } = params;
     if (!invitedUserId.trim()) throw new Error('err_choose_invitee');
-    if (invitedUserId === lifetree.ownerId) throw new Error('err_owner_already');
+    if (invitedUserId === lifetree.anchorUid) throw new Error('err_keeper_already');
     // Already holds this role? Check the LIN link (the single source of truth), not a legacy array.
     if ((await getDoc(doc(db, 'links', `${invitedUserId}__${role}__${lifetree.id}`))).exists()) throw new Error('err_role_already');
     // Single-field query + client filter, to avoid requiring a composite index.

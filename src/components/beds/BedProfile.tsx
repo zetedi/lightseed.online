@@ -41,7 +41,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
   const { t } = useLanguage();
   const { lightseed } = useSession();
   const uid = lightseed?.uid;
-  const isOwner = !!uid && bed.ownerId === uid;
+  const isAnchor = !!uid && bed.anchorUid === uid;
 
   const [genesisBlock, setGenesisBlock] = useState<Pulse | null>(null);
   const [blocks, setBlocks] = useState<Pulse[]>([]);
@@ -56,9 +56,9 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
   const [circle, setCircle] = useState<ReturnType<typeof treeCircle>>({ groups: [], size: 0 });
   useEffect(() => {
     let alive = true;
-    firestoreStore.linksTo(bed.id).then(links => { if (alive) setCircle(treeCircle(bed.ownerId, links)); }).catch(() => {});
+    firestoreStore.linksTo(bed.id).then(links => { if (alive) setCircle(treeCircle(bed.anchorUid, links)); }).catch(() => {});
     return () => { alive = false; };
-  }, [bed.id, bed.ownerId, circleNonce]);
+  }, [bed.id, bed.anchorUid, circleNonce]);
 
   const loadChain = useCallback(() => {
     setLoadingChain(true);
@@ -167,7 +167,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
               <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{bed.body}</p>
             </div>
           )}
-          {isOwner && (
+          {isAnchor && (
             <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
               <label className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('visibility')}</label>
               <select value={vis} onChange={e => changeVisibility(e.target.value as Lifetree['visibility'])}
@@ -207,7 +207,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
             <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${housed ? 'bg-amber-400/20 text-amber-200' : 'bg-sky-400/20 text-sky-200'}`}>
               {housed ? t('housed') : t('loose')}
             </span>
-            <BeingQr lid={bed.lid} name={bed.name} savedHref={bed.qr?.href} canMint={isOwner}
+            <BeingQr lid={bed.lid} name={bed.name} savedHref={bed.qr?.href} canMint={isAnchor}
               onMint={(href) => mintBeingQr('lifetrees', bed.id, href)} className="text-white/70" />
             <LoveButton collection="lifetrees" id={bed.id} initialCount={bed.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25 dark:bg-slate-900/15" />
           </>

@@ -5,7 +5,7 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
-    function isOwner(userId) {
+    function isAnchor(userId) {
       return request.auth.uid == userId;
     }
     function isSuperAdmin() {
@@ -15,7 +15,7 @@ service cloud.firestore {
     function isStaff() {
       return exists(/databases/$(database)/documents/admins/$(request.auth.uid)) || request.auth.token.admin == true || isSuperAdmin();
     }
-    // "Owner" means KEEPER: the founding ownerId or any `keeper` link holder — FULL PEERS
+    // "Owner" means KEEPER: the founding anchorUid or any `keeper` link holder — FULL PEERS
     // (ring 2026-08-12, domain/keeperCircle). Keeper links are never client-minted: only the
     // server writes one (acceptKeeperInvite / acceptKeeperRequest), after proving the newcomer
     // owns a living tree. Extending THIS function is what makes peers peers everywhere at once.
@@ -29,18 +29,18 @@ service cloud.firestore {
     function hasKeeperLink(communityId) {
       return exists(/databases/$(database)/documents/links/$(request.auth.uid + '__keeper__' + communityId));
     }
-    function isCommunityOwner(communityId) {
+    function keepsCommunity(communityId) {
       return communityId is string &&
         (
           (exists(/databases/$(database)/documents/communities/$(communityId)) &&
-           get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid)
+           get(/databases/$(database)/documents/communities/$(communityId)).data.anchorUid == request.auth.uid)
           || hasKeeperLink(communityId)
         );
     }
     // A keeper of the community's DOOR: its owner, or a linked steward — the delegated hands
     // that accept knocks, remove members, and mint/revoke invitations. Delegation is a link.
     function isCommunityKeeper(communityId) {
-      return isCommunityOwner(communityId)
+      return keepsCommunity(communityId)
         || (communityId is string
             && exists(/databases/$(database)/documents/links/$(request.auth.uid + '__steward__' + communityId)));
     }
@@ -82,7 +82,7 @@ service cloud.firestore {
       return communityId is string && communityId != '' && (
         hasLink('member', communityId)
         || (exists(/databases/$(database)/documents/communities/$(communityId))
-            && get(/databases/$(database)/documents/communities/$(communityId)).data.ownerId == request.auth.uid));
+            && get(/databases/$(database)/documents/communities/$(communityId)).data.anchorUid == request.auth.uid));
     }
     // A party to a covenant: does the signed-in user hold a `party` link into it? Authority-by-path,
     // exactly like hasLink — the covenant's proposer minted these (domain/covenant.ts).
@@ -157,7 +157,7 @@ service cloud.firestore {
     // (any signed-in user may add one) and grants NO privileges — it is deliberately excluded from
     // every check below. Caring and circle access vest only in the invited roles (keeper /
     // steward / observer), whose links are minted server-side by acceptTreeInvite (never self-serve).
-    // A TREE IS KEPT, NOT OWNED (ring 2026-09-29): its keepers are EQUAL — the anchor (ownerId, the
+    // A TREE IS KEPT, NOT OWNED (ring 2026-09-29): its keepers are EQUAL — the anchor (anchorUid, the
     // hand that planted it, the field the "never keeperless" invariant lives in) and every keeper
     // link holder hold the same powers. Nothing below reads the anchor alone; only resignTreeKeeper
     // (server) moves it, by succession.
@@ -165,7 +165,7 @@ service cloud.firestore {
       return treeId is string && treeId != '' && (
         hasLink('keeper', treeId)
         || (exists(/databases/$(database)/documents/lifetrees/$(treeId))
-            && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid));
+            && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.anchorUid == request.auth.uid));
     }
     // CARERS may edit a tree and confirm its watering: keepers and stewards.
     function isTreeCarer(treeId) {
@@ -274,19 +274,19 @@ service cloud.firestore {
       return !('visibility' in resource.data)
         || resource.data.visibility == 'public'
         || (isSignedIn() && resource.data.visibility == 'node')
-        || (isSignedIn() && resource.data.ownerId == request.auth.uid)
+        || (isSignedIn() && resource.data.anchorUid == request.auth.uid)
         || isStaff();
     }
     // LIST proves safety from the QUERY (the pulse lesson of ring 2026-08-25, heard for trees
     // on 2026-09-07 — Lumo's review): default 'unlisted', so an unconstrained query is refused
     // whole and a node- or private tree never rides an anonymous list. The get default stays
-    // public (legacy-safe); every list pins visibility, or its own ownerId, or is staff's.
+    // public (legacy-safe); every list pins visibility, or its own anchorUid, or is staff's.
     function canListLifetree() {
       return resource.data.get('visibility', 'unlisted') == 'public'
         || (isSignedIn() && (
              isStaff()
              || resource.data.get('visibility', 'unlisted') == 'node'
-             || resource.data.get('ownerId', '') == request.auth.uid));
+             || resource.data.get('anchorUid', '') == request.auth.uid));
     }
     function canReadVision() {
       return !('visibility' in resource.data)
@@ -311,7 +311,7 @@ service cloud.firestore {
       return resource.data.get('visibility', 'community') == 'public'
         || (isSignedIn() && (
              resource.data.get('visibility', 'community') == 'node'
-             || resource.data.get('ownerId', '') == request.auth.uid
+             || resource.data.get('anchorUid', '') == request.auth.uid
              || isStaff()
              || isCommunityMember(resource.data.get('communityId', ''))
            ));
@@ -369,7 +369,7 @@ service cloud.firestore {
       let parent = /databases/$(database)/documents/$(collectionName)/$(beingId);
       let before = get(parent).data.get('loveCount', 0);
       return isSignedIn()
-        && isOwner(loveId)
+        && isAnchor(loveId)
         && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.createdAt == request.time
@@ -381,7 +381,7 @@ service cloud.firestore {
       let parent = /databases/$(database)/documents/$(collectionName)/$(beingId);
       let before = get(parent).data.get('loveCount', 0);
       return isSignedIn()
-        && isOwner(loveId)
+        && isAnchor(loveId)
         && before is int
         && before > 0
         && getAfter(parent).data.get('loveCount', 0) == before - 1;
@@ -392,7 +392,7 @@ service cloud.firestore {
       let oldLoveCount = get(parent).data.get('loveCount', 0);
       let before = oldLoveCount > 0 ? oldLoveCount : get(parent).data.get('validationScore', 0);
       return isSignedIn()
-        && isOwner(loveId)
+        && isAnchor(loveId)
         && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.createdAt == request.time
@@ -406,7 +406,7 @@ service cloud.firestore {
       let oldLoveCount = get(parent).data.get('loveCount', 0);
       let before = oldLoveCount > 0 ? oldLoveCount : get(parent).data.get('validationScore', 0);
       return isSignedIn()
-        && isOwner(loveId)
+        && isAnchor(loveId)
         && before is int
         && before > 0
         && getAfter(parent).data.get('loveCount', 0) == before - 1
@@ -440,7 +440,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn()
         && request.resource.data.invitedByUserId == request.auth.uid
-        && isCommunityOwner(request.resource.data.communityId);
+        && keepsCommunity(request.resource.data.communityId);
       allow update: if isSignedIn()
         && (resource.data.invitedUserId == request.auth.uid || resource.data.invitedByUserId == request.auth.uid)
         && !request.resource.data.diff(resource.data).affectedKeys()
@@ -507,12 +507,12 @@ service cloud.firestore {
     // mirrored onto the user's (world-readable) lifetrees so the reach gate can read it
     // without exposing the rest of the private user doc to other members.
     match /users/{userId} {
-      allow read: if isOwner(userId) || isStaff();
-      allow create, delete: if isOwner(userId) || isStaff();
+      allow read: if isAnchor(userId) || isStaff();
+      allow create, delete: if isAnchor(userId) || isStaff();
       // PUSH (ring 2026-09-06): a being's own devices — theirs to add and drop, no one else's to
       // see. functions/onReachCreated reads them with the admin hand when a reach arrives.
       match /pushSubscriptions/{subId} {
-        allow read, write: if isOwner(userId) || isStaff();
+        allow read, write: if isAnchor(userId) || isStaff();
       }
       // `invitesRemaining` is a server-authoritative allowance. From the client a user may only
       // SPEND it (lower it) or hold it within the self-serve allotment (144, granted on community
@@ -520,7 +520,7 @@ service cloud.firestore {
       // unlimited invites" hole. All other profile fields (theme, prefs, privacy flags) stay
       // self-writable. Staff may set any value.
       allow update: if isStaff()
-        || (isOwner(userId) && (
+        || (isAnchor(userId) && (
              request.resource.data.get('invitesRemaining', 0) <= resource.data.get('invitesRemaining', 0)
              || request.resource.data.get('invitesRemaining', 0) <= 144
            ));
@@ -553,7 +553,7 @@ service cloud.firestore {
     // Usage: per-user server-authoritative daily counters (AI free-tier + outbound email). Written
     // ONLY by Cloud Functions via the Admin SDK; a user may read their own to display allowance.
     match /usage/{userId} {
-      allow read: if isOwner(userId) || isStaff();
+      allow read: if isAnchor(userId) || isStaff();
       allow write: if false;
     }
 
@@ -574,12 +574,12 @@ service cloud.firestore {
       // EVERY bed — housed, loose, staff-planted — is born domainless
       // (domain == '' is the structural forest-exclusion invariant: a domain-scoped query
       // must never surface a bed).
-      // THE BIRTH IS SIGNED (ring 2026-08-17): ownerId is the planter's OWN uid, from every
+      // THE BIRTH IS SIGNED (ring 2026-08-17): anchorUid is the planter's OWN uid, from every
       // hand but staff's (staff stay exempt only from the ownership check, the bed gate's
       // precedent — they plant the node's genesis and beings for others). Before this, any
       // signed-in client could plant a tree wearing any uid it liked.
       allow create: if isSignedIn()
-        && (isStaff() || request.resource.data.get('ownerId', '') == request.auth.uid)
+        && (isStaff() || request.resource.data.get('anchorUid', '') == request.auth.uid)
         // BORN AT ITS ROOT (ring 2026-09-23): a tree's head at birth IS its genesis, height 0 —
         // from every hand, staff included (a data-validity invariant, like the bed's place).
         // After birth the head moves only under the server's hand (the update freeze below).
@@ -616,12 +616,12 @@ service cloud.firestore {
           && (
             staffHand('tree_edit')
             || (
-              request.resource.data.ownerId == request.auth.uid
+              request.resource.data.anchorUid == request.auth.uid
               && (
                 // HOUSED: the house names its keeper, and the keeper is the writer.
                 (
                   request.resource.data.get('lightHouseId', '') != ''
-                  && get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.ownerId == request.auth.uid
+                  && get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.anchorUid == request.auth.uid
                 )
                 // LOOSE: no house — the shared place gate above has already proven the coordinate.
                 || request.resource.data.get('lightHouseId', '') == ''
@@ -631,7 +631,7 @@ service cloud.firestore {
         )
       );
       // Carers (keepers/stewards) or staff may edit a tree — but `validated`/`validatorId`
-      // and `ownerId` are FROZEN on the edit path, so a tree can neither self-validate (the flag
+      // and `anchorUid` are FROZEN on the edit path, so a tree can neither self-validate (the flag
       // that bypasses onlyValidatedCanReach) nor transfer its own ownership from the client.
       // `lightHouseId` is SOFT, not frozen (a loose bed may one day graduate or join a house) —
       // but any write that sets or changes it to a non-empty house must come from that house's
@@ -668,7 +668,7 @@ service cloud.firestore {
         (
           (isTreeCarer(treeId) || isStaff())
           && !request.resource.data.diff(resource.data).affectedKeys()
-                .hasAny(['validated', 'validatorId', 'ownerId', 'lid', 'loveCount'])
+                .hasAny(['validated', 'validatorId', 'anchorUid', 'lid', 'loveCount'])
           // THE HEAD IS THE SERVER'S (ring 2026-09-23): latestHash / blockHeight / genesisHash
           // move only under functions/mintBlock and its twins, never from a client hand.
           && !request.resource.data.diff(resource.data).affectedKeys()
@@ -681,7 +681,7 @@ service cloud.firestore {
           && (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lightHouseId'])
             || request.resource.data.get('lightHouseId', '') == ''
-            || get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.ownerId == request.auth.uid
+            || get(/databases/$(database)/documents/lightHouses/$(request.resource.data.lightHouseId)).data.anchorUid == request.auth.uid
           )
         )
         // Peer validation (web of trust): a validator signs ANOTHER tree with a validated tree it
@@ -719,7 +719,7 @@ service cloud.firestore {
 
       // Loves: own-slot privacy plus atomic coupling to the public tally above.
       match /loves/{loveId} {
-        allow read: if isSignedIn() && isOwner(loveId);
+        allow read: if isSignedIn() && isAnchor(loveId);
         allow create: if validLoveSlotCreate('lifetrees', treeId, loveId);
         allow delete: if validLoveSlotDelete('lifetrees', treeId, loveId);
         allow update: if false;
@@ -734,7 +734,7 @@ service cloud.firestore {
         // nights too, or a booked bed would show as free. The payload carries only dates.
         allow read: if true;
         allow write: if isSignedIn() && (
-          get(/databases/$(database)/documents/lifetrees/$(treeId)).data.ownerId == request.auth.uid
+          get(/databases/$(database)/documents/lifetrees/$(treeId)).data.anchorUid == request.auth.uid
           || isStaff()
         );
       }
@@ -939,7 +939,7 @@ service cloud.firestore {
 
       // Loves: own-slot privacy plus atomic coupling to the public tally above.
       match /loves/{loveId} {
-        allow read: if isSignedIn() && isOwner(loveId);
+        allow read: if isSignedIn() && isAnchor(loveId);
         allow create: if validLoveSlotCreate('visions', visionId, loveId);
         allow delete: if validLoveSlotDelete('visions', visionId, loveId);
         allow update: if false;
@@ -971,7 +971,7 @@ service cloud.firestore {
         && (request.resource.data.type != 'event'
             || !('communityId' in request.resource.data)   // standalone event — anyone may plant one
             || isStaff()
-            || isCommunityOwner(request.resource.data.communityId))
+            || keepsCommunity(request.resource.data.communityId))
         // The two birth laws below bind every standalone record (Lumo's second look,
         // 2026-09-07: once hidden in a fork's else-branch, a labelled pulse walked past both —
         // an addressed reach labelled public, an offering from a stranger's tree).
@@ -1055,7 +1055,7 @@ service cloud.firestore {
                   request.resource.data.get('status', '') == resource.data.get('status', '')
                   || isStaff()
                   || resource.data.get('proposedBy', '') == request.auth.uid
-                  || isCommunityOwner(resource.data.get('communityId', ''))
+                  || keepsCommunity(resource.data.get('communityId', ''))
                 )
              && (
                   !request.resource.data.diff(resource.data).affectedKeys().hasAny(['enactedHash', 'withdrawnHash'])
@@ -1065,7 +1065,7 @@ service cloud.firestore {
                   !(resource.data.get('listening', false) == true && request.resource.data.get('listening', false) == false)
                   || isStaff()
                   || resource.data.get('proposedBy', '') == request.auth.uid
-                  || isCommunityOwner(resource.data.get('communityId', ''))
+                  || keepsCommunity(resource.data.get('communityId', ''))
                 )
            )
 
@@ -1080,14 +1080,14 @@ service cloud.firestore {
              && (
                   isStaff()
                   || resource.data.get('proposedBy', '') == request.auth.uid
-                  || isCommunityOwner(resource.data.get('communityId', ''))
+                  || keepsCommunity(resource.data.get('communityId', ''))
                 )
            )
 
         // (f) Event content edits — author, community owner, or staff; content keys only.
         || (
              resource.data.get('type', '') == 'event'
-             && (isStaff() || resource.data.authorId == request.auth.uid || isCommunityOwner(resource.data.get('communityId', '')))
+             && (isStaff() || resource.data.authorId == request.auth.uid || keepsCommunity(resource.data.get('communityId', '')))
              && request.resource.data.diff(resource.data).affectedKeys()
                   .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
            )
@@ -1102,7 +1102,7 @@ service cloud.firestore {
              && !('communityId' in resource.data)
              && request.resource.data.get('communityId', '') is string
              && request.resource.data.get('communityId', '') != ''
-             && isCommunityOwner(request.resource.data.communityId)
+             && keepsCommunity(request.resource.data.communityId)
              && get(/databases/$(database)/documents/communities/$(request.resource.data.communityId)).data.get('domain', '') == resource.data.get('domain', '')
              && request.resource.data.diff(resource.data).affectedKeys()
                   .hasOnly(['communityId', 'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
@@ -1253,7 +1253,7 @@ service cloud.firestore {
       allow delete: if isSignedIn() && !isChainBlock(resource.data) && (
         isStaff()
         || (
-             (resource.data.get('authorId', '') == request.auth.uid || isCommunityOwner(resource.data.get('communityId', '')))
+             (resource.data.get('authorId', '') == request.auth.uid || keepsCommunity(resource.data.get('communityId', '')))
              // A REACH is never plainly deleted, not even by its author (retraction is its way).
              && resource.data.get('type', '') != 'reach'
              && (
@@ -1273,7 +1273,7 @@ service cloud.firestore {
       // Loves: a pulse may reveal only YOUR mark; the slot and both legacy tally fields
       // move together in the same transaction.
       match /loves/{loveId} {
-          allow read: if isSignedIn() && isOwner(loveId);
+          allow read: if isSignedIn() && isAnchor(loveId);
           allow create: if validPulseLoveSlotCreate(pulseId, loveId);
           allow delete: if validPulseLoveSlotDelete(pulseId, loveId);
           allow update: if false;
@@ -1349,7 +1349,7 @@ service cloud.firestore {
         && request.resource.data.fromDate < request.resource.data.toDate
         && get(/databases/$(database)/documents/lifetrees/$(request.resource.data.bedId)).data.get('treeType', '') == 'BED'
         && request.resource.data.get('hostUid', '') ==
-             get(/databases/$(database)/documents/lifetrees/$(request.resource.data.bedId)).data.ownerId;
+             get(/databases/$(database)/documents/lifetrees/$(request.resource.data.bedId)).data.anchorUid;
       allow update: if isSignedIn()
         && (resource.data.hostUid == request.auth.uid || isStaff())
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
@@ -1453,19 +1453,18 @@ service cloud.firestore {
     // Communities: Read public, Write staff/owner
     match /communities/{communityId} {
       allow read: if true;
-      // THE BIRTH IS SIGNED: a community is founded in the founder's own name (both the
-      // anchor ownerId and, when carried, the legacy founderUserId).
+      // THE BIRTH IS SIGNED: a community is founded in the founder's own name — the anchor
+      // (anchorUid, ring 2026-09-30: the one seat that is never empty; who founded is the history).
       allow create: if papersSound() && isSignedIn() && (isStaff() || (
-        request.resource.data.get('ownerId', '') == request.auth.uid
-        && request.resource.data.get('founderUserId', request.auth.uid) == request.auth.uid
+        request.resource.data.get('anchorUid', '') == request.auth.uid
         // `keeperUids` is the server's mirror of the keeper links (storage.rules reads it) —
         // no client hand writes it, at birth or after (ring 2026-09-07).
         && !('keeperUids' in request.resource.data)
         // `domainAliases` — the doors — are claimed by proof or granted (functions), never typed.
         && !('domainAliases' in request.resource.data)
       ));
-      // Keepers are FULL PEERS (ring 2026-08-12): the founding ownerId and every `keeper`
-      // link holder edit alike. The ANCHOR itself (`ownerId`) is frozen against client
+      // Keepers are FULL PEERS (ring 2026-08-12): the founding anchorUid and every `keeper`
+      // link holder edit alike. The ANCHOR itself (`anchorUid`) is frozen against client
       // hands like `lid` — succession moves only through the resignKeeper transaction,
       // which refuses to leave a community keeperless. (Before this, an owner could hand
       // the anchor to any uid — or to nobody — in one client write.)
@@ -1474,17 +1473,17 @@ service cloud.firestore {
       // or the badge would be a self-claim wearing a proof's clothes.
       allow update: if papersSound() && isSignedIn() && (
         (
-          (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || staffHand('community_edit'))
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'ownerId', 'bornOn', 'domainVerification', 'formedAt', 'formedBy', 'keeperUids', 'newsletterLastSentAt', 'newsletterLastSubject', 'newsletterLastSent', 'domainAliases'])
+          (resource.data.anchorUid == request.auth.uid || hasKeeperLink(communityId) || staffHand('community_edit'))
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount', 'anchorUid', 'bornOn', 'domainVerification', 'formedAt', 'formedBy', 'keeperUids', 'newsletterLastSentAt', 'newsletterLastSubject', 'newsletterLastSent', 'domainAliases'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || validLoveCountChange('communities', communityId)
       );
-      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || hasKeeperLink(communityId) || isStaff());
+      allow delete: if isSignedIn() && (resource.data.anchorUid == request.auth.uid || hasKeeperLink(communityId) || isStaff());
 
       // Loves: own-slot privacy plus atomic coupling to the public tally above.
       match /loves/{loveId} {
-        allow read: if isSignedIn() && isOwner(loveId);
+        allow read: if isSignedIn() && isAnchor(loveId);
         allow create: if validLoveSlotCreate('communities', communityId, loveId);
         allow delete: if validLoveSlotDelete('communities', communityId, loveId);
         allow update: if false;
@@ -1507,7 +1506,7 @@ service cloud.firestore {
       // THE BIRTH IS SIGNED: consecrated in the consecrator's own name (a keeper who
       // consecrates for their community still signs as themself).
       allow create: if isSignedIn()
-        && (isStaff() || request.resource.data.get('ownerId', '') == request.auth.uid);
+        && (isStaff() || request.resource.data.get('anchorUid', '') == request.auth.uid);
       // CARE TOUCH (ring 2026-08-24): the primary community's keeper may refresh
       // lastCaredAt alone — a step-in care warms a house its keeper does not own.
       allow update: if isSignedIn()
@@ -1517,7 +1516,7 @@ service cloud.firestore {
       // The lid (the true name, load-bearing for QR links) is frozen on every update path.
       allow update: if isSignedIn() && (
         (
-          (resource.data.ownerId == request.auth.uid || isStaff())
+          (resource.data.anchorUid == request.auth.uid || isStaff())
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
@@ -1530,7 +1529,7 @@ service cloud.firestore {
       // Own-slot read is why a Light House CAN wear a heart even when its own read is member-gated:
       // each being sees only their own mark, so a guarded house never leaks who loved it.
       match /loves/{loveId} {
-        allow read: if isSignedIn() && isOwner(loveId);
+        allow read: if isSignedIn() && isAnchor(loveId);
         allow create: if validLoveSlotCreate('lightHouses', lightHouseId, loveId);
         allow delete: if validLoveSlotDelete('lightHouses', lightHouseId, loveId);
         allow update: if false;
@@ -1633,22 +1632,22 @@ service cloud.firestore {
     // Intelligences: public ones are world-readable; private ones only to owner/staff.
     match /intelligences/{intelligenceId} {
       allow read: if resource.data.public == true ||
-        (isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff()));
+        (isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff()));
       // THE BIRTH IS SIGNED — with one lawful delegation: a community KEEPER connects the
-      // community's intelligence, and the doc wears the COMMUNITY OWNER's uid (the section's
+      // community's intelligence, and the doc wears the COMMUNITY ANCHOR's uid (the section's
       // management queries key on it). Only a real keeper of THAT community may do so, and
-      // only with that community's true owner — never an arbitrary name.
+      // only with that community's true anchor — never an arbitrary name.
       allow create: if isSignedIn() && (
         isStaff()
-        || request.resource.data.get('ownerId', '') == request.auth.uid
+        || request.resource.data.get('authorId', '') == request.auth.uid
         || (
           request.resource.data.get('credentialScope', '') == 'community'
-          && isCommunityKeeper(request.resource.data.get('credentialOwnerId', ''))
-          && request.resource.data.get('ownerId', '')
-               == get(/databases/$(database)/documents/communities/$(request.resource.data.credentialOwnerId)).data.ownerId
+          && isCommunityKeeper(request.resource.data.get('credentialHolderUid', ''))
+          && request.resource.data.get('authorId', '')
+               == get(/databases/$(database)/documents/communities/$(request.resource.data.credentialHolderUid)).data.anchorUid
         )
       );
-      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
     }
 
     // Personas: behaviour templates, world-readable; only staff curate them.
@@ -1663,17 +1662,17 @@ service cloud.firestore {
         isStaff() ||
         (isSignedIn() && resource.data.visibility == 'community');
       // THE BIRTH IS SIGNED: a memory carries its writer's own uid (createMemory now
-      // stamps ownerId), and a COMMUNITY memory may only be laid down by that community's
+      // stamps authorId), and a COMMUNITY memory may only be laid down by that community's
       // keeper — mirroring the update gate below.
       allow create: if isSignedIn()
-        && (isStaff() || request.resource.data.get('ownerId', '') == request.auth.uid)
+        && (isStaff() || request.resource.data.get('authorId', '') == request.auth.uid)
         && (
           !('communityId' in request.resource.data)
           || isStaff()
-          || isCommunityOwner(request.resource.data.communityId)
+          || keepsCommunity(request.resource.data.communityId)
         );
       allow update, delete: if isSignedIn() &&
-        (isStaff() || isCommunityOwner(resource.data.communityId));
+        (isStaff() || keepsCommunity(resource.data.communityId));
     }
 
     // (Governance decisions are now pulses of type 'decision' — see the /pulses rules.
@@ -1743,7 +1742,7 @@ service cloud.firestore {
             && request.resource.data.from != request.resource.data.to
             && exists(/databases/$(database)/documents/communities/$(request.resource.data.from))
             && exists(/databases/$(database)/documents/communities/$(request.resource.data.to))
-            && isCommunityOwner(request.resource.data.from)
+            && keepsCommunity(request.resource.data.from)
             && request.resource.data.get('type', '') == 'link'
             && request.resource.data.get('lid', '') is string
             && request.resource.data.get('lid', '') != ''
@@ -1752,7 +1751,7 @@ service cloud.firestore {
             && request.resource.data.keys().hasOnly(['lid', 'type', 'rel', 'from', 'to', 'createdAt']))
         // Rooting: a lightHouse's keeper roots THEIR lightHouse in a tree (from = lightHouse id).
         || (isSignedIn() && request.resource.data.rel in ['rooted', 'shelters']
-            && get(/databases/$(database)/documents/lightHouses/$(request.resource.data.from)).data.ownerId == request.auth.uid)
+            && get(/databases/$(database)/documents/lightHouses/$(request.resource.data.from)).data.anchorUid == request.auth.uid)
         // Membership through the DOOR (domain/communityDoor.ts): a keeper (owner or steward)
         // accepts a knock; or the joiner steps in themself while the door is open; or they
         // arrive holding a live invitation (which also carries provenance on the edge).
@@ -1787,7 +1786,7 @@ service cloud.firestore {
         // The community owner appoints stewards — delegated door-keepers. A steward may step
         // down themself (the from == uid delete clause below); the owner may also remove them.
         || (isSignedIn() && request.resource.data.rel == 'steward'
-            && isCommunityOwner(request.resource.data.to))
+            && keepsCommunity(request.resource.data.to))
         // A covenant's PROPOSER mints the roster: one `party` link per party (from = a party's uid,
         // to = the covenant). Only that covenant's proposer may (its proposedBy). Grants no power on
         // its own — the crypto lives in the covenants/{id}/signatures subcollection. Staff (the
@@ -1822,22 +1821,22 @@ service cloud.firestore {
         // Either community's owner/keeper circle may change only its OWN attestation. Removing one direction turns
         // reciprocal recognition back into a one-sided proposal; it never edits the other hand.
         || (resource.data.get('rel', '') in ['collaborates_with', 'recognises', 'shares_resources_with', 'accepts_coin_of']
-            && isCommunityOwner(resource.data.from))
+            && keepsCommunity(resource.data.from))
         || (resource.data.get('rel', '') in ['rooted', 'shelters']
             && exists(/databases/$(database)/documents/lightHouses/$(resource.data.from))
-            && get(/databases/$(database)/documents/lightHouses/$(resource.data.from)).data.ownerId == request.auth.uid)
+            && get(/databases/$(database)/documents/lightHouses/$(resource.data.from)).data.anchorUid == request.auth.uid)
         // A door-keeper (owner or steward) can decline requests and remove members.
         || (resource.data.get('rel', '') in ['member', 'join_request']
             && isCommunityKeeper(resource.data.to))
         // A keepership knock is declined by the target's keeper (community or tree).
         // (Its author withdraws it via the from == uid clause above.) NOTE: `keeper` links
         // themselves are NOT listed here — a peer cannot remove a peer; a keeper leaves only
-        // by their own hand (from == uid) or by staff mend. Never keeperless: ownerId remains.
+        // by their own hand (from == uid) or by staff mend. Never keeperless: anchorUid remains.
         || (resource.data.get('rel', '') == 'keeper_request'
             && (isCommunityKeeper(resource.data.to) || isTreeKeeper(resource.data.to)))
         // The owner can remove a steward they appointed.
         || (resource.data.get('rel', '') == 'steward'
-            && isCommunityOwner(resource.data.to)));
+            && keepsCommunity(resource.data.to)));
       allow update: if false;
     }
 

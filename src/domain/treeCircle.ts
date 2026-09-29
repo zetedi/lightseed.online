@@ -4,7 +4,7 @@ import type { Stamp } from './time';
 // The tree is the living anchor; the circle (community) grows around shared care.
 
 // A tree is KEPT, not owned (ring 2026-09-29): its keepers are equal — the hand that planted it
-// (ownerId, the anchor in the data, named only by the history) and every keeper link since.
+// (anchorUid, the anchor in the data, named only by the history) and every keeper link since.
 export type TreeRelationRole = 'keeper' | 'guardian' | 'observer' | 'steward';
 export type TreeRelationStatus = 'pending' | 'accepted' | 'declined' | 'revoked';
 
@@ -41,7 +41,7 @@ export const roleLabelKey = (role: TreeRelationRole) => `role_${role}` as const;
 export const roleDescKey = (role: TreeRelationRole) => `role_${role}_desc` as const;
 
 // A CIRCLE GRADUATES into a standing community by the hands that carry it: the keeper
-// circle (ownerId + keeper links), or a keeper of the ROOT TREE — the caring layer that
+// circle (anchorUid + keeper links), or a keeper of the ROOT TREE — the caring layer that
 // formed the circle in the first place. Forming chooses a name, stamps provenance
 // (bornOn = the garden where the root tree stands, formedAt/formedBy by the server's hand
 // alone — the rules freeze both), and never mints a domain: an address is claimed later,

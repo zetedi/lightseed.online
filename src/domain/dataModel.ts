@@ -69,7 +69,7 @@ export const DATA_MODEL: ModelEntity[] = [
     fields: [
       { name: 'id', type: 'string', pk: true },
       { name: 'lid', type: 'uuidv7' },
-      { name: 'ownerId', type: 'uid', ref: 'Person' },
+      { name: 'anchorUid', type: 'uid', ref: 'Person' },
       { name: 'name', type: 'string' },
       { name: 'domain', type: 'string' },
       { name: 'heroImageUrl', type: 'string?' },
@@ -86,7 +86,7 @@ export const DATA_MODEL: ModelEntity[] = [
     fields: [
       { name: 'id', type: 'string', pk: true },
       { name: 'lid', type: 'uuidv7' },
-      { name: 'ownerId', type: 'uid', ref: 'Person' },
+      { name: 'anchorUid', type: 'uid', ref: 'Person' },
       { name: 'communityId', type: 'string?', ref: 'Community' },
       { name: 'validated', type: 'bool' },
       { name: 'validatorId', type: 'string?', ref: 'Lifetree' },
@@ -178,7 +178,7 @@ export const DATA_MODEL: ModelEntity[] = [
     fields: [
       { name: 'id', type: 'string', pk: true },
       { name: 'lid', type: 'uuidv7' },
-      { name: 'ownerId', type: 'uid', ref: 'Person' },
+      { name: 'anchorUid', type: 'uid', ref: 'Person' },
       { name: 'name', type: 'string' },
       { name: 'body', type: 'string' },
       { name: 'domain', type: 'string?' },
@@ -334,7 +334,7 @@ export const DATA_MODEL: ModelEntity[] = [
     fields: [
       { name: 'id', type: 'string', pk: true },
       { name: 'lid', type: 'uuidv7' },
-      { name: 'ownerId', type: 'uid?', ref: 'Person' },
+      { name: 'anchorUid', type: 'uid?', ref: 'Person' },
       { name: 'name', type: 'string' },
       { name: 'provider', type: 'enum' },
       { name: 'model', type: 'string' },
@@ -375,7 +375,7 @@ export const DATA_MODEL: ModelEntity[] = [
       { name: 'id', type: 'scope_owner_provider', pk: true },
       { name: 'provider', type: 'enum' },
       { name: 'scope', type: 'user|community' },
-      { name: 'ownerId', type: 'id', ref: 'Person' },
+      { name: 'anchorUid', type: 'id', ref: 'Person' },
       { name: 'keyHint', type: 'string' },
       { name: 'key', type: 'secret 🔒' },
     ],

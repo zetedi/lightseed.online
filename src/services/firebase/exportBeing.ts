@@ -100,11 +100,11 @@ export const exportPerson = async (uid: string, displayName?: string | null): Pr
 
   const [person, user, trees, pulses, linksOut, linksIn, visions, lightHouses] = await Promise.all([
     readDoc(`persons/${uid}`), readDoc(`users/${uid}`),
-    readQuery('lifetrees', 'ownerId'),
+    readQuery('lifetrees', 'anchorUid'),
     readQuery('pulses', 'authorId'),
     firestoreStore.linksFrom(uid), firestoreStore.linksTo(uid),
     readQuery('visions', 'authorId'),
-    readQuery('lightHouses', 'ownerId'),
+    readQuery('lightHouses', 'anchorUid'),
   ]);
   const chains = await Promise.all(
     (trees as { id: string }[]).map(async t => ({ treeId: t.id, ...(await treeChain(t.id)) })));

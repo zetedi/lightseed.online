@@ -464,7 +464,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       )}
 
       {/* THE ADDRESS — the community's domain, keeper-editable (ring 2026-08-15; the rules
-          already admitted keepers to every field but lid/loveCount/ownerId — this gives the
+          already admitted keepers to every field but lid/loveCount/anchorUid — this gives the
           field a face). Validated by the same law as the place-of-record mend; and honest
           about what it does NOT do: beings already stamped with the old domain keep their
           stamps (their re-homing is the staff mend / a migration, not a side effect). */}

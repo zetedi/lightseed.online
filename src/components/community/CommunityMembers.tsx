@@ -36,7 +36,7 @@ interface CommunityMembersProps {
   // Owner, steward or staff — may accept/decline requests, remove members, mint invitations.
   canManage: boolean;
   // Owner or staff — may set the door and appoint/remove stewards (community-doc writes).
-  isOwner: boolean;
+  isAnchor: boolean;
   // Lets the shell keep its copy of the community fresh after a door change.
   onCommunityUpdate?: (updates: Partial<Community>) => void;
 }
@@ -51,7 +51,7 @@ const DOORS: { value: CommunityDoor; label: TranslationKey; hint: TranslationKey
 const resolveNames = async (uids: string[]): Promise<Row[]> =>
   Promise.all(uids.map(async (uid) => ({ uid, name: (await getPersonName(uid)) || uid })));
 
-export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, currentUserId, canManage, isOwner, onCommunityUpdate }) => {
+export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, currentUserId, canManage, isAnchor, onCommunityUpdate }) => {
     const { t } = useLanguage();
   const [members, setMembers] = useState<Row[] | null>(null);
   const [requests, setRequests] = useState<Row[]>([]);
@@ -72,7 +72,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   const [invites, setInvites] = useState<CommunityInvite[]>([]);
   const [minting, setMinting] = useState(false);
 
-  // The keeper circle (domain/keeperCircle): the anchor (ownerId) + every keeper link.
+  // The keeper circle (domain/keeperCircle): the anchor (anchorUid) + every keeper link.
   const [keeperLinks, setKeeperLinks] = useState<{ from: string; createdAtMs: number }[]>([]);
   const [keeperAsks, setKeeperAsks] = useState<Row[]>([]);
   const [keeperOffers, setKeeperOffers] = useState<KeeperInvite[]>([]);
@@ -87,7 +87,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
         firestoreStore.linksTo(community.id, 'keeper_request'),
       ]);
       // The owner is implicitly a member even without a link (legacy circles).
-      const memberUids = Array.from(new Set([community.ownerId, ...memberLinks.map(l => l.from)].filter(Boolean)));
+      const memberUids = Array.from(new Set([community.anchorUid, ...memberLinks.map(l => l.from)].filter(Boolean)));
       const requestUids = requestLinks.map(l => l.from).filter(uid => !memberUids.includes(uid));
       const [memberRows, requestRows, askRows] = await Promise.all([
         resolveNames(memberUids), resolveNames(requestUids), resolveNames(kAsks.map(l => l.from)),
@@ -101,7 +101,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       console.error('Members load failed:', e);
       setMembers([]);
     }
-  }, [community.id, community.ownerId]);
+  }, [community.id, community.anchorUid]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -113,9 +113,9 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   }, [community.id, canManage]);
 
   // The viewer's standing in the keeper circle, and whether they may leave it.
-  const keeperUids = new Set([community.ownerId, ...keeperLinks.map(l => l.from)]);
+  const keeperUids = new Set([community.anchorUid, ...keeperLinks.map(l => l.from)]);
   const viewerIsKeeper = !!currentUserId && keeperUids.has(currentUserId);
-  const viewerCanResign = !!currentUserId && canResign(currentUserId, community.ownerId, keeperLinks);
+  const viewerCanResign = !!currentUserId && canResign(currentUserId, community.anchorUid, keeperLinks);
 
   // The callables refuse in the domain's words; speak them in the viewer's language.
   const keeperError = (e: any): string => {
@@ -165,7 +165,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
     try {
       const res = await resignKeeper(community.id);
       notify(res.successor ? spokenLine('resigned_with_successor', { name: (await getPersonName(res.successor)) || res.successor }) : spokenLine('resigned_quietly', {}));
-      if (res.successor) onCommunityUpdate?.({ ownerId: res.successor });
+      if (res.successor) onCommunityUpdate?.({ anchorUid: res.successor });
       await load();
     } catch (e: any) { showAlert(keeperError(e)); }
   };
@@ -249,7 +249,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   const handleLeave = async () => {
     if (!currentUserId) return;
     const refusal = leaveRefusal({
-      isAnchor: currentUserId === community.ownerId,
+      isAnchor: currentUserId === community.anchorUid,
       holdsKeeperLink: keeperLinks.some(l => l.from === currentUserId),
     });
     if (refusal) { showAlert('leave_while_keeping'); return; }
@@ -293,7 +293,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
       <SectionTitle title={t('members')} sub={t('community_members_sub')} />
 
       {/* The DOOR — owner-set: who may join, and how. Distinct from visibility (who may see). */}
-      {isOwner && (
+      {isAnchor && (
         <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 dark:bg-slate-900 dark:border-slate-800">
           <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{t('the_door')}</p>
           <div className="flex flex-wrap gap-1.5">
@@ -491,7 +491,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
                       </button>
                     )
                   )}
-                  {isOwner && (
+                  {isAnchor && (
                     <button onClick={() => handleSteward(m, !stewardUids.has(m.uid))} disabled={busyUid === m.uid}
                       title={stewardUids.has(m.uid) ? t('steward_revoke_hint') : t('steward_grant_hint')}
                       className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-bold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:bg-slate-900 dark:border-amber-900 dark:text-amber-300">

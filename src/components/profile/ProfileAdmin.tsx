@@ -358,13 +358,13 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
                           {u.displayName || u.email || u.uid}
-                          {u.isSuperAdmin && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('admin_node_owner_chip')}</span>}
+                          {u.isSuperAdmin && <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('admin_node_keeper_chip')}</span>}
                         </p>
                         <p className="truncate text-[10px] text-slate-400">{u.email || t('admin_no_email')} · <span className="font-mono">{u.uid}</span>{u.createdAt ? ` · ${new Date(u.createdAt).toLocaleDateString()}` : ''}</p>
                       </div>
                       <button
                         disabled={deletingUser || u.uid === uid || u.isSuperAdmin}
-                        title={u.uid === uid ? t('admin_no_self_delete') : (u.isSuperAdmin ? t('admin_no_owner_delete') : t('admin_delete_this_user'))}
+                        title={u.uid === uid ? t('admin_no_self_delete') : (u.isSuperAdmin ? t('admin_no_keeper_delete') : t('admin_delete_this_user'))}
                         onClick={() => handleDeleteUser(u)}
                         className="shrink-0 rounded-lg bg-red-600 px-2.5 py-1.5 text-[10px] font-bold text-white transition-colors hover:bg-red-500 disabled:opacity-40"
                       >

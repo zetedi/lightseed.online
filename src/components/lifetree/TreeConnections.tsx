@@ -27,11 +27,11 @@ export const TreeConnections = ({ tree }: { tree: Lifetree }) => {
     let alive = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the walk is fetched only once the panel is opened (revealed); resets its veil per tree
     setLoading(true);
-    loadSubgraphAround({ id: tree.id, kind: 'tree', ownerUid: tree.ownerId || null, name: tree.name, lid: tree.lid })
+    loadSubgraphAround({ id: tree.id, kind: 'tree', anchorUid: tree.anchorUid || null, name: tree.name, lid: tree.lid })
       .then(g => { if (alive) { setLoaded(g); setLoading(false); } })
       .catch(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [revealed, tree.id, tree.ownerId, tree.name, tree.lid]);
+  }, [revealed, tree.id, tree.anchorUid, tree.name, tree.lid]);
 
 
   const walk: SubgraphWalk | null = useMemo(() => {

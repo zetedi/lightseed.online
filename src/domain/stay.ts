@@ -13,7 +13,7 @@ export type StayStatus = 'requested' | 'accepted' | 'declined';
 export interface Stay extends Being {
   id: string;
   bedId: string;        // the reserved BED being — the anchor of a stay (a bed holds one guest
-                        // at a time). The rules verify hostUid against THIS bed's ownerId.
+                        // at a time). The rules verify hostUid against THIS bed's anchorUid.
   bedName?: string;     // denormalised for the host inbox and the guest's own list
   lightHouseId: string; // the bed's house for context/queries — '' for a loose bed
   lightHouseName?: string;
@@ -24,7 +24,7 @@ export interface Stay extends Being {
   guestTreeId?: string;
   guestTreeName?: string;
   guestTreeGrowthUrl?: string;
-  hostUid: string;      // the BED's ownerId at request time (denormalised — the rules and the
+  hostUid: string;      // the BED's anchorUid at request time (denormalised — the rules and the
                         // keeper's inbox query stand on this field)
   fromDate: string;     // yyyy-mm-dd
   toDate: string;       // yyyy-mm-dd (departure day — nights = to - from)

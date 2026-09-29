@@ -30,7 +30,7 @@ export const VALIDATION_WINDOW_MS = 365 * 24 * 3600 * 1000; // mirrors utils/val
 
 export interface TreeFacts {
   id: string;
-  ownerId: string;
+  anchorUid: string;
   treeType?: string | null;   // 'LIFETREE' (absent = LIFETREE) | 'GUARDED' | 'BED'
   isNature?: boolean | null;
   diedAtMs?: number | null;
@@ -52,7 +52,7 @@ export interface GuardianRequestFacts {
 
 // Why the asking may not be made — or null when it may.
 export const guardianRequestRefusal = (f: GuardianRequestFacts): DomainKey | null => {
-  if (f.tree.ownerId !== f.askerUid) return 'guard_not_owner';
+  if (f.tree.anchorUid !== f.askerUid) return 'guard_not_keeper';
   if (!isLifetree(f.tree)) return 'guard_not_lifetree';
   if (!isAlive(f.tree)) return 'guard_tree_dead';
   if (f.invitee.uid === f.askerUid) return 'guard_self';

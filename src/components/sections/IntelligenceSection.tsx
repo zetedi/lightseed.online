@@ -41,9 +41,9 @@ interface IntelligenceSectionProps {
   // The owning entity: id keys the edit-state reset when the entity (or its saved data) changes.
   entityId: string;
   // Being id the panel's provider credentials are stored under (usually === entityId).
-  credentialOwnerId: string;
+  credentialHolderUid: string;
   // Uid that owns intelligence docs created from the panel (the entity's owner).
-  intelligenceOwnerUid: string;
+  intelligenceAuthorUid: string;
   // Staff/superadmin — may enable/disable shared intelligences in the panel too.
   canManageAll?: boolean;
   // Current persisted selection on the entity.
@@ -73,8 +73,8 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
   canEdit,
   currentUserId,
   entityId,
-  credentialOwnerId,
-  intelligenceOwnerUid,
+  credentialHolderUid,
+  intelligenceAuthorUid,
   canManageAll,
   defaultIntelligenceId,
   availableIntelligenceIds,
@@ -156,8 +156,8 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
       <div className="mb-8">
         <IntelligencePanel
           scope={scope}
-          credentialOwnerId={credentialOwnerId}
-          intelligenceOwnerUid={intelligenceOwnerUid}
+          credentialHolderUid={credentialHolderUid}
+          intelligenceAuthorUid={intelligenceAuthorUid}
           viewerUid={currentUserId}
           canManageAll={!!canManageAll}
           selectedIntelligenceId={editDefaultIntelligenceId}

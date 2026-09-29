@@ -11,7 +11,7 @@ const ts = (ms: number) => ({ toMillis: () => ms }) as any;
 
 const tree = (id: string, over: Partial<Lifetree> = {}): Lifetree => ({
   id,
-  ownerId: 'alice',
+  anchorUid: 'alice',
   name: `Tree ${id}`,
   body: '',
   createdAt: ts(NOW - 100 * DAY_MS),
@@ -35,7 +35,7 @@ describe('sustainingSeven — the floor of seven planted, witnessed, cared for t
       tree('guarded', { treeType: 'GUARDED' }),
       tree('legacy-nature', { treeType: undefined, isNature: true } as any),
       tree('bed', { treeType: 'BED' }),
-      tree('bobs', { ownerId: 'bob' }),
+      tree('bobs', { anchorUid: 'bob' }),
     ];
     const p = sustainingSeven(trees, [], 'alice', NOW);
     expect(p.planted).toBe(1);

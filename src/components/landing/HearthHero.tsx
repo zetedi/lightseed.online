@@ -34,11 +34,11 @@ export const HearthHero: React.FC<HearthHeroProps> = ({ community, props, lights
     let alive = true;
     // The same one sentence every event surface speaks (the banner-leak lesson): a strict
     // portal scopes to its place; a signed-out visitor sees the public gatherings.
-    const { levels, ownerUid } = eventFeedScope(
+    const { levels, anchorUid } = eventFeedScope(
       { uid: lightseed?.uid },
       { reflectsPublic: community.reflectsPublic, strictScope: community.strictScope },
     );
-    fetchEventPulses(undefined, community.domain, levels, ownerUid)
+    fetchEventPulses(undefined, community.domain, levels, anchorUid)
       .then(r => {
         if (!alive) return;
         const seen = eventsOnView(r.items, { signedIn: !!lightseed, showPast: false, nowMs: Date.now() });

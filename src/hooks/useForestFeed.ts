@@ -77,7 +77,7 @@ export function useForestFeed(params: {
     // The tree feeds merge the viewer's OWN trees so a creator is never lost on a custom
     // domain; a strict, scoped node suppresses the merge. ONE derivation (domain
     // ownMergeUid) — the hand-copy era ended with the Nūr-on-Per-Auset leak.
-    const feedOwnerUid = ownMergeUid(lightseed?.uid, { reflectsPublic: hostReflectsPublic, strictScope: hostStrictScope });
+    const feedAnchorUid = ownMergeUid(lightseed?.uid, { reflectsPublic: hostReflectsPublic, strictScope: hostStrictScope });
     // A reflecting feed requests PUBLIC only. A scoped feed keeps the viewer's ordinary
     // readable levels; reflection must never carry another place's node-visible records.
     const feedLevels = reflects
@@ -104,13 +104,13 @@ export function useForestFeed(params: {
           // The map shows the whole forest at once (no pagination) so every tree appears.
           // Beds are already excluded at the service layer — the guard here is the belt
           // to that braces (a bed must never reach the forest, whatever the source).
-          const all = unionStanding(excludeBedTrees(await fetchAllLifetrees(currentDomain, feedOwnerUid, treeLevels)));
+          const all = unionStanding(excludeBedTrees(await fetchAllLifetrees(currentDomain, feedAnchorUid, treeLevels)));
           if (stale()) return;
           setData(all);
           setLastDoc(null);
           setHasMore(false);
         } else {
-          const res = await fetchLifetrees(currentLastDoc, currentDomain, feedOwnerUid, treeLevels);
+          const res = await fetchLifetrees(currentLastDoc, currentDomain, feedAnchorUid, treeLevels);
           if (stale()) return;
           setData(prev => {
             const newItems = reset ? unionStanding(excludeBedTrees(res.items)) : excludeBedTrees(res.items);
@@ -138,13 +138,13 @@ export function useForestFeed(params: {
       else if (tab === 'events') {
         // The events tab and the home hero box derive their scope from ONE sentence
         // (domain/pulseVisibility eventFeedScope) — the banner leak taught us what two
-        // hand-copies of the same law cost. ownerUid folds the viewer's OWN events in;
+        // hand-copies of the same law cost. anchorUid folds the viewer's OWN events in;
         // a strict scoped node suppresses it, like the trees.
-        const { levels, ownerUid } = eventFeedScope(
+        const { levels, anchorUid } = eventFeedScope(
           { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin },
           { reflectsPublic: hostReflectsPublic, strictScope: hostStrictScope },
         );
-        const res = await fetchEventPulses(currentLastDoc, currentDomain, levels, ownerUid);
+        const res = await fetchEventPulses(currentLastDoc, currentDomain, levels, anchorUid);
         // The face's second question, on the first page only: the host's members-only events,
         // for a viewer who stands there (ring 2026-09-21).
         const members = (reset && memberEventsOf) ? await fetchMemberEvents(memberEventsOf).catch(() => [] as Pulse[]) : [];

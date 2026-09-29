@@ -124,7 +124,7 @@ describe('ownMergeUid — the creator-never-lost courtesy speaks one sentence (r
 
   it('strict wins over reflection (ring 2026-09-07): my own items live in my profile, nowhere else', () => {
     expect(ownMergeUid('zoltan', { reflectsPublic: true, strictScope: true })).toBeUndefined();
-    expect(eventFeedScope({ uid: 'zoltan' }, { reflectsPublic: true, strictScope: true })).toEqual({ levels: ['public'], ownerUid: undefined });
+    expect(eventFeedScope({ uid: 'zoltan' }, { reflectsPublic: true, strictScope: true })).toEqual({ levels: ['public'], anchorUid: undefined });
   });
 
   it('no viewer, no merge — and eventFeedScope derives from the SAME sentence', () => {
@@ -135,7 +135,7 @@ describe('ownMergeUid — the creator-never-lost courtesy speaks one sentence (r
       { reflectsPublic: true, strictScope: true },
       {},
     ]) {
-      expect(eventFeedScope({ uid: 'zoltan' }, host).ownerUid).toBe(ownMergeUid('zoltan', host));
+      expect(eventFeedScope({ uid: 'zoltan' }, host).anchorUid).toBe(ownMergeUid('zoltan', host));
     }
   });
 });
@@ -146,25 +146,25 @@ describe('eventFeedScope — the one sentence both event surfaces speak', () => 
   const zoltan = { uid: 'zoltan', isStaff: false };
 
   it('reflecting: public-only plus the viewer\'s own', () => {
-    const { levels, ownerUid } = eventFeedScope(zoltan, { reflectsPublic: true, strictScope: false });
+    const { levels, anchorUid } = eventFeedScope(zoltan, { reflectsPublic: true, strictScope: false });
     expect(levels).toEqual(['public']);
-    expect(ownerUid).toBe('zoltan');
+    expect(anchorUid).toBe('zoltan');
   });
   it('scoped strict: the place and nothing else — no owner merge', () => {
-    const { levels, ownerUid } = eventFeedScope(zoltan, { reflectsPublic: false, strictScope: true });
+    const { levels, anchorUid } = eventFeedScope(zoltan, { reflectsPublic: false, strictScope: true });
     expect(levels).toEqual(['public', 'node']);
-    expect(ownerUid).toBeUndefined();
+    expect(anchorUid).toBeUndefined();
   });
   it('scoped lenient: the place plus the viewer\'s own (creator never lost)', () => {
-    const { levels, ownerUid } = eventFeedScope(zoltan, { reflectsPublic: false, strictScope: false });
+    const { levels, anchorUid } = eventFeedScope(zoltan, { reflectsPublic: false, strictScope: false });
     expect(levels).toEqual(['public', 'node']);
-    expect(ownerUid).toBe('zoltan');
-    expect(eventFeedScope(zoltan, {}).ownerUid).toBe('zoltan'); // absent flags = scoped lenient
+    expect(anchorUid).toBe('zoltan');
+    expect(eventFeedScope(zoltan, {}).anchorUid).toBe('zoltan'); // absent flags = scoped lenient
   });
   it('a signed-out visitor: public only, no one to merge', () => {
-    const { levels, ownerUid } = eventFeedScope({}, { reflectsPublic: false });
+    const { levels, anchorUid } = eventFeedScope({}, { reflectsPublic: false });
     expect(levels).toEqual(['public']);
-    expect(ownerUid).toBeUndefined();
+    expect(anchorUid).toBeUndefined();
   });
 });
 

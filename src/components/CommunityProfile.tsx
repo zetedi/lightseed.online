@@ -90,15 +90,15 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const currentUser = lightseed;
   const currentUserId = lightseed?.uid;
   // FULL PEERS (domain/keeperCircle, ring 2026-08-12): a `keeper` link holder edits, deletes
-  // and keeps exactly as the founding ownerId does — resolved from the links load below.
+  // and keeps exactly as the founding anchorUid does — resolved from the links load below.
   const [isKeeperByLink, setIsKeeperByLink] = useState(false);
-  const canEdit = currentUserId === community.ownerId || isKeeperByLink || isSuperAdmin || isAdmin;
-  const canDelete = currentUserId === community.ownerId || isKeeperByLink || isSuperAdmin;
+  const canEdit = currentUserId === community.anchorUid || isKeeperByLink || isSuperAdmin || isAdmin;
+  const canDelete = currentUserId === community.anchorUid || isKeeperByLink || isSuperAdmin;
 
   // Membership is a prism over the LIN ('member' links), read through the Store port. The owner
   // is implicitly a member (seeded synchronously so first render is correct); everyone else is
   // resolved from links below. Legacy memberIds arrays are no longer read.
-  const memberSeed = !!currentUserId && community.ownerId === currentUserId;
+  const memberSeed = !!currentUserId && community.anchorUid === currentUserId;
   const [memberByLink, setMemberByLink] = useState(false);
   // Has this viewer already asked to join? (join_request link — see the Members tab.)
   const [joinRequested, setJoinRequested] = useState(false);
@@ -377,7 +377,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
           const homes = [...(s.communityId ? [s.communityId] : []), ...(homesOf.get(s.id) || [])];
           // Consent lives with the lightHouse: only its keeper (or staff) may step it in —
           // the rules enforce this, so the panel offers only what would actually succeed.
-          const mayStepIn = s.ownerId === currentUserId || isSuperAdmin || isAdmin;
+          const mayStepIn = s.anchorUid === currentUserId || isSuperAdmin || isAdmin;
           return mayStepIn
             && !homes.includes(community.id)
             && s.domain !== community.domain
@@ -666,7 +666,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             if (!currentUserId) return;
             await createLightHouse({
               ...draft,
-              ownerId: currentUserId,
+              anchorUid: currentUserId,
               domain: community.domain,
               communityId: community.id,
             });
@@ -733,7 +733,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     },
     {
       key: 'members', label: t('members'), icon: <Icons.Users />, render: () => (
-        <CommunityMembers community={community} currentUserId={currentUserId} canManage={canEdit || isSteward} isOwner={canEdit} onCommunityUpdate={onUpdate} />
+        <CommunityMembers community={community} currentUserId={currentUserId} canManage={canEdit || isSteward} isAnchor={canEdit} onCommunityUpdate={onUpdate} />
       ),
     },
     {
@@ -877,7 +877,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
                 </button>
               )
             )}
-            {isMember && currentUserId !== community.ownerId && (
+            {isMember && currentUserId !== community.anchorUid && (
               <span className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300 sm:px-4 sm:py-2 sm:text-xs">
                 <Icons.Users size={14} /> {t('member_badge')}
               </span>
@@ -899,7 +899,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             {canDelete && (
               <button onClick={handleDelete} disabled={isDeleting} title={t('delete_community')} aria-label={t('delete_community')} className="relative flex items-center gap-1 rounded-full border border-red-400/30 bg-red-500/15 p-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500 hover:text-white sm:px-4 sm:py-2">
                 <Icons.Trash /><span className="hidden sm:inline">{t('delete')}</span>
-                {currentUserId !== community.ownerId && <SuperDot />}
+                {currentUserId !== community.anchorUid && <SuperDot />}
               </button>
             )}
           </>

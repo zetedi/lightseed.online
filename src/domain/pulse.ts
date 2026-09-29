@@ -129,7 +129,7 @@ export interface Pulse extends Being {
   reachTreeId?: string;
   reachTreeName?: string;
   reachResponse?: string; // The reached tree's reply, kept so reach threads persist.
-  recipientUid?: string | null; // Owner of the reached tree — drives 1:1 inbox routing + email delivery.
+  recipientUid?: string | null; // The reached tree's anchor — drives 1:1 inbox routing + email delivery.
   recipientName?: string;
   seenBy?: string[];
   threadId?: string; // Deterministic id for a reach thread: [fromTreeId, toTreeId].sort().join('__') (1:1) or grp__<treeId>__<audience>__<initiator> (group).

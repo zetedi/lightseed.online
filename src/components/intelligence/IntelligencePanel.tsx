@@ -36,8 +36,8 @@ const PROVIDER_LABEL: Record<string, string> = {
  */
 export const IntelligencePanel = ({
   scope,
-  credentialOwnerId,
-  intelligenceOwnerUid,
+  credentialHolderUid,
+  intelligenceAuthorUid,
   selectedIntelligenceId,
   onSelect,
   viewerUid,
@@ -48,8 +48,8 @@ export const IntelligencePanel = ({
   onAssignDuty,
 }: {
   scope: CredentialScope;
-  credentialOwnerId: string;       // uid (user) or communityId (community) — owner of the key
-  intelligenceOwnerUid: string;    // uid that owns created intelligence docs
+  credentialHolderUid: string;       // uid (user) or communityId (community) — holder of the key
+  intelligenceAuthorUid: string;    // uid that owns created intelligence docs
   selectedIntelligenceId?: string;
   onSelect: (intelligenceId: string) => void;
   viewerUid?: string;              // the signed-in user (for ownership checks)
@@ -77,11 +77,11 @@ export const IntelligencePanel = ({
   const [promoting, setPromoting] = useState(false);
 
   const refresh = () => {
-    getManageableIntelligences(intelligenceOwnerUid).then(setIntelligences).catch(() => {});
+    getManageableIntelligences(intelligenceAuthorUid).then(setIntelligences).catch(() => {});
   };
-  useEffect(refresh, [intelligenceOwnerUid]);
+  useEffect(refresh, [intelligenceAuthorUid]);
 
-  const canManage = (intel: Intelligence) => !!viewerUid && (intel.ownerId === viewerUid || canManageAll);
+  const canManage = (intel: Intelligence) => !!viewerUid && (intel.authorId === viewerUid || canManageAll);
 
   const toggleEnabled = async (intel: Intelligence) => {
     setTogglingId(intel.id);
@@ -96,7 +96,7 @@ export const IntelligencePanel = ({
 
   // The anthropic intelligence already bound to this scope's key, if any.
   const existingClaude = intelligences.find(
-    i => i.provider === 'anthropic' && i.credentialOwnerId === credentialOwnerId,
+    i => i.provider === 'anthropic' && i.credentialHolderUid === credentialHolderUid,
   );
 
   // Show the walkthrough open by default until Claude is connected, so it's discoverable.
@@ -123,13 +123,13 @@ export const IntelligencePanel = ({
           model,
           enabled: true,
           public: false,
-          ownerId: intelligenceOwnerUid,
+          authorId: intelligenceAuthorUid,
           personaId: 'persona-oracle',
           credentialScope: scope,
-          credentialOwnerId,
+          credentialHolderUid,
         } as any);
       }
-      const res = await saveProviderCredential({ scope, ownerId: credentialOwnerId, provider: 'anthropic', key: apiKey.trim(), intelligenceId });
+      const res = await saveProviderCredential({ scope, holderId: credentialHolderUid, provider: 'anthropic', key: apiKey.trim(), intelligenceId });
       if (!res.connected) throw new Error('err_key_store');
       setApiKey(''); setOpenSettings(null);
       refresh();
@@ -184,7 +184,7 @@ export const IntelligencePanel = ({
     if (!existingClaude) return;
     setBusy(true);
     try {
-      await disconnectProviderCredential({ scope, ownerId: credentialOwnerId, provider: 'anthropic', intelligenceId: existingClaude.id });
+      await disconnectProviderCredential({ scope, holderId: credentialHolderUid, provider: 'anthropic', intelligenceId: existingClaude.id });
       refresh();
     } catch (e: any) {
       showAlert(e?.message || 'err_intel_disconnect');

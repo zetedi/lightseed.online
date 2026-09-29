@@ -51,7 +51,7 @@ export const chooseDomainClaimant = <T>(
 
 // LEAVING is the door's other direction: any member may withdraw their own membership link,
 // and a held steward deed leaves with it (a door-hand without membership would keep the door
-// invisibly — the mirror of removal's rule). Two hands are refused: the ANCHOR (ownerId) and
+// invisibly — the mirror of removal's rule). Two hands are refused: the ANCHOR (anchorUid) and
 // a keeper-link peer carry the community — never keeperless — so they resign keepership first
 // (domain/keeperCircle); membership becomes their own to lay down only after that.
 export type LeaveRefusal = 'anchor' | 'keeper';

@@ -47,10 +47,10 @@ const resolveBeing = async (kind: BeingKind, id: string): Promise<LoadedBeing | 
     const snap = await getDoc(doc(db, COLLECTION[k], id));
     if (!snap.exists()) return null;
     const d = snap.data() as Record<string, unknown>;
-    const ownerUid = k === 'person' ? id
-      : (d.ownerId as string) || (d.authorId as string) || null;
+    const anchorUid = k === 'person' ? id
+      : (d.anchorUid as string) || (d.authorId as string) || null;
     const name = (d.name as string) || (d.title as string) || (d.displayName as string) || '';
-    return { id, kind: k, ownerUid, name, lid: d.lid as string | undefined };
+    return { id, kind: k, anchorUid, name, lid: d.lid as string | undefined };
   };
   try {
     const first = await read(kind);

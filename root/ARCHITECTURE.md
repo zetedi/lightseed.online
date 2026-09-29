@@ -59,7 +59,8 @@ this backend (`version: 1`, `nodeLid`); browser clients cannot write it. A
 person's signing history lives below `persons/{uid}` as append-only `keys` and
 `keyEvents`; `keyRecoveries/{id}/witnesses/{uid}__{epoch}` holds the social recovery
 proof, while the person doc names only the current epoch and active/frozen state.
-`lifetrees`: the seed beings; chain fields frozen; provenance (`plantedAt`+coords).
+`lifetrees`: the seed beings; chain fields frozen; provenance (`plantedAt`+coords); `anchorUid`
+(the never-empty keeper seat — ring 2026-09-30; keepers are equal, `keeper` links beside it).
 `pulses`: one ledger for growth/care/events/decisions/reaches/offerings; an offering may carry
 `offeringAppreciationLight` (suggested after-gift, never admission).
 `links`: the LIN: `from__rel__to`; rels: guardian, keeper, steward, observer,
@@ -73,7 +74,8 @@ Doc id MUST equal `from__rel__to`
 (rules bind it: authority is resolved by path, so an unbound id would be forgeable).
 `visions` `communities` (bearing the **door**: open/invite/closed) `lightHouses`
 `stays` `alignments` `supports` (server-only)
-`intelligences` `personas` `memories` `providerCredentials`: the intelligence commons.
+`intelligences` `personas` `memories` `providerCredentials`: the intelligence commons (`authorId`
+on the made things; a credential has a `holderId`, never an owner).
 `networkInvites` `communityInvites` (shareable /i/ door keys; revoked, never deleted)
 `treeKeepingInvites` `communityTreeInvites` `inviteRequests`.
 
@@ -200,7 +202,7 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   rules. In particular, a direct client can claim another owner/author or create a
   lifetree already validated. Close at CREATE with schema keysets and emulator tests
   before new Being kinds grow (first-sight ring, 2026-08-12). CLOSED 2026-08-17 (the
-  births-are-bound ring): ownerId/authorId/initiatorUid is the writer's own uid on every
+  births-are-bound ring): anchorUid/authorId/initiatorUid is the writer's own uid on every
   client create, a tree cannot be born validated, the persons hinge is guarded, each
   refusal held by an emulator test. (This bullet stood open a month after the ring; a
   review of 2026-09-20 cited it as live debt before checking the rules — noted there.)

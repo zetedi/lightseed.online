@@ -4,7 +4,7 @@ import type { Paper } from './papers';
 
 export interface Community extends Being {
   id: string;
-  ownerId: string;
+  anchorUid: string;
   name: string;
   domain: string; // The link to Lifetree
   // Hostnames this community also answers (theohouse.web.app while theohouse.org's DNS
@@ -77,7 +77,6 @@ export interface Community extends Being {
 
   // Tree Circle — communities that emerged from shared care of a Lifetree.
   rootLifetreeId?: string;       // the living anchor this community grew from
-  founderUserId?: string;
   // The PORTAL the community was founded on (ring 2026-08-21) — its birthplace, distinct
   // from `domain` (its own address). Stamped at creation, frozen by the rules; a strict
   // portal's communities tab shows only what was born here (communitiesOnView).

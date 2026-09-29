@@ -148,7 +148,7 @@ if (treeSnap.exists) {
 } else {
   await treeRef.set({
     lid: uuidv7(),
-    ownerId: KEEPER_UID, // the carrier holds the keys until beings can sign for themselves
+    anchorUid: KEEPER_UID, // the carrier holds the keys until beings can sign for themselves
     name: 'The Aspen',
     shortTitle: 'Many trunks, one root',
     body: GENESIS_CONTENT.body,

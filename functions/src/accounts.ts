@@ -107,7 +107,7 @@ async function purgeUserData(uid: string, heirUid?: string) {
         return qs.size;
     };
     const counts = {
-        lifetrees: await deleteWhere("lifetrees", "ownerId"),
+        lifetrees: await deleteWhere("lifetrees", "anchorUid"),
         pulses: await deleteWhere("pulses", "authorId"),
         visions: await deleteWhere("visions", "authorId"),
         links: await deleteWhere("links", "from"),
@@ -142,11 +142,11 @@ export const deleteUserAsAdmin = onCall({ cors: true }, async (request) => {
         throw new HttpsError("permission-denied", "Staff only.");
     }
     if (superadmin.exists && superadmin.data()?.uid === targetUid && !callerIsSuper) {
-        throw new HttpsError("permission-denied", "The node owner cannot be deleted.");
+        throw new HttpsError("permission-denied", "The node's keeper cannot be deleted.");
     }
     // Only the node owner may delete a fellow admin (protects the admin hierarchy).
     if (!callerIsSuper && (await db.collection("admins").doc(targetUid).get()).exists) {
-        throw new HttpsError("permission-denied", "Only the node owner can delete an admin.");
+        throw new HttpsError("permission-denied", "Only the node's keeper can delete an admin.");
     }
 
     const counts = await purgeUserData(targetUid);

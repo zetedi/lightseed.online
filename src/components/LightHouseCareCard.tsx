@@ -36,7 +36,7 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
       getCommunityById(communityId).catch(() => null),
       firestoreStore.linksFrom(currentUserId, 'keeper').catch(() => []),
     ]).then(([c, keeperLinks]) => {
-      if (alive) setIsKeeper(c?.ownerId === currentUserId || keeperLinks.some(l => l.to === communityId));
+      if (alive) setIsKeeper(c?.anchorUid === currentUserId || keeperLinks.some(l => l.to === communityId));
     });
     return () => { alive = false; };
   }, [currentUserId, lightHouse.communityId]);
@@ -85,7 +85,7 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
           </div>
         </div>
       )}
-      {(mayWitness || (currentUserId && (isKeeper || lightHouse.ownerId === currentUserId))) && (
+      {(mayWitness || (currentUserId && (isKeeper || lightHouse.anchorUid === currentUserId))) && (
         <div className="mt-3 flex gap-2">
           {mayWitness && (
             <button type="button" disabled={busy} onClick={witness}
@@ -93,7 +93,7 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
               👁 {t('lh_witness_btn')}
             </button>
           )}
-          {currentUserId && (isKeeper || lightHouse.ownerId === currentUserId) && (
+          {currentUserId && (isKeeper || lightHouse.anchorUid === currentUserId) && (
             <button type="button" disabled={busy} onClick={careAgain}
               className="rounded-full border border-amber-300 bg-white px-4 py-1.5 text-xs font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50 dark:bg-slate-900 dark:text-amber-300">
               🌞 {t('lh_care_act')}

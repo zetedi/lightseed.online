@@ -179,7 +179,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   }, [currentUserId]);
 
   const standingOf = (c: Community): CardStanding =>
-    c.ownerId === currentUserId ? 'keeper'
+    c.anchorUid === currentUserId ? 'keeper'
       : memberIds.has(c.id) ? 'member'
       : requestedIds.has(c.id) ? 'requested'
       : 'joinable';
@@ -273,7 +273,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
         vision: '',
         imageUrls: [],
         theme: communityThemePresets[0],
-        ownerId: currentUserId,
+        anchorUid: currentUserId,
         // The birthplace: the canonical face this founding happened on (frozen by the rules).
         bornOn: host?.domain || genesisCommunity?.domain || window.location.hostname.toLowerCase().replace(/^www\./, ''),
       };

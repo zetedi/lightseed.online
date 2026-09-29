@@ -20,7 +20,7 @@ const NODE_AI_IMAGE_LIMIT = 3;
 const isValidatedMember = async (uid: string): Promise<boolean> => {
     const initiate = await db.collection("initiates").doc(uid).get();
     if (initiate.exists) return true;
-    const vt = await db.collection("lifetrees").where("ownerId", "==", uid).where("validated", "==", true).limit(1).get();
+    const vt = await db.collection("lifetrees").where("anchorUid", "==", uid).where("validated", "==", true).limit(1).get();
     return !vt.empty;
 };
 const nodeAiValidatedOnly = async (): Promise<boolean> => {
@@ -164,22 +164,22 @@ export const generateAIContent = onCall({
 // plaintext `key` from before is sealed the first time it is read.
 // ---------------------------------------------------------------------------
 
-const credentialDocId = (scope: string, ownerId: string, provider: string) =>
-    `${scope}_${ownerId}_${provider}`;
+const credentialDocId = (scope: string, holderId: string, provider: string) =>
+    `${scope}_${holderId}_${provider}`;
 
 // May the caller set a key for this scope/owner?
 //  - user scope:      only for their own uid
 //  - community scope: the community owner, or any staff/superadmin
-const canManageCredential = async (uid: string, scope: string, ownerId: string): Promise<boolean> => {
-    if (scope === "user") return ownerId === uid;
+const canManageCredential = async (uid: string, scope: string, holderId: string): Promise<boolean> => {
+    if (scope === "user") return holderId === uid;
     if (scope === "community") {
-        if (!ownerId) return false;
+        if (!holderId) return false;
         const [community, superadmin, adminDoc] = await Promise.all([
-            db.collection("communities").doc(ownerId).get(),
+            db.collection("communities").doc(holderId).get(),
             db.collection("config").doc("superadmin").get(),
             db.collection("admins").doc(uid).get(),
         ]);
-        if (community.exists && community.data()?.ownerId === uid) return true;
+        if (community.exists && community.data()?.anchorUid === uid) return true;
         if (superadmin.exists && superadmin.data()?.uid === uid) return true;
         if (adminDoc.exists) return true;
     }
@@ -192,18 +192,18 @@ const canManageCredential = async (uid: string, scope: string, ownerId: string):
 // Mirrors the `isCommunityMember` gate in firestore.rules. A caller who fails this check
 // is NOT rejected — generateClaudeContent silently falls back to the node key — so
 // unauthorized callers simply can't spend someone else's BYO key.
-const canUseCredential = async (uid: string, scope: string, ownerId: string): Promise<boolean> => {
-    if (!ownerId) return false;
-    if (scope === "user") return ownerId === uid;
+const canUseCredential = async (uid: string, scope: string, holderId: string): Promise<boolean> => {
+    if (!holderId) return false;
+    if (scope === "user") return holderId === uid;
     if (scope === "community") {
         const [memberLink, community, superadmin, adminDoc] = await Promise.all([
-            db.collection("links").doc(`${uid}__member__${ownerId}`).get(),
-            db.collection("communities").doc(ownerId).get(),
+            db.collection("links").doc(`${uid}__member__${holderId}`).get(),
+            db.collection("communities").doc(holderId).get(),
             db.collection("config").doc("superadmin").get(),
             db.collection("admins").doc(uid).get(),
         ]);
         if (memberLink.exists) return true;
-        if (community.exists && community.data()?.ownerId === uid) return true;
+        if (community.exists && community.data()?.anchorUid === uid) return true;
         if (superadmin.exists && superadmin.data()?.uid === uid) return true;
         if (adminDoc.exists) return true;
     }
@@ -216,16 +216,16 @@ export const saveProviderCredential = onCall({ cors: true }, async (request) => 
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in first.");
     const uid = request.auth.uid;
     const scope = String(request.data?.scope || "");
-    const ownerId = String(request.data?.ownerId || "");
+    const holderId = String(request.data?.holderId || "");
     const provider = String(request.data?.provider || "");
     const key = String(request.data?.key || "").trim();
     const intelligenceId = request.data?.intelligenceId ? String(request.data.intelligenceId) : null;
 
     if (!["user", "community"].includes(scope)) throw new HttpsError("invalid-argument", "Bad scope.");
     if (!["anthropic", "openai", "deepseek", "google"].includes(provider)) throw new HttpsError("invalid-argument", "Unknown provider.");
-    if (!(await canManageCredential(uid, scope, ownerId))) throw new HttpsError("permission-denied", "Not allowed to set this key.");
+    if (!(await canManageCredential(uid, scope, holderId))) throw new HttpsError("permission-denied", "Not allowed to set this key.");
 
-    const ref = db.collection("providerCredentials").doc(credentialDocId(scope, ownerId, provider));
+    const ref = db.collection("providerCredentials").doc(credentialDocId(scope, holderId, provider));
 
     if (!key) {
         await ref.delete().catch(() => undefined);
@@ -239,7 +239,7 @@ export const saveProviderCredential = onCall({ cors: true }, async (request) => 
     const keyHint = key.length > 4 ? `…${key.slice(-4)}` : "set";
     const sealed = await sealSecret(key);
     await ref.set({
-        provider, scope, ownerId,
+        provider, scope, holderId,
         ...sealed,
         key: FieldValue.delete(), // never plaintext again, even over an old row
         keyHint,
@@ -249,7 +249,7 @@ export const saveProviderCredential = onCall({ cors: true }, async (request) => 
     // Mirror the non-secret connection status onto the intelligence so the UI can show it.
     if (intelligenceId) {
         await db.collection("intelligences").doc(intelligenceId)
-            .set({ connected: true, keyHint, credentialScope: scope, credentialOwnerId: ownerId }, { merge: true }).catch(() => undefined);
+            .set({ connected: true, keyHint, credentialScope: scope, credentialHolderUid: holderId }, { merge: true }).catch(() => undefined);
     }
     return { connected: true, keyHint };
 });
@@ -267,17 +267,17 @@ export const generateClaudeContent = onCall({
     const messages = Array.isArray(request.data?.messages) ? request.data.messages : [];
     const systemInstruction = String(request.data?.systemInstruction || "");
     const model = String(request.data?.model || "claude-sonnet-5");
-    const credential = request.data?.credential as { scope?: string; ownerId?: string } | undefined;
+    const credential = request.data?.credential as { scope?: string; holderId?: string } | undefined;
 
     // Resolve the key: BYO (user/community) first, node secret as fallback. The caller may
     // only spend a BYO key they're entitled to (own user key, or a community they belong to);
     // otherwise we ignore the named credential and fall through to the node key below.
     let apiKey: string | undefined;
     let usedByoKey = false;
-    if (credential?.scope && credential.scope !== "node" && credential.ownerId
-        && await canUseCredential(request.auth.uid, credential.scope, credential.ownerId)) {
+    if (credential?.scope && credential.scope !== "node" && credential.holderId
+        && await canUseCredential(request.auth.uid, credential.scope, credential.holderId)) {
         const snap = await db.collection("providerCredentials")
-            .doc(credentialDocId(credential.scope, credential.ownerId, "anthropic")).get();
+            .doc(credentialDocId(credential.scope, credential.holderId, "anthropic")).get();
         if (snap.exists) {
             const row = snap.data() as Record<string, unknown>;
             if (typeof row.keyCiphertext === "string" && row.keyCiphertext) {
