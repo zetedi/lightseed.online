@@ -739,6 +739,7 @@ const zh = {
   leave_while_keeping: "请先辞去守护人之职——守护与成员身份同行。",
   step_down: "卸任", step_down_confirm: "卸下 {tree} 的 {role} 角色？",
   step_down_keeper: "卸任守护者", keeper_stepped_down: "你已卸任。这棵树仍有它的守护者。",
+  circle_joined_as: "你现在以{role}的身份站在 {tree} 的圈子里。",
   tree_last_keeper: "树不能没有守护者——卸任前请先向他人提供守护。",
   resign_keeper: "辞去守护人", resign_keeper_confirm: "辞去“{name}”的守护人？必须还有其他守护人。",
   resigned_with_successor: "你已卸任。{name} 现在持有锚点。", resigned_quietly: "你已辞去守护人。",

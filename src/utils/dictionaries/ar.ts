@@ -741,6 +741,7 @@ const ar = {
   leave_while_keeping: "استقل من الحفاظة أولًا — الحفاظة والعضوية تسيران معًا.",
   step_down: "تنحَّ", step_down_confirm: "أتتنحى عن دور {role} لشجرة {tree}؟",
   step_down_keeper: "تنحَّ عن الحراسة", keeper_stepped_down: "تنحّيت. الشجرة تبقى مع حرّاسها.",
+  circle_joined_as: "أنت الآن في حلقة {tree} بصفة {role}.",
   tree_last_keeper: "الشجرة لا تبقى بلا حارس — اعرض الحراسة على أحد قبل أن تتنحّى.",
   resign_keeper: "تنحَّ عن الحفاظة", resign_keeper_confirm: "أتتنحى عن حفاظة «{name}»؟ يجب أن يبقى حافظ آخر.",
   resigned_with_successor: "تنحّيت. {name} يحمل المرساة الآن.", resigned_quietly: "تنحّيت عن الحفاظة.",

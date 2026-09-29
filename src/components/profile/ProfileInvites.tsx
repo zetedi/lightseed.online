@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { createNetworkInvite, getSentInvites, getInviteRequests, approveInviteRequest, declineInviteRequest, triggerSystemEmail } from '../../services/firebase';
 import { SectionTitle } from '../ui/SectionTitle';
+import { ProfileInviteBanners } from './ProfileInviteBanners';
 import { Modal } from '../ui/Modal';
 import { speak } from '../../utils/translations';
 
@@ -122,6 +123,10 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
     <div className="space-y-6">
       <div>
         <SectionTitle title={t('invitations')} sub={t('invites_sub')} />
+        {/* The invitations addressed to YOU come first, under the title (Zoltán, 2026-09-29):
+            tree circle seats and communities asking for one of your trees — answered here, where
+            invitations live, no longer as a banner above every tab. */}
+        <ProfileInviteBanners uid={uid} notify={notify} />
         {(!hasTrees && !isSuperAdmin) ? (
           <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"><Icons.Tree /></div>

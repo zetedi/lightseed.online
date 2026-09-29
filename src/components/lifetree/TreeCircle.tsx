@@ -6,7 +6,7 @@ import { Icons } from '../ui/Icons';
 import { firestoreStore } from '../../adapters/firestore';
 import { canCareForTree } from '../../domain/policy';
 import { SectionCard } from '../ui/SectionCard';
-import { fetchAllLifetrees, getPersonName, createTreeInvite, getSentTreeInvites, revokeTreeInvite, resignTreeKeeper } from '../../services/firebase';
+import { fetchAllLifetrees, getPersonName, createTreeInvite, getSentTreeInvites, revokeTreeInvite, resignTreeKeeper, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite } from '../../services/firebase';
 import { treeCircle } from '../../domain/views/circle';
 import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole, type TreeKeepingInvite } from '../../domain/treeCircle';
 // `translations.en` feeds only the STORED invite message (data on the invite doc — the
@@ -111,6 +111,45 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             .catch(() => { if (alive) setSentInvites([]); });
         return () => { alive = false; };
     }, [treeId, canEdit, currentUserId, inviteNonce]);
+
+    // MY OWN INVITATIONS INTO THIS CIRCLE (Zoltán, 2026-09-29): the seats offered to the viewer on
+    // THIS tree, answered here — the same hands the profile's banners hold (acceptTreeInvite is
+    // the server's; decline is the invitee's own mark), so no one has to walk to the profile.
+    const [myInvites, setMyInvites] = useState<TreeKeepingInvite[]>([]);
+    const [answeringMine, setAnsweringMine] = useState<string | null>(null);
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the offers for a signed-out viewer before the async read below
+        if (!currentUserId) { setMyInvites([]); return; }
+        let alive = true;
+        getPendingTreeInvites(currentUserId)
+            .then(list => { if (alive) setMyInvites(list.filter(i => i.lifetreeId === treeId)); })
+            .catch(() => { if (alive) setMyInvites([]); });
+        return () => { alive = false; };
+    }, [treeId, currentUserId, inviteNonce]);
+    const handleAcceptMine = async (inv: TreeKeepingInvite) => {
+        setAnsweringMine(inv.id);
+        try {
+            const res = await acceptTreeInvite(inv.id);
+            setMyInvites(prev => prev.filter(i => i.id !== inv.id));
+            onGuardianChange(); // the shell re-reads the circle
+            if (inv.role === 'guardian') {
+                const name = tree.name || '—';
+                notify(res.validated ? speak('guard_thanks').replace('{tree}', name) : speak('guard_thanks_more').replace('{tree}', name).replace('{n}', String(res.guardiansNeeded ?? 1)));
+            } else {
+                notify(speak(spokenLine('circle_joined_as', { role: roleName(inv.role).toLowerCase(), tree: tree.name || '—' })));
+            }
+        } catch (e: any) {
+            const m = String(e?.message || '');
+            showAlert(m.includes('no_tree') ? 'keeper_no_tree' : m || 'err_invite_accept');
+        }
+        setAnsweringMine(null);
+    };
+    const handleDeclineMine = async (inv: TreeKeepingInvite) => {
+        setAnsweringMine(inv.id);
+        try { await declineTreeInvite(inv.id); setMyInvites(prev => prev.filter(i => i.id !== inv.id)); }
+        catch (e: any) { showAlert(e?.message || 'err_invite_decline'); }
+        setAnsweringMine(null);
+    };
 
     // The visible forest, once — lends both the faces and the invite search. Rules-safe (public/node).
     useEffect(() => {
@@ -317,6 +356,29 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     return (
         <SectionCard title={t('circle')} icon={<Icons.Venn />}>
             <p className="mb-5 text-sm text-slate-500">{t('circle_intro')}</p>
+
+            {/* The seats offered to the viewer on this tree — answered right here. */}
+            {myInvites.length > 0 && (
+                <div className="mb-5 space-y-2">
+                    {myInvites.map(inv => (
+                        <div key={inv.id} className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm sm:flex-row sm:items-center dark:border-emerald-900 dark:bg-emerald-950/40">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm text-emerald-900 dark:text-emerald-200">
+                                    {t('invite_banner_tree')
+                                        .replace('{name}', inv.invitedByName || t('someone'))
+                                        .replace('{role}', roleName(inv.role).toLowerCase())
+                                        .replace('{tree}', tree.name || t('a_lifetree'))}
+                                </p>
+                                {inv.message && <p className="mt-1 text-xs italic text-emerald-700/80">“{inv.message}”</p>}
+                            </div>
+                            <div className="flex shrink-0 gap-2">
+                                <button onClick={() => void handleAcceptMine(inv)} disabled={answeringMine === inv.id} className="rounded-full btn-theme px-4 py-2 text-xs font-bold shadow disabled:opacity-50">{answeringMine === inv.id ? '…' : t('accept')}</button>
+                                <button onClick={() => void handleDeclineMine(inv)} disabled={answeringMine === inv.id} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">{t('decline')}</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Everyone, grouped by role, each shown as their tree. */}
             {circle.groups.length > 0 ? (

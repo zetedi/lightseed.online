@@ -15,7 +15,6 @@ import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
 import { assignDuty, type DutyAssignment } from '../domain/intelligenceDuty';
 import { BeingProfile, type BeingSection } from './BeingProfile';
 import { SuperDot } from './ui/SuperDot';
-import { ProfileInviteBanners } from './profile/ProfileInviteBanners';
 import { ProfileTrees } from './profile/ProfileTrees';
 import { ProfileLight } from './profile/ProfileLight';
 import { ProfilePulses } from './profile/ProfilePulses';
@@ -426,13 +425,6 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                     </>
                 ),
             }}
-            banner={
-                <>
-                    {/* Pending invitations (tree circle + community) shown above the tabs */}
-                    <ProfileInviteBanners uid={lightseed.uid} notify={notify} />
-
-                </>
-            }
             // The menu + content boxes sit ON the hero — the blue extends behind them.
             layoutProps={{ overlapClassName: '-mt-10' }}
         />

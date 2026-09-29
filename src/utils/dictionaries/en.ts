@@ -743,6 +743,7 @@ const en = {
   leave_while_keeping: "Resign keepership first — keeping and membership travel together.",
   step_down: "Step down", step_down_confirm: "Step down as {role} of {tree}?",
   step_down_keeper: "Step down as keeper", keeper_stepped_down: "You stepped down. The tree keeps its keepers.",
+  circle_joined_as: "You now stand in the circle of {tree} as {role}.",
   tree_last_keeper: "A tree is never keeperless — offer keeping to someone before you step down.",
   resign_keeper: "Resign as keeper", resign_keeper_confirm: "Step down as a keeper of \u201c{name}\u201d? Another keeper must remain.",
   resigned_with_successor: "You stepped down. {name} now holds the anchor.", resigned_quietly: "You stepped down as keeper.",
