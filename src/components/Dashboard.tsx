@@ -147,7 +147,9 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
 
             {/* Signed-out visitors: a full-width carousel of reflections (admin-editable per node)
                 in place of the Home + Observatory cards. */}
-            {!lightseed && <QuoteCarousel quotes={(hostCommunity?.carouselQuotes?.length ? hostCommunity.carouselQuotes : quotesFor(language))} />}
+            {/* …and for a signed-in reader with NO events to show, the same carousel stands where
+                the events banner would (Zoltán, 2026-09-30): the hero never goes quiet. */}
+            {(!lightseed || !events || events.length === 0) && <QuoteCarousel quotes={(hostCommunity?.carouselQuotes?.length ? hostCommunity.carouselQuotes : quotesFor(language))} />}
 
             {/* Events banner — logged-in only. Full width (home card → plant card), half a card
                 tall. A distorted node/community hero, a living leaf texture, and an oversized
