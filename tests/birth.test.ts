@@ -88,6 +88,9 @@ describe('the birth law — what the server refuses', () => {
     expect(refusalOf(facts({ type: 'tree_growth', webLinks: [{ url: 'https://blog.example.org/', label: '' }] }))).toBe('block_field_bad');
     expect(refusalOf(facts({ type: 'tree_growth', webLinks: [{ url: 'https://blog.example.org/', label: 'x'.repeat(81) }] }))).toBe('block_field_bad');
     expect(refusalOf(facts({ type: 'tree_growth', webLinks: Array.from({ length: 13 }, () => door) }))).toBe('block_field_bad');
+    // The same doors on a vision's chain — one law for every chain-bearing type.
+    expect(refusalOf(facts({ type: 'vision_growth', webLinks: [door] }, { on: 'vision' }))).toBeNull();
+    expect(refusalOf(facts({ type: 'vision_growth', webLinks: [{ url: 'vision.example.org' }] }, { on: 'vision' }))).toBe('block_field_bad');
   });
   it('a visibility that does not exist', () => {
     expect(refusalOf(facts({ type: 'tree_growth', visibility: 'secret' }))).toBe('block_visibility_bad');

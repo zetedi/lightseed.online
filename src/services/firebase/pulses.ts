@@ -608,6 +608,7 @@ export const growVision = async (
     vision: Pick<Vision, 'id'>,
     data: {
         title?: string; body?: string; imageUrl?: string; growthCategory?: string;
+        webLinks?: Pulse['webLinks'];
         authorId: string; authorName?: string; authorPhoto?: string;
         visibility?: Pulse['visibility'];
     },

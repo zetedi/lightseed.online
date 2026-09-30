@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { showAlert } from "../ui/Dialog";
-import { webLinksOf } from '../../domain/webLink';
+import { webLinksOf, type WebLink } from '../../domain/webLink';
 import { WebLinksEditor, type WebLinkRow } from '../ui/WebLinksEditor';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSession } from '../../contexts/SessionContext';
@@ -28,7 +28,7 @@ interface EmitPulseModalProps {
   onMint: (data: any) => Promise<void>;
   // Grow a vision — seals a CONTRIBUTION onto the VISION'S OWN chain (not the rooted tree).
   // The tree grows by caring (onMint → the tree's chain); the vision by contributions.
-  onGrowVision?: (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; growthCategory?: string }) => Promise<void>;
+  onGrowVision?: (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; growthCategory?: string; webLinks?: WebLink[] }) => Promise<void>;
   onProposeAlignment: (data: any) => Promise<void>;
   // Fired after a tree growth mints, so the caller can refresh the tree's latest image.
   onGrown?: (treeId: string, imageUrl?: string) => void;
@@ -159,6 +159,10 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      // The doors a growth carries outward — the same law on either chain.
+      const doors = webLinksOf(linkRows);
+      if (doors.problem) { showAlert(speak(doors.problem)); setIsSubmitting(false); return; }
+      const webLinks = doors.links.length ? { webLinks: doors.links } : {};
       let finalImageUrl = pulseImageUrl;
       if (pulseImageUrl.startsWith('data:')) {
         finalImageUrl = await uploadBase64Image(pulseImageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
@@ -172,6 +176,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
           body: pulseBody,
           imageUrl: finalImageUrl || undefined,
           growthCategory: growthCategory || undefined,
+          ...webLinks,
         });
         onClose();
         return;
@@ -179,15 +184,13 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
 
       // Tree growth — sealed onto the tree's chain via onMint (unchanged).
       const lifetreeId = growthTree?.id || '';
-      const doors = webLinksOf(linkRows);
-      if (doors.problem) { showAlert(speak(doors.problem)); setIsSubmitting(false); return; }
       await onMint({
         lifetreeId,
         type: 'tree_growth',
         title: pulseTitle.trim() || t('growth_of').replace('{name}', growthTree?.name || t('the_tree')),
         body: pulseBody,
         imageUrl: finalImageUrl,
-        ...(doors.links.length ? { webLinks: doors.links } : {}),
+        ...webLinks,
         authorId: lightseed.uid,
         authorName: nameAs(growthTree?.name) || t('someone'),
         authorPhoto: lightseed.photoURL || undefined,
@@ -362,7 +365,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       value={pulseBody}
                       onChange={e => setPulseBody(e.target.value)}
                     />
-                    {growthKind === 'tree' && <WebLinksEditor rows={linkRows} onChange={setLinkRows} fieldClassName="h-10 w-full rounded border p-2 text-sm" />}
+                    <WebLinksEditor rows={linkRows} onChange={setLinkRows} fieldClassName="h-10 w-full rounded border p-2 text-sm" />
                     <button
                       type="button"
                       onClick={() => handleMint()}

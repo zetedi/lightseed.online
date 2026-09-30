@@ -46,6 +46,7 @@ import { usePathwayInput } from './hooks/usePathwayInput';
 import { setActiveCoin } from './hooks/useCoin';
 import { useHostStanding } from './hooks/useHostStanding';
 import { memberEventsPlace } from './domain/pulseVisibility';
+import type { WebLink } from './domain/webLink';
 import { coinOf } from './domain/coin';
 import { GDPRBanner } from './components/GDPRBanner';
 
@@ -346,7 +347,7 @@ const AppContent = () => {
 
     // A contribution sealed onto the vision's own chain. After it commits, refresh the open vision
     // so its chain head (blockHeight/latestHash) and the Contributions view reflect the new leaf.
-    const handleGrowVision = async (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; growthCategory?: string }) => {
+    const handleGrowVision = async (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; growthCategory?: string; webLinks?: WebLink[] }) => {
         if (!lightseed) return;
         await growVision(vision, {
             ...data,
