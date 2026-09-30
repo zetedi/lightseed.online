@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   normalizeWebLink, webLinkProblem, hostOf, normalizeHostname,
-  linkTarget, linkLabel,
+  linkTarget, linkLabel, webLinksOf, isWebLinkList, MAX_WEB_LINKS, MAX_WEB_LINK_LABEL,
 } from '../src/domain/webLink';
 import { DOMAIN_KEYS } from '../src/domain/words';
 
@@ -87,5 +87,64 @@ describe('linkLabel — the name a reader sees', () => {
   });
   it('shows back what was typed when it is not a link, so nothing vanishes silently', () => {
     expect(linkLabel('not a domain')).toBe('not a domain');
+  });
+});
+
+// THE DOORS A RECORD CARRIES OUTWARD (ring 2026-09-30).
+describe('webLinksOf — a typed list, sanitized', () => {
+  it('normalizes each address, trims labels, drops empty rows, keeps order', () => {
+    const { links, problem } = webLinksOf([
+      { url: ' blog.example.org ', label: '  the blog ' },
+      { url: '', label: 'nothing here' },
+      { url: 'https://drive.example.org/x', label: '' },
+    ]);
+    expect(problem).toBeNull();
+    expect(links).toEqual([{ url: 'https://blog.example.org/', label: 'the blog' }, { url: 'https://drive.example.org/x' }]);
+  });
+  it('names the first fault a person can fix', () => {
+    expect(webLinksOf([{ url: 'javascript:alert(1)', label: '' }]).problem).toBe('link_not_web');
+    expect(webLinksOf([{ url: 'not a domain', label: '' }]).problem).toBe('link_not_valid');
+    expect(webLinksOf(Array.from({ length: MAX_WEB_LINKS + 1 }, () => ({ url: 'example.org', label: '' }))).problem).toBe('links_too_many');
+  });
+  it('what is not a list at all is simply no doors', () => {
+    expect(webLinksOf('example.org')).toEqual({ links: [], problem: null });
+    expect(webLinksOf(undefined)).toEqual({ links: [], problem: null });
+  });
+  it('a label longer than the law is cut, not refused', () => {
+    const { links } = webLinksOf([{ url: 'example.org', label: 'x'.repeat(MAX_WEB_LINK_LABEL + 20) }]);
+    expect(links[0].label).toHaveLength(MAX_WEB_LINK_LABEL);
+  });
+  it('every refusal it can speak is a word the dictionary carries', () => {
+    for (const k of ['link_not_web', 'link_not_valid', 'links_too_many']) expect(DOMAIN_KEYS as readonly string[]).toContain(k);
+  });
+});
+
+describe('isWebLinkList — what a stored list must look like (the seal and the server judge by it)', () => {
+  it('accepts what webLinksOf produces, and nothing looser', () => {
+    const { links } = webLinksOf([{ url: 'blog.example.org', label: 'the blog' }, { url: 'https://drive.example.org/x', label: '' }]);
+    expect(isWebLinkList(links)).toBe(true);
+    expect(isWebLinkList([])).toBe(true);
+    expect(isWebLinkList(undefined)).toBe(false);
+    expect(isWebLinkList('https://example.org')).toBe(false);
+    expect(isWebLinkList([{ url: 'blog.example.org' }])).toBe(false);            // not normalized
+    expect(isWebLinkList([{ url: 'javascript:alert(1)' }])).toBe(false);
+    expect(isWebLinkList([{ url: 'https://example.org/', label: '' }])).toBe(false);
+    expect(isWebLinkList([{ url: 'https://example.org/', label: 'x'.repeat(MAX_WEB_LINK_LABEL + 1) }])).toBe(false);
+    expect(isWebLinkList([{ url: 'https://example.org/', extra: 1 }])).toBe(false);
+    expect(isWebLinkList(Array.from({ length: MAX_WEB_LINKS + 1 }, () => ({ url: 'https://example.org/' })))).toBe(false);
+  });
+});
+
+// The server cannot import src/domain; its copy of the door law must answer as this one does.
+describe('the functions mirror of the door law stays true', () => {
+  it('normalizes and judges identically', async () => {
+    const server = await import('../functions/src/birth');
+    const inputs = ['example.org', '  Example.ORG/a?b=1 ', '//example.org', 'http://Example.ORG/x', 'javascript:alert(1)', 'data:text/html,x',
+      'mailto:a@b.org', 'ftp://example.org', 'not a domain', 'localhostish', 'https://user:pw@example.org/', '<https://example.org>', '', 'x'.repeat(300) + '.org'];
+    for (const i of inputs) expect(server.normalizeWebLink(i)).toBe(normalizeWebLink(i));
+    const lists: unknown[] = [[{ url: 'https://example.org/', label: 'a' }], [{ url: 'example.org' }], [{ url: 'https://example.org/', extra: 1 }], 'x', [], [{ url: 'https://example.org/', label: '' }]];
+    for (const l of lists) expect(server.isWebLinkList(l)).toBe(isWebLinkList(l));
+    expect(server.MAX_WEB_LINKS).toBe(MAX_WEB_LINKS);
+    expect(server.MAX_WEB_LINK_LABEL).toBe(MAX_WEB_LINK_LABEL);
   });
 });

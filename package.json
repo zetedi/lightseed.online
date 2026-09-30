@@ -12,6 +12,7 @@
     "prod": "vite build --mode production",
     "prebuild": "node scripts/charter-sync.mjs && node scripts/build-initiates.mjs && node scripts/build-commits.mjs",
     "build": "vite build",
+    "postbuild": "node scripts/face-og.mjs --all",
     "initiates:build": "node scripts/build-initiates.mjs",
     "commits:build": "node scripts/build-commits.mjs",
     "whitepaper:build": "node scripts/build-white-paper.mjs",
@@ -33,7 +34,7 @@
     "flatten": "bash scripts/flat.sh",
     "test:gemini": "node scripts/test-gemini.mjs",
     "lint": "eslint .",
-    "deploy:faces": "npm run build && firebase deploy --only hosting:app && node scripts/face-og.mjs perauset && firebase deploy --only hosting:perauset && node scripts/face-og.mjs theohouse && firebase deploy --only hosting:theohouse && node scripts/face-og.mjs enlightenednations && firebase deploy --only hosting:enlightenednations && node scripts/face-og.mjs mamaway && firebase deploy --only hosting:mamaway",
+    "deploy:faces": "firebase deploy --only hosting",
     "charter": "node scripts/charter-sync.mjs",
     "charter:check": "node scripts/charter-sync.mjs --check",
     "node:create": "node scripts/create-node.mjs"

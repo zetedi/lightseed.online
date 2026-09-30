@@ -6,7 +6,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 // exhaustive-deps is a warning (the codebase deliberately omits deps in places — each one
 // should be a conscious eslint-disable, burned down over time); rules-of-hooks is an ERROR.
 export default tseslint.config(
-  { ignores: ['dist', 'dev-dist', 'node_modules', 'functions', 'scripts', 'public', 'tailwind.config.js'] },
+  { ignores: ['dist', 'dist-faces', 'dev-dist', 'node_modules', 'functions', 'scripts', 'public', 'tailwind.config.js'] },
   ...tseslint.configs.recommended,
   {
     plugins: { 'react-hooks': reactHooks },

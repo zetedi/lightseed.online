@@ -213,6 +213,13 @@ service cloud.firestore {
         // A watering is a link on a tree's chain or nothing: its light mint reads a chain block.
         && request.resource.data.get('care', '') != 'watering';
     }
+    // THE DOORS A RECORD CARRIES OUTWARD (ring 2026-09-30): webLinks, when present, is a list
+    // of at most twelve. The addresses themselves are judged by the domain law on the client
+    // and by the server's mirror at every chain birth; rules can only hold the shape.
+    function webLinksInShape() {
+      return !('webLinks' in request.resource.data)
+        || (request.resource.data.webLinks is list && request.resource.data.webLinks.size() <= 12);
+    }
     // A private direct message / group reach: a 'reach' pulse that names its recipients
     // (participantUids) or a single recipient (legacy recipientUid). Minted, public "reach"
     // reflections have neither and stay world-readable through the normal visibility path.
@@ -968,6 +975,7 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && (isStaff() || request.resource.data.get('authorId', '') == request.auth.uid)
         && clientBornStandalone()
+        && webLinksInShape()
         && (request.resource.data.type != 'event'
             || !('communityId' in request.resource.data)   // standalone event — anyone may plant one
             || isStaff()
@@ -1088,8 +1096,9 @@ service cloud.firestore {
         || (
              resource.data.get('type', '') == 'event'
              && (isStaff() || resource.data.authorId == request.auth.uid || keepsCommunity(resource.data.get('communityId', '')))
+             && webLinksInShape()
              && request.resource.data.diff(resource.data).affectedKeys()
-                  .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
+                  .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'eventMaxParticipants', 'webLinks', 'visibility', 'updatedAt'])
            )
         // (f2) A KEEPER ADOPTS a standalone event into their place (ring 2026-09-21): an event
         //      born at a door with no community may be given exactly ONE community — the one
@@ -1104,8 +1113,9 @@ service cloud.firestore {
              && request.resource.data.get('communityId', '') != ''
              && keepsCommunity(request.resource.data.communityId)
              && get(/databases/$(database)/documents/communities/$(request.resource.data.communityId)).data.get('domain', '') == resource.data.get('domain', '')
+             && webLinksInShape()
              && request.resource.data.diff(resource.data).affectedKeys()
-                  .hasOnly(['communityId', 'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'visibility', 'updatedAt'])
+                  .hasOnly(['communityId', 'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'eventMaxParticipants', 'webLinks', 'visibility', 'updatedAt'])
            )
 
         // (g) The guardians' veto — a guardian of the pulse's tree may append exactly their

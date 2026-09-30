@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
+import { webLinksOf, type WebLink } from '../../domain/webLink';
+import { WebLinksEditor, rowsOf, type WebLinkRow } from '../ui/WebLinksEditor';
 import { notify } from '../ui/Toast';
 import { speak } from '../../utils/translations';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -38,6 +40,7 @@ export interface EventDraft {
   eventDate: string;
   eventLocation: string;
   visibility: PulseVisibility;
+  webLinks?: WebLink[];
   authorId: string;
   authorName: string;
   authorPhoto?: string;
@@ -93,6 +96,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const [eventBody, setEventBody] = useState('');
   const [eventVisibility, setEventVisibility] = useState<PulseVisibility>('public');
   const [eventImageUrls, setEventImageUrls] = useState<string[]>([]);
+  const [eventLinkRows, setEventLinkRows] = useState<WebLinkRow[]>([]);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [isEventSaving, setIsEventSaving] = useState(false);
   const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
@@ -139,6 +143,8 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUserId || !eventTitle.trim() || isEventSaving) return;
+    const doors = webLinksOf(eventLinkRows);
+    if (doors.problem) { showAlert(speak(doors.problem)); return; }
     setIsEventSaving(true);
     try {
       const payload = {
@@ -149,6 +155,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
         imageUrls: eventImageUrls,
         eventDate: eventDate || '',
         eventLocation: eventLocation.trim(),
+        webLinks: doors.links,
         visibility: eventVisibility,
       };
       if (editingEventId) {
@@ -167,6 +174,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       setEventBody('');
       setEventVisibility('public');
       setEventImageUrls([]);
+      setEventLinkRows([]);
       setEditingEventId(null);
       setShowEventForm(false);
       refreshEvents();
@@ -208,6 +216,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     setEventLocation(ev.eventLocation || '');
     setEventVisibility((ev.visibility as PulseVisibility) || 'public');
     setEventImageUrls(ev.imageUrls?.length ? ev.imageUrls : (ev.imageUrl ? [ev.imageUrl] : []));
+    setEventLinkRows(rowsOf(ev.webLinks));
     setShowEventForm(true);
   };
 
@@ -230,6 +239,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
             <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('location')} />
           </div>
           <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('event_details_ph')} />
+          <WebLinksEditor rows={eventLinkRows} onChange={setEventLinkRows} />
           <label className="block">
             <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('visibility')}</span>
             <select value={eventVisibility} onChange={e => setEventVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">

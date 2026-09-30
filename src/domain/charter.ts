@@ -173,10 +173,17 @@ export const firebasercOf = (c: Charter) => ({
 
 // The hosting entries of firebase.json: one per face, every face wearing the same shape
 // (rewrites, headers, public dir) — the template is the first entry as it stands. Only the
-// FIRST face carries the predeploy build: the others are dressed by scripts/face-og.mjs
-// between deploys (npm run deploy:faces), and a build of their own would undress them.
-export const hostingOf = <T extends Record<string, unknown>>(c: Charter, template: T): Array<Omit<T, 'predeploy'> & { target: string; predeploy?: unknown }> =>
+// EVERY FACE KEEPS ITS OWN CARD (ring 2026-09-30). The first face builds (its predeploy) into
+// the shared `public` dir; every other face is served from ITS OWN copy of that build,
+// `<public>-faces/<target>`, dressed with its community's Open Graph card by its own predeploy
+// (scripts/face-og.mjs <target>). Before this, faces were dressed between deploys by hand
+// (npm run deploy:faces), and any plain `firebase deploy --only hosting` undressed all of them
+// with the app's card — which is exactly what happened, week after week.
+export const hostingOf = <T extends Record<string, unknown>>(c: Charter, template: T): Array<Omit<T, 'predeploy' | 'public'> & { target: string; predeploy?: unknown; public: string }> =>
   c.faces.map((f, i) => {
-    const { predeploy, ...rest } = template as T & { predeploy?: unknown };
-    return { target: f.target, ...(i === 0 && predeploy !== undefined ? { predeploy } : {}), ...rest };
+    const { predeploy, public: pub, ...rest } = template as T & { predeploy?: unknown; public?: unknown };
+    const base = typeof pub === 'string' && pub ? pub : 'dist';
+    return i === 0
+      ? { target: f.target, ...(predeploy !== undefined ? { predeploy } : {}), public: base, ...rest }
+      : { target: f.target, predeploy: `node scripts/face-og.mjs ${f.target}`, public: `${base}-faces/${f.target}`, ...rest };
   });

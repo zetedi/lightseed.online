@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { showAlert } from "../ui/Dialog";
+import { webLinksOf } from '../../domain/webLink';
+import { WebLinksEditor, type WebLinkRow } from '../ui/WebLinksEditor';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSession } from '../../contexts/SessionContext';
 import { speak } from '../../utils/translations';
@@ -92,6 +94,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   const [growthCategory, setGrowthCategory] = useState<string>('');
   const [pulseTitle, setPulseTitle] = useState('');
   const [pulseBody, setPulseBody] = useState('');
+  const [linkRows, setLinkRows] = useState<WebLinkRow[]>([]);
   const [pulseImageUrl, setPulseImageUrl] = useState(targetVision?.imageUrl || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -176,12 +179,15 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
 
       // Tree growth — sealed onto the tree's chain via onMint (unchanged).
       const lifetreeId = growthTree?.id || '';
+      const doors = webLinksOf(linkRows);
+      if (doors.problem) { showAlert(speak(doors.problem)); setIsSubmitting(false); return; }
       await onMint({
         lifetreeId,
         type: 'tree_growth',
         title: pulseTitle.trim() || t('growth_of').replace('{name}', growthTree?.name || t('the_tree')),
         body: pulseBody,
         imageUrl: finalImageUrl,
+        ...(doors.links.length ? { webLinks: doors.links } : {}),
         authorId: lightseed.uid,
         authorName: nameAs(growthTree?.name) || t('someone'),
         authorPhoto: lightseed.photoURL || undefined,
@@ -356,6 +362,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                       value={pulseBody}
                       onChange={e => setPulseBody(e.target.value)}
                     />
+                    {growthKind === 'tree' && <WebLinksEditor rows={linkRows} onChange={setLinkRows} fieldClassName="h-10 w-full rounded border p-2 text-sm" />}
                     <button
                       type="button"
                       onClick={() => handleMint()}

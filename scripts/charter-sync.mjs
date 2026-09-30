@@ -68,9 +68,13 @@ put('.firebaserc', pretty(firebasercOf(charter)).trimEnd());
 const fbPath = resolve(ROOT, 'firebase.json');
 const fb = JSON.parse(readFileSync(fbPath, 'utf8'));
 const entries = Array.isArray(fb.hosting) ? fb.hosting : [fb.hosting];
-// Mirror of hostingOf: the first face alone keeps the predeploy build (face-og dresses the rest).
-const { target: _t, predeploy, ...template } = entries[0];
-fb.hosting = charter.faces.map((f, i) => ({ target: f.target, ...(i === 0 && predeploy !== undefined ? { predeploy } : {}), ...template }));
+// Mirror of hostingOf (ring 2026-09-30): the first face builds into `public`; every other face
+// is served from its own dressed copy, `<public>-faces/<target>`, made by its own predeploy.
+const { target: _t, predeploy, public: pub, ...template } = entries[0];
+const base = typeof pub === 'string' && pub ? pub : 'dist';
+fb.hosting = charter.faces.map((f, i) => (i === 0
+  ? { target: f.target, ...(predeploy !== undefined ? { predeploy } : {}), public: base, ...template }
+  : { target: f.target, predeploy: `node scripts/face-og.mjs ${f.target}`, public: `${base}-faces/${f.target}`, ...template }));
 put('firebase.json', pretty(fb).trimEnd() + '\n');
 
 if (CHECK && changed) { console.error(`charter-sync: ${changed} file(s) out of step with node.json — run \`npm run charter\`.`); process.exit(1); }

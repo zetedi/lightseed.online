@@ -65,6 +65,8 @@ export const BLOCK_CONTENT_FIELDS = [
     // The author's own signature (ring 2026-09-23, signed blocks): sealed INTO the hash, so a
     // signature can no more be swapped than a body. Absent on unsigned and server-hand blocks.
     'authorSignature',
+    // Doors outward (ring 2026-09-30): the links a block carries are its content, sealed with it.
+    'webLinks',
 ] as const;
 
 export function blockContent(pulse: Record<string, unknown>): Record<string, unknown> {

@@ -6,6 +6,42 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-30 · Every face keeps its own card** — Zoltán, seeing seed.perauset.org's link preview
+wear Lightseed's card: "I would like to have the OG domain specific." The card a link unfurls
+into is the face's, not the node's: title, description and hero come from the community rooted
+at that face (its name, its vision paper, its hero picture). THE MOVE: the first face builds
+`dist` as before; every other face is served from its own copy, `dist-faces/<target>`, made by
+its own hosting predeploy (`node scripts/face-og.mjs <target>`, derived by `hostingOf` in
+domain/charter and mirrored into firebase.json by charter-sync). A plain
+`firebase deploy --only hosting` therefore never undresses a face again — once, a hand-run
+dressing script was the only thing between a face and the generic card, and one plain deploy
+erased it. A face whose community cannot be read (no vision paper, no credentials) keeps the
+node's card rather than failing the deploy. NOT GUARANTEED: the card changes only at deploy
+time — a renamed community or a new hero waits for the next hosting deploy, not for a
+Firestore write (a serverless function per face was rejected as a cost with no reader yet).
+
+---
+
+**2026-09-30 · The doors a record carries outward** — Zoltán: "the option to add a dynamic list
+of (sanitized) links to pulses to connect to blogs, online storage etc." A gathering and a
+growth may carry `webLinks`: a bounded list (twelve at most) of `{ url, label? }`, every
+address already an absolute web door (domain/webLink `webLinksOf` sanitizes as a person types
+— nothing but http(s), no credentials in the address, a real host — and `isWebLinkList` is the
+stored shape both the seal and the server's mirror judge by; a row with a stray key, an
+unnormalized address or an empty label is refused). ON A CHAIN the doors are content: sealed
+into the block's hash beside the body, so a growth's links cannot be rewritten after the fact.
+ON A STANDALONE gathering they are editable by the hands that edit its words (author, keeper,
+staff), the rules holding the shape (a list of ≤12) while the law holds each address; a copied
+gathering carries its doors on. Every door is rendered through OutwardLink — another house
+opens in its own tab, nothing that is not a web link is ever an anchor. Rejected: free text
+with autolinking (would let any string become a door); links as their own beings (a door is a
+property of a record, not a being with a chain — until a link is watered, it stays a field).
+NOT GUARANTEED: that a door still opens (no reachability check, no snapshot); that the label
+tells the truth about the address (the address is shown on hover and in the status bar as the
+browser's own honesty).
+
+---
+
 **2026-09-30 · The anchor, not the owner** — Zoltán: "I'd like the ownerId field to fade out
 also." The last "owner" left the model. THE FIELD: the kept beings — lifetrees, communities,
 Light Houses — carry `anchorUid`: the one keeper seat that is never empty, the place the

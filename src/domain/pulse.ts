@@ -1,6 +1,7 @@
 import type { Stamp } from './time';
 import type { Being } from './being';
 import type { ReachAudience } from './reach';
+import type { WebLink } from './webLink';
 
 // Canonical pulse types are explicit lowercase tokens. Casing/identity previously encoded
 // meaning (a footgun): 'GROWTH' = a tree's growth, lowercase 'growth' = a VISION's growth,
@@ -114,6 +115,10 @@ export interface Pulse extends Being {
   offeredToKeeperUid?: string;   // the tree's keeper / the vision's author, for the leaf's eye
   offeredToRootTreeId?: string;  // a vision's root tree — where the keeper's notice lands
   door?: string;                 // a reach may carry a /b/ door the push opens (domain/push)
+  // DOORS OUTWARD (domain/webLink webLinksOf, ring 2026-09-30): a bounded list of sanitized
+  // links a gathering or a growth carries — a blog, an album, a shared folder. Sealed on chain
+  // blocks; editable on standalone records by the same hands that edit their words.
+  webLinks?: WebLink[];
   offeringFromTreeId?: string;   // the offerer's own tree, whose chain carries its twin block
   offeringFromTreeName?: string;
   offeringStatus?: 'open' | 'accepted' | 'withdrawn' | 'declined';

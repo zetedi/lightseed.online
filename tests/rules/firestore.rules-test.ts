@@ -1081,6 +1081,31 @@ describe('a keeper adopts a standalone event into their place (ring 2026-09-21)'
   });
 });
 
+describe('the doors a record carries outward — webLinks on events (ring 2026-09-30)', () => {
+  const EV3 = 'ev-with-doors';
+  const seed = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'communities', 'com-pa'), { name: 'Per Auset', anchorUid: ALICE, domain: 'seed.perauset.org' });
+    await setDoc(doc(d, 'pulses', EV3), { authorId: MALLORY, type: 'event', title: 'Dance', domain: 'seed.perauset.org', communityId: 'com-pa', visibility: 'public' });
+  });
+  const doors = [{ url: 'https://blog.example.org/', label: 'the blog' }, { url: 'https://drive.example.org/x' }];
+
+  it('the author and the community keeper may set the doors; a stranger may not', async () => {
+    await seed();
+    await assertSucceeds(updateDoc(doc(db(MALLORY), 'pulses', EV3), { webLinks: doors, updatedAt: 1 }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', EV3), { webLinks: [], updatedAt: 2 }));
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', EV3), { webLinks: doors, updatedAt: 3 }));
+  });
+
+  it('the shape is held — a list of at most twelve, at birth and on edit', async () => {
+    await seed();
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', EV3), { webLinks: 'https://example.org', updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(MALLORY), 'pulses', EV3), { webLinks: Array.from({ length: 13 }, () => doors[0]), updatedAt: 1 }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'ev-born-with-doors'), { authorId: ALICE, type: 'event', title: 'Gathering', previousHash: 'EVENT', hash: 'e1', visibility: 'public', webLinks: doors }));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'ev-born-badly'), { authorId: ALICE, type: 'event', title: 'Gathering', previousHash: 'EVENT', hash: 'e1', visibility: 'public', webLinks: { url: 'https://example.org' } }));
+  });
+});
+
 describe('guardian veto — window and tenure live in the rules, not only the client', () => {
   const mintPulse = async (createdAtMs: number, guardianSinceMs?: number) => {
     await env.withSecurityRulesDisabled(async (ctx) => {

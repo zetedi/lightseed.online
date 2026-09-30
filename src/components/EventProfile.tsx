@@ -13,6 +13,7 @@ import { beingPath } from '../domain/beingLink';
 import { mintBeingQr } from '../services/firebase/beings';
 import { Pulse, Lifetree, Community } from '../types';
 import { Icons } from './ui/Icons';
+import { WebLinksList } from './ui/WebLinksList';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { EventWeather } from './ui/EventWeather';
 import { ProfileHero } from './ui/ProfileHero';
@@ -273,6 +274,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDu
                         <p dir="auto" className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-slate-600 dark:text-slate-300">
                             {pulse.content || pulse.body}
                         </p>
+                        <WebLinksList links={pulse.webLinks} />
                         {/* THE LINEAGE (domain/eventLineage): where this occurrence stands in its gathering's
                             tree — the first held, the hand it is from the root, the occurrences copied from it. */}
                         {lineage && (pulse.descendsFromId || lineage.childCount > 0) && (

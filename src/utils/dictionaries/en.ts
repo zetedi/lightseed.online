@@ -1673,7 +1673,10 @@ const en = {
   footer_already_subscribed: "You receive the letter of {place}.",
   visions_endeavours: "Visions & Endeavours",
   link_not_web: "A link opens on the web: it begins with http:// or https://.",
-  link_not_valid: "That is not an address. Try something like example.org."
+  link_not_valid: "That is not an address. Try something like example.org.",
+  links_too_many: "At most twelve links.",
+  web_links: "Links", web_links_hint: "Doors outward — a blog, an album, a shared folder. Each opens in its own tab.",
+  web_link_label_ph: "Label (optional)", web_link_url_ph: "https://…", add_link: "Add a link", remove_link: "Remove link",
 };
 
 export type Dictionary = typeof en;

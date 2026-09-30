@@ -78,6 +78,17 @@ describe('the birth law — what the server refuses', () => {
     expect(refusalOf(facts({ type: 'tree_growth', care: 'yes' }))).toBe('block_field_bad');
     expect(refusalOf(facts({ type: 'tree_growth', care: 'watering', wateringConfirmation: 'ok' }))).toBe('block_field_bad');
   });
+  it('the doors a growth carries outward: only sanitized web addresses, at most twelve, labels short (both laws)', () => {
+    const door = { url: 'https://blog.example.org/', label: 'the blog' };
+    expect(refusalOf(facts({ type: 'tree_growth', webLinks: [door, { url: 'https://drive.example.org/x' }] }))).toBeNull();
+    expect(refusalOf(facts({ type: 'tree_growth', webLinks: [] }))).toBeNull();
+    expect(refusalOf(facts({ type: 'tree_growth', webLinks: 'https://blog.example.org/' }))).toBe('block_field_bad');
+    expect(refusalOf(facts({ type: 'tree_growth', webLinks: [{ url: 'javascript:alert(1)' }] }))).toBe('block_field_bad');
+    expect(refusalOf(facts({ type: 'tree_growth', webLinks: [{ url: 'blog.example.org' }] }))).toBe('block_field_bad'); // not normalized
+    expect(refusalOf(facts({ type: 'tree_growth', webLinks: [{ url: 'https://blog.example.org/', label: '' }] }))).toBe('block_field_bad');
+    expect(refusalOf(facts({ type: 'tree_growth', webLinks: [{ url: 'https://blog.example.org/', label: 'x'.repeat(81) }] }))).toBe('block_field_bad');
+    expect(refusalOf(facts({ type: 'tree_growth', webLinks: Array.from({ length: 13 }, () => door) }))).toBe('block_field_bad');
+  });
   it('a visibility that does not exist', () => {
     expect(refusalOf(facts({ type: 'tree_growth', visibility: 'secret' }))).toBe('block_visibility_bad');
   });
@@ -151,7 +162,7 @@ describe('the record and the seal', () => {
     // The birth whitelist and the seal whitelist meet on the fields that matter: whatever a
     // hand says that is block content enters the hash; the rest (display, off-chain state) does not.
     const sealed = BLOCK_BIRTH_FIELDS.filter(f => (BLOCK_CONTENT_FIELDS as readonly string[]).includes(f));
-    expect(sealed).toEqual(expect.arrayContaining(['type', 'title', 'body', 'content', 'imageUrl', 'visibility', 'care', 'participantUids', 'authorName']));
+    expect(sealed).toEqual(expect.arrayContaining(['type', 'title', 'body', 'content', 'imageUrl', 'visibility', 'care', 'participantUids', 'authorName', 'webLinks']));
     expect((BLOCK_CONTENT_FIELDS as readonly string[]).includes('wateringConfirmedBy')).toBe(false); // mutated by the witness
     const rec = blockRecordOf(p);
     const hash = await computeCanonicalHash('h9', p.mintedAt, rec);

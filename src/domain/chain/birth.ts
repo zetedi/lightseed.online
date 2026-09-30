@@ -1,5 +1,6 @@
 import type { DomainKey } from '../words';
 import { signingPreimage } from '../signing';
+import { isWebLinkList } from '../webLink';
 
 // THE BIRTH OF A BLOCK — the law the server applies when a hand asks for a new link on a
 // chain (ring 2026-09-23, "server-held heads"). Before this ring a browser read a tree's head,
@@ -44,7 +45,7 @@ export const BLOCK_BIRTH_FIELDS = [
   'reachTreeId', 'reachTreeName', 'recipientUid', 'recipientName',
   'threadId', 'participantUids', 'audience', 'threadName', 'isGroup', 'mintNotice', 'seenBy', 'door',
   'authorName', 'authorPersonName', 'authorPhoto', 'carriedByName', 'disclosure',
-  'growthCategory', 'communityId',
+  'growthCategory', 'communityId', 'webLinks',
 ] as const;
 export type BlockBirthField = typeof BLOCK_BIRTH_FIELDS[number];
 
@@ -131,6 +132,8 @@ export function judgeBlockBirth(f: BlockBirthFacts): BlockBirthJudgment {
     if (b[k] !== undefined && typeof b[k] !== 'boolean') return reject('block_field_bad');
   }
   if (b.wateringConfirmation !== undefined && !isPlainObject(b.wateringConfirmation)) return reject('block_field_bad');
+  // Doors outward: a bounded list, every row already a normalized web door (domain/webLink).
+  if (b.webLinks !== undefined && !isWebLinkList(b.webLinks)) return reject('block_field_bad');
 
   // Visibility: one of the five, or absent (the bearer's, else public).
   const visibility = b.visibility === undefined

@@ -24,7 +24,7 @@ const readHand = async (t: Transaction, ev: Record<string, unknown>, uid: string
 
 // The fields a copy carries from its parent: the gathering's own words and frame, never its
 // lineage, seal, author, memory of a circle or off-chain state.
-const COPIED_EVENT_FIELDS = ['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'eventMaxParticipants', 'visibility', 'communityId', 'communityName', 'domain'] as const;
+const COPIED_EVENT_FIELDS = ['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'eventMaxParticipants', 'webLinks', 'visibility', 'communityId', 'communityName', 'domain'] as const;
 
 // ── duplicateEvent: a new occurrence, descending from this one ───────────────────────────
 export const duplicateEvent = onCall({ cors: true }, async (request) => {

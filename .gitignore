@@ -115,6 +115,7 @@ typings/
 
 # Vite
 dist
+dist-faces
 dist-ssr
 *.local
 

@@ -103,7 +103,8 @@
     },
     {
       "target": "perauset",
-      "public": "dist",
+      "predeploy": "node scripts/face-og.mjs perauset",
+      "public": "dist-faces/perauset",
       "ignore": [
         "firebase.json",
         "**/.*",
@@ -180,7 +181,8 @@
     },
     {
       "target": "theohouse",
-      "public": "dist",
+      "predeploy": "node scripts/face-og.mjs theohouse",
+      "public": "dist-faces/theohouse",
       "ignore": [
         "firebase.json",
         "**/.*",
@@ -257,7 +259,8 @@
     },
     {
       "target": "enlightenednations",
-      "public": "dist",
+      "predeploy": "node scripts/face-og.mjs enlightenednations",
+      "public": "dist-faces/enlightenednations",
       "ignore": [
         "firebase.json",
         "**/.*",
@@ -334,7 +337,8 @@
     },
     {
       "target": "mamaway",
-      "public": "dist",
+      "predeploy": "node scripts/face-og.mjs mamaway",
+      "public": "dist-faces/mamaway",
       "ignore": [
         "firebase.json",
         "**/.*",

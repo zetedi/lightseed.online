@@ -8,6 +8,9 @@ import { visibilitiesForScope, type PulseScope } from '../../domain/pulseVisibil
 import { beingStoragePath } from '../../domain/beingIndex';
 import { useSession } from '../../contexts/SessionContext';
 import type { Pulse, PulseVisibility } from '../../domain/pulse';
+import { webLinksOf } from '../../domain/webLink';
+import { WebLinksEditor, rowsOf } from '../ui/WebLinksEditor';
+import { speak } from '../../utils/translations';
 
 /**
  * Plant a standalone event — anyone can, no community required. A community can later form
@@ -42,6 +45,7 @@ export const EventModal = ({
   const [body, setBody] = useState(event?.content || event?.body || '');
   const [visibility, setVisibility] = useState<PulseVisibility>((event?.visibility as PulseVisibility) || 'public');
   const [imageUrls, setImageUrls] = useState<string[]>(event?.imageUrls?.length ? event.imageUrls : (event?.imageUrl ? [event.imageUrl] : []));
+  const [linkRows, setLinkRows] = useState(rowsOf(event?.webLinks));
   const [saving, setSaving] = useState(false);
 
   // Filed under the being who plants it. The old `events/{uid}/…` fell to storage.rules'
@@ -61,6 +65,8 @@ export const EventModal = ({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || saving || !lightseed) return;
+    const doors = webLinksOf(linkRows);
+    if (doors.problem) { showAlert(speak(doors.problem)); return; }
     setSaving(true);
     try {
       const base = {
@@ -74,6 +80,7 @@ export const EventModal = ({
         // A positive number bounds the gathering; anything else clears the bound (null, not
         // undefined, so an edit can REMOVE a previously set limit).
         eventMaxParticipants: Number.parseInt(maxParticipants, 10) > 0 ? Number.parseInt(maxParticipants, 10) : null,
+        webLinks: doors.links,
         visibility,
       };
       // On edit, never overwrite authorship (an admin editing another's event keeps the author).
@@ -108,6 +115,7 @@ export const EventModal = ({
           className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
         />
         <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('event_details_ph')} className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+        <WebLinksEditor rows={linkRows} onChange={setLinkRows} />
         <label className="block">
           <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('visibility')}</span>
           <select value={visibility} onChange={e => setVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">

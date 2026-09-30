@@ -64,7 +64,7 @@ export const DOMAIN_KEYS = [
   'guard_ask', 'guard_accept', 'guard_decline',
   'guard_not_keeper', 'guard_not_lifetree', 'guard_tree_dead', 'guard_self', 'guard_no_living_tree', 'guard_already', 'guard_pending',
   // web doors — a link a being carries outward (domain/webLink)
-  'link_not_web', 'link_not_valid',
+  'link_not_web', 'link_not_valid', 'links_too_many',
   // doors — a keeper claims a door by proof; a face door is granted (domain/doors)
   'door_not_hostname', 'door_is_node', 'door_is_domain', 'door_already', 'door_taken', 'hand_door_grant',
 ] as const;

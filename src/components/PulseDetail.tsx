@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pulse, Lifetree } from '../types';
 import { Icons } from './ui/Icons';
+import { WebLinksList } from './ui/WebLinksList';
 import { SuperDot } from './ui/SuperDot';
 import { ProfileHero } from './ui/ProfileHero';
 import { PulseInsightPanel } from './ui/PulseInsightPanel';
@@ -237,6 +238,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
                     <p dir="auto" className="text-slate-600 leading-relaxed whitespace-pre-wrap font-serif text-lg dark:text-slate-300">
                         {pulse.content || pulse.body}
                     </p>
+                    <WebLinksList links={pulse.webLinks} />
                 </div>
 
                 {/* The guardians' conscience — consensus veto on a growth mint. */}

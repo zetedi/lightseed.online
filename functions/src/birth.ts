@@ -22,7 +22,7 @@ export const BLOCK_BIRTH_FIELDS = [
     'reachTreeId', 'reachTreeName', 'recipientUid', 'recipientName',
     'threadId', 'participantUids', 'audience', 'threadName', 'isGroup', 'mintNotice', 'seenBy', 'door',
     'authorName', 'authorPersonName', 'authorPhoto', 'carriedByName', 'disclosure',
-    'growthCategory', 'communityId',
+    'growthCategory', 'communityId', 'webLinks',
 ] as const;
 
 export function blockBirthOf(data: Record<string, unknown>): Record<string, unknown> {
@@ -98,6 +98,7 @@ export function judgeBlockBirth(f: BlockBirthFacts): BlockBirthJudgment {
         if (b[k] !== undefined && typeof b[k] !== 'boolean') return reject('block_field_bad');
     }
     if (b.wateringConfirmation !== undefined && !isPlainObject(b.wateringConfirmation)) return reject('block_field_bad');
+    if (b.webLinks !== undefined && !isWebLinkList(b.webLinks)) return reject('block_field_bad');
 
     const visibility = b.visibility === undefined
         ? (isStr(f.bearer.visibility) && (BLOCK_VISIBILITIES as readonly string[]).includes(f.bearer.visibility) ? f.bearer.visibility : 'public')
@@ -317,3 +318,30 @@ export function judgeBlockSignature(f: {
         signature: { version: BLOCK_SIGNATURE_VERSION, sig: f.claim.sig, pubkey: String(f.signer.pubkey || ''), keyFingerprint: f.claim.keyFingerprint, epochId: f.claim.epochId },
     };
 }
+
+// ── DOORS OUTWARD (mirror of src/domain/webLink normalizeWebLink + isWebLinkList) ─────────────
+const HOST_RE = /^(?=.{1,253}$)(?!-)[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}$/;
+const schemeOf = (s: string): string => (/^([a-z][a-z0-9+.-]*):/i.exec(s)?.[1] || '').toLowerCase();
+export const normalizeWebLink = (raw: string | null | undefined): string | null => {
+    const text = String(raw ?? '').trim().replace(/^<|>$/g, '').trim();
+    if (!text || /\s/.test(text)) return null;
+    const scheme = schemeOf(text);
+    if (scheme && scheme !== 'http' && scheme !== 'https') return null;
+    const withScheme = scheme ? text : `https://${text.replace(/^\/\//, '')}`;
+    let url: URL;
+    try { url = new URL(withScheme); } catch { return null; }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    if (url.username || url.password) return null;
+    const host = url.hostname.toLowerCase();
+    if (!HOST_RE.test(host) && host !== 'localhost') return null;
+    url.hostname = host;
+    return url.toString();
+};
+export const MAX_WEB_LINKS = 12;
+export const MAX_WEB_LINK_LABEL = 80;
+export interface WebLink { url: string; label?: string }
+export const isWebLinkList = (v: unknown): v is WebLink[] =>
+    Array.isArray(v) && v.length <= MAX_WEB_LINKS && v.every(r =>
+        !!r && typeof r === 'object' && Object.keys(r).every(k => k === 'url' || k === 'label')
+        && typeof (r as WebLink).url === 'string' && normalizeWebLink((r as WebLink).url) === (r as WebLink).url
+        && ((r as WebLink).label === undefined || (typeof (r as WebLink).label === 'string' && (r as WebLink).label!.length <= MAX_WEB_LINK_LABEL && (r as WebLink).label!.trim().length > 0)));

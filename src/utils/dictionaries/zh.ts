@@ -1644,6 +1644,9 @@ const zh = {
   visions_endeavours: "愿景与志业",
   link_not_web: "链接通向网络：它以 http:// 或 https:// 开头。",
   link_not_valid: "这不是一个地址。可以试试 example.org 这样的写法。",
+  links_too_many: "最多十二个链接。",
+  web_links: "链接", web_links_hint: "向外的门——博客、相册、共享文件夹。每个都在自己的标签页中打开。",
+  web_link_label_ph: "标签（可选）", web_link_url_ph: "网址 https://…", add_link: "添加链接", remove_link: "移除链接",
 } satisfies Partial<Dictionary>;
 
 export default zh;

@@ -99,3 +99,36 @@ export const linkLabel = (raw: string | null | undefined): string => {
   if (!href) return stripWrapping(raw);
   return href.replace(/^https?:\/\//, '').replace(/\/$/, '');
 };
+
+// A LIST OF DOORS (ring 2026-09-30): a pulse — a gathering, a growth — may carry a bounded list
+// of outward links: a blog, an album, a shared folder. Each is a web door by the law above,
+// normalized before it is stored (the server refuses a link that is not already in its
+// normalized form, so a stored list is verifiable byte for byte); a label is optional and short.
+// Plain contract: webLinksOf answers the sanitized list and the first fault a person can fix;
+// the list never exceeds MAX_WEB_LINKS; empty rows are dropped, not faulted.
+export const MAX_WEB_LINKS = 12;
+export const MAX_WEB_LINK_LABEL = 80;
+export interface WebLink { url: string; label?: string }
+
+export const webLinksOf = (raw: unknown): { links: WebLink[]; problem: DomainKey | null } => {
+  const rows = Array.isArray(raw) ? raw : [];
+  const links: WebLink[] = [];
+  for (const r of rows) {
+    const row = (r && typeof r === 'object' ? r : { url: r }) as { url?: unknown; label?: unknown };
+    const text = String(row.url ?? '').trim();
+    if (!text) continue;
+    const problem = webLinkProblem(text);
+    if (problem) return { links, problem };
+    const label = String(row.label ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_WEB_LINK_LABEL);
+    links.push(label ? { url: normalizeWebLink(text)!, label } : { url: normalizeWebLink(text)! });
+  }
+  if (links.length > MAX_WEB_LINKS) return { links: links.slice(0, MAX_WEB_LINKS), problem: 'links_too_many' };
+  return { links, problem: null };
+};
+
+// Is this a stored list the server may seal? Every row already normalized, labelled or not.
+export const isWebLinkList = (v: unknown): v is WebLink[] =>
+  Array.isArray(v) && v.length <= MAX_WEB_LINKS && v.every(r =>
+    !!r && typeof r === 'object' && Object.keys(r).every(k => k === 'url' || k === 'label')
+    && typeof (r as WebLink).url === 'string' && normalizeWebLink((r as WebLink).url) === (r as WebLink).url
+    && ((r as WebLink).label === undefined || (typeof (r as WebLink).label === 'string' && (r as WebLink).label!.length <= MAX_WEB_LINK_LABEL && (r as WebLink).label!.trim().length > 0)));

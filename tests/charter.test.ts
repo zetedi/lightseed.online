@@ -89,8 +89,9 @@ describe('what the charter derives', () => {
     const hosting = hostingOf(node, { predeploy: 'npm run build', public: 'dist', rewrites: [{ source: '**', destination: '/index.html' }] });
     expect(hosting.map(h => h.target)).toEqual(['app', 'perauset', 'theohouse', 'enlightenednations', 'mamaway']);
     expect(hosting[0]).toMatchObject({ target: 'app', predeploy: 'npm run build', public: 'dist' });
-    expect(hosting[3]).toMatchObject({ public: 'dist', target: 'enlightenednations' });
-    expect('predeploy' in hosting[3]).toBe(false); // face-og dresses the other faces between deploys
+    // Every other face is served from its own dressed copy, made by its own predeploy (ring 2026-09-30).
+    expect(hosting[3]).toMatchObject({ public: 'dist-faces/enlightenednations', target: 'enlightenednations', predeploy: 'node scripts/face-og.mjs enlightenednations' });
+    expect(hosting[1].public).toBe('dist-faces/perauset');
   });
 });
 
@@ -109,7 +110,13 @@ describe('the files that must agree with node.json (scripts/charter-sync.mjs)', 
     expect(hosting.map(h => h.target)).toEqual(node.faces.map(f => f.target));
     const { target: _t, ...template } = hosting[0];
     expect(hosting).toEqual(hostingOf(node, template));
-    expect(hosting.slice(1).every(h => !('predeploy' in h))).toBe(true);
+    // Every face after the first is served from its own dressed copy (dist-faces/<target>),
+    // made by its own predeploy — so a plain `firebase deploy --only hosting` never undresses
+    // a face's card (ring 2026-09-30).
+    for (const h of hosting.slice(1)) {
+      expect(h.public).toBe(`dist-faces/${h.target}`);
+      expect(h.predeploy).toBe(`node scripts/face-og.mjs ${h.target}`);
+    }
   });
 });
 

@@ -1646,6 +1646,9 @@ const ar = {
   visions_endeavours: "الرؤى والمساعي",
   link_not_web: "الرابط يفتح على الويب: يبدأ بـ http:// أو https://.",
   link_not_valid: "هذا ليس عنوانًا. جرّب شيئًا مثل example.org.",
+  links_too_many: "اثنا عشر رابطًا على الأكثر.",
+  web_links: "روابط", web_links_hint: "أبواب إلى الخارج — مدوّنة أو ألبوم أو مجلد مشترك. كلٌّ يُفتح في تبويبه.",
+  web_link_label_ph: "عنوان (اختياري)", web_link_url_ph: "الرابط https://…", add_link: "أضف رابطًا", remove_link: "إزالة الرابط",
 } satisfies Partial<Dictionary>;
 
 export default ar;
