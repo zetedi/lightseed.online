@@ -20,6 +20,8 @@ describe('offeringProblem: what a valid offering is', () => {
   it('a sound draft has no problem', () => {
     expect(offeringProblem(ok())).toBeNull();
     expect(offeringProblem(ok({ kind: 'bed' }))).toBeNull();
+    expect(offeringProblem(ok({ kind: 'product', url: 'https://shop.example.org/balm' }))).toBeNull(); // a made thing, its shop at the door
+    expect(offeringProblem(ok({ kind: 'product' }))).toBeNull();                                        // or given by hand, no door
   });
   it('refuses a bad kind, an empty title, or non-positive/fractional appreciation', () => {
     expect(speak(offeringProblem(ok({ kind: 'x' as any }))!)).toMatch(/what you are offering/i);

@@ -94,7 +94,7 @@ export interface Pulse extends Being {
   generation?: number;
   // Offerings (type 'offering'): a bed or service offered through trust. The author may name a
   // suggested appreciation in light, given AFTER the contribution and never gating access.
-  offeringKind?: 'bed' | 'service' | 'code';
+  offeringKind?: 'bed' | 'service' | 'code' | 'product';
   offeringAppreciationLight?: number;
   offeringBedId?: string;
   offeringBedName?: string;

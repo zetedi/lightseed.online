@@ -21,7 +21,9 @@ import type { DomainKey } from './words';
 // that exists and lives, from a tree that exists. Not guaranteed: who may see an offering (the
 // pulse's visibility law), and any movement of light on acceptance (none, yet).
 
-export type OfferingKind = 'bed' | 'service' | 'code';
+// A PRODUCT (ring 2026-09-30): a made thing — a balm, a loaf, a print — offered like a service: bought
+// with money at its door if it is sold at all, appreciated in light after it is received.
+export type OfferingKind = 'bed' | 'service' | 'code' | 'product';
 export type OfferedToKind = 'tree' | 'vision';
 export type OfferingStatus = 'open' | 'accepted' | 'withdrawn' | 'declined';
 export const OFFERING_STATUSES: readonly OfferingStatus[] = ['open', 'accepted', 'withdrawn', 'declined'];
@@ -52,7 +54,7 @@ export interface OfferingDraft {
 
 // Why this offering cannot stand yet, or null when it may. Keeps the form honest before a write.
 export const offeringProblem = (d: OfferingDraft): DomainKey | null => {
-    if (d.kind !== 'bed' && d.kind !== 'service' && d.kind !== 'code') return 'offering_choose_kind';
+    if (d.kind !== 'bed' && d.kind !== 'service' && d.kind !== 'code' && d.kind !== 'product') return 'offering_choose_kind';
     if (!d.title.trim()) return 'offering_name';
     if (!Number.isFinite(d.suggestedAppreciationLight) || d.suggestedAppreciationLight <= 0) return 'offering_appreciation_positive';
     if (!Number.isInteger(d.suggestedAppreciationLight)) return 'offering_appreciation_whole';

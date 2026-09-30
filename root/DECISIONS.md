@@ -6,6 +6,17 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-30 · A product is a kind of offering** — Zoltán, walking the balm made at The O House
+through the light: "Let's keep the current model and add a product kind." A PRODUCT is a made thing
+— a balm, a loaf, a print — offered like a service: if it is sold, its door leads to the shop and
+money stays on its own rail; light follows AFTER it is received, never as a price, and never to the
+maker (the suspended gift stands). The model was re-examined and kept: buying WITH light was
+weighed and declined again, because the moment light pays a person it becomes a wage and a second
+economy beside money. Still to build for the balm's full walk: the witnessed receipt of a standing
+listing and the CLAIM by the next receiver (the ring above names both).
+
+---
+
 **2026-09-30 · Spending is a gate, not a number** — the season of roots, item 2, on Zoltán's word
 ("Let's do item two, spending as a gate"). Until today light was kindled, witnessed and held, and
 nothing could move it: glow was a number nothing could spend, a coin's acceptance an attestation

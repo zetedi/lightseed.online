@@ -29,7 +29,7 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
     const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
     const isOffering = pulse.type === 'offering';
     const appreciationLight = pulse.offeringAppreciationLight;
-    const badge = pulse.type === 'event' ? t('badge_event') : pulse.type === 'tree_growth' ? t('badge_growth') : isOffering ? (pulse.offeringKind === 'bed' ? t('badge_bed') : t('badge_offering')) : '';
+    const badge = pulse.type === 'event' ? t('badge_event') : pulse.type === 'tree_growth' ? t('badge_growth') : isOffering ? (pulse.offeringKind === 'bed' ? t('badge_bed') : pulse.offeringKind === 'product' ? t('badge_product') : t('badge_offering')) : '';
     const isEvent = pulse.type === 'event';
     const meta = isEvent && pulse.eventDate ? `${new Date(pulse.eventDate).toLocaleDateString()} · ${pulse.eventLocation || pulse.body}` : pulse.body;
 

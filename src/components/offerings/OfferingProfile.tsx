@@ -169,6 +169,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
   ) : null;
   const HEART = tabTone('offerings');
   const isBed = offering.offeringKind === 'bed';
+  const isProduct = offering.offeringKind === 'product';
   // The same face the card wears: the first of imageUrls, else the single imageUrl.
   const img = offering.imageUrls?.length ? offering.imageUrls[0] : (offering.imageUrl || '');
 
@@ -307,11 +308,11 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
           </div>
         ),
         title: offering.title,
-        subtitle: <p className="mt-1 text-sm text-white/60">{isBed ? t('offering_bed_trust') : t('offering_service_trust')}</p>,
+        subtitle: <p className="mt-1 text-sm text-white/60">{isBed ? t('offering_bed_trust') : isProduct ? t('offering_product_trust') : t('offering_service_trust')}</p>,
         chips: (
           <>
             <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white" style={{ backgroundColor: HEART }}>
-              {isBed ? t('offering_kind_bed') : t('offering_kind_service')}
+              {isBed ? t('offering_kind_bed') : isProduct ? t('offering_kind_product') : t('offering_kind_service')}
             </span>
             {!active && (
               <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/80 dark:bg-slate-900/20">{t('offering_resting')}</span>

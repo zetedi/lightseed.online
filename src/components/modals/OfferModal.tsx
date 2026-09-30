@@ -147,12 +147,12 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
         <Modal title={editing ? t('offer_retell') : to ? `${t('offer_to')} ${to.name || ''}`.trim() : t('offer_make')} onClose={onClose} wide>
             <form onSubmit={submit} className="flex flex-col gap-4">
                 {/* What is offered: a service, a bed — or code, a pull request offered to a being. */}
-                <div className="grid grid-cols-3 gap-2">
-                    {(['service', 'bed', 'code'] as OfferingKind[]).map(k => (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {(['service', 'bed', 'product', 'code'] as OfferingKind[]).map(k => (
                         <button key={k} type="button" onClick={() => !editing && setKind(k)} disabled={editing}
                             className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all ${kind === k ? 'border-emerald-600 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200 dark:border-slate-800 dark:bg-slate-900'}`}>
-                            <span className="[&>svg]:h-5 [&>svg]:w-5">{k === 'service' ? <Icons.Drop /> : k === 'bed' ? <Icons.Moon /> : <Icons.Globe />}</span>
-                            <span className="text-xs font-bold uppercase tracking-wide">{k === 'service' ? t('offer_service') : k === 'bed' ? t('offer_bed') : t('offer_code')}</span>
+                            <span className="[&>svg]:h-5 [&>svg]:w-5">{k === 'service' ? <Icons.Drop /> : k === 'bed' ? <Icons.Moon /> : k === 'product' ? <Icons.Leaf /> : <Icons.Globe />}</span>
+                            <span className="text-xs font-bold uppercase tracking-wide">{k === 'service' ? t('offer_service') : k === 'bed' ? t('offer_bed') : k === 'product' ? t('offer_product') : t('offer_code')}</span>
                         </button>
                     ))}
                 </div>
@@ -175,7 +175,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
                 )}
 
                 <input dir="auto" value={title} onChange={e => setTitle(e.target.value)} required
-                    placeholder={kind === 'bed' ? t('offer_title_bed_ph') : kind === 'code' ? t('offer_title_code_ph') : t('offer_title_service_ph')}
+                    placeholder={kind === 'bed' ? t('offer_title_bed_ph') : kind === 'code' ? t('offer_title_code_ph') : kind === 'product' ? t('offer_title_product_ph') : t('offer_title_service_ph')}
                     className={`${field} h-11 px-3 font-medium`} />
 
                 <textarea dir="auto" value={description} onChange={e => setDescription(e.target.value)}
