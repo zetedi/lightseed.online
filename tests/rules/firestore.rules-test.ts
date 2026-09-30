@@ -729,6 +729,23 @@ describe("the lifetree LIST leak — the pulse lesson, heard for trees (Lumo's r
     await assertFails(getDoc(doc(db(MALLORY), 'lifetrees', 'treePrivate')));
     await assertSucceeds(getDoc(doc(db(ALICE), 'lifetrees', 'treePrivate')));
   });
+  it('a SECRET TREE is read by its circle — a keeper, steward, guardian or observer link opens it; nothing else does (ring 2026-10-01)', async () => {
+    const mint = (uid: string, rel: string) => env.withSecurityRulesDisabled(async (ctx) => setDoc(doc(ctx.firestore(), 'links', `${uid}__${rel}__treePrivate`), { type: 'link', rel, from: uid, to: 'treePrivate' }));
+    const drop = (uid: string, rel: string) => env.withSecurityRulesDisabled(async (ctx) => deleteDoc(doc(ctx.firestore(), 'links', `${uid}__${rel}__treePrivate`)));
+    await mint(BOB, 'keeper');
+    await mint(MALLORY, 'member'); // not a circle rel
+    await assertSucceeds(getDoc(doc(db(BOB), 'lifetrees', 'treePrivate')));     // the friend, a keeper
+    await assertFails(getDoc(doc(db(MALLORY), 'lifetrees', 'treePrivate')));    // a link that is not the circle's
+    await assertFails(getDoc(doc(db(), 'lifetrees', 'treePrivate')));           // no one from the street
+    for (const rel of ['steward', 'guardian', 'observer']) {
+      await mint(MALLORY, rel);
+      await assertSucceeds(getDoc(doc(db(MALLORY), 'lifetrees', 'treePrivate')));
+      await drop(MALLORY, rel);
+    }
+    // Stepping down closes the door again: the link gone, the tree is hidden once more.
+    await drop(BOB, 'keeper');
+    await assertFails(getDoc(doc(db(BOB), 'lifetrees', 'treePrivate')));
+  });
 });
 
 describe("a tree is born unvalidated — validation is witnessed, never claimed (Lumo's review, 2026-09-07)", () => {

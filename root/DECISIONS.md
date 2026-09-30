@@ -6,6 +6,19 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-01 · A secret tree is read by its circle** — Zoltán: "I would like to be able to share a
+secret tree with a friend… invite somebody to my private tree as a keeper." The seam: keepers had
+been equal since 2026-09-29, yet a private tree's read rule still admitted only its anchor — a
+friend could hold the keeper link and be refused the tree, and the shell already swallowed that
+refusal ("a tended tree drawn back beyond this viewer's sight"). THE MEND: `canReadLifetree` now
+admits the tree's CIRCLE — the anchor and every hand holding a keeper, steward, guardian or
+observer link — and no one else; the list rule is untouched (a circle member reaches a private tree
+by its link, then by get, never by an unpinned list). Stepping down (resignTreeKeeper, a link
+removed) closes the door again, by the same rule. "Aligns with the chain / truth" — the LIN is the
+only reader's list a private tree has.
+
+---
+
 **2026-09-30 · A product is a kind of offering** — Zoltán, walking the balm made at The O House
 through the light: "Let's keep the current model and add a product kind." A PRODUCT is a made thing
 — a balm, a loaf, a print — offered like a service: if it is sold, its door leads to the shop and

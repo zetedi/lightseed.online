@@ -277,11 +277,16 @@ service cloud.firestore {
 
     // Love must never become an existence oracle. Reuse the exact parent visibility gates on
     // the love-update path so knowing a private document id grants no new way to touch it.
-    function canReadLifetree() {
+    // A PRIVATE tree is read by its CIRCLE (ring 2026-10-01): the anchor and every hand holding a
+    // keeper, steward, guardian or observer link to it — a secret tree shared with a friend. The
+    // circle is the LIN; there is no other reader. (The rule read only the anchor before, so a
+    // keeper held the link and was refused the tree: keepers are equal, and now the door agrees.)
+    function canReadLifetree(treeId) {
       return !('visibility' in resource.data)
         || resource.data.visibility == 'public'
         || (isSignedIn() && resource.data.visibility == 'node')
         || (isSignedIn() && resource.data.anchorUid == request.auth.uid)
+        || (isSignedIn() && (hasLink('keeper', treeId) || hasLink('steward', treeId) || hasLink('guardian', treeId) || hasLink('observer', treeId)))
         || isStaff();
     }
     // LIST proves safety from the QUERY (the pulse lesson of ring 2026-08-25, heard for trees
@@ -570,7 +575,7 @@ service cloud.firestore {
       // member; 'private' = owner or staff only. get = one document (legacy-absent reads as
       // public); list = a query, proven from its constraints (canListLifetree) — fused, an
       // anonymous unconstrained list carried node trees (Lumo's review, 2026-09-07).
-      allow get: if canReadLifetree();
+      allow get: if canReadLifetree(treeId);
       allow list: if canListLifetree();
       // Planting is open — except a BED (domain/bed.ts), whose home is optional and SOFT:
       // it is born either HOUSED (lightHouseId set — only that Light House's keeper plants
@@ -719,7 +724,7 @@ service cloud.firestore {
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['latestHash', 'blockHeight', 'genesisHash'])
         )
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
-        || (canReadLifetree() && validLoveCountChange('lifetrees', treeId))
+        || (canReadLifetree(treeId) && validLoveCountChange('lifetrees', treeId))
       );
       // Releasing a tree is every keeper's hand (equal keepers), or staff's.
       allow delete: if isSignedIn() && (isTreeKeeper(treeId) || isStaff());
