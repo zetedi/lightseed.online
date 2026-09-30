@@ -125,6 +125,10 @@ export interface Pulse extends Being {
   offeringAnsweredBy?: string;
   offeringAnsweredAt?: Stamp;
   offeringAcceptedPulseIds?: { from: string; to: string };
+  // SPENDING IS A GATE (ring 2026-09-30): the light SUSPENDED at this offering for whoever comes
+  // next (the caffè sospeso) and how many times it was appreciated — server-written only.
+  offeringSuspendedLight?: number;
+  offeringAppreciations?: number;
   // The twin blocks themselves (type 'standard'): each names the offering and the other chain.
   offeringId?: string;
   offeringLid?: string;

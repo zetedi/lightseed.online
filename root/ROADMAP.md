@@ -113,6 +113,13 @@ canopy, in this order, no new canopy until the first two stand:
 2. **Spending is a gate, not a number.** Glow spent only through a council decision; a ray
    appreciated only at a coin the place ACCEPTS (`accepts_coin_of` checked at the moment of
    appreciation, not merely attested); acceptance and spend both server-minted. Not before 1.
+   **SHIPPED 2026-09-30** (ring "Spending is a gate, not a number"): `appreciateOffering` (the
+   receiver's light, suspended at the offering) and `spendGlow` (a signed purchase decision,
+   re-verified on server ground) in `functions/lightCalls`; the law in `domain/spend`; the
+   ledgers `gifts` and `spends` server-only by rule; the coin gate at the moment of movement.
+   Left for later rings: the CLAIM of a suspended gift by a next receiver (needs the witnessed
+   receipt of a standing listing), the spend amount inside the signed decision identity (v4), and
+   consensus discernment as a spend gate.
 3. **A place takes its beings with it.** A server hand that re-stamps beings when a keeper
    moves a community's domain, and re-names rays already kindled when a coin is renamed —
    today both are scripts run by hand (move-place-of-record, the coin's data).

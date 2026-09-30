@@ -62,7 +62,9 @@ proof, while the person doc names only the current epoch and active/frozen state
 `lifetrees`: the seed beings; chain fields frozen; provenance (`plantedAt`+coords); `anchorUid`
 (the never-empty keeper seat — ring 2026-09-30; keepers are equal, `keeper` links beside it).
 `pulses`: one ledger for growth/care/events/decisions/reaches/offerings; an offering may carry
-`offeringAppreciationLight` (suggested after-gift, never admission).
+`offeringAppreciationLight` (suggested after-gift, never admission) and, server-written, the light
+SUSPENDED at it (`offeringSuspendedLight`); a purchase decision names its `spend` at birth (frozen).
+`gifts` / `spends`: the ledgers of light that MOVED (ring 2026-09-30) — server-only, like `rays`.
 `links`: the LIN: `from__rel__to`; rels: guardian, keeper, steward, observer,
 member, joined, participant, join_request, **rooted** (Light House→tree),
 **shelters** (Light House→community), **invited_by** (newcomer→community; append-only

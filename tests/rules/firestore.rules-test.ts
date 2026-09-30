@@ -2179,6 +2179,62 @@ describe('draft vanishes, minted withdraws — the decision delete rule and the 
   });
 });
 
+describe('spending is a gate — gifts, spends and the marks of moved light are the server\'s (ring 2026-09-30)', () => {
+  const gift = { lid: 'g1', offeringId: 'off1', giverUid: ALICE, units: 21, glow: 3, suspended: 18, glowHome: 'com1' };
+  const spend = { lid: 's1', decisionId: 'dec1', communityId: 'com1', offeringId: 'off1', units: 108, glow: 15, suspended: 93, glowHome: 'com1', spentBy: ALICE };
+
+  it('no client may write a gift or a spend — not the giver, not staff', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'gifts', 'off1__alice'), gift));
+    await assertFails(setDoc(doc(db(STAFF), 'gifts', 'off1__alice'), gift));
+    await assertFails(setDoc(doc(db(ALICE), 'spends', 'dec1'), spend));
+    await assertFails(setDoc(doc(db(STAFF), 'spends', 'dec1'), spend));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'gifts', 'off1__alice'), gift);
+      await setDoc(doc(ctx.firestore(), 'spends', 'dec1'), spend);
+    });
+    await assertFails(updateDoc(doc(db(ALICE), 'gifts', 'off1__alice'), { units: 999 }));
+    await assertFails(deleteDoc(doc(db(ALICE), 'spends', 'dec1')));
+  });
+
+  it('a gift is the giver\'s own to read; a spend is the circle\'s, read by any signed-in being', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'gifts', 'off1__alice'), gift);
+      await setDoc(doc(ctx.firestore(), 'spends', 'dec1'), spend);
+    });
+    await assertSucceeds(getDoc(doc(db(ALICE), 'gifts', 'off1__alice')));
+    await assertFails(getDoc(doc(db(BOB), 'gifts', 'off1__alice')));
+    await assertSucceeds(getDoc(doc(db(STAFF), 'gifts', 'off1__alice')));
+    await assertSucceeds(getDoc(doc(db(BOB), 'spends', 'dec1')));
+  });
+
+  it('an offering is never born holding light, and a keeper cannot fill its pot by hand', async () => {
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'off-lit'), { authorId: ALICE, type: 'offering', title: 'A bed', previousHash: 'OFFERING', hash: 'o1', visibility: 'public', offeringSuspendedLight: 500 }));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'off-dark'), { authorId: ALICE, type: 'offering', title: 'A bed', previousHash: 'OFFERING', hash: 'o1', visibility: 'public' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'off-dark'), { offeringSuspendedLight: 500, updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'off-dark'), { offeringAppreciations: 3, updatedAt: 1 }));
+  });
+
+  it('a purchase decision names its spend in shape at birth; the spend is frozen after; the marks are the server\'s', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'communities', 'com1'), { name: 'Grove', anchorUid: ALICE, domain: 'grove.org' });
+    });
+    const base = { authorId: ALICE, proposedBy: ALICE, type: 'decision', communityId: 'com1', nature: 'purchase', title: 'A bed', previousHash: 'DECISION', hash: 'd1', visibility: 'community', votesRequired: 2, status: 'open' };
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'dec-ok'), { ...base, spend: { offeringId: 'off1', units: 108 } }));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'dec-zero'), { ...base, spend: { offeringId: 'off1', units: 0 } }));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'dec-frac'), { ...base, spend: { offeringId: 'off1', units: 1.5 } }));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'dec-noid'), { ...base, spend: { offeringId: '', units: 5 } }));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'dec-extra'), { ...base, spend: { offeringId: 'off1', units: 5, to: BOB } }));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'dec-intent'), { ...base, nature: 'intention', spend: { offeringId: 'off1', units: 5 } }));
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'dec-spent'), { ...base, spend: { offeringId: 'off1', units: 5 }, spentAt: 1 }));
+    // Frozen: neither the proposer, nor the keeper, nor staff may change what is spent once born.
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'dec-ok'), { spend: { offeringId: 'off1', units: 1080 }, updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(STAFF), 'pulses', 'dec-ok'), { spend: { offeringId: 'off2', units: 108 }, updatedAt: 1 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'dec-ok'), { spentAt: 1, spendId: 'x', updatedAt: 1 }));
+    // The governance overlay still moves as before.
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', 'dec-ok'), { status: 'passed', passedAt: 1, enactedHash: 'e', updatedAt: 1 }));
+  });
+});
+
 describe('rays — light is server-minted and privately read (the sun ring, domain/light)', () => {
   const ray = { holderUid: ALICE, role: 'carer', sourceUid: ALICE, treeId: 't1', units: 100, pulseId: 'p1' };
 

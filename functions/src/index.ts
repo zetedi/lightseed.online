@@ -7,6 +7,7 @@ export { generateAIContent, saveProviderCredential, generateClaudeContent } from
 export { sendSystemEmail, onReachCreated } from "./mail";
 export { onLifetreeCreated, onBedHomeMoved, onStayWritten, mintStayLeaves } from "./lifetrees";
 export { witnessWatering, checkWateringSchedules, resetLight } from "./light";
+export { appreciateOffering, spendGlow } from "./lightCalls";
 export { onJoinRequestCreated, onNetworkInviteAccepted, acceptTreeInvite, acceptKeeperInvite, acceptKeeperRequest, resignKeeper, resignTreeKeeper, formCommunityFromCircle, requestInvite } from "./invites";
 export { startDomainVerification, checkDomainVerification, startDoorClaim, checkDoorClaim, grantDoor, withdrawDoor, listDoorClaims } from "./domains";
 export { sendNewsletterEmails, unsubscribe } from "./letters";

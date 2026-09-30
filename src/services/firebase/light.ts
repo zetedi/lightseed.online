@@ -2,6 +2,7 @@ import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firesto
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from './core';
 import { getCommunityById, getCommunityByDomain } from './spaces';
+import { announce } from '../refreshBus';
 import type { Community } from '../../types';
 
 // --- Light: the rays a being holds -----------------------------------------------------------
@@ -39,6 +40,26 @@ export const fetchMyRays = async (uid: string): Promise<HeldRay[]> => {
         })
         // Newest care first; the carer's ray ahead of the witness's seventh on the same day.
         .sort((a, b) => b.dayKey.localeCompare(a.dayKey) || a.role.localeCompare(b.role));
+};
+
+// SPENDING IS A GATE (ring 2026-09-30; domain/spend, functions/lightCalls). Both doors are the
+// server's: the law judges, one transaction moves the light, no client writes a unit.
+export interface LightMoved { units: number; glow: number; suspended: number }
+// The hand that RECEIVED an offering of care appreciates it with whole units of its own light.
+export const appreciateOffering = async (offeringId: string, units: number): Promise<LightMoved> => {
+    const fn = httpsCallable<{ offeringId: string; units: number }, LightMoved>(functions, 'appreciateOffering');
+    const res = await fn({ offeringId, units });
+    announce('pulses', offeringId, { offeringSuspendedLight: res.data.suspended });
+    return res.data;
+};
+// Has this hand already appreciated this offering? (gifts/{offeringId}__{uid}: readable by its giver.)
+export const hasAppreciated = async (offeringId: string, uid: string): Promise<boolean> => {
+    try { return (await getDoc(doc(db, 'gifts', `${offeringId}__${uid}`))).exists(); } catch { return false; }
+};
+// A keeper (or the proposer) carries out a PASSED purchase decision: the glow moves to the offering.
+export const spendGlow = async (decisionId: string): Promise<LightMoved & { verifiedSigners: number }> => {
+    const fn = httpsCallable<{ decisionId: string }, LightMoved & { verifiedSigners: number }>(functions, 'spendGlow');
+    return (await fn({ decisionId })).data;
 };
 
 // RESET LIGHT — the testing-phase restart (ring 2026-07-21): empties every ray and every glow.

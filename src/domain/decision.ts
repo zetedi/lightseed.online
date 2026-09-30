@@ -1,6 +1,7 @@
 import type { Stamp } from './time';
 import type { Being } from './being';
 import { signatureBindsToIdentityOrLineage, type SignatureVerifier, type LineageCheck } from './covenant';
+import type { SpendIntent } from './spend';
 
 // Governance as an event: an event IS a decision, and its NATURE sets how many voices it
 // needs. Light intentions need one voice; weightier acts need a circle. The numbers nod to
@@ -87,6 +88,12 @@ export interface Decision extends Being {
   withdrawnAt?: Stamp;
   rejectedAt?: Stamp;
   expiresAt?: Stamp;
+  // SPENDING IS A GATE (ring 2026-09-30; domain/spend): a PURCHASE names what it spends at birth —
+  // frozen by the rules from then on — and wears the server's marks once carried out (spendGlow).
+  spend?: SpendIntent;
+  spentAt?: Stamp;
+  spentBy?: string;
+  spendId?: string;
 }
 
 // ── The signed vote — a decision seven people sign (Covenant, phase 3) ─────────────────────────────

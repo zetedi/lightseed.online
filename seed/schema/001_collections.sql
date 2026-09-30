@@ -47,6 +47,8 @@ create table if not exists alignments          (id text primary key, doc jsonb n
 -- Light & the care economy
 create table if not exists rays                (id text primary key, doc jsonb not null);
 create table if not exists glow                (id text primary key, doc jsonb not null);
+create table if not exists gifts               (id text primary key, doc jsonb not null); -- light suspended at an offering (ring 2026-09-30)
+create table if not exists spends              (id text primary key, doc jsonb not null); -- glow carried out by a signed purchase decision
 create table if not exists stays               (id text primary key, doc jsonb not null);
 create table if not exists supports            (id text primary key, doc jsonb not null);
 

@@ -6,6 +6,38 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-09-30 · Spending is a gate, not a number** — the season of roots, item 2, on Zoltán's word
+("Let's do item two, spending as a gate"). Until today light was kindled, witnessed and held, and
+nothing could move it: glow was a number nothing could spend, a coin's acceptance an attestation
+nothing checked. TWO MOVEMENTS, both server-minted (`functions/lightCalls`), both judged by one
+pure law (`domain/spend`, mirrored in `functions/src/spend`, held by `tests/spend.test.ts`):
+APPRECIATION — the hand that RECEIVED an offering of care (the acceptance the server minted is the
+receipt) moves whole units of its own light to it, once per receipt (`gifts/{offeringId}__{uid}`);
+oldest accepted rays travel first; the offering's place takes its glow share and the rest is
+SUSPENDED at the offering for whoever comes next — the caffè sospeso of 2026-08-05, now with a
+body; the offerer is never paid. THE SPEND — a community's glow moves to an offering only by a
+council decision of nature *purchase* that NAMES what it spends at birth (`spend: { offeringId,
+units }`, its shape held and then frozen by the rules — even the staff mend-anything escape no
+longer touches the marks of moved light), whose quorum of signatures the SERVER RE-VERIFIES on its
+own ground (`functions/decisionSeal`: the shell's counting rule, the key-epoch law mirrored, real
+Ed25519 in the test) — a client-flipped `passed` moves nothing — carried out once
+(`spends/{decisionId}`) by a keeper or the proposer. THE COIN GATE at the moment of movement: a
+ray is named by the place it was kindled in; light arrives only where its coin is accepted — the
+same place, or through an `accepts_coin_of` link the offering's place minted; the node's Light is
+the common tongue, an offering at the node accepts every coin. Conservation to the last unit at
+every arrival (`suspendGift`). The faces: the receiver's "Appreciate" on an accepted offering and
+"N waiting here" on every offering with a pot; the council's purchase form names the offering and
+the units, and a passed purchase shows "Carry out the spend" to the circle's hand. Rejected:
+trusting `status: 'passed'` (the flag is the proposer's; the seal is the signatures); paying the
+offerer (the gift ring's first decision stands); a signed-identity change to carry the amount
+(v4 would break every decision's tag — deferred; the rules freeze the amount instead, and the
+contract says so). NOT YET: the CLAIM (a next receiver taking a suspended coffee — the witnessed
+receipt of a standing listing is not built; the pot waits, conserved and visible); the amount
+inside the signed identity; a consensus decision's discernment as a spend gate (verified unite
+signatures count in either mode); the idle fade and the attention dial, as before.
+
+---
+
 **2026-09-30 · Every face keeps its own card** — Zoltán, seeing seed.perauset.org's link preview
 wear Lightseed's card: "I would like to have the OG domain specific." The card a link unfurls
 into is the face's, not the node's: title, description and hero come from the community rooted

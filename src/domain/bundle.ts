@@ -100,6 +100,10 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   // Light & the care economy
   { path: 'rays', mode: 'verbatim', localUidFields: ['holderUid', 'sourceUid'], deterministicIds: 'treeId__dayKey__carer|witness — the once-per-day law lives in the id' },
   { path: 'glow', mode: 'verbatim', deterministicIds: 'communityId, or the NODE sentinel' },
+  // Light that MOVED (ring 2026-09-30): a receiver's appreciation suspended at an offering, and a
+  // circle's glow carried to one by a signed purchase decision. Server-written ledgers, verbatim.
+  { path: 'gifts', mode: 'verbatim', localUidFields: ['giverUid'], deterministicIds: 'offeringId__giverUid — one appreciation per receipt lives in the id' },
+  { path: 'spends', mode: 'verbatim', localUidFields: ['spentBy'], deterministicIds: 'decisionId — one spend per decision lives in the id' },
   { path: 'stays', mode: 'verbatim', localUidFields: ['uid', 'hostUid'] },
   { path: 'supports', mode: 'verbatim' }, // rules-declared, no shipped writer — no field names to claim yet
 

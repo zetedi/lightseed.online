@@ -1,3 +1,4 @@
+import type { SpendIntent } from '../../domain/spend';
 import { query, getDocs, getDoc, addDoc, setDoc, collection, serverTimestamp, doc, runTransaction, where, updateDoc, deleteDoc, Timestamp, type DocumentData } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { announce } from '../refreshBus';
@@ -23,7 +24,7 @@ import { normalizeDomain } from './trees';
 
 export const createDecision = async (
     community: Pick<Community, 'id' | 'domain'>,
-    data: { nature: DecisionNature; title: string; body?: string; subject?: string; proposedBy: string; mode?: DecisionMode },
+    data: { nature: DecisionNature; title: string; body?: string; subject?: string; proposedBy: string; mode?: DecisionMode; spend?: SpendIntent },
 ): Promise<Decision> => {
     const mode: DecisionMode = data.mode || 'threshold';
     const required = votesRequired(data.nature);
@@ -49,6 +50,8 @@ export const createDecision = async (
         votesRequired: required,
         positions: [] as Decision['positions'],
         status: 'open' as const,
+        // A PURCHASE names what it spends at birth (domain/spend); the rules hold the shape and freeze it.
+        ...(data.nature === 'purchase' && data.spend ? { spend: { offeringId: data.spend.offeringId, units: data.spend.units } } : {}),
     };
     const hash = await createBlock('DECISION', payload, Date.now());
     const lid = uuidv7();

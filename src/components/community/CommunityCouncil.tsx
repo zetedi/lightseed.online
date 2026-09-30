@@ -10,6 +10,12 @@ import { createDecision, getDecisions, raiseConcern, resumeDecision, withdrawDec
 import { hasSigningKey, readyToSign, SigningKeyNeedsRestoreError } from '../../services/keys';
 import { SigningKeyModal } from '../modals/SigningKeyModal';
 import { DECISION_NATURES, statusLabelKey, stanceLabelKey, votesRequired, decisionDeletable, type Decision, type DecisionNature, type DecisionMode, type ConsensusStance } from '../../domain/decision';
+import { spendIntentProblem } from '../../domain/spend';
+import { formatLight, RAY_UNITS } from '../../domain/light';
+import { fetchOfferingPulses } from '../../services/firebase/pulses';
+import { spendGlow } from '../../services/firebase/light';
+import { useCoin } from '../../hooks/useCoin';
+import type { Pulse } from '../../types';
 import { councilView } from '../../domain/views/council';
 import { speak, spokenLine } from '../../utils/translations';
 import type { PulseVisibility } from '../../domain/pulse';
@@ -60,6 +66,36 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
       setSigStates(Object.fromEntries(entries));
     }).catch(() => {});
   }, [community.id, communityLevels]);
+
+  // SPENDING IS A GATE (ring 2026-09-30; domain/spend): a PURCHASE names the offering the glow goes
+  // to and how much, at birth; the rules freeze it; the server carries it out (spendGlow) once the
+  // quorum of signatures is re-verified on its own ground.
+  const coin = useCoin();
+  const [offerings, setOfferings] = useState<Pulse[]>([]);
+  const [spendOfferingId, setSpendOfferingId] = useState('');
+  const [spendUnits, setSpendUnits] = useState(String(RAY_UNITS));
+  const [spendingId, setSpendingId] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetchOfferingPulses(undefined, community.domain, communityLevels).then(r => { if (alive) setOfferings(r.items); }).catch(() => {});
+    return () => { alive = false; };
+  }, [community.domain, communityLevels]);
+  const spendDraft = { offeringId: spendOfferingId, units: Number.parseInt(spendUnits, 10) };
+  const spendDraftProblem = decNature === 'purchase' ? spendIntentProblem(spendDraft) : null;
+  const offeringTitle = (id: string) => offerings.find(o => o.id === id)?.title || id;
+  const handleSpend = async (id: string) => {
+    if (spendingId) return;
+    setSpendingId(id);
+    try {
+      const moved = await spendGlow(id);
+      notify('🌞 ' + speak(spokenLine('spent_toast', { light: formatLight(moved.units, coin) })));
+      refreshDecisions();
+    } catch (e: any) {
+      const code = String(e?.message || '').split(' ').pop() || '';
+      showAlert(code.includes('_') ? speak(code as never) : (e?.message || 'err_council_propose'));
+    }
+    setSpendingId(null);
+  };
   useEffect(() => { refreshDecisions(); }, [refreshDecisions]);
 
   // Run a signing action, routing through SigningKeyModal first if the being has no device key yet.
@@ -92,11 +128,11 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   };
 
   const handlePropose = async () => {
-    if (!currentUserId || !decTitle.trim()) return;
+    if (!currentUserId || !decTitle.trim() || spendDraftProblem) return;
     setProposing(true);
     try {
-      await createDecision(community, { nature: decNature, title: decTitle.trim(), body: decBody.trim(), proposedBy: currentUserId, mode: decMode });
-      setDecTitle(''); setDecBody(''); setDecNature('intention');
+      await createDecision(community, { nature: decNature, title: decTitle.trim(), body: decBody.trim(), proposedBy: currentUserId, mode: decMode, ...(decNature === 'purchase' ? { spend: spendDraft } : {}) });
+      setDecTitle(''); setDecBody(''); setDecNature('intention'); setSpendOfferingId(''); setSpendUnits(String(RAY_UNITS));
       refreshDecisions();
     } catch (e: any) { showAlert(e?.message || 'err_council_propose'); }
     setProposing(false);
@@ -189,6 +225,22 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
               {DECISION_NATURES.map(n => <option key={n.id} value={n.id}>{t(('nature_' + n.id) as any)} · {n.votes} {t('voices')}</option>)}
             </select>
           </label>
+          {decNature === 'purchase' && (
+            <div className="grid gap-2 sm:grid-cols-[1fr_8rem]">
+              <label className="block space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-400">{t('spend_offering_label')}</span>
+                <select value={spendOfferingId} onChange={e => setSpendOfferingId(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">
+                  <option value="">{t('spend_pick_offering')}</option>
+                  {offerings.map(o => <option key={o.id} value={o.id}>{o.title}</option>)}
+                </select>
+              </label>
+              <label className="block space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-400">{t('spend_units_label')}</span>
+                <input type="number" min={1} step={1} inputMode="numeric" value={spendUnits} onChange={e => setSpendUnits(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+              </label>
+              {spendDraftProblem && <p className="text-[11px] text-rose-600 sm:col-span-2 dark:text-rose-300">{speak(spendDraftProblem)}</p>}
+            </div>
+          )}
           <textarea value={decBody} onChange={e => setDecBody(e.target.value)} placeholder={t('decision_body_ph')} className="min-h-20 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold uppercase text-slate-400">{t('council_mode_label')}</span>
@@ -271,6 +323,13 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                               : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">{t('decision_open')}</span>}
                     </div>
                     {d.body && <p className="mt-1 text-xs italic text-slate-500">{d.body}</p>}
+                    {d.spend && (
+                      <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                        <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Sun /></span>
+                        {speak(spokenLine('spend_line', { light: formatLight(d.spend.units, coin), offering: offeringTitle(d.spend.offeringId) }))}
+                        {d.spent && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-950/40">{t('spent_chip')}</span>}
+                      </p>
+                    )}
 
                     {/* The seal PROVEN, not asserted — verified signatures against the frozen proposal. */}
                     {(() => {
@@ -359,6 +418,11 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                     )}
                     {/* Minted withdraws: an ENACTED decision may also be retired — a chain-marked
                         withdrawal, never a deletion — so the clerk keeps this door after passing. */}
+                    {d.passed && d.spend && !d.spent && clerk && (
+                      <button onClick={() => void handleSpend(d.id)} disabled={spendingId === d.id} className="rounded-full bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-600 disabled:opacity-50">
+                        {spendingId === d.id ? '…' : t('spend_carry_out')}
+                      </button>
+                    )}
                     {(open || d.passed) && clerk && (
                       <button onClick={() => handleWithdraw(d.id)} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-medium text-slate-400 transition-colors hover:text-red-500">{t('withdraw')}</button>
                     )}

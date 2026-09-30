@@ -65,6 +65,10 @@ export const DOMAIN_KEYS = [
   'guard_not_keeper', 'guard_not_lifetree', 'guard_tree_dead', 'guard_self', 'guard_no_living_tree', 'guard_already', 'guard_pending',
   // web doors — a link a being carries outward (domain/webLink)
   'link_not_web', 'link_not_valid', 'links_too_many',
+  // Spending is a gate (domain/spend, ring 2026-09-30)
+  'appreciate_offering_gone', 'appreciate_not_received', 'appreciate_already', 'appreciate_coin_refused',
+  'spend_no_decision', 'spend_not_purchase', 'spend_no_offering', 'spend_nothing', 'spend_no_standing',
+  'spend_not_passed', 'spend_listening', 'spend_unsigned', 'spend_already', 'spend_coin_refused', 'spend_glow_short',
   // doors — a keeper claims a door by proof; a face door is granted (domain/doors)
   'door_not_hostname', 'door_is_node', 'door_is_domain', 'door_already', 'door_taken', 'hand_door_grant',
 ] as const;

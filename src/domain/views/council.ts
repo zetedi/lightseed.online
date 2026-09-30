@@ -1,4 +1,5 @@
 import type { Decision, DecisionStatus, Concern, DecisionMode, ConsensusStance, Position } from '../decision';
+import type { SpendIntent } from '../spend';
 
 // Governance as a prism: decisions + their SIGNATURES (a voice is a signature doc in
 // pulses/{id}/signatures — the votes[] array is retired; ring 2026-08-10) refracted into a
@@ -27,6 +28,9 @@ export interface CouncilItem {
   blocks: number;
   blocked: boolean;      // an unresolved block stands — the meeting is not in unity
   myStance?: ConsensusStance; // the viewer's current position, if any
+  // A purchase: what it spends, and whether the server has carried it out.
+  spend?: SpendIntent;
+  spent: boolean;
 }
 
 // A decision's crypto standing, as the caller measured it (CommunityCouncil re-verifies the raw
@@ -71,6 +75,8 @@ export function councilView(
       blocks: count('block'),
       blocked: count('block') > 0,
       myStance: viewerUid ? positions.find(p => p.by === viewerUid)?.stance : undefined,
+      ...(d.spend ? { spend: d.spend } : {}),
+      spent: !!d.spentAt,
     };
   });
 }

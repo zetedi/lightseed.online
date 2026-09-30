@@ -992,6 +992,22 @@ service cloud.firestore {
             || (request.resource.data.get('offeringStatus', 'open') == 'open'
                 && (isStaff() || !('offeringFromTreeId' in request.resource.data)
                     || isTreeCarer(request.resource.data.offeringFromTreeId))))
+        // SPENDING IS A GATE (ring 2026-09-30): the light an offering holds (its suspended pot) and
+        // the marks of a carried-out decision are the server's alone — never born by a client. A
+        // purchase decision NAMES what it spends at birth (spend: { offeringId, units }), in shape;
+        // the update branches below never admit `spend`, so what the signers saw is what moves.
+        && !('offeringSuspendedLight' in request.resource.data)
+        && !('offeringAppreciations' in request.resource.data)
+        && !('spentAt' in request.resource.data) && !('spentBy' in request.resource.data) && !('spendId' in request.resource.data)
+        && (!('spend' in request.resource.data)
+            || (request.resource.data.get('type', '') == 'decision'
+                && request.resource.data.get('nature', '') == 'purchase'
+                && request.resource.data.spend is map
+                && request.resource.data.spend.keys().hasOnly(['offeringId', 'units'])
+                && request.resource.data.spend.get('offeringId', '') is string
+                && request.resource.data.spend.get('offeringId', '') != ''
+                && request.resource.data.spend.get('units', 0) is int
+                && request.resource.data.spend.get('units', 0) > 0))
         // An ADDRESSED reach (a recipient, a thread) is born PRIVATE: the get path refuses it
         // to strangers whatever its label, but the list path proves from the label — so the
         // label may never lie at birth.
@@ -1245,8 +1261,12 @@ service cloud.firestore {
              && request.resource.data.get('domain', '') != ''
            )
 
-        // (j) Staff may mend anything.
-        || isStaff()
+        // (j) Staff may mend anything — except the marks of MOVED LIGHT (ring 2026-09-30): a
+        //     decision's frozen spend and its carried-out marks, an offering's suspended pot. Those
+        //     are the server's alone, as rays are; a staff hand mends them by a server script.
+        || (isStaff()
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['spend', 'spentAt', 'spentBy', 'spendId', 'offeringSuspendedLight', 'offeringAppreciations']))
       );
       // DRAFT VANISHES, MINTED WITHDRAWS: a decision may be erased only while it is still its
       // proposer's own draft — never once passed, and never once another voice stands on it (a
@@ -1393,6 +1413,20 @@ service cloud.firestore {
     // signed-in being, because a community's warmth is communal, never a private balance.
     // glow/NODE is the instance commons, the home of last resort.
     match /glow/{homeId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // SPENDING IS A GATE (ring 2026-09-30): the two ledgers of light that MOVED. A gift is a
+    // receiver's appreciation suspended at an offering (gifts/{offeringId}__{giverUid}); a spend is
+    // a community's glow carried to an offering by a signed purchase decision (spends/{decisionId}).
+    // Both SERVER-WRITTEN only (functions/lightCalls). A gift is the giver's own light and private
+    // like a ray; a spend is the circle's act and communal like the glow.
+    match /gifts/{giftId} {
+      allow read: if isSignedIn() && (resource.data.giverUid == request.auth.uid || isStaff());
+      allow write: if false;
+    }
+    match /spends/{spendId} {
       allow read: if isSignedIn();
       allow write: if false;
     }

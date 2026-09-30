@@ -38,6 +38,12 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   `functions/src/birth.ts`, held equal by `tests/birth.test.ts`. The rules (`clientBornStandalone`,
   `isChainBlock`, the frozen head keys) are held by `tests/rules/firestore.rules-test.ts` ("the
   chain is the server's") and the living walk (`tests/living`) mints through the real callable.
+- **Light moves only through a gate** (ring 2026-09-30): `functions/src/lightCalls.ts`
+  (`appreciateOffering`, `spendGlow`) apply `src/domain/spend.ts` (mirror `functions/src/spend.ts`,
+  held by `tests/spend.test.ts`); a purchase decision's seal is re-verified by
+  `functions/src/decisionSeal.ts` (the shell's counting rule + `keyEpoch` mirror, held by
+  `tests/decisionSeal.test.ts` with real Ed25519). The ledgers `gifts` and `spends`, the offering's
+  suspended pot and a decision's `spend`/`spentAt` are server-only by rule.
 - **The hand signs its link** (same ring): `signedContentOf` + `blockSignaturePayload` in
   `src/domain/chain/birth.ts` (tag `lifeseed.block-signature.v1`); the client signs in
   `services/firebase/pulses.ts` (`signatureFor`), the server verifies in `functions/src/blocks.ts`

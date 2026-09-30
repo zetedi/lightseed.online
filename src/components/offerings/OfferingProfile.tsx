@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from '../../contexts/SessionContext';
 import { Icons } from '../ui/Icons';
 import { OutwardLink } from '../ui/OutwardLink';
@@ -10,9 +10,12 @@ import { LoveButton } from '../ui/LoveButton';
 import { mintBeingQr } from '../../services/firebase/beings';
 import { setOfferingActive, acceptOffering, declineOffering, withdrawOffering } from '../../services/firebase';
 import { offeringStatusOf, canWithdrawOffering, canAnswerOffering } from '../../domain/offering';
+import { giftsWaiting } from '../../domain/gift';
+import { appreciateOffering, hasAppreciated } from '../../services/firebase/light';
+import { say, speak } from '../../utils/translations';
 import { BeingProfile, type BeingSection } from '../BeingProfile';
 import { ChainTree } from '../sections/ChainTree';
-import { formatLight } from '../../domain/light';
+import { formatLight, RAY_UNITS } from '../../domain/light';
 import { useCoin } from '../../hooks/useCoin';
 import { tabTone } from '../../utils/tabTheme';
 import { notify } from '../ui/Toast';
@@ -56,6 +59,38 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
   const mayAnswer = canAnswerOffering(lifecycle, uid, standsForReceiver);
   const mayWithdraw = canWithdrawOffering(lifecycle, uid);
 
+  // SPENDING IS A GATE (ring 2026-09-30; domain/spend): the hand that RECEIVED this offering — the
+  // one that accepted it — may appreciate it with whole units of its own light, once. The light
+  // waits at the offering for whoever comes next (the suspended gift); the offerer is never paid.
+  const [suspended, setSuspended] = useState(offering.offeringSuspendedLight || 0);
+  const [appreciated, setAppreciated] = useState(false);
+  const [giveUnits, setGiveUnits] = useState(String(offering.offeringAppreciationLight || RAY_UNITS));
+  const [giving, setGiving] = useState(false);
+  const receiver = status === 'accepted' && !!uid && offering.offeringAnsweredBy === uid && offering.authorId !== uid;
+  useEffect(() => {
+    let alive = true;
+    if (receiver) hasAppreciated(offering.id, uid).then(given => { if (alive && given) setAppreciated(true); });
+    return () => { alive = false; };
+  }, [receiver, offering.id, uid]);
+  const mayAppreciate = receiver && !appreciated;
+  const appreciate = async () => {
+    const units = Number.parseInt(giveUnits, 10);
+    if (giving || !Number.isInteger(units) || units <= 0) return;
+    setGiving(true);
+    try {
+      const moved = await appreciateOffering(offering.id, units);
+      setSuspended(s => s + moved.suspended);
+      setAppreciated(true);
+      onUpdate?.({ offeringSuspendedLight: suspended + moved.suspended });
+      notify('🌞 ' + say('appreciated_toast', { n: units }));
+    } catch (err: any) {
+      const code = String(err?.message || '').split(' ').pop() || '';
+      showAlert(code.includes('_') ? speak(code as never) : (err?.message || 'err_offering_change'));
+    }
+    setGiving(false);
+  };
+  const waiting = giftsWaiting(suspended, offering.offeringAppreciationLight || 0);
+
   const answer = async (what: 'accept' | 'decline' | 'withdraw') => {
     if (busy) return;
     setBusy(true);
@@ -82,7 +117,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${statusTone[status]}`}>{t(`offering_status_${status}`)}</span>
       </div>
-      {(mayAnswer || mayWithdraw) && (
+      {(mayAnswer || mayWithdraw || mayAppreciate) && (
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
           {mayAnswer && !confirming && (
             <>
@@ -108,6 +143,17 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
               <button type="button" disabled={busy} onClick={() => setConfirming(false)}
                 className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700">
                 {t('offer_accept_no')}
+              </button>
+            </div>
+          )}
+          {mayAppreciate && (
+            <div className="flex w-full flex-wrap items-center gap-2">
+              <p className="mr-auto text-xs font-medium text-slate-600 dark:text-slate-300">{t('appreciate_hint')}</p>
+              <input type="number" min={1} step={1} inputMode="numeric" value={giveUnits} onChange={e => setGiveUnits(e.target.value)} aria-label={t('appreciate_units_ph')}
+                className="h-9 w-24 rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-slate-900 dark:border-slate-700" />
+              <button type="button" disabled={giving} onClick={() => void appreciate()}
+                className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50">
+                <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Sun /></span> {giving ? t('saving') : t('appreciate_button')}
               </button>
             </div>
           )}
@@ -182,6 +228,11 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
               {formatLight(offering.offeringAppreciationLight || 0, coin)}
               <span className="text-xs text-slate-400">{t('offer_after_receiving')}</span>
             </p>
+            {suspended > 0 && (
+              <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                {say('light_waiting', { light: formatLight(suspended, coin), n: waiting })}
+              </p>
+            )}
           </div>
 
           {offering.offeringBedName && (
