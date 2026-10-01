@@ -137,6 +137,9 @@ export function judgeWitness(f: WitnessFacts): WitnessJudgment {
     if (f.tree.diedAtMs !== null) return reject("failed-precondition", "A tree that has died kindles memory, not light.");
 
     const dayKey = kindleDayKeyFromMs(f.pulse.createdAtMs);
+    // A SECRET tree (domain/secretTree, ring 2026-10-02) is witnessed like any tree — the moment is
+    // confirmed on its chain — but it kindles NO light: it grants nothing outside itself.
+    if (f.tree.treeType === "SECRET") return { outcome: "kindle", dayKey, carerRay: null, witnessRay: null };
     const carerRay = f.carerRayExists
         ? null
         : { holderUid: f.pulse.carerUid, role: "carer" as const, units: RAY_UNITS };

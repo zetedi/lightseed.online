@@ -25,7 +25,7 @@ interface PlantTreeModalProps {
   readPhotoProvenance: (file: File) => Promise<PhotoProvenance | null>;
   // Optionally open straight into a type's flow (e.g. the "Guard Tree" button skips
   // the type selection and lands on the planting step).
-  initialType?: 'LIFETREE' | 'GUARDED';
+  initialType?: 'LIFETREE' | 'GUARDED' | 'SECRET';
   initialStep?: number;
 }
 
@@ -42,7 +42,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
   initialStep
 }) => {
   const { t } = useLanguage();
-  const [treeType, setTreeType] = useState<'LIFETREE' | 'GUARDED'>(initialType || 'LIFETREE');
+  const [treeType, setTreeType] = useState<'LIFETREE' | 'GUARDED' | 'SECRET'>(initialType || 'LIFETREE');
   const [plantStep, setPlantStep] = useState(initialStep || 1);
   const [treeName, setTreeName] = useState('');
   const [treeShortTitle] = useState('');
@@ -196,7 +196,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
 
   return (
     <Modal
-      title={treeType === 'GUARDED' ? t('guard_tree') : t('plant_lifetree')}
+      title={treeType === 'GUARDED' ? t('guard_tree') : treeType === 'SECRET' ? t('plant_secret_tree') : t('plant_lifetree')}
       onClose={onClose}
       backgroundImage={(plantStep === 1 || treeType !== 'GUARDED') ? lifetreeImage : undefined}
       fullScreenOnMobile
@@ -210,10 +210,12 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
               <h2 className="text-xl font-bold mb-2">{t('plant_step_type')}</h2>
               <p className="text-sm opacity-70">{t('plant_step_type_sub')}</p>
             </div>
-            <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3">
               {[
                 { id: 'LIFETREE', label: t('type_lifetree'), icon: <Icons.Tree />, desc: t('type_lifetree_desc'), image: '/seed.webp' },
-                { id: 'GUARDED', label: t('type_guarded'), icon: <Icons.Shield />, desc: t('type_guarded_desc'), image: '/phoenix.webp' }
+                { id: 'GUARDED', label: t('type_guarded'), icon: <Icons.Shield />, desc: t('type_guarded_desc'), image: '/phoenix.webp' },
+                // THE SECRET TREE (ring 2026-10-02; domain/secretTree): kept by a circle, private forever, no light.
+                { id: 'SECRET', label: t('type_secret'), icon: <Icons.Key />, desc: t('type_secret_desc'), image: '/trunkb.webp' }
               ].map((type: any) => (
                 <button
                   key={type.id}

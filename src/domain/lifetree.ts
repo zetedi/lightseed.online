@@ -6,8 +6,9 @@ import type { WateringSchedule } from './watering';
 //   'LIFETREE' — a being's own tree · 'GUARDED' — a real tree in nature, stood for ·
 //   'BED' — a place to sleep (see src/domain/bed.ts): a full Being with its own chain, housed
 //     in a Light House or loose under open stars, but furniture rather than forest — never
-//     listed among the trees.
-export type LifetreeType = "LIFETREE" | "GUARDED" | "BED";
+//     listed among the trees. · 'SECRET' — a secret tree (src/domain/secretTree.ts): kept by a
+//     circle, private for its whole life, kindling no light and granting nothing outside itself.
+export type LifetreeType = "LIFETREE" | "GUARDED" | "BED" | "SECRET";
 
 // The Being / immutable-chain container / Living Identity
 export interface Lifetree extends Being {

@@ -1,5 +1,6 @@
 // lifetrees.ts — split from index.ts (ring 2026-09-16); every function keeps its name, trigger and options.
 import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
+import { isSecretTree, rootsABeing, SECRET_TREE_TYPE, MAX_SECRET_TREES } from "./treeKind";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { FieldValue } from "firebase-admin/firestore";
 import { db, isStaffUid, mintLid } from "./core";
@@ -52,6 +53,17 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
 
         const isBedTree = (t: any) => t.treeType === "BED";
 
+        // A SECRET tree (./treeKind, ring 2026-10-02) is no citizenship: exempt from the 193/132
+        // caps, bounded by its own small ceiling per keeper. Over it, the newborn is uprooted.
+        if (isSecretTree(tree)) {
+            const secrets = await db.collection("lifetrees").where("anchorUid", "==", anchorUid).where("treeType", "==", SECRET_TREE_TYPE).get();
+            if (secrets.size > MAX_SECRET_TREES) {
+                await snap.ref.delete();
+                console.warn(`Secret-tree cap enforced: uprooted ${snap.id} (keeper ${anchorUid}, ${secrets.size} vs ${MAX_SECRET_TREES}).`);
+            }
+            return;
+        }
+
         // Beds (treeType BED, domain/bed.ts) are furniture, not the keeper's personal forest:
         // exempt from the 193/132 caps below, but bounded by their own ceilings. A HOUSED bed
         // counts against its Light House — otherwise anyone could mint a Light House and pour
@@ -91,7 +103,7 @@ export const onLifetreeCreated = onDocumentCreated("lifetrees/{treeId}", async (
         const maxGuardedTrees = num(raw?.maxGuardedTrees, 132);
 
         const isGuardedTree = (t: any) => t.treeType === "GUARDED" || (!t.treeType && t.isNature === true);
-        const trees = mine.docs.map((d) => d.data()).filter((t) => !isBedTree(t));
+        const trees = mine.docs.map((d) => d.data()).filter((t) => rootsABeing(t));
         const guarded = trees.filter(isGuardedTree).length;
         const lifetrees = trees.length - guarded;
         const over = isGuardedTree(tree) ? guarded > maxGuardedTrees : lifetrees > maxLifetrees;

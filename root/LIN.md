@@ -91,6 +91,7 @@ no-privilege follow that vows protection) · *validated = initiated* (standing
 in the web of trust) · *Light House* (a sacred place that keeps a light for others:
 a point of orientation on the map, rooted in a mother tree) ·
 *mother tree* (a tree holding a Light House) ·
+*secret tree* (a tree for a few: kept by a circle, private for its whole life, kindling no light, guarded and kept without a tree of one's own; it grants nothing outside itself — belonging before rooting) ·
 *bed* (a being: a Lifetree with a place to sleep, inside a Light House *or* loose under open
 stars at a coordinate; each stay a leaf on its chain, each tender a guardian. Home is soft and
 optional: a loose bed that gathers can **graduate**, its tree becoming the mother tree a Light

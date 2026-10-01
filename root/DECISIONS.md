@@ -6,6 +6,40 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · The secret tree** — Zoltán: "I'm starting to like the secret tree idea more and more,
+it's like a true mycelium and it's about creating a new type of relationship… a secret tree, which
+can be guarded / kept without having a lifetree and it's a new doorway. It would not be one to mint
+light from… It would create intimacy, shared experience." A new KIND beside lifetree, guarded tree
+and bed (`domain/secretTree`, mirrored in `functions/treeKind`): a chain and a circle with no place
+in the world's economy. The lifetree is a citizenship — counted against the 193, validated, kindling
+light; the secret tree is a shared story — growths, equal keepers, invitations as its doorway. THE
+ONE LINE: a secret tree grants nothing outside itself. So: born private and private for its whole
+life, never another kind, never validated, from every hand staff included (rules
+`secretBornSecret` / `secretStaysSecret`); witnessed care is confirmed on its chain and kindles no
+light (`judgeWitness`); it counts toward no cap, not the seven, not a being's rootedness
+(`rootsABeing` everywhere the bed was already excluded — keeper circles, key-recovery witnesses,
+event circles, the forest cap); guardians and keepers need no living tree (`acceptTreeInvite`
+skips the proof that protects only light and validation); it forms no circle community and has no
+Root Vision, because both read as public and would betray it; no self-serve guardian, no event
+enlistment, no community garden, no map; at most twelve per keeper. With the open door of
+2026-10-01 it becomes the invitation: a friend arrives through a link, keeps a secret tree with you,
+and the Light Path waits for when they want light. NOT YET: the mycelium itself — secret trees
+sprouting from one another along a lineage edge; secrecy against the circle (any member may tell).
+
+---
+
+**2026-10-02 · No key cut by the burglar** — found while building the secret tree: since the ring
+of 2026-10-01 a guardian link reads a private tree, and the link rule still let ANY signed-in hand
+mint a guardian link to ANY tree ("guarding is an open door"). Together: whoever learned a private
+tree's id could make themself its guardian and read it. Live in production from 2026-10-01 until
+this ring's deploy. THE MEND: self-serve guarding only where the world may see (`openToGuarding`:
+not private, not secret); on a private tree the guardian seat comes only through an invitation the
+server mints. The circle's "Guard this tree" pill hides there. THE LESSON: a rule that GRANTS on a
+relation must be read beside every rule that MINTS that relation — yesterday's review read the
+grant and not the mint.
+
+---
+
 **2026-10-01 · The open door to a tree's circle** — Zoltán: "I would like to be able to invite
 someone who does not have a lifetree to be a guardian of the tree… there is not invitation link
 minting at the circle." Three seams, read in the code: the circle's picker finds people by their

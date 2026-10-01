@@ -39,9 +39,11 @@ export const WitnessWaterings: React.FC<WitnessWateringsProps> = ({ treeName, pu
         setWitnessing(p.id);
         try {
             const res = await witnessWatering(p.id);
-            showAlert(res.kindled
-                ? say('witness_kindled', { tree: treeName || t('tree') })
-                : 'witness_already_lit');
+            showAlert(res.secret
+                ? say('witness_secret', { tree: treeName || t('tree') })
+                : res.kindled
+                    ? say('witness_kindled', { tree: treeName || t('tree') })
+                    : 'witness_already_lit');
             onWitnessed?.();
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setWitnessing(null);

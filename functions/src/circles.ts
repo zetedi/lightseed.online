@@ -5,6 +5,7 @@
 // its newcomers into it. And the lineage itself is born here: duplicateEvent copies an
 // occurrence and mints the one edge (descends_from) no client hand may claim.
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { rootsABeing } from "./treeKind";
 import { FieldValue, type Transaction, type DocumentSnapshot } from "firebase-admin/firestore";
 import { db, isStaffUid, mintLid, keeperLinkRef } from "./core";
 import { createBlock } from "./chain";
@@ -94,7 +95,7 @@ export const formCircleFromEvent = onCall({ cors: true }, async (request) => {
         const linkSnaps = await Promise.all(occurrenceIds.map((id) => t.get(db.collection("links").where("to", "==", id).where("rel", "==", "participant"))));
         const treeIds = Array.from(new Set(linkSnaps.flatMap((s) => s.docs.map((d) => String((d.data() as Record<string, unknown>).from || ""))).filter(Boolean)));
         const trees = await Promise.all(treeIds.map((id) => t.get(db.doc(`lifetrees/${id}`))));
-        const standing: DocumentSnapshot[] = trees.filter((s) => s.exists && (s.data() as Record<string, unknown>).treeType !== "BED");
+        const standing: DocumentSnapshot[] = trees.filter((s) => s.exists && rootsABeing(s.data()));
 
         const judgment = judgeEventCircle({ isEvent, isHand, rootCircleCommunityId: root.circleCommunityId, participantTreeCount: standing.length });
         if (judgment.outcome === "reject") {

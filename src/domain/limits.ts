@@ -8,6 +8,7 @@
 // message IS the point, so it lives here with the numbers it explains.
 
 import { isBedTree } from './bed';
+import { isSecretTree, MAX_SECRET_TREES } from './secretTree';
 import { spokenLine } from './words';
 
 // The UN roll as of 2026 (South Sudan joined in 2011, none since). If the roll changes,
@@ -95,12 +96,18 @@ const isGuarded = (t: TreeLike): boolean => t.treeType === 'GUARDED' || (!t.tree
 // or null when the planting may proceed.
 export const treePlantingGate = (
   existing: TreeLike[],
-  type: 'LIFETREE' | 'GUARDED',
+  type: 'LIFETREE' | 'GUARDED' | 'SECRET',
   limits: NodeLimits = DEFAULT_NODE_LIMITS,
 ): string | null => {
+  // A SECRET tree (domain/secretTree) is no citizenship: it counts against neither cap, only
+  // against its own small ceiling (mirrored server-side in functions/onLifetreeCreated).
+  if (type === 'SECRET') {
+    return existing.filter(t => isSecretTree(t)).length >= MAX_SECRET_TREES
+      ? spokenLine('limit_secret_trees', { max: MAX_SECRET_TREES }) : null;
+  }
   // Beds (domain/bed.ts) are a Light House's furniture, not the keeper's personal forest —
   // they never count against either cap (mirrored server-side in functions/onLifetreeCreated).
-  const countable = existing.filter(t => !isBedTree(t));
+  const countable = existing.filter(t => !isBedTree(t) && !isSecretTree(t));
   const guarded = countable.filter(isGuarded).length;
   const lifetrees = countable.length - guarded;
 

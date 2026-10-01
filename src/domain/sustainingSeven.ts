@@ -1,4 +1,5 @@
 import { isBedTree } from './bed';
+import { isSecretTree } from './secretTree';
 import { isWateringOverdue } from './watering';
 import type { Lifetree } from './lifetree';
 
@@ -47,8 +48,9 @@ export interface SustainingSevenProgress {
 const isGuardedTree = (t: Pick<Lifetree, 'treeType' | 'isNature'>): boolean =>
   t.treeType === 'GUARDED' || (!t.treeType && t.isNature === true);
 
+// A secret tree is no part of the seven: it roots no one (domain/secretTree).
 const plantedBy = (t: Lifetree, uid: string): boolean =>
-  !isBedTree(t) && !isGuardedTree(t) && t.anchorUid === uid;
+  !isBedTree(t) && !isGuardedTree(t) && !isSecretTree(t) && t.anchorUid === uid;
 
 const toMs = (t: any): number => (t?.toMillis ? t.toMillis() : 0);
 

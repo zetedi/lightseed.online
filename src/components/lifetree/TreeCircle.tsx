@@ -29,7 +29,7 @@ import { Picture } from '../ui/Picture';
 type TreeCircleView = ReturnType<typeof treeCircle>;
 
 interface TreeCircleProps {
-    tree: Pick<Lifetree, 'id' | 'name' | 'anchorUid'>;
+    tree: Pick<Lifetree, 'id' | 'name' | 'anchorUid'> & Partial<Pick<Lifetree, 'visibility' | 'treeType'>>;
     currentUserId?: string;
     currentUserName?: string | null;
     circle: TreeCircleView;
@@ -57,7 +57,7 @@ interface Face { name?: string; imageUrl?: string }
 // is private (users doc), so this public freshest tree is the honest public stand-in.
 const faceFromForest = (uid: string, forest: Lifetree[]): Face => {
     const mine = forest
-        .filter(t => t.anchorUid === uid && t.treeType !== 'BED')
+        .filter(t => t.anchorUid === uid && t.treeType !== 'BED' && t.treeType !== 'SECRET')
         .sort((a, b) => ((b.updatedAt as any)?.toMillis?.() || (b.createdAt as any)?.toMillis?.() || 0)
             - ((a.updatedAt as any)?.toMillis?.() || (a.createdAt as any)?.toMillis?.() || 0));
     const withImage = mine.find(t => t.latestGrowthUrl || t.imageUrl) || mine[0];
@@ -448,7 +448,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
 
             {/* Actions — compact pills, never full width. */}
             <div className="flex flex-wrap items-center gap-2">
-                {currentUserId ? (
+                {/* Guarding is a self-serve door only on a tree the world may see (rules: openToGuarding):
+                    a private or secret tree's guardians come through invitations. One already
+                    guarding may always lay it down. */}
+                {currentUserId && !isGuardian && (tree.visibility === 'private' || tree.treeType === 'SECRET') ? null : currentUserId ? (
                     <button
                         onClick={handleToggleGuardian}
                         disabled={isBusy}

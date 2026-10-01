@@ -127,7 +127,7 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
         if (judgment.carerRay && carerRef) t.set(carerRef, rayDoc(judgment.carerRay, carerUid, treeId, communityId, judgment.dayKey, pulseId));
         if (judgment.witnessRay && witnessRef) t.set(witnessRef, rayDoc(judgment.witnessRay, carerUid, treeId, communityId, judgment.dayKey, pulseId));
 
-        return { kindled: judgment.carerRay !== null, witnessUnits: judgment.witnessRay ? judgment.witnessRay.units : 0 };
+        return { kindled: judgment.carerRay !== null, witnessUnits: judgment.witnessRay ? judgment.witnessRay.units : 0, ...(treeFacts.treeType === "SECRET" ? { secret: true } : {}) };
     });
 });
 

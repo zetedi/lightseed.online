@@ -1,5 +1,6 @@
 // keys.ts — split from index.ts (ring 2026-09-16); every function keeps its name, trigger and options.
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { rootsABeing } from "./treeKind";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
 import { db } from "./core";
@@ -205,7 +206,7 @@ const recoveryWitnessEligible = async (uid: string): Promise<boolean> => {
     const kept = await db.collection("links").where("from", "==", uid).where("rel", "==", "keeper").limit(10).get();
     for (const l of kept.docs) {
         const tree = await db.collection("lifetrees").doc(String((l.data() as any).to || "")).get();
-        if (tree.exists && (tree.data() as any).validated === true && (tree.data() as any).treeType !== "BED") return true;
+        if (tree.exists && (tree.data() as any).validated === true && rootsABeing(tree.data())) return true;
     }
     return false;
 };

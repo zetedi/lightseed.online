@@ -193,10 +193,10 @@ export const recordWatering = async ({
 // kindles the carer's ray + the witness's seventh atomically. The witness is never a
 // client-passed field, so it can't be forged or aimed (Lumo's review, 2026-07-20). Also stamps the
 // pulse confirmed for the validation display.
-export const witnessWatering = async (pulseId: string): Promise<{ kindled: boolean; witnessUnits: number }> => {
+export const witnessWatering = async (pulseId: string): Promise<{ kindled: boolean; witnessUnits: number; secret?: boolean }> => {
     const fn = httpsCallable(functions, 'witnessWatering');
     const res = await fn({ pulseId });
-    return res.data as { kindled: boolean; witnessUnits: number };
+    return res.data as { kindled: boolean; witnessUnits: number; secret?: boolean };
 };
 
 // A guardian asks to become a steward — a knock on the circle's door, carried as a message into

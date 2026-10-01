@@ -1,5 +1,6 @@
 // invites.ts — split from index.ts (ring 2026-09-16); every function keeps its name, trigger and options.
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { isSecretTree, rootsABeing } from "./treeKind";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import { charter, NODE_ORIGIN } from "./charter";
@@ -188,7 +189,10 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         // (config/limits.guardiansToValidate, one by default). All reads before any write.
         let validatedNow = false;
         let guardiansNeeded = 0;
-        if (invite.role === "guardian") {
+        // A SECRET tree (./treeKind, ring 2026-10-02) is guarded without a living tree of one's own:
+        // the proof protects light and validation, and a secret tree has neither.
+        const secret = isSecretTree(tree);
+        if (invite.role === "guardian" && !secret) {
             const asMs = (v: any): number | null => (v && typeof v.toMillis === "function" ? v.toMillis() : (typeof v === "number" ? v : null));
             const treeFacts = { treeType: tree.treeType, isNature: tree.isNature, diedAtMs: asMs(tree.diedAt) };
             const mine = await tx.get(db.collection("lifetrees").where("anchorUid", "==", uid).limit(30));
@@ -238,7 +242,9 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         // A GUARDIAN is a lightweight, no-privilege FOLLOW (domain/policy, the rules) — accepting a
         // guardian invitation mints only the guardian link, never a circle community or membership.
         // The caring roles (keeper/steward) form the circle; guardianship watches over it.
-        if (invite.role !== "guardian") {
+        // A secret tree forms NO circle community: a community is world-readable, and its name
+        // would betray the tree. Its circle is its links alone.
+        if (invite.role !== "guardian" && !secret) {
             if (!communityId) {
                 const communityRef = db.collection("communities").doc();
                 communityId = communityRef.id;
@@ -300,11 +306,12 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
 // accepted. Co-keeping counts because keeping, not owning, is what roots a being; a bed never does.
 const keepsLivingTree = async (uid: string): Promise<boolean> => {
     const own = await db.collection("lifetrees").where("anchorUid", "==", uid).limit(10).get();
-    if (own.docs.some((d) => (d.data() as any).treeType !== "BED")) return true;
+    // A bed is furniture and a secret tree grants nothing outside itself: neither roots a being.
+    if (own.docs.some((d) => rootsABeing(d.data()))) return true;
     const co = await db.collection("links").where("from", "==", uid).where("rel", "==", "keeper").limit(10).get();
     for (const l of co.docs) {
         const tree = await db.collection("lifetrees").doc(String((l.data() as any).to || "")).get();
-        if (tree.exists && (tree.data() as any).treeType !== "BED") return true;
+        if (tree.exists && rootsABeing(tree.data())) return true;
     }
     return false;
 };

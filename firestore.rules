@@ -295,6 +295,25 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('visibility', 'public') != 'private'
         && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('treeType', '') != 'SECRET';
     }
+    // THE SECRET TREE (ring 2026-10-02; domain/secretTree): born private, private for its whole
+    // life, never another kind, never validated — from every hand, staff included. It grants nothing
+    // outside itself: no event enlistment, no community garden, no self-serve guardian.
+    function isSecretTreeId(treeId) {
+      return exists(/databases/$(database)/documents/lifetrees/$(treeId))
+        && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('treeType', '') == 'SECRET';
+    }
+    function secretBornSecret() {
+      return request.resource.data.get('treeType', '') != 'SECRET'
+        || (request.resource.data.get('visibility', '') == 'private'
+            && request.resource.data.get('lightHouseId', '') == ''
+            && !('communityId' in request.resource.data));
+    }
+    function secretStaysSecret() {
+      return (request.resource.data.get('treeType', '') == 'SECRET') == (resource.data.get('treeType', '') == 'SECRET')
+        && (resource.data.get('treeType', '') != 'SECRET'
+            || (request.resource.data.get('visibility', '') == 'private'
+                && request.resource.data.get('validated', false) == false));
+    }
     // Love must never become an existence oracle. Reuse the exact parent visibility gates on
     // the love-update path so knowing a private document id grants no new way to touch it.
     // A PRIVATE tree is read by its CIRCLE (ring 2026-10-01): the anchor and every hand holding a
@@ -612,6 +631,7 @@ service cloud.firestore {
       // signed-in client could plant a tree wearing any uid it liked.
       allow create: if isSignedIn()
         && bornWithAnchor()
+         && secretBornSecret()
         // BORN AT ITS ROOT (ring 2026-09-23): a tree's head at birth IS its genesis, height 0 —
         // from every hand, staff included (a data-validity invariant, like the bed's place).
         // After birth the head moves only under the server's hand (the update freeze below).
@@ -684,6 +704,7 @@ service cloud.firestore {
       allow update: if isSignedIn()
         && (request.resource.data.get('treeType', '') == 'BED')
             == (resource.data.get('treeType', '') == 'BED')
+        && secretStaysSecret()
         && (
           request.resource.data.get('treeType', '') != 'BED'
           || request.resource.data.get('lightHouseId', '') != ''
@@ -1808,12 +1829,14 @@ service cloud.firestore {
             && (exists(/databases/$(database)/documents/communities/$(request.resource.data.to))
                 || exists(/databases/$(database)/documents/lifetrees/$(request.resource.data.to))))
         || (isSignedIn() && request.resource.data.rel == 'participant'
-            && isTreeKeeper(request.resource.data.from))
+            && isTreeKeeper(request.resource.data.from)
+            && !isSecretTreeId(request.resource.data.from))
         // A tree stands in ANOTHER community's forest (ring 2026-08-24) — through the
         // community's own door: OPEN, the tree's owner steps in self-serve; any door, the
         // keeper welcomes the tree. Grants nothing; the forest queries alone read it.
         || (isSignedIn() && request.resource.data.rel == 'grows_in'
             && exists(/databases/$(database)/documents/lifetrees/$(request.resource.data.from))
+            && !isSecretTreeId(request.resource.data.from)
             && (
               // A tree CARER (owner/keeper/steward) steps into an open-door garden;
               // any door, the community's keeper welcomes the tree (ring 2026-08-25); and the

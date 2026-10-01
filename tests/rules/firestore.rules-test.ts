@@ -753,6 +753,42 @@ describe("the lifetree LIST leak — the pulse lesson, heard for trees (Lumo's r
   });
 });
 
+describe('THE SECRET TREE (ring 2026-10-02): private for its whole life, never another kind, never validated, granting nothing outside itself', () => {
+  const seed = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'lifetrees', 'secret1'), { anchorUid: ALICE, name: 'Mycelium', treeType: 'SECRET', visibility: 'private', validated: false, validatorId: null, loveCount: 0 });
+    await setDoc(doc(d, 'links', `${BOB}__keeper__secret1`), { lid: 'k', type: 'link', rel: 'keeper', from: BOB, to: 'secret1', createdAt: 1 });
+    await setDoc(doc(d, 'communities', 'garden'), { name: 'Garden', anchorUid: MALLORY, domain: 'garden.org', door: 'open' });
+    await setDoc(doc(d, 'pulses', 'gathering'), { authorId: MALLORY, type: 'event', title: 'Fire', visibility: 'public' });
+  });
+  it('is born private, or not at all — no house, no community', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'lifetrees', 'bornSecret'), { anchorUid: ALICE, name: 'Hidden', treeType: 'SECRET', visibility: 'private', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'loudSecret'), { anchorUid: ALICE, name: 'Loud', treeType: 'SECRET', visibility: 'public', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'bareSecret'), { anchorUid: ALICE, name: 'Bare', treeType: 'SECRET', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(ALICE), 'lifetrees', 'placedSecret'), { anchorUid: ALICE, name: 'Placed', treeType: 'SECRET', visibility: 'private', communityId: 'garden', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'staffLoud'), { anchorUid: ALICE, name: 'Staff', treeType: 'SECRET', visibility: 'node', loveCount: 0 }));
+  });
+  it('stays private and secret for its whole life — keeper, staff, validator alike', async () => {
+    await seed();
+    await assertSucceeds(updateDoc(doc(db(BOB), 'lifetrees', 'secret1'), { name: 'Mycelium, renamed' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'secret1'), { visibility: 'public' }));
+    await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'secret1'), { visibility: 'node' }));
+    await assertFails(updateDoc(doc(db(ALICE), 'lifetrees', 'secret1'), { treeType: 'LIFETREE' }));
+    await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'secret1'), { treeType: 'GUARDED' }));
+    await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'secret1'), { validated: true, validatorId: STAFF }));
+    // …and no other tree becomes a secret one by edit.
+    await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'treeA'), { treeType: 'SECRET', visibility: 'private' }));
+  });
+  it('is read by its circle alone; takes no self-serve guardian; enlists in no event; stands in no garden', async () => {
+    await seed();
+    await assertSucceeds(getDoc(doc(db(BOB), 'lifetrees', 'secret1')));
+    await assertFails(getDoc(doc(db(MALLORY), 'lifetrees', 'secret1')));
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__guardian__secret1`), { lid: 'g', type: 'link', rel: 'guardian', from: MALLORY, to: 'secret1', createdAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(db(ALICE), 'links', 'secret1__participant__gathering'), { lid: 'p', type: 'link', rel: 'participant', from: 'secret1', to: 'gathering', createdAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(db(ALICE), 'links', 'secret1__grows_in__garden'), { lid: 'w', type: 'link', rel: 'grows_in', from: 'secret1', to: 'garden', createdAt: serverTimestamp() }));
+  });
+});
+
 describe("a tree is born unvalidated — validation is witnessed, never claimed (Lumo's review, 2026-09-07)", () => {
   it('a client cannot plant a tree already wearing validated:true or a witness', async () => {
     await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'selfValidated'), { anchorUid: MALLORY, name: 'Mine', validated: true, validatorId: 'someone', loveCount: 0 }));

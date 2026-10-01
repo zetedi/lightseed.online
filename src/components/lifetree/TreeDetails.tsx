@@ -124,7 +124,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
             longitude: Number(editLng),
             locationName: editLocationName.trim() || null,
             domain: normalizeHostname(editDomain) || null,
-            visibility: editVisibility,
+            visibility: tree.treeType === 'SECRET' ? 'private' : editVisibility,
             ...(editCreatedAt && { createdAt: new Date(editCreatedAt) }),
         });
     };
@@ -294,7 +294,10 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                 </div>
                 <div className="flex flex-col gap-2 py-2 border-t border-slate-50 dark:border-slate-800 sm:flex-row sm:items-center sm:gap-4">
                     <span className="w-24 shrink-0 text-slate-500 text-sm">{t('visibility')}</span>
-                    {isEditing && canEdit ? (
+                    {tree.treeType === 'SECRET' ? (
+                        // A secret tree is private for its whole life (rules: secretStaysSecret).
+                        <span className="flex-1 text-left text-slate-800 text-sm dark:text-slate-100">{t('secret_tree_visibility')}</span>
+                    ) : isEditing && canEdit ? (
                         <select value={editVisibility} onChange={e => setEditVisibility(e.target.value as 'public' | 'node' | 'private')} className={fieldClassName}>
                             <option value="public">{t('vis_public')}</option>
                             <option value="node">{t('vis_node')}</option>
@@ -330,7 +333,7 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                 </div>
 
                 {/* Kind — staff can convert a mis-planted tree (lifetree ↔ guarded). */}
-                {onConvertType && (
+                {onConvertType && tree.treeType !== 'SECRET' && (
                     <div className="flex items-center gap-4 py-2 border-t border-slate-50 dark:border-slate-800">
                         <span className="w-24 shrink-0 text-slate-500 text-sm">{t('kind')}</span>
                         <span className="flex-1 text-left text-slate-800 text-sm dark:text-slate-100">

@@ -107,7 +107,8 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
     }, []);
     const [isMapReady, setIsMapReady] = useState(false);
     const [markerCount, setMarkerCount] = useState(0);
-    const visibleTrees = useMemo(() => trees.filter(tree => getTreeCoordinates(tree)), [trees]);
+    // A secret tree never stands on a map, not even its keeper's (domain/secretTree).
+    const visibleTrees = useMemo(() => trees.filter(tree => tree.treeType !== 'SECRET' && getTreeCoordinates(tree)), [trees]);
     const visibleTreeCount = visibleTrees.length;
     // Guardian counts come from the LIN (all 'guardian' edges), fetched and grouped by tree.
     // refreshKey re-fetches after we touch a tree (e.g. join/leave a guardianship in a detail view).

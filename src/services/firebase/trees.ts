@@ -234,7 +234,9 @@ export const setNodeAiValidatedOnly = (value: boolean) =>
 
 export const plantLifetree = async (data: Partial<Lifetree> & { anchorUid: string; name: string; body?: string }) => {
     // Quality, not quantity: the node's caps (or the 12 + 132 = 144 defaults) per being.
-    const plantingType: 'LIFETREE' | 'GUARDED' = (data.treeType as 'LIFETREE' | 'GUARDED' | undefined) || (data.isNature ? 'GUARDED' : 'LIFETREE');
+    const plantingType: 'LIFETREE' | 'GUARDED' | 'SECRET' = (data.treeType as 'LIFETREE' | 'GUARDED' | 'SECRET' | undefined) || (data.isNature ? 'GUARDED' : 'LIFETREE');
+    // A SECRET tree (domain/secretTree) is born private — stamped here, held by the rules forever.
+    const secret = plantingType === 'SECRET';
     const [mine, limits] = await Promise.all([getMyLifetrees(data.anchorUid), getNodeLimits()]);
     const refusal = treePlantingGate(mine, plantingType, limits);
     if (refusal) throw new Error(refusal);
@@ -266,7 +268,7 @@ export const plantLifetree = async (data: Partial<Lifetree> & { anchorUid: strin
         // Visibility is stamped HERE, not trusted to the caller: a tree born without the field
         // is invisible to every `visibility in [...]` query — forest, map, and the circle's
         // invite search alike (how The Aspen vanished; ring 2026-08-09).
-        visibility: data.visibility || 'public',
+        visibility: secret ? 'private' : (data.visibility || 'public'),
         onlyValidatedCanReach,
         treeType: data.treeType || (data.isNature ? 'GUARDED' : 'LIFETREE'),
         createdAt: serverTimestamp(), genesisHash, latestHash: genesisHash, blockHeight: 0,
@@ -276,7 +278,8 @@ export const plantLifetree = async (data: Partial<Lifetree> & { anchorUid: strin
     // A GUARDED (nature) tree has NO Root Vision — like a bed, it is stood-for, not dreamed
     // forward; its welcome lives in `body`. A LIFETREE's Root Vision is its idea-twin, born the
     // same moment WITH its own genesis chain (the 2026-07-17 twin ring), not mute.
-    if (plantingType !== 'GUARDED') {
+    // A SECRET tree has no Root Vision either: a vision reads as public, and would betray the tree.
+    if (plantingType === 'LIFETREE') {
         const visionGenesis = await createBlock('0', { msg: 'Birth' }, Date.now());
         await addDoc(visionsCollection, {
             lid: uuidv7(),
