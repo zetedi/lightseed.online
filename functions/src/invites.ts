@@ -1,6 +1,6 @@
 // invites.ts — split from index.ts (ring 2026-09-16); every function keeps its name, trigger and options.
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { isSecretTree, rootsABeing } from "./treeKind";
+import { isSecretTree, rootsABeing, secretRoleAllowed } from "./treeKind";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import { charter, NODE_ORIGIN } from "./charter";
@@ -192,6 +192,8 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         // A SECRET tree (./treeKind, ring 2026-10-02) is guarded without a living tree of one's own:
         // the proof protects light and validation, and a secret tree has neither.
         const secret = isSecretTree(tree);
+        // …and its only seat is keeping: whoever is let in to see it keeps it.
+        if (!secretRoleAllowed(tree, invite.role)) throw new HttpsError("failed-precondition", "secret_keepers_only");
         if (invite.role === "guardian" && !secret) {
             const asMs = (v: any): number | null => (v && typeof v.toMillis === "function" ? v.toMillis() : (typeof v === "number" ? v : null));
             const treeFacts = { treeType: tree.treeType, isNature: tree.isNature, diedAtMs: asMs(tree.diedAt) };

@@ -1652,6 +1652,7 @@ const zh = {
   links_too_many: "最多十二个链接。",
   tree_no_anchor: "这棵树没有守护者之席；需由其守护者修复后才能形成圈子。",
   limit_secret_trees: "一位守护者最多拥有 {max} 棵秘密之树。",
+  secret_keepers_only: "秘密之树唯一的席位是守护者：被允许进入的人便守护它。",
   type_secret: "秘密之树",
   type_secret_desc: "为少数人而种的树：共同守护，只有它的圈子能看见，不点燃光。邀请一位尚未到来的朋友。",
   plant_secret_tree: "种下一棵秘密之树",

@@ -19,6 +19,15 @@
 // from one another (the mycelium — a later ring).
 //
 // THE ONE LINE THAT KEEPS IT HONEST: a secret tree grants nothing outside itself.
+//
+// ITS ONLY SEAT IS KEEPING (Zoltán, 2026-10-02: "Who gets to see it in person can be a keeper."):
+// a secret tree has no outer rings — no guardians watching from outside, no stewards, no
+// observers. Whoever is let in to see it keeps it, as an equal. Invitations to a secret tree are
+// keeper invitations only (rules, server, and the circle's picker).
+export const SECRET_TREE_ROLES = ['keeper'] as const;
+export const ALL_INVITABLE_ROLES = ['keeper', 'steward', 'guardian', 'observer'] as const;
+export const invitableRolesFor = (t: { treeType?: string | null } | null | undefined): readonly ('keeper' | 'steward' | 'guardian' | 'observer')[] =>
+  isSecretTree(t) ? SECRET_TREE_ROLES : ALL_INVITABLE_ROLES;
 
 export const SECRET_TREE_TYPE = 'SECRET' as const;
 export const MAX_SECRET_TREES = 12;

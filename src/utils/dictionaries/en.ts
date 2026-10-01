@@ -1682,6 +1682,7 @@ const en = {
   links_too_many: "At most twelve links.",
   tree_no_anchor: "This tree carries no keeper seat; its keeper must mend it before a circle can form.",
   limit_secret_trees: "A keeper holds at most {max} secret trees.",
+  secret_keepers_only: "A secret tree's only seat is keeping: whoever is let in keeps it.",
   type_secret: "Secret tree",
   type_secret_desc: "A tree for a few: kept together, seen only by its circle, kindling no light. Invite a friend who is not here yet.",
   plant_secret_tree: "Plant a secret tree",

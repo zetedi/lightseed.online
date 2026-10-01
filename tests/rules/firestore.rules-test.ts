@@ -753,6 +753,7 @@ describe("the lifetree LIST leak — the pulse lesson, heard for trees (Lumo's r
   });
 });
 
+const CAROL_UID = 'carol-secret-uid';
 describe('THE SECRET TREE (ring 2026-10-02): private for its whole life, never another kind, never validated, granting nothing outside itself', () => {
   const seed = () => env.withSecurityRulesDisabled(async (ctx) => {
     const d = ctx.firestore();
@@ -778,6 +779,16 @@ describe('THE SECRET TREE (ring 2026-10-02): private for its whole life, never a
     await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'secret1'), { validated: true, validatorId: STAFF }));
     // …and no other tree becomes a secret one by edit.
     await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'treeA'), { treeType: 'SECRET', visibility: 'private' }));
+  });
+  it('its only seat is keeping: a keeper invites keepers, addressed or by open link — never a guardian, steward or observer', async () => {
+    await seed();
+    const inv = (id: string, extra: object) => setDoc(doc(db(ALICE), 'treeKeepingInvites', id), { lifetreeId: 'secret1', lifetreeName: 'Mycelium', invitedByUserId: ALICE, invitedUserId: CAROL_UID, role: 'keeper', status: 'pending', createdAt: 1, updatedAt: 1, ...extra });
+    await assertSucceeds(inv('s-keeper', {}));
+    await assertSucceeds(inv('s-open-keeper', { invitedUserId: '', open: true }));
+    for (const role of ['guardian', 'steward', 'observer']) {
+      await assertFails(inv(`s-${role}`, { role }));
+      await assertFails(inv(`s-open-${role}`, { role, invitedUserId: '', open: true }));
+    }
   });
   it('is read by its circle alone; takes no self-serve guardian; enlists in no event; stands in no garden', async () => {
     await seed();

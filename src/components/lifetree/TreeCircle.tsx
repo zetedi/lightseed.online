@@ -9,6 +9,7 @@ import { SectionCard } from '../ui/SectionCard';
 import { fetchAllLifetrees, getPersonName, createTreeInvite, getSentTreeInvites, revokeTreeInvite, resignTreeKeeper, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite } from '../../services/firebase';
 import { mintOpenTreeInvite } from '../../services/firebase/trees';
 import { treeInviteUrl } from '../../domain/treeInvite';
+import { invitableRolesFor, isSecretTree } from '../../domain/secretTree';
 import { treeCircle } from '../../domain/views/circle';
 import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole, type TreeKeepingInvite } from '../../domain/treeCircle';
 // `translations.en` feeds only the STORED invite message (data on the invite doc — the
@@ -247,7 +248,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     // Answering a knock stays inside the circle's ONE privileged door: the keeper sends the
     // asker an invitation in the chosen role, and the knock is withdrawn — keeping begins
     // only when the asker confirms the role they are offered.
-    const [askRole, setAskRole] = useState<InvitableRole>(canInviteRoles ? 'steward' : 'guardian');
+    // The seats this tree offers: a secret tree's only seat is keeping (domain/secretTree).
+    const roles = invitableRolesFor(tree);
+    const secretTree = isSecretTree(tree);
+    const [askRole, setAskRole] = useState<InvitableRole>(secretTree ? 'keeper' : canInviteRoles ? 'steward' : 'guardian');
     const [answering, setAnswering] = useState<string | null>(null);
     const handleAnswerAsk = async (r: { uid: string; name: string }) => {
         if (!currentUserId) return;
@@ -307,7 +311,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
 
     // ── Invite by tree name ─────────────────────────────────────────────────────────────────────
     const [term, setTerm] = useState('');
-    const [inviteRole, setInviteRole] = useState<InvitableRole>('guardian');
+    const [inviteRole, setInviteRole] = useState<InvitableRole>(secretTree ? 'keeper' : 'guardian');
     const [inviting, setInviting] = useState<string | null>(null);
     const [invited, setInvited] = useState<Set<string>>(new Set());
 
@@ -494,10 +498,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-900 dark:bg-violet-950/60">
                     <div className="mb-1 flex items-center justify-between gap-2">
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-700 dark:text-violet-300">{t('keeper_requests')}</p>
-                        {canInviteRoles && (
+                        {canInviteRoles && roles.length > 1 && (
                             <select value={askRole} onChange={e => setAskRole(e.target.value as InvitableRole)}
                                 className="h-8 rounded-lg border border-violet-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:bg-slate-900 dark:text-slate-300 dark:border-violet-900">
-                                {(['keeper', 'steward', 'guardian', 'observer'] as InvitableRole[]).map(r => (
+                                {(roles as readonly InvitableRole[]).map(r => (
                                     <option key={r} value={r}>{t('invite_as_role').replace('{role}', roleName(r))}</option>
                                 ))}
                             </select>
@@ -585,10 +589,10 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
                     <div className="mb-1.5 flex items-center justify-between gap-2">
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('invite_into_circle')}</p>
-                        {canInviteRoles && (
+                        {canInviteRoles && roles.length > 1 && (
                             <select value={inviteRole} onChange={e => setInviteRole(e.target.value as InvitableRole)}
                                 className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
-                                {(['keeper', 'steward', 'guardian', 'observer'] as InvitableRole[]).map(r => (
+                                {(roles as readonly InvitableRole[]).map(r => (
                                     <option key={r} value={r}>{t('invite_as_role').replace('{role}', roleName(r))}</option>
                                 ))}
                             </select>

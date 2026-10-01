@@ -4,5 +4,8 @@ export const SECRET_TREE_TYPE = "SECRET";
 export const MAX_SECRET_TREES = 12;
 export const isSecretTree = (t: { treeType?: unknown } | null | undefined): boolean =>
     !!t && t.treeType === SECRET_TREE_TYPE;
+// A secret tree's only seat is keeping (mirror of domain/secretTree invitableRolesFor).
+export const secretRoleAllowed = (t: { treeType?: unknown } | null | undefined, role: unknown): boolean =>
+    !isSecretTree(t) || role === "keeper";
 export const rootsABeing = (t: { treeType?: unknown } | null | undefined): boolean =>
     !!t && t.treeType !== "BED" && t.treeType !== SECRET_TREE_TYPE;

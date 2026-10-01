@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { isSecretTree, rootsABeing, MAX_SECRET_TREES, SECRET_TREE_TYPE } from '../src/domain/secretTree';
-import { isSecretTree as serverIsSecret, rootsABeing as serverRoots, MAX_SECRET_TREES as SERVER_MAX, SECRET_TREE_TYPE as SERVER_TYPE } from '../functions/src/treeKind';
+import { isSecretTree, rootsABeing, MAX_SECRET_TREES, SECRET_TREE_TYPE, invitableRolesFor } from '../src/domain/secretTree';
+import { isSecretTree as serverIsSecret, rootsABeing as serverRoots, MAX_SECRET_TREES as SERVER_MAX, SECRET_TREE_TYPE as SERVER_TYPE, secretRoleAllowed } from '../functions/src/treeKind';
 import { treePlantingGate } from '../src/domain/limits';
 import { sustainingSeven } from '../src/domain/sustainingSeven';
 import { isLivingLifetree } from '../src/domain/guardianship';
@@ -28,6 +28,16 @@ describe('the kind law and its mirror', () => {
     for (const k of kinds) {
       expect(serverIsSecret(k)).toBe(isSecretTree(k));
       expect(serverRoots(k)).toBe(rootsABeing(k));
+    }
+  });
+});
+
+describe('its only seat is keeping — whoever is let in keeps it', () => {
+  it('a secret tree offers keeping alone; every other tree all four seats; the server agrees', () => {
+    expect([...invitableRolesFor({ treeType: 'SECRET' })]).toEqual(['keeper']);
+    expect([...invitableRolesFor({ treeType: 'LIFETREE' })]).toEqual(['keeper', 'steward', 'guardian', 'observer']);
+    for (const k of kinds) for (const role of ['keeper', 'steward', 'guardian', 'observer']) {
+      expect(secretRoleAllowed(k, role)).toBe((invitableRolesFor(k) as readonly string[]).includes(role));
     }
   });
 });

@@ -1708,6 +1708,8 @@ service cloud.firestore {
           ? request.resource.data.get('invitedUserId', '') == ''
           : request.resource.data.get('invitedUserId', '') != '') &&
         !('claimedAt' in request.resource.data) &&
+        // A SECRET tree's only seat is keeping (ring 2026-10-02): whoever is let in keeps it.
+        (!isSecretTreeId(request.resource.data.lifetreeId) || request.resource.data.get('role', '') == 'keeper') &&
         (isStaff() || isTreeKeeper(request.resource.data.lifetreeId) ||
           (isTreeCarer(request.resource.data.lifetreeId) && request.resource.data.get('role', '') in ['guardian', 'observer']));
       // Decline (the invitee) / revoke (the inviter, or any keeper of the tree for any invitation

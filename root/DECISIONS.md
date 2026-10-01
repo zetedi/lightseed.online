@@ -6,6 +6,16 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · A secret tree's only seat is keeping** — Zoltán: "I would like the invitation to a
+secret tree to be to be a keeper. Who gets to see it in person can be a keeper." A secret tree has
+no outer rings: no guardians watching from outside, no stewards, no observers. Whoever is let in to
+see it keeps it, as an equal — the keeper equality of 2026-09-29 taken to its intimate end.
+`invitableRolesFor` (domain/secretTree, mirrored `secretRoleAllowed`) offers keeping alone; the
+rules refuse any other role on a secret tree's invitation, addressed or open; `acceptTreeInvite`
+refuses one that slipped through (`secret_keepers_only`); the circle's role pickers vanish there.
+
+---
+
 **2026-10-02 · The secret tree** — Zoltán: "I'm starting to like the secret tree idea more and more,
 it's like a true mycelium and it's about creating a new type of relationship… a secret tree, which
 can be guarded / kept without having a lifetree and it's a new doorway. It would not be one to mint
