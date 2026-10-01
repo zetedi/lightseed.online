@@ -6,6 +6,28 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-01 · The open door to a tree's circle** — Zoltán: "I would like to be able to invite
+someone who does not have a lifetree to be a guardian of the tree… there is not invitation link
+minting at the circle." Three seams, read in the code: the circle's picker finds people by their
+TREE, an invitation is a document addressed to an account that exists, and the guardianship law
+refuses a guardian without a living tree. THE DOOR, built; THE LAW, kept. An OPEN invitation
+(`domain/treeInvite`) is the same `treeKeepingInvites` document born with no invitee and `open:
+true`: minted at the circle in a chosen role, shared as /i/<id> beside the community door (the
+arrival tries the community ledger, then the tree's), readable by any holder of the link, signed
+in or not. The FIRST signed-in hand to arrive CLAIMS it — one write the rules judge: open, pending,
+not the inviter, exactly the claim keys, never twice — and from then on it is an ordinary
+invitation under their profile, answered by the server's `acceptTreeInvite`, which still asks a
+guardian to hold a living tree. So the friend who is not here yet opens the link, signs up, plants
+their own seed and then accepts: the door roots them; it does not hollow the guard. Rejected
+(weighed, offered, declined by the keeper): a guardian link as a tree-less follow — it would have
+needed a new gate on witnessing and a ring correcting 2026-09-09. NOT YET: an expiry on open
+links (the field is read, none is written); a greeting that names the inviter and the role on the
+sign-in door (it greets by the tree's name); a claimed invitation on a PRIVATE tree is seen only
+under the profile until accepted (the circle read of 2026-10-01 opens the tree the moment the link
+is minted by acceptance).
+
+---
+
 **2026-10-01 · Born with an anchor, from every hand** — Zoltán, after planting Wachumito at The O
 House: "I don't become a keeper automatically… INTERNAL." THE SEAM, found in the data and the log:
 the tree was born today carrying the retired `ownerId` and no `anchorUid` — a tab still running the

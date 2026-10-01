@@ -1652,12 +1652,15 @@ service cloud.firestore {
       // A single invitation: its invitee and its inviter (and staff). The LEDGER of a tree's
       // invitations (list by lifetreeId) belongs to the tree's CARERS — owner, keeper, steward —
       // so the circle can see who was invited, as what, and withdraw; the invitee lists their own.
-      allow get: if isSignedIn() && (
+      // THE OPEN DOOR (ring 2026-10-01; domain/treeInvite): an invitation born with no invitee is a
+      // link anyone may hold — readable by the holder, signed in or not, like a community
+      // invitation (its id is the key) — until the first signed-in hand claims it.
+      allow get: if resource.data.get('open', false) == true || (isSignedIn() && (
         resource.data.invitedUserId == request.auth.uid ||
         resource.data.invitedByUserId == request.auth.uid ||
         isStaff() ||
         isTreeCarer(resource.data.lifetreeId)
-      );
+      ));
       allow list: if isSignedIn() && (
         isStaff() ||
         resource.data.invitedUserId == request.auth.uid ||
@@ -1670,6 +1673,11 @@ service cloud.firestore {
       allow create: if isSignedIn() &&
         request.resource.data.invitedByUserId == request.auth.uid &&
         request.resource.data.get('status', '') == 'pending' &&
+        // Addressed to a hand, or OPEN (no invitee yet) — never both, never neither.
+        (request.resource.data.get('open', false) == true
+          ? request.resource.data.get('invitedUserId', '') == ''
+          : request.resource.data.get('invitedUserId', '') != '') &&
+        !('claimedAt' in request.resource.data) &&
         (isStaff() || isTreeKeeper(request.resource.data.lifetreeId) ||
           (isTreeCarer(request.resource.data.lifetreeId) && request.resource.data.get('role', '') in ['guardian', 'observer']));
       // Decline (the invitee) / revoke (the inviter, or any keeper of the tree for any invitation
@@ -1678,11 +1686,24 @@ service cloud.firestore {
       allow update: if isSignedIn() &&
         resource.data.get('status', '') == 'pending' &&
         (
-          (resource.data.invitedUserId == request.auth.uid && request.resource.data.status == 'declined') ||
-          ((resource.data.invitedByUserId == request.auth.uid || isTreeKeeper(resource.data.lifetreeId) || isStaff())
-            && request.resource.data.status == 'revoked')
-        ) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'declinedAt', 'revokedAt', 'updatedAt']);
+          (
+            (resource.data.invitedUserId == request.auth.uid && request.resource.data.status == 'declined') ||
+            ((resource.data.invitedByUserId == request.auth.uid || isTreeKeeper(resource.data.lifetreeId) || isStaff())
+              && request.resource.data.status == 'revoked')
+          ) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'declinedAt', 'revokedAt', 'updatedAt'])
+        )
+        // THE CLAIM: the first signed-in hand through the door takes the invitee seat, once — never
+        // the inviter, never a second hand, nothing else riding along.
+        || (
+          resource.data.get('open', false) == true &&
+          resource.data.get('invitedUserId', '') == '' &&
+          resource.data.invitedByUserId != request.auth.uid &&
+          request.resource.data.get('invitedUserId', '') == request.auth.uid &&
+          request.resource.data.get('open', true) == false &&
+          request.resource.data.get('claimedAt', null) == request.time &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['invitedUserId', 'open', 'claimedAt', 'updatedAt'])
+        );
       allow delete: if isStaff();
     }
 

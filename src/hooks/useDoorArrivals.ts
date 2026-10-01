@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import type { CommunityInvite, Lightseed } from '../types';
 import type { BeingOverlays } from './useBeingOverlays';
-import { getPendingTreeInvites, getCommunityInvite, getCommunityById } from '../services/firebase';
+import { getPendingTreeInvites, getCommunityInvite, getCommunityById, getPersonName } from '../services/firebase';
+import { getTreeInvite, claimTreeInvite } from '../services/firebase/trees';
+import { treeInviteClaimRefusal } from '../domain/treeInvite';
+import { roleLabelKey } from '../domain/treeCircle';
+import type { TreeKeepingInvite } from '../domain/treeCircle';
 import { findBeingByLid } from '../services/firebase/beings';
 import { lidFromPath, beingPath } from '../domain/beingLink';
 import { inviteIdFromPath } from '../domain/communityDoor';
 import { asksSignIn, withoutSignInAsk } from '../domain/ssoDoor';
 import { notify } from '../components/ui/Toast';
-import { speak } from '../utils/translations';
+import { speak, spokenLine } from '../utils/translations';
 
 // THE DOORS A VISITOR ARRIVES THROUGH (ring 2026-09-16, lifted out of App.tsx unchanged).
 // /b/<lid> (a scanned QR or a shared being), /i/<inviteId> (a community invitation), the
@@ -22,8 +26,12 @@ export function useDoorArrivals(params: {
   inviteParam: string | null | undefined;
   beings: Pick<BeingOverlays, 'setSelectedTree' | 'setViewingLightHouse' | 'setSelectedVision' | 'setSelectedPulse' | 'setSelectedCommunity'>;
   openAuth: () => void;
+  openProfile?: () => void;
 }) {
-  const { authLoading, lightseed, isStaff, tab, inviteParam, beings, openAuth } = params;
+  const { authLoading, lightseed, isStaff, tab, inviteParam, beings, openAuth, openProfile } = params;
+  // THE OPEN DOOR to a tree's circle (ring 2026-10-01; domain/treeInvite): an unclaimed invitation
+  // the visitor arrived holding — carried until the signed-in hand claims it, then released.
+  const [arrivedTreeInvite, setArrivedTreeInvite] = useState<TreeKeepingInvite | null>(null);
   // An invitation the visitor arrived holding (/i/<id>) — carried until used or dismissed.
   const [arrivedInvite, setArrivedInvite] = useState<CommunityInvite | null>(null);
   const [pendingTreeInvites, setPendingTreeInvites] = useState(0);
@@ -49,9 +57,35 @@ export function useDoorArrivals(params: {
   // Arriving on a community invitation (/i/), signed out, opens the join door directly — the
   // auth modal greets by the community name and starts in sign-up (see the AuthModal render).
   useEffect(() => {
-    if (arrivedInvite && !lightseed && !authLoading) openAuth();
+    if ((arrivedInvite || arrivedTreeInvite) && !lightseed && !authLoading) openAuth();
   // eslint-disable-next-line react-hooks/exhaustive-deps -- reacts to the resolved /i/ arrival once auth settles; mirrors the ?invite effect above
-  }, [arrivedInvite, lightseed, authLoading]);
+  }, [arrivedInvite, arrivedTreeInvite, lightseed, authLoading]);
+
+  // THE CLAIM: once a hand is signed in, the carried tree invitation is taken (one write the rules
+  // judge), spoken, and left under the profile's Invitations where acceptance lives.
+  // One claim per arrival (a ref, not a cleared state: the carried invitation is harmless once
+  // signed in — the sign-in door reads it only while signed out).
+  const claimedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!arrivedTreeInvite || !lightseed?.uid || claimedRef.current === arrivedTreeInvite.id) return;
+    claimedRef.current = arrivedTreeInvite.id;
+    const inv = arrivedTreeInvite;
+    const refusal = treeInviteClaimRefusal({
+      exists: true, open: inv.open, status: inv.status, invitedUserId: inv.invitedUserId, invitedByUserId: inv.invitedByUserId,
+      revokedAtMs: inv.revokedAt ? (inv.revokedAt as { toMillis?: () => number }).toMillis?.() ?? null : null,
+      expiresAtMs: inv.expiresAt ? (inv.expiresAt as { toMillis?: () => number }).toMillis?.() ?? null : null,
+      claimantUid: lightseed.uid, nowMs: Date.now(),
+    });
+    if (refusal) { notify(speak(refusal), 'error'); return; }
+    claimTreeInvite(inv.id, lightseed.uid)
+      .then(async () => {
+        const who = inv.invitedByName || (await getPersonName(inv.invitedByUserId).catch(() => '')) || speak('someone');
+        notify(speak(spokenLine('tree_invite_claimed', { who, role: speak(roleLabelKey(inv.role)).toLowerCase(), tree: inv.lifetreeName || speak('a_tree') })));
+        openProfile?.();
+      })
+      .catch(() => notify(speak('tree_invite_taken'), 'error'));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot claim once the hand is signed in
+  }, [arrivedTreeInvite, lightseed?.uid]);
 
   // The /b/<lid> door — a scanned QR lands here. Resolved once the session settles
   // (what the scanner may see depends on who they are), then the path is cleaned.
@@ -86,9 +120,11 @@ export function useDoorArrivals(params: {
     window.history.replaceState({}, '', '/');
     getCommunityInvite(inviteId).then(async invite => {
       const community = invite ? await getCommunityById(invite.communityId) : null;
-      if (!invite || !community) { notify(speak('invite_not_found')); return; }
-      setArrivedInvite(invite);
-      beings.setSelectedCommunity(community);
+      if (invite && community) { setArrivedInvite(invite); beings.setSelectedCommunity(community); return; }
+      // Not a community's door: perhaps a tree circle's (the same /i/ prefix, its own ledger).
+      const treeInvite = await getTreeInvite(inviteId).catch(() => null);
+      if (!treeInvite) { notify(speak('invite_not_found')); return; }
+      setArrivedTreeInvite(treeInvite);
     }).catch(() => notify(speak('invite_not_found')));
   // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution
   }, [authLoading]);
@@ -103,5 +139,5 @@ export function useDoorArrivals(params: {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the ask is consumed on first resolution
   }, [authLoading]);
 
-  return { arrivedInvite, setArrivedInvite, pendingTreeInvites, doorPending };
+  return { arrivedInvite, setArrivedInvite, arrivedTreeInvite, pendingTreeInvites, doorPending };
 }

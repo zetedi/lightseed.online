@@ -922,6 +922,34 @@ export const createTreeInvite = async (params: {
     return ref.id;
 };
 
+// THE OPEN DOOR (ring 2026-10-01; domain/treeInvite): an invitation with no invitee yet, minted by a
+// keeper (any role) or a carer (the open layer), shared as /i/<id>; claimed once by the first
+// signed-in hand to arrive. The rules hold the shape; the server's acceptTreeInvite answers after.
+export const mintOpenTreeInvite = async (params: {
+    lifetree: Lifetree; role: InvitableRole; invitedByUserId: string; invitedByName?: string; message?: string;
+}): Promise<string> => {
+    const ref = await addDoc(treeInvitesCollection, {
+        lifetreeId: params.lifetree.id,
+        lifetreeName: params.lifetree.name || '',
+        invitedByUserId: params.invitedByUserId,
+        invitedByName: params.invitedByName || '',
+        invitedUserId: '',
+        open: true,
+        role: params.role,
+        status: 'pending',
+        message: params.message || '',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
+    return ref.id;
+};
+export const getTreeInvite = async (inviteId: string): Promise<TreeKeepingInvite | null> => {
+    const snap = await getDoc(doc(db, 'treeKeepingInvites', inviteId));
+    return snap.exists() ? (mapDoc(snap) as TreeKeepingInvite) : null;
+};
+export const claimTreeInvite = (inviteId: string, uid: string) =>
+    updateDoc(doc(db, 'treeKeepingInvites', inviteId), { invitedUserId: uid, open: false, claimedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+
 export const getPendingTreeInvites = async (userId: string): Promise<TreeKeepingInvite[]> => {
     // Single-field query + client filter, to avoid requiring a composite index.
     const snap = await getDocs(query(treeInvitesCollection, where('invitedUserId', '==', userId)));

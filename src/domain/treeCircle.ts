@@ -26,6 +26,11 @@ export interface TreeKeepingInvite {
   acceptedAt?: Stamp;
   declinedAt?: Stamp;
   revokedAt?: Stamp;
+  // THE OPEN DOOR (ring 2026-10-01; domain/treeInvite): born with no invitee, claimed once by the
+  // first signed-in hand to arrive through its link; `open` turns false and `claimedAt` is stamped.
+  open?: boolean;
+  claimedAt?: Stamp;
+  expiresAt?: Stamp | null;
 }
 
 // Relations live in the `links` collection (the LIN) — the single source of truth. The legacy

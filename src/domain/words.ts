@@ -65,6 +65,8 @@ export const DOMAIN_KEYS = [
   'guard_not_keeper', 'guard_not_lifetree', 'guard_tree_dead', 'guard_self', 'guard_no_living_tree', 'guard_already', 'guard_pending',
   // web doors — a link a being carries outward (domain/webLink)
   'link_not_web', 'link_not_valid', 'links_too_many', 'tree_no_anchor',
+  // The open door to a tree's circle (domain/treeInvite, ring 2026-10-01)
+  'tree_invite_gone', 'tree_invite_revoked', 'tree_invite_expired', 'tree_invite_settled', 'tree_invite_taken', 'tree_invite_signin', 'tree_invite_own',
   // Spending is a gate (domain/spend, ring 2026-09-30)
   'appreciate_offering_gone', 'appreciate_not_received', 'appreciate_already', 'appreciate_coin_refused',
   'spend_no_decision', 'spend_not_purchase', 'spend_no_offering', 'spend_nothing', 'spend_no_standing',

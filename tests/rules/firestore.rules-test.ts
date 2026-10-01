@@ -2636,6 +2636,33 @@ describe('tree circle invitations — the circle reads its ledger, keepers open 
     await assertSucceeds(updateDoc(doc(db(MALLORY), 'treeKeepingInvites', 'tinv-owner-1'), decline));
     await assertFails(updateDoc(doc(db(BOB), 'treeKeepingInvites', 'tinv-owner-1'), { status: 'pending', updatedAt: serverTimestamp() })); // one-way
   });
+
+  it('THE OPEN DOOR (ring 2026-10-01): an invitation with no invitee is minted by a keeper, read by any holder of its link, claimed ONCE by a signed-in stranger', async () => {
+    await seedTreeInvites();
+    const openInvite = (extra: object = {}) => invite({ invitedUserId: '', open: true, ...extra });
+    // Born open by the anchor (any role) and by a steward (the open layer only); never half-open.
+    await assertSucceeds(setDoc(doc(db(BOB), 'treeKeepingInvites', 'open-keeper'), openInvite({ role: 'keeper' })));
+    await assertSucceeds(setDoc(doc(db(DAN), 'treeKeepingInvites', 'open-guardian'), openInvite({ invitedByUserId: DAN, role: 'guardian' })));
+    await assertFails(setDoc(doc(db(DAN), 'treeKeepingInvites', 'open-steward-by-steward'), openInvite({ invitedByUserId: DAN, role: 'steward' })));
+    await assertFails(setDoc(doc(db(BOB), 'treeKeepingInvites', 'open-with-invitee'), openInvite({ invitedUserId: MALLORY })));
+    await assertFails(setDoc(doc(db(BOB), 'treeKeepingInvites', 'addressed-to-no-one'), invite({ invitedUserId: '' })));
+    await assertFails(setDoc(doc(db(BOB), 'treeKeepingInvites', 'born-claimed'), openInvite({ claimedAt: 1 })));
+    // The link is the key: a signed-out holder reads it; an addressed invitation stays private.
+    await assertSucceeds(getDoc(doc(db(), 'treeKeepingInvites', 'open-guardian')));
+    await assertFails(getDoc(doc(db(), 'treeKeepingInvites', 'tinv-owner-1')));
+    // The claim: a stranger takes the seat with exactly the claim keys; the inviter cannot; nothing else rides.
+    const claim = (uid: string) => ({ invitedUserId: uid, open: false, claimedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    await assertFails(updateDoc(doc(db(DAN), 'treeKeepingInvites', 'open-guardian'), claim(DAN)));                       // one's own invitation
+    await assertFails(updateDoc(doc(db(CAROL), 'treeKeepingInvites', 'open-guardian'), claim(MALLORY)));                 // another's seat
+    await assertFails(updateDoc(doc(db(CAROL), 'treeKeepingInvites', 'open-guardian'), { ...claim(CAROL), role: 'keeper' })); // the role rides along
+    await assertFails(updateDoc(doc(db(CAROL), 'treeKeepingInvites', 'open-guardian'), { ...claim(CAROL), open: true }));   // still open after claiming
+    await assertSucceeds(updateDoc(doc(db(CAROL), 'treeKeepingInvites', 'open-guardian'), claim(CAROL)));
+    await assertFails(updateDoc(doc(db(MALLORY), 'treeKeepingInvites', 'open-guardian'), claim(MALLORY)));              // taken: no second claim
+    await assertFails(updateDoc(doc(db(CAROL), 'treeKeepingInvites', 'tinv-owner-1'), claim(CAROL)));                     // an addressed invitation is no door
+    // Claimed, it is an ordinary invitation: the claimant declines it, a keeper withdraws an open one.
+    await assertSucceeds(updateDoc(doc(db(CAROL), 'treeKeepingInvites', 'open-guardian'), { status: 'declined', declinedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'treeKeepingInvites', 'open-keeper'), { status: 'revoked', revokedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+  });
 });
 
 describe('a tree is kept, not owned — every keeper is equal, and the anchor is only the history (ring 2026-09-29)', () => {

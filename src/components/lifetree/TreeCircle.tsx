@@ -7,6 +7,8 @@ import { firestoreStore } from '../../adapters/firestore';
 import { canCareForTree } from '../../domain/policy';
 import { SectionCard } from '../ui/SectionCard';
 import { fetchAllLifetrees, getPersonName, createTreeInvite, getSentTreeInvites, revokeTreeInvite, resignTreeKeeper, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite } from '../../services/firebase';
+import { mintOpenTreeInvite } from '../../services/firebase/trees';
+import { treeInviteUrl } from '../../domain/treeInvite';
 import { treeCircle } from '../../domain/views/circle';
 import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole, type TreeKeepingInvite } from '../../domain/treeCircle';
 // `translations.en` feeds only the STORED invite message (data on the invite doc — the
@@ -161,7 +163,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     // Person names as a fallback label for beings whose tree has no face yet — the circle's
     // members and the invited alike. Batched, best-effort.
     const nameUids = useMemo(
-        () => [...new Set([...circleUids, ...sentInvites.map(i => i.invitedUserId)])],
+        () => [...new Set([...circleUids, ...sentInvites.map(i => i.invitedUserId).filter(Boolean)])],
         [circleUids, sentInvites],
     );
     useEffect(() => {
@@ -330,6 +332,22 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             .sort((a, b) => Number(!!a.reason) - Number(!!b.reason)) // invitable first
             .slice(0, 6);
     }, [term, forest, treeId, tree.anchorUid, circleSet]);
+
+    // THE OPEN DOOR (ring 2026-10-01; domain/treeInvite): a link for someone not here yet. Minted in
+    // the chosen role, copied to the clipboard; the first signed-in hand to open it takes the seat.
+    const [mintingLink, setMintingLink] = useState(false);
+    const handleMintLink = async () => {
+        if (!currentUserId || mintingLink) return;
+        setMintingLink(true);
+        try {
+            const id = await mintOpenTreeInvite({ lifetree: tree as Lifetree, role: inviteRole, invitedByUserId: currentUserId, invitedByName: currentUserName || undefined });
+            setInviteNonce(n => n + 1);
+            const url = treeInviteUrl(window.location.origin, id);
+            try { await navigator.clipboard.writeText(url); notify(t('tree_invite_link_copied')); }
+            catch { showAlert(url); } // clipboard unavailable: show the link instead
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+        setMintingLink(false);
+    };
 
     const handleInvite = async (candidate: Lifetree) => {
         if (!currentUserId) return;
@@ -516,13 +534,14 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     ) : (
                         <div className="space-y-1.5">
                             {sentInvites.map(inv => {
-                                const face = faceFromForest(inv.invitedUserId, forest);
+                                const face = inv.invitedUserId ? faceFromForest(inv.invitedUserId, forest) : {};
                                 const mayRevoke = canInviteRoles || isAnchor || inv.invitedByUserId === currentUserId;
+                                const openLink = inv.open === true && !inv.invitedUserId;
                                 return (
                                     <div key={inv.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-2 dark:bg-slate-900/50 dark:border-slate-800">
-                                        <Avatar imageUrl={face.imageUrl} seed={labelFor(inv.invitedUserId, face)} ring={ROLE_RING[inv.role]} />
+                                        <Avatar imageUrl={face.imageUrl} seed={openLink ? '🗝' : labelFor(inv.invitedUserId, face)} ring={ROLE_RING[inv.role]} />
                                         <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-bold text-slate-700 dark:text-slate-200">{labelFor(inv.invitedUserId, face)}</p>
+                                            <p className="truncate text-sm font-bold text-slate-700 dark:text-slate-200">{openLink ? t('tree_invite_open_row') : labelFor(inv.invitedUserId, face)}</p>
                                             <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">
                                                 {roleName(inv.role)}
                                                 <span className="ml-1.5 normal-case tracking-normal font-normal">
@@ -615,6 +634,13 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     {term.trim().length >= 2 && matches.length === 0 && (
                         <p className="mt-2 text-xs italic text-slate-400">{t('no_tree_to_invite')}</p>
                     )}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={() => void handleMintLink()} disabled={mintingLink}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 px-3.5 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:border-emerald-400 hover:text-emerald-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300">
+                            <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Link /></span> {mintingLink ? '…' : t('tree_invite_link')} · {roleName(inviteRole)}
+                        </button>
+                        <span className="text-[11px] text-slate-400">{t('tree_invite_link_hint')}</span>
+                    </div>
                 </div>
             )}
         </SectionCard>

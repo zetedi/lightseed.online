@@ -187,9 +187,10 @@ const AppContent = () => {
     }, [tab, lightseed?.uid, isSuperAdmin, isAdmin, viewMode, hostCommunityResolved, authLoading, activeCommunity?.reflectsPublic, activeCommunity?.domain, activeCommunity?.strictScope]);
 
     const carrying = useCarrying({ isSuperAdmin, carrierName: lightseed?.displayName });
-    const { arrivedInvite, setArrivedInvite, pendingTreeInvites, doorPending } = useDoorArrivals({
+    const { arrivedInvite, setArrivedInvite, arrivedTreeInvite, pendingTreeInvites, doorPending } = useDoorArrivals({
         authLoading, lightseed, isStaff: isSuperAdmin || isAdmin, tab, inviteParam, beings,
         openAuth: () => doors.setShowAuthModal(true),
+        openProfile: () => setTab('profile'),
     });
 
     // Seed the Intelligence Commons (default personas + Gemini Oracle) once a super-admin
@@ -744,8 +745,8 @@ const AppContent = () => {
 
                 {doors.showAuthModal && !lightseed && (
                     <AuthModal onClose={() => doors.setShowAuthModal(false)} inviteId={inviteParam} inviteOnly={config.inviteOnly} theme={effectiveTheme}
-                        startMode={arrivedInvite ? 'signup' : undefined}
-                        greetName={arrivedInvite ? beings.selectedCommunity?.name : undefined} />
+                        startMode={arrivedInvite || arrivedTreeInvite ? 'signup' : undefined}
+                        greetName={arrivedInvite ? beings.selectedCommunity?.name : arrivedTreeInvite ? (arrivedTreeInvite.lifetreeName || undefined) : undefined} />
                 )}
 
                 {/* The Path, whole — the Light Path's ruleset with the walker's position lit. */}
