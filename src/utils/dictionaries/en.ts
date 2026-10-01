@@ -1699,6 +1699,7 @@ const en = {
   tree_invite_link_hint: "Mint a link for someone who is not here yet. The first person to open it, signed in, takes the seat you chose.",
   tree_invite_link_copied: "🗝 Invitation link copied. Share it; the first to open it takes the seat.",
   tree_invite_open_row: "Open link",
+  copy_link: "Copy link",
   tree_invite_claimed: "{who} invited you to become a {role} of {tree}. Find it under Invitations on your profile.",
   tree_invite_plant_first: "A guardian must hold a living tree of their own — plant yours, then accept.",
   appreciate_offering_gone: "That offering is no longer here.",

@@ -9,6 +9,7 @@ import { SectionCard } from '../ui/SectionCard';
 import { fetchAllLifetrees, getPersonName, createTreeInvite, getSentTreeInvites, revokeTreeInvite, resignTreeKeeper, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite } from '../../services/firebase';
 import { mintOpenTreeInvite } from '../../services/firebase/trees';
 import { treeInviteUrl } from '../../domain/treeInvite';
+import { LinkQr } from '../ui/LinkQr';
 import { invitableRolesFor, isSecretTree } from '../../domain/secretTree';
 import { treeCircle } from '../../domain/views/circle';
 import { roleLabelKey, roleDescKey, type TreeRelationRole, type InvitableRole, type TreeKeepingInvite } from '../../domain/treeCircle';
@@ -353,6 +354,12 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         setMintingLink(false);
     };
 
+    const copyOpenLink = async (inviteId: string) => {
+        const url = treeInviteUrl(window.location.origin, inviteId);
+        try { await navigator.clipboard.writeText(url); notify(t('tree_invite_link_copied')); }
+        catch { showAlert(url); } // clipboard unavailable: show the link instead
+    };
+
     const handleInvite = async (candidate: Lifetree) => {
         if (!currentUserId) return;
         setInviting(candidate.id);
@@ -556,6 +563,17 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                                 </span>
                                             </p>
                                         </div>
+                                        {/* An open link stays shareable while it waits: copy it again, or show its QR
+                                            to a friend in person (the door is its id; a keeper may always revoke it). */}
+                                        {openLink && (
+                                            <>
+                                                <button type="button" onClick={() => void copyOpenLink(inv.id)}
+                                                    className="shrink-0 rounded-lg border border-emerald-100 bg-white px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">
+                                                    {t('copy_link')}
+                                                </button>
+                                                <LinkQr url={treeInviteUrl(window.location.origin, inv.id)} title={`${tree.name || t('a_tree')} · ${roleName(inv.role)}`} />
+                                            </>
+                                        )}
                                         {mayRevoke && (
                                             <button onClick={() => handleRevokeInvite(inv)} disabled={revoking === inv.id}
                                                 className="shrink-0 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900 dark:border-red-900">

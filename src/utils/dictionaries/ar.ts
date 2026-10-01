@@ -1671,6 +1671,7 @@ const ar = {
   tree_invite_link_hint: "اصنع رابطًا لشخص ليس هنا بعد. أول من يفتحه مسجَّلًا يأخذ المقعد الذي اخترته.",
   tree_invite_link_copied: "🗝 نُسخ رابط الدعوة. شاركه؛ أول من يفتحه يأخذ المقعد.",
   tree_invite_open_row: "رابط مفتوح",
+  copy_link: "انسخ الرابط",
   tree_invite_claimed: "دعاك {who} لتصبح {role} لـ {tree}. ستجدها تحت الدعوات في ملفك.",
   tree_invite_plant_first: "على الحارس أن يحمل شجرة حيّة له — ازرع شجرتك ثم اقبل.",
   appreciate_offering_gone: "هذا العطاء لم يعد هنا.",

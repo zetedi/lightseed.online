@@ -1669,6 +1669,7 @@ const zh = {
   tree_invite_link_hint: "为尚未到来的人铸造一个链接。第一个登录并打开它的人将获得你所选的席位。",
   tree_invite_link_copied: "🗝 邀请链接已复制。分享它；第一个打开的人获得席位。",
   tree_invite_open_row: "开放链接",
+  copy_link: "复制链接",
   tree_invite_claimed: "{who} 邀请你成为 {tree} 的{role}。请在个人页面的“邀请”下查看。",
   tree_invite_plant_first: "守护者必须拥有一棵自己的活树——先种下你的树，再接受。",
   appreciate_offering_gone: "那份供养已不在这里。",
