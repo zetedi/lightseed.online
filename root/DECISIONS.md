@@ -6,6 +6,24 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-01 · Born with an anchor, from every hand** — Zoltán, after planting Wachumito at The O
+House: "I don't become a keeper automatically… INTERNAL." THE SEAM, found in the data and the log:
+the tree was born today carrying the retired `ownerId` and no `anchorUid` — a tab still running the
+bundle of 2026-09-29 (the shell applies a new bundle only when the person presses Refresh on the
+update toast), and the birth rule's staff escape (`isStaff() || anchorUid == uid`) let the stale
+write through because the planter is staff. Anchorless, the tree showed no keeper, and accepting a
+steward invitation crashed the server on `anchorUid: undefined` — the INTERNAL. THE MEND: one
+predicate, `bornWithAnchor`, at the birth of every kept being — lifetree, community, Light House:
+`anchorUid` a non-empty string, `ownerId` refused, and staff may name another anchor but never
+none; `acceptTreeInvite` refuses an anchorless tree plainly (`tree_no_anchor`) instead of crashing;
+the one anchorless document is repaired by the migration's own strip pass (idempotent, one doc).
+The lesson is the ring of 2026-09-30's own NOT GUARANTEED, met a day later: a stale bundle's
+writes must be REFUSED by the rules, and a staff escape at birth is a hole, not a privilege.
+NAMED, NOT DONE: a bundle older than its deploy should apply itself after a bounded patience (the
+toast stays polite, but not forever).
+
+---
+
 **2026-10-01 · A secret tree is read by its circle** — Zoltán: "I would like to be able to share a
 secret tree with a friend… invite somebody to my private tree as a keeper." The seam: keepers had
 been equal since 2026-09-29, yet a private tree's read rule still admitted only its anchor — a

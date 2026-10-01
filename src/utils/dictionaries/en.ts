@@ -1680,6 +1680,7 @@ const en = {
   link_not_web: "A link opens on the web: it begins with http:// or https://.",
   link_not_valid: "That is not an address. Try something like example.org.",
   links_too_many: "At most twelve links.",
+  tree_no_anchor: "This tree carries no keeper seat; its keeper must mend it before a circle can form.",
   appreciate_offering_gone: "That offering is no longer here.",
   appreciate_not_received: "Only the hand that received this offering may appreciate it.",
   appreciate_already: "You have already appreciated this offering.",

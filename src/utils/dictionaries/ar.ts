@@ -1652,6 +1652,7 @@ const ar = {
   link_not_web: "الرابط يفتح على الويب: يبدأ بـ http:// أو https://.",
   link_not_valid: "هذا ليس عنوانًا. جرّب شيئًا مثل example.org.",
   links_too_many: "اثنا عشر رابطًا على الأكثر.",
+  tree_no_anchor: "هذه الشجرة لا تحمل مقعد حارس؛ على حارسها إصلاحها قبل أن تتشكّل دائرة.",
   appreciate_offering_gone: "هذا العطاء لم يعد هنا.",
   appreciate_not_received: "وحدها اليد التي تلقّت هذا العطاء يمكنها تقديره.",
   appreciate_already: "لقد قدّرت هذا العطاء من قبل.",

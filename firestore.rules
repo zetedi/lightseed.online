@@ -275,6 +275,17 @@ service cloud.firestore {
            )));
     }
 
+    // BORN WITH AN ANCHOR (ring 2026-10-01): every kept being — lifetree, community, Light House —
+    // is born carrying `anchorUid`, a non-empty string: the signing hand's own uid, or, for staff
+    // alone, another being's (the genesis ceremony, nature trees). The retired `ownerId` is refused
+    // at birth from EVERY hand, staff included — a stale bundle planted an anchorless tree today,
+    // and the staff escape let it through; nothing may be born without the seat that is never empty.
+    function bornWithAnchor() {
+      return request.resource.data.get('anchorUid', '') is string
+        && request.resource.data.get('anchorUid', '') != ''
+        && !('ownerId' in request.resource.data)
+        && (isStaff() || request.resource.data.anchorUid == request.auth.uid);
+    }
     // Love must never become an existence oracle. Reuse the exact parent visibility gates on
     // the love-update path so knowing a private document id grants no new way to touch it.
     // A PRIVATE tree is read by its CIRCLE (ring 2026-10-01): the anchor and every hand holding a
@@ -591,7 +602,7 @@ service cloud.firestore {
       // precedent — they plant the node's genesis and beings for others). Before this, any
       // signed-in client could plant a tree wearing any uid it liked.
       allow create: if isSignedIn()
-        && (isStaff() || request.resource.data.get('anchorUid', '') == request.auth.uid)
+        && bornWithAnchor()
         // BORN AT ITS ROOT (ring 2026-09-23): a tree's head at birth IS its genesis, height 0 —
         // from every hand, staff included (a data-validity invariant, like the bed's place).
         // After birth the head moves only under the server's hand (the update freeze below).
@@ -1504,7 +1515,7 @@ service cloud.firestore {
       allow read: if true;
       // THE BIRTH IS SIGNED: a community is founded in the founder's own name — the anchor
       // (anchorUid, ring 2026-09-30: the one seat that is never empty; who founded is the history).
-      allow create: if papersSound() && isSignedIn() && (isStaff() || (
+      allow create: if papersSound() && isSignedIn() && bornWithAnchor() && (isStaff() || (
         request.resource.data.get('anchorUid', '') == request.auth.uid
         // `keeperUids` is the server's mirror of the keeper links (storage.rules reads it) —
         // no client hand writes it, at birth or after (ring 2026-09-07).
@@ -1554,8 +1565,7 @@ service cloud.firestore {
       allow read: if canReadLightHouse();
       // THE BIRTH IS SIGNED: consecrated in the consecrator's own name (a keeper who
       // consecrates for their community still signs as themself).
-      allow create: if isSignedIn()
-        && (isStaff() || request.resource.data.get('anchorUid', '') == request.auth.uid);
+      allow create: if isSignedIn() && bornWithAnchor();
       // CARE TOUCH (ring 2026-08-24): the primary community's keeper may refresh
       // lastCaredAt alone — a step-in care warms a house its keeper does not own.
       allow update: if isSignedIn()

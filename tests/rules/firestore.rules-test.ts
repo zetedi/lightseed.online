@@ -758,6 +758,15 @@ describe("a tree is born unvalidated — validation is witnessed, never claimed 
   it('staff alone may plant a tree that stands validated (the genesis ceremony, nature trees)', async () => {
     await assertSucceeds(setDoc(doc(db(STAFF), 'lifetrees', 'natureTree'), { anchorUid: BOB, name: 'Old yew', validated: true, validatorId: 'SYSTEM', loveCount: 0 }));
   });
+  it('BORN WITH AN ANCHOR (ring 2026-10-01): no kept being is born anchorless or wearing the retired ownerId — not even by staff', async () => {
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'anchorless'), { ownerId: STAFF, name: 'Stale bundle', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(STAFF), 'lifetrees', 'noSeat'), { name: 'No seat', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'oldWord'), { anchorUid: MALLORY, ownerId: MALLORY, name: 'Both words', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(MALLORY), 'lifetrees', 'emptySeat'), { anchorUid: '', name: 'Empty', loveCount: 0 }));
+    await assertFails(setDoc(doc(db(STAFF), 'lightHouses', 'anchorlessHouse'), { ownerId: STAFF, name: 'Stale house' }));
+    await assertFails(setDoc(doc(db(STAFF), 'communities', 'anchorlessCom'), { ownerId: STAFF, name: 'Stale circle', domain: '', papers: [] }));
+    await assertSucceeds(setDoc(doc(db(STAFF), 'lightHouses', 'namedHouse'), { anchorUid: BOB, name: 'A house for Bob' }));
+  });
 });
 
 describe("an offering is made FROM a tree the offerer holds (Lumo's review, 2026-09-07)", () => {

@@ -1650,6 +1650,7 @@ const zh = {
   link_not_web: "链接通向网络：它以 http:// 或 https:// 开头。",
   link_not_valid: "这不是一个地址。可以试试 example.org 这样的写法。",
   links_too_many: "最多十二个链接。",
+  tree_no_anchor: "这棵树没有守护者之席；需由其守护者修复后才能形成圈子。",
   appreciate_offering_gone: "那份供养已不在这里。",
   appreciate_not_received: "只有接受了这份供养的人才能感谢它。",
   appreciate_already: "你已经感谢过这份供养。",

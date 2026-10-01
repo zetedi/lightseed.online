@@ -229,6 +229,11 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
         };
 
         const treeUpdate: any = { updatedAt: FieldValue.serverTimestamp() };
+        // An anchorless tree cannot form a circle (the seat that is never empty is missing — a stale
+        // bundle's birth, refused by the rules since 2026-10-01): say so, never crash on undefined.
+        if (invite.role !== "guardian" && (typeof tree.anchorUid !== "string" || !tree.anchorUid)) {
+            throw new HttpsError("failed-precondition", "tree_no_anchor");
+        }
         let communityId: string = tree.communityId;
         // A GUARDIAN is a lightweight, no-privilege FOLLOW (domain/policy, the rules) — accepting a
         // guardian invitation mints only the guardian link, never a circle community or membership.
