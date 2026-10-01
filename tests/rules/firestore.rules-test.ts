@@ -742,6 +742,11 @@ describe("the lifetree LIST leak — the pulse lesson, heard for trees (Lumo's r
       await assertSucceeds(getDoc(doc(db(MALLORY), 'lifetrees', 'treePrivate')));
       await drop(MALLORY, rel);
     }
+    // NO KEY CUT BY THE BURGLAR (ring 2026-10-02): guarding is a self-serve door only on a tree the
+    // world may see. On a private tree the guardian seat comes only through an invitation.
+    await assertFails(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__guardian__treePrivate`), { lid: 'g', type: 'link', rel: 'guardian', from: MALLORY, to: 'treePrivate', createdAt: serverTimestamp() }));
+    await assertFails(getDoc(doc(db(MALLORY), 'lifetrees', 'treePrivate')));
+    await assertSucceeds(setDoc(doc(db(MALLORY), 'links', `${MALLORY}__guardian__treePublic`), { lid: 'g', type: 'link', rel: 'guardian', from: MALLORY, to: 'treePublic', createdAt: serverTimestamp() }));
     // Stepping down closes the door again: the link gone, the tree is hidden once more.
     await drop(BOB, 'keeper');
     await assertFails(getDoc(doc(db(BOB), 'lifetrees', 'treePrivate')));

@@ -286,6 +286,15 @@ service cloud.firestore {
         && !('ownerId' in request.resource.data)
         && (isStaff() || request.resource.data.anchorUid == request.auth.uid);
     }
+    // GUARDING IS AN OPEN DOOR — but only on a tree the world may see (ring 2026-10-02). A PRIVATE
+    // tree is read by its circle (canReadLifetree), so a self-minted guardian link on one would be a
+    // key cut by the burglar: there the guardian seat comes only through an invitation, minted by
+    // the server (acceptTreeInvite). A SECRET tree is private by nature and takes no open guard.
+    function openToGuarding(treeId) {
+      return exists(/databases/$(database)/documents/lifetrees/$(treeId))
+        && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('visibility', 'public') != 'private'
+        && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('treeType', '') != 'SECRET';
+    }
     // Love must never become an existence oracle. Reuse the exact parent visibility gates on
     // the love-update path so knowing a private document id grants no new way to touch it.
     // A PRIVATE tree is read by its CIRCLE (ring 2026-10-01): the anchor and every hand holding a
@@ -1781,7 +1790,10 @@ service cloud.firestore {
         // the server's duplicate hand, so a lineage can never be claimed, only made.
         && ((staffHand('link_mint') && request.resource.data.rel != 'grows_in' && request.resource.data.rel != 'descends_from')
         || (isSignedIn() && request.resource.data.from == request.auth.uid
-            && request.resource.data.rel in ['guardian', 'joined'])
+            && request.resource.data.rel == 'joined')
+        || (isSignedIn() && request.resource.data.from == request.auth.uid
+            && request.resource.data.rel == 'guardian'
+            && openToGuarding(request.resource.data.to))
         // A knock at the door — possible unless the community's door is closed.
         || (isSignedIn() && request.resource.data.from == request.auth.uid
             && request.resource.data.rel == 'join_request'
