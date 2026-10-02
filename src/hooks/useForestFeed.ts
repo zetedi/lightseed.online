@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { getMyPrivateTreesAt } from '../services/firebase/trees';
 import type { Alignment, Lightseed, Pulse } from '../types';
 import {
   fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchOfferingPulses, fetchReachPulses, fetchVisions,
@@ -95,10 +96,17 @@ export function useForestFeed(params: {
         const standing = (currentDomain && hostCommunityId)
           ? await treesStandingIn(hostCommunityId).catch(() => [])
           : [];
+        // The viewer's own PRIVATE trees of this place — anchored, or held by a circle seat, secret
+        // ones included (ring 2026-10-02): a strict face keeps out other places' trees, never this
+        // place's own from its circle. Scoped feeds only; nothing private ever reflects.
+        const minePrivate = (currentDomain && lightseed?.uid)
+          ? await getMyPrivateTreesAt(lightseed.uid, currentDomain).catch(() => [])
+          : [];
         if (stale()) return;
         const unionStanding = (items: any[]) => {
           const seen = new Set(items.map((t: any) => t.id));
-          return [...items, ...standing.filter(t => !seen.has(t.id))];
+          const extra = [...standing, ...minePrivate].filter(t => !seen.has(t.id) && (seen.add(t.id), true));
+          return [...items, ...extra];
         };
         if (viewMode === 'map') {
           // The map shows the whole forest at once (no pagination) so every tree appears.

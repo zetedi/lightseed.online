@@ -794,6 +794,17 @@ describe('THE SECRET TREE (ring 2026-10-02): private for its whole life, never a
     await assertSucceeds(getDocs(query(collection(db(ALICE), 'pulses'), where('lifetreeId', '==', 'secret1'), where('visibility', '==', 'private'), where('authorId', '==', ALICE))));
     await assertFails(getDocs(query(collection(db(BOB), 'pulses'), where('lifetreeId', '==', 'secret1'), where('visibility', '==', 'private'), where('authorId', '==', ALICE))));
   });
+  it('the forest and garden loader (getMyPrivateTreesAt) runs for anchor and keeper alike, and finds nothing for a stranger', async () => {
+    await seed();
+    // The anchor's ask: their own private trees.
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'lifetrees'), where('anchorUid', '==', ALICE), where('visibility', '==', 'private'))));
+    // Nobody may ask for another's private trees.
+    await assertFails(getDocs(query(collection(db(MALLORY), 'lifetrees'), where('anchorUid', '==', ALICE), where('visibility', '==', 'private'))));
+    // The keeper's ask: their circle seats, then the tree by get.
+    await assertSucceeds(getDocs(query(collection(db(BOB), 'links'), where('from', '==', BOB), where('rel', 'in', ['keeper', 'steward', 'guardian', 'observer']))));
+    await assertSucceeds(getDoc(doc(db(BOB), 'lifetrees', 'secret1')));
+    await assertFails(getDoc(doc(db(MALLORY), 'lifetrees', 'secret1')));
+  });
   it('its only seat is keeping: a keeper invites keepers, addressed or by open link — never a guardian, steward or observer', async () => {
     await seed();
     const inv = (id: string, extra: object) => setDoc(doc(db(ALICE), 'treeKeepingInvites', id), { lifetreeId: 'secret1', lifetreeName: 'Mycelium', invitedByUserId: ALICE, invitedUserId: CAROL_UID, role: 'keeper', status: 'pending', createdAt: 1, updatedAt: 1, ...extra });

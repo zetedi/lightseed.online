@@ -6,6 +6,21 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · A strict face keeps out other places, not its own circle** — Zoltán, as a keeper:
+"I accepted, I see myself as a keeper and don't see Wachumito. The list view is also empty… secret
+trees should appear on the strict faced hosts also if the domain is right." The forest's list and
+map asked only for public and node trees, and a strict face switched off the own-tree merge whole —
+so no private tree ever reached them, its circle included. The earlier ring that put the secret
+tree "on its circle's map" removed a filter in the map while the forest never handed the map the
+tree: a claim made without walking it as a keeper who is not the anchor. THE MEND: the forest
+(list and map, scoped feeds only) also asks for the viewer's private trees of THIS place — anchored,
+or held by a keeper, steward, guardian or observer seat (`getMyPrivateTreesAt`) — secret trees
+included; the garden's tab asks the same and keeps the secret ones. Strictness keeps out other
+places' trees and nothing more. The rules still decide every read; the emulator walks the loader's
+exact queries as anchor, keeper and stranger.
+
+---
+
 **2026-10-02 · The envelope opens what it counts** — Zoltán, as his test account: "There is an
 alert on the messaging icon but no messages." The amber badge on the envelope counts tree-circle
 invitations, but the envelope always opened the messages, where invitations do not live — a badge
