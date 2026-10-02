@@ -100,10 +100,16 @@ export function judgeBlockBirth(f: BlockBirthFacts): BlockBirthJudgment {
     if (b.wateringConfirmation !== undefined && !isPlainObject(b.wateringConfirmation)) return reject('block_field_bad');
     if (b.webLinks !== undefined && !isWebLinkList(b.webLinks)) return reject('block_field_bad');
 
+    // A PRIVATE TREE's growth belongs to its CIRCLE (ring 2026-10-02): the block defaults to 'circle'
+    // — read by every keeper, steward, guardian and observer — never to 'private', which only its
+    // author reads (a secret tree's first care vanished that way). And it is never louder than the
+    // tree: a public, node or community block on a private tree would betray it on a list.
+    const privateTree = f.on === 'tree' && f.bearer.visibility === 'private';
     const visibility = b.visibility === undefined
-        ? (isStr(f.bearer.visibility) && (BLOCK_VISIBILITIES as readonly string[]).includes(f.bearer.visibility) ? f.bearer.visibility : 'public')
+        ? (privateTree ? 'circle' : isStr(f.bearer.visibility) && (BLOCK_VISIBILITIES as readonly string[]).includes(f.bearer.visibility) ? f.bearer.visibility : 'public')
         : b.visibility;
     if (!isStr(visibility) || !(BLOCK_VISIBILITIES as readonly string[]).includes(visibility)) return reject('block_visibility_bad');
+    if (privateTree && visibility !== 'circle' && visibility !== 'private') return reject('block_visibility_bad');
 
     if (b.care !== undefined) {
         if (b.care !== true && b.care !== 'watering') return reject('block_field_bad');

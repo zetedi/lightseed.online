@@ -780,6 +780,20 @@ describe('THE SECRET TREE (ring 2026-10-02): private for its whole life, never a
     // …and no other tree becomes a secret one by edit.
     await assertFails(updateDoc(doc(db(STAFF), 'lifetrees', 'treeA'), { treeType: 'SECRET', visibility: 'private' }));
   });
+  it('its growth is listed to its circle: the keeper lists circle blocks; a stranger is refused; the author lists their own private ones', async () => {
+    await seed();
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'pulses', 'sg-circle'), { authorId: ALICE, lifetreeId: 'secret1', type: 'tree_growth', visibility: 'circle', hash: 'c1', previousHash: 'g' });
+      await setDoc(doc(d, 'pulses', 'sg-private'), { authorId: ALICE, lifetreeId: 'secret1', type: 'tree_growth', visibility: 'private', hash: 'p1', previousHash: 'g' });
+    });
+    const circleQ = (uid: string) => getDocs(query(collection(db(uid), 'pulses'), where('lifetreeId', '==', 'secret1'), where('visibility', '==', 'circle')));
+    await assertSucceeds(circleQ(BOB));       // a keeper
+    await assertSucceeds(circleQ(ALICE));     // the anchor
+    await assertFails(circleQ(MALLORY));      // a stranger
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'pulses'), where('lifetreeId', '==', 'secret1'), where('visibility', '==', 'private'), where('authorId', '==', ALICE))));
+    await assertFails(getDocs(query(collection(db(BOB), 'pulses'), where('lifetreeId', '==', 'secret1'), where('visibility', '==', 'private'), where('authorId', '==', ALICE))));
+  });
   it('its only seat is keeping: a keeper invites keepers, addressed or by open link — never a guardian, steward or observer', async () => {
     await seed();
     const inv = (id: string, extra: object) => setDoc(doc(db(ALICE), 'treeKeepingInvites', id), { lifetreeId: 'secret1', lifetreeName: 'Mycelium', invitedByUserId: ALICE, invitedUserId: CAROL_UID, role: 'keeper', status: 'pending', createdAt: 1, updatedAt: 1, ...extra });

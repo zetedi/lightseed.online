@@ -520,8 +520,19 @@ export const getPulsesByTreeId = async (treeId: string) => {
     // are filtered out CLIENT-side (Firestore forbids `type not-in` beside `visibility in`).
     // Needs the (lifetreeId, visibility) index.
     const q = query(pulsesCollection, where('lifetreeId', '==', treeId), where('visibility', 'in', listableLevels()));
-    const snap = await getDocs(q);
-    const pulses = snap.docs.map(mapPulse).filter(p => p.type !== 'reach' && (p as { type?: string }).type !== 'tree_chat');
+    // A PRIVATE tree's growth is the circle's (ring 2026-10-02; domain/chain/birth): a signed-in
+    // viewer also asks for the tree's 'circle' blocks (the rules admit the list only to its circle —
+    // anyone else is refused, and that ask quietly yields nothing) and their OWN 'private' blocks.
+    const uid = auth.currentUser?.uid;
+    const quiet = (p: Promise<{ docs: QueryDocumentSnapshot[] }>) => p.then(r => r.docs).catch(() => [] as QueryDocumentSnapshot[]);
+    const [open, circle, own] = await Promise.all([
+        getDocs(q).then(r => r.docs),
+        uid ? quiet(getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('visibility', '==', 'circle')))) : Promise.resolve([] as QueryDocumentSnapshot[]),
+        uid ? quiet(getDocs(query(pulsesCollection, where('lifetreeId', '==', treeId), where('visibility', '==', 'private'), where('authorId', '==', uid)))) : Promise.resolve([] as QueryDocumentSnapshot[]),
+    ]);
+    const seen = new Set<string>();
+    const docs = [...open, ...circle, ...own].filter(d => (seen.has(d.id) ? false : (seen.add(d.id), true)));
+    const pulses = docs.map(mapPulse).filter(p => p.type !== 'reach' && (p as { type?: string }).type !== 'tree_chat');
     // Sort Descending (Newest -> Oldest/Genesis) so the timeline can be rendered top-down
     return pulses.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
 }

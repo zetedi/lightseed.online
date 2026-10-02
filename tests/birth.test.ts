@@ -92,6 +92,16 @@ describe('the birth law — what the server refuses', () => {
     expect(refusalOf(facts({ type: 'vision_growth', webLinks: [door] }, { on: 'vision' }))).toBeNull();
     expect(refusalOf(facts({ type: 'vision_growth', webLinks: [{ url: 'vision.example.org' }] }, { on: 'vision' }))).toBe('block_field_bad');
   });
+  it('a PRIVATE tree\'s growth belongs to its circle, and is never louder than the tree (both laws)', () => {
+    const onPrivate = (block: Record<string, unknown>) => facts(block, { bearer: bearer({ visibility: 'private' }) });
+    const j = judge(onPrivate({ type: 'tree_growth', body: 'first care' }));
+    expect(j.outcome === 'mint' && j.content.visibility).toBe('circle');
+    expect(refusalOf(onPrivate({ type: 'tree_growth', visibility: 'private' }))).toBeNull();
+    for (const loud of ['public', 'node', 'community']) expect(refusalOf(onPrivate({ type: 'tree_growth', visibility: loud }))).toBe('block_visibility_bad');
+    // A public tree keeps its own default; a vision is untouched.
+    const pub = judge(facts({ type: 'tree_growth' }, { bearer: bearer({ visibility: 'public' }) }));
+    expect(pub.outcome === 'mint' && pub.content.visibility).toBe('public');
+  });
   it('a visibility that does not exist', () => {
     expect(refusalOf(facts({ type: 'tree_growth', visibility: 'secret' }))).toBe('block_visibility_bad');
   });

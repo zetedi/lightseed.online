@@ -6,6 +6,20 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · A private tree's growth belongs to its circle** — Zoltán, after the first care of the
+secret Wachumito: "The care button didn't save the pulse… no leaf there." The leaf WAS born —
+block 1, sealed, the head moved — but the birth law copied the tree's own visibility onto the block,
+so a private tree's growth was sealed `private`, which only its author reads, and the chain view
+asked only for public and node blocks: nobody saw it, its author included. THE MEND: on a private
+tree a block defaults to `circle` (read and listed by every keeper, steward, guardian and observer —
+the rules' isTreeCircle) and may never be louder than the tree (`public`, `node`, `community`
+refused; domain/chain/birth and its server mirror, one law); the chain view also asks for the
+tree's circle blocks and the viewer's own private ones. NOT MENDED: the block already born stays
+`private` — visibility is sealed into its hash — so Wachumito's first care is seen by its author
+alone; every care after it is the circle's.
+
+---
+
 **2026-10-02 · A secret tree's only seat is keeping** — Zoltán: "I would like the invitation to a
 secret tree to be to be a keeper. Who gets to see it in person can be a keeper." A secret tree has
 no outer rings: no guardians watching from outside, no stewards, no observers. Whoever is let in to
