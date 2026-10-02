@@ -26,21 +26,23 @@ export function treeCoordinates(tree: Pick<Lifetree, 'latitude' | 'longitude'>):
 }
 
 // Can this viewer see a tree, given its visibility? Mirrors the read rule EXACTLY
-// (firestore.rules /lifetrees 'allow read'): 'public' = everyone; 'node' = any signed-in
-// member; 'private' = owner or staff ONLY. Guardianship is a no-privilege follow (the rule
-// grants a guardian nothing for a private tree), so it confers no read here either — the
-// client must not greenlight what the law denies. `guardedIds` is still accepted for call-site
-// symmetry with the pulse gates, but it never widens tree visibility.
+// (firestore.rules canReadLifetree): 'public' = everyone; 'node' = any signed-in member; 'private' =
+// its anchor, staff, or its CIRCLE — a hand holding a keeper, steward, guardian or observer seat on
+// it (ring 2026-10-01: "a secret tree is read by its circle"). `guardedIds` are the trees the viewer
+// guards, `circleIds` the trees they hold any other circle seat in; either opens a private tree.
+// (This gate kept the old "owner or staff only" law a day after the rule changed, and so hid a
+// kept secret tree from its own keeper — ring 2026-10-02.)
 export function canViewTree(
   tree: Pick<Lifetree, 'anchorUid' | 'visibility'> & { id?: string },
-  viewer: { uid?: string; isStaff?: boolean; guardedIds?: Set<string> },
+  viewer: { uid?: string; isStaff?: boolean; guardedIds?: Set<string>; circleIds?: Set<string> },
 ): boolean {
   const v = tree.visibility || 'public';
   if (v === 'public') return true;
   if (viewer.isStaff) return true;
   if (viewer.uid && tree.anchorUid === viewer.uid) return true;
   if (v === 'node') return !!viewer.uid;
-  return false; // private, and not owner / staff (a guardian gets nothing — matches the rule)
+  // private: the circle alone.
+  return !!viewer.uid && !!tree.id && (!!viewer.guardedIds?.has(tree.id) || !!viewer.circleIds?.has(tree.id));
 }
 
 // Can this viewer see a vision, given its visibility? Mirrors canViewTree, but the author is the

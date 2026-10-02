@@ -99,10 +99,12 @@ const messageOf = (e: unknown): string | undefined => (e instanceof Error && e.m
 
 const AppContent = () => {
     const { t, language, setLanguage } = useLanguage();
-    const { lightseed, myTrees, guardedTrees, activeTree, defaultVisionId, publicName, isAdmin, isSuperAdmin, loading: authLoading, refreshTrees } = useSession();
+    const { lightseed, myTrees, guardedTrees, tendedTrees, activeTree, defaultVisionId, publicName, isAdmin, isSuperAdmin, loading: authLoading, refreshTrees } = useSession();
     // The set of trees the signed-in user guards (the LIN, via guardian links) — passed to cards
     // so a card can show its guardian affordance without a per-card read.
     const guardedTreeIds = useMemo(() => new Set(guardedTrees.map(t => t.id)), [guardedTrees]);
+    // The trees this viewer holds a deeper circle seat in (keeper / steward) — a private tree opens to its circle.
+    const circleTreeIds = useMemo(() => new Set(tendedTrees.map(x => x.tree.id)), [tendedTrees]);
     // The open beings — declared before useAppRouting so its deep-link callback opens through them.
     const beings = useBeingOverlays();
     // Routing (tab + forest view mode + ?tree/?invite deep-links) lives in useAppRouting.
@@ -433,11 +435,11 @@ const AppContent = () => {
             if (!text.toLowerCase().includes(term)) return false;
         }
         if (tab === 'forest') {
-            if (!canViewTree(item, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin, guardedIds: guardedTreeIds })) return false;
+            if (!canViewTree(item, { uid: lightseed?.uid, isStaff: isSuperAdmin || isAdmin, guardedIds: guardedTreeIds, circleIds: circleTreeIds })) return false;
             if (!passesForestFilter(item, { showNature: filters.showNatureTrees, showUser: filters.showUserTrees, showValidated: filters.showValidatedTrees }, isExplicitlyValidatedTree)) return false;
         }
         return true;
-    }), [data, searchTerm, tab, filters.showNatureTrees, filters.showUserTrees, filters.showValidatedTrees, lightseed?.uid, isSuperAdmin, isAdmin, guardedTreeIds]);
+    }), [data, searchTerm, tab, filters.showNatureTrees, filters.showUserTrees, filters.showValidatedTrees, lightseed?.uid, isSuperAdmin, isAdmin, guardedTreeIds, circleTreeIds]);
 
     // --- The Pathway — the plain facts derivePathway reads (domain/pathway) ----------------
     const { wateringNeededCount, pathwayFacts, pathwayInput } = usePathwayInput({

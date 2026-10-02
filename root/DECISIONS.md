@@ -6,6 +6,19 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · The client's gate learns the circle** — Zoltán, after the forest fix: "I still can't
+see Wachumito after refresh, what is going on?" A second gate stood between the loader and the
+screen: the shell's forest filter (`canViewTree`, domain/views/forest) still carried the law of
+before 2026-10-01 — a private tree opens to its anchor and staff only, "a guardian gets nothing" —
+and its parity test held that old law in place. So the loader fetched the tree, the rules allowed
+it, and the client threw it away. Now the gate mirrors `canReadLifetree`: a private tree opens to its
+anchor, staff, and its circle (the trees the viewer guards, and those they keep or steward from the
+session); the parity table carries the circle rows. AND the forest's list shows a loader while its
+first page is on its way, never a blank page. THE LESSON, twice in one day: a rule changed on the
+server has client mirrors; find every one (grep the old sentence) before the change is called done.
+
+---
+
 **2026-10-02 · A strict face keeps out other places, not its own circle** — Zoltán, as a keeper:
 "I accepted, I see myself as a keeper and don't see Wachumito. The list view is also empty… secret
 trees should appear on the strict faced hosts also if the domain is right." The forest's list and

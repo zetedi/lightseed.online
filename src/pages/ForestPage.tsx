@@ -171,7 +171,10 @@ export const ForestPage = ({
                 </div>
               ));
             })}
-            {filteredData.length === 0 && !loadingMore && !(showLightHouses && lightHouses.length > 0) ? (
+            {/* The first page is still on its way: a loader, never a blank page (ring 2026-10-02). */}
+            {filteredData.length === 0 && loadingMore ? (
+              <div className="col-span-full flex justify-center py-16"><Loading /></div>
+            ) : filteredData.length === 0 && !loadingMore && !(showLightHouses && lightHouses.length > 0) ? (
               /* No trees yet: Mahameru remains — the sea of creation, Orion over still water. */
               <div className="col-span-full relative overflow-hidden rounded-3xl border border-slate-800/40 shadow-xl">
                 <img src="/mahameru.svg" alt={t('mahameru_alt')} className="h-80 w-full object-cover sm:h-96" />
