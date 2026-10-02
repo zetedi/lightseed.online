@@ -6,6 +6,19 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · A house is released by its own keeper** — found by the rules compiler while the
+secret circle was deployed ("Invalid variable name: treeId"): the keeper ring of 2026-09-29 pasted
+the TREE's delete clause into the Light House block, where `treeId` names nothing — so the clause
+errored and only staff could release a Light House; its own anchor was refused. A warning printed on
+every deploy since, and no test asked the question. THE MEND: a Light House is released by its
+anchor or staff, the same hand that edits it; an emulator test holds it (it fails against the old
+clause). ALSO RECORDED: the secret circle was deployed (rules → functions → hosting) and the move
+ran — Wachumito's two keeper seats now stand in `secretLinks`; asked from the street, the seat and
+the tree are refused and the old link is gone. THE LESSON: a compiler's warning is a finding; read
+the deploy's output, not only its last line.
+
+---
+
 **2026-10-02 · The secret circle** — Zoltán, on the review's fifth finding: "I don't fully understand
 why the circle is not secret and why not mended." Because it was not a slip but the shape of the
 LIN: every relation is a link, and `links` is world-readable (`allow read: if true`) — so a secret

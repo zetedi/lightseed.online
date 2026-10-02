@@ -702,6 +702,17 @@ describe('the lid is frozen — the true name is load-bearing (QR links stand on
     await assertSucceeds(updateDoc(doc(db(ALICE), 'communities', 'com1'), { name: 'Com2' }));
     await assertFails(updateDoc(doc(db(ALICE), 'communities', 'com1'), { lid: 'forged' }));
   });
+  it('a Light House is released by its anchor or staff — never by a stranger (the mend of 2026-10-02: the clause named a variable that did not exist)', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'lightHouses', 'relA'), { anchorUid: ALICE, name: 'A', lid: 'rel-a', visibility: 'public' });
+      await setDoc(doc(d, 'lightHouses', 'relB'), { anchorUid: ALICE, name: 'B', lid: 'rel-b', visibility: 'public' });
+    });
+    await assertFails(deleteDoc(doc(db(MALLORY), 'lightHouses', 'relA')));
+    await assertFails(deleteDoc(doc(db(), 'lightHouses', 'relA')));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'lightHouses', 'relA')));
+    await assertSucceeds(deleteDoc(doc(db(STAFF), 'lightHouses', 'relB')));
+  });
 });
 
 describe("the lifetree LIST leak — the pulse lesson, heard for trees (Lumo's review, 2026-09-07)", () => {

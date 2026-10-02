@@ -1622,8 +1622,10 @@ service cloud.firestore {
         // LOVE: exactly one own-slot transition and exactly +/- one, atomically proved.
         || (canReadLightHouse() && validLoveCountChange('lightHouses', lightHouseId))
       );
-      // Releasing a tree is every keeper's hand (equal keepers), or staff's.
-      allow delete: if isSignedIn() && (isTreeKeeper(treeId) || isStaff());
+      // Releasing a Light House is its anchor's hand, or staff's — the same hand that edits it.
+      // (The keeper ring of 2026-09-29 pasted the TREE's delete clause here: `treeId` is no
+      // variable in this block, so the clause errored and only staff could release a house.)
+      allow delete: if isSignedIn() && (resource.data.anchorUid == request.auth.uid || isStaff());
 
       // Loves: own-slot privacy plus atomic coupling to the public tally above.
       // Own-slot read is why a Light House CAN wear a heart even when its own read is member-gated:
