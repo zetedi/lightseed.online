@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · The door asks where it opens** — Zoltán: "I've created an invitation, pasted it in
+the browser, signed in and I don't see Wachumito." The link worked: the signed-in hand claimed it.
+But the claim only addressed the invitation; the yes still waited under the profile's Invitations,
+and a secret tree cannot be seen before that yes — two friends had claimed links and stood, unseen,
+outside. Now the arrival ASKS right there ("{who} invites you to become a keeper of {tree}. Will
+you?"): yes accepts on the server's hand (acceptTreeInvite, every law unchanged) and opens the tree;
+"not now" leaves it waiting under Invitations, as before; a seat that needs what the visitor lacks
+(a guardian's own living tree) says so and waits. Consent stays a conscious act — it is only asked
+at the door instead of down the hall.
+
+---
+
 **2026-10-02 · A secret tree stands on its circle's map** — Zoltán: "I don't see it yet on my map…
 I see it among the trees when on list mode." The secret-tree ring said "no map": that was the
 builder's caution, not the keeper's wish, and it hid the tree from the very circle it belongs to.

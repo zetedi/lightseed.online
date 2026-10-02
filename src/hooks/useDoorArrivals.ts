@@ -2,7 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import type { CommunityInvite, Lightseed } from '../types';
 import type { BeingOverlays } from './useBeingOverlays';
 import { getPendingTreeInvites, getCommunityInvite, getCommunityById, getPersonName } from '../services/firebase';
-import { getTreeInvite, claimTreeInvite } from '../services/firebase/trees';
+import { getTreeInvite, claimTreeInvite, acceptTreeInvite } from '../services/firebase/trees';
+import { getLifetreeById } from '../services/firebase/pulses';
+import { showConfirm } from '../components/ui/Dialog';
 import { treeInviteClaimRefusal } from '../domain/treeInvite';
 import { roleLabelKey } from '../domain/treeCircle';
 import type { TreeKeepingInvite } from '../domain/treeCircle';
@@ -77,11 +79,27 @@ export function useDoorArrivals(params: {
       claimantUid: lightseed.uid, nowMs: Date.now(),
     });
     if (refusal) { notify(speak(refusal), 'error'); return; }
-    claimTreeInvite(inv.id, lightseed.uid)
+    // Taken, then ASKED right where the visitor stands (Zoltán, 2026-10-02: two friends claimed a link and
+    // waited, unseen, under their profile). A yes accepts on the server's hand and opens the tree; a
+    // "not now" — or a seat that needs what they have not yet (a guardian's own living tree) — leaves
+    // the invitation waiting under Invitations, as before.
+    const uid = lightseed.uid;
+    claimTreeInvite(inv.id, uid)
       .then(async () => {
         const who = inv.invitedByName || (await getPersonName(inv.invitedByUserId).catch(() => '')) || speak('someone');
-        notify(speak(spokenLine('tree_invite_claimed', { who, role: speak(roleLabelKey(inv.role)).toLowerCase(), tree: inv.lifetreeName || speak('a_tree') })));
-        openProfile?.();
+        const words = { who, role: speak(roleLabelKey(inv.role)).toLowerCase(), tree: inv.lifetreeName || speak('a_tree') };
+        const yes = await showConfirm(spokenLine('tree_invite_accept_q', words), { title: 'tree_invite_accept_title', confirmText: 'accept', cancelText: 'not_now' });
+        if (!yes) { notify(speak(spokenLine('tree_invite_claimed', words))); openProfile?.(); return; }
+        try {
+          await acceptTreeInvite(inv.id);
+          const tree = await getLifetreeById(inv.lifetreeId).catch(() => null);
+          if (tree) beings.setSelectedTree(tree);
+          notify('🌱 ' + speak(spokenLine('tree_invite_welcome', words)));
+        } catch (e) {
+          const code = e instanceof Error ? (e.message.split(' ').pop() || '') : '';
+          notify(speak(code === 'guard_no_living_tree' ? 'tree_invite_plant_first' : spokenLine('tree_invite_claimed', words)), 'error');
+          openProfile?.();
+        }
       })
       .catch(() => notify(speak('tree_invite_taken'), 'error'));
   // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot claim once the hand is signed in
