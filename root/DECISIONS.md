@@ -6,6 +6,46 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · A secret tree is never worn; a key can be taken back** — Zoltán, looking back over
+two days of fast rings: "I'm afraid there are things messed up a little." A review of the fifteen
+commits of 2026-10-01/02, each finding proven against the emulator or the real code before it was
+believed. Both gates were green throughout — the tree was whole, and still five seams stood open:
+(1) THE SECRET TREE WAS WORN. The session split what a being anchors on `isNature` alone, so a
+secret tree sat in `myTrees` and could be the ACTIVE tree — signing reaches with its name and id,
+naming an anonymous being, stamping a stay; it also froze the profile's plant card (never validated,
+so "all validated" was never true) and read as a planted tree on the Light Path. `rootsABeing` was
+called everywhere on the server and nowhere in the shell. THE MEND: `anchoredTreeLists`
+(domain/secretTree) — personal / nature / secret — and the session keeps `secretTrees` apart, shown
+on the own profile in their own section (key, no star, no badge, no seven).
+(2) THE CLAIM STOOD OUTSIDE ITS GATES. In the invitation's update rule `&&` bound tighter than `||`,
+so the open-door claim was judged without "signed in, pending": a REVOKED open invitation could
+still be claimed (the server's acceptTreeInvite refused it after, so no seat was ever taken), and —
+`open` staying true on a revoked document — still be read from the street, the tree's name with it.
+THE MEND: both doors behind both gates; an open invitation is world-readable only while pending. A
+revoked link now answers a stranger "not found", not "withdrawn".
+(3) A KEY NO KEEPER COULD TAKE BACK. A guardian who stepped in while a tree was public kept reading
+it after it was drawn private, and only the guardian or staff could remove the link. THE MEND: any
+keeper of a tree may remove a guardian link on it (the circle's row carries Release); keeper links
+stay un-removable by peers. `scripts/audit-guardian-keys.mjs` (read-only) walked production: thirty
+guardian links, none on a private tree — the open window of 2026-10-01 left no key behind.
+(4) WORDS AHEAD OF THE LAW. The ring of "a private tree's growth belongs to its circle" and both
+birth laws said a guardian reads `circle` blocks; `isTreeCircle` is carers and observers. DECIDED:
+the law stands, the words are corrected — a guardian of a private tree reads the tree, not its
+growth (the lightweight guardian, kept); an emulator test now holds that line.
+(5) THE CIRCLE IS NOT SECRET. Links are world-readable, so who keeps a secret tree, and who
+welcomed whom into it, can be read by anyone who knows its id. Not mended — named: the plain
+contract in domain/secretTree now says it under NOT GUARANTEED.
+ALSO CORRECTED IN WORDS: a secret tree's keepers (not "guardians and keepers") need no living tree;
+"no map" was already unsaid by its own later ring. NAMED, NOT DONE: on a private or secret tree the
+"Guard this tree" pill vanishes without a word (a line saying guardians come by invitation would
+serve); the mobile envelope's invitations branch can never run (its button shows only with unread
+messages); the planting steps ask a secret tree for a "vision"; a vision may still be grounded on a
+secret tree by its own keeper's hand (the birth rule reads no tree). THE LESSON: green gates prove
+what the tests ask; a metaphor's contract ("grants nothing outside itself") must be walked through
+every consumer of the thing — the server was walked, the session was not.
+
+---
+
 **2026-10-02 · The client's gate learns the circle** — Zoltán, after the forest fix: "I still can't
 see Wachumito after refresh, what is going on?" A second gate stood between the loader and the
 screen: the shell's forest filter (`canViewTree`, domain/views/forest) still carried the law of

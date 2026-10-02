@@ -101,7 +101,8 @@ export function judgeBlockBirth(f: BlockBirthFacts): BlockBirthJudgment {
     if (b.webLinks !== undefined && !isWebLinkList(b.webLinks)) return reject('block_field_bad');
 
     // A PRIVATE TREE's growth belongs to its CIRCLE (ring 2026-10-02): the block defaults to 'circle'
-    // — read by every keeper, steward, guardian and observer — never to 'private', which only its
+    // — read by every keeper, steward and observer (the rules' isTreeCircle; a guardian reads the
+    // tree, not its growth — the mend of 2026-10-02) — never to 'private', which only its
     // author reads (a secret tree's first care vanished that way). And it is never louder than the
     // tree: a public, node or community block on a private tree would betray it on a list.
     const privateTree = f.on === 'tree' && f.bearer.visibility === 'private';

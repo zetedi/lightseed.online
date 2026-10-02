@@ -751,6 +751,37 @@ describe("the lifetree LIST leak — the pulse lesson, heard for trees (Lumo's r
     await drop(BOB, 'keeper');
     await assertFails(getDoc(doc(db(BOB), 'lifetrees', 'treePrivate')));
   });
+  it('A GUARDIAN IS A KEY ITS KEEPERS CAN TAKE BACK (the mend of 2026-10-02): one who stepped in while the tree was public reads it after it is drawn private — until a keeper releases them', async () => {
+    const guardLink = (uid: string) => doc(db(uid), 'links', `${MALLORY}__guardian__treePublic`);
+    await assertSucceeds(setDoc(guardLink(MALLORY), { lid: 'g', type: 'link', rel: 'guardian', from: MALLORY, to: 'treePublic', createdAt: serverTimestamp() }));
+    await env.withSecurityRulesDisabled(async (ctx) => updateDoc(doc(ctx.firestore(), 'lifetrees', 'treePublic'), { visibility: 'private' }));
+    await assertSucceeds(getDoc(doc(db(MALLORY), 'lifetrees', 'treePublic')));   // the old follow is now a key
+    await assertFails(deleteDoc(guardLink(ALICE)));                               // not this tree's keeper
+    await assertSucceeds(deleteDoc(guardLink(BOB)));                              // its anchor — a keeper — releases her
+    await assertFails(getDoc(doc(db(MALLORY), 'lifetrees', 'treePublic')));
+    // A keeper by LINK holds the same hand; a keeper's own seat is still no peer's to remove.
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'links', `${ALICE}__keeper__treePublic`), { lid: 'k', type: 'link', rel: 'keeper', from: ALICE, to: 'treePublic', createdAt: 1 });
+      await setDoc(doc(d, 'links', `${MALLORY}__guardian__treePublic`), { lid: 'g', type: 'link', rel: 'guardian', from: MALLORY, to: 'treePublic', createdAt: 1 });
+    });
+    await assertFails(deleteDoc(doc(db(BOB), 'links', `${ALICE}__keeper__treePublic`)));
+    await assertSucceeds(deleteDoc(guardLink(ALICE)));
+  });
+  it('a GUARDIAN reads a private tree, not its growth: `circle` blocks are the carers\' and the observers\' (isTreeCircle)', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'links', `${MALLORY}__guardian__treePrivate`), { lid: 'g', type: 'link', rel: 'guardian', from: MALLORY, to: 'treePrivate', createdAt: 1 });
+      await setDoc(doc(d, 'links', `${BOB}__observer__treePrivate`), { lid: 'o', type: 'link', rel: 'observer', from: BOB, to: 'treePrivate', createdAt: 1 });
+      await setDoc(doc(d, 'pulses', 'leafPrivate'), { authorId: ALICE, type: 'growth', title: 'Leaf', lifetreeId: 'treePrivate', visibility: 'circle', previousHash: 'abc', hash: 'def' });
+    });
+    const circleBlocks = (uid: string) => getDocs(query(collection(db(uid), 'pulses'), where('lifetreeId', '==', 'treePrivate'), where('visibility', '==', 'circle')));
+    await assertSucceeds(getDoc(doc(db(MALLORY), 'lifetrees', 'treePrivate')));   // the tree itself
+    await assertFails(getDoc(doc(db(MALLORY), 'pulses', 'leafPrivate')));         // …not its leaves
+    await assertFails(circleBlocks(MALLORY));
+    await assertSucceeds(getDoc(doc(db(BOB), 'pulses', 'leafPrivate')));          // an observer sits inside
+    await assertSucceeds(circleBlocks(BOB));
+  });
 });
 
 const CAROL_UID = 'carol-secret-uid';
@@ -2739,6 +2770,12 @@ describe('tree circle invitations — the circle reads its ledger, keepers open 
     // Claimed, it is an ordinary invitation: the claimant declines it, a keeper withdraws an open one.
     await assertSucceeds(updateDoc(doc(db(CAROL), 'treeKeepingInvites', 'open-guardian'), { status: 'declined', declinedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
     await assertSucceeds(updateDoc(doc(db(ALICE), 'treeKeepingInvites', 'open-keeper'), { status: 'revoked', revokedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+    // A REVOKED LINK OPENS NOTHING (the mend of 2026-10-02): `open` stays true on the document, so
+    // the door is judged by its status too — no read from the street, no claim; its circle still sees it.
+    await assertFails(getDoc(doc(db(), 'treeKeepingInvites', 'open-keeper')));
+    await assertFails(getDoc(doc(db(MALLORY), 'treeKeepingInvites', 'open-keeper')));
+    await assertFails(updateDoc(doc(db(MALLORY), 'treeKeepingInvites', 'open-keeper'), claim(MALLORY)));
+    await assertSucceeds(getDoc(doc(db(BOB), 'treeKeepingInvites', 'open-keeper')));
   });
 });
 

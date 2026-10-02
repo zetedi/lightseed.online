@@ -20,6 +20,9 @@ interface ProfileTreesProps {
   // Trees tended through the circle's caring layer (keeper/steward links) — not owned,
   // so they carry none of the owner's affordances (no delete, no default star, no seven).
   tendedTrees: TendedTree[];
+  // The SECRET trees this being anchors (domain/secretTree): kept apart from myTrees — never the
+  // default tree (no star), never validated (no badge), no part of the seven.
+  secretTrees?: Lifetree[];
   guardedOnly: Lifetree[];
   // Mahameru — shown to everyone, last: The Original Tree.
   originalTree?: Lifetree | null;
@@ -40,6 +43,7 @@ interface ProfileTreesProps {
 export const ProfileTrees: React.FC<ProfileTreesProps> = ({
   myTrees,
   tendedTrees,
+  secretTrees = [],
   guardedOnly,
   originalTree,
   defaultTreeId,
@@ -220,6 +224,38 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
           )}
         </div>
       </div>
+
+      {/* Secret — the trees this being anchors for a few (domain/secretTree). Seen only by their
+          circle; they root no one, so no star, no validation and no seven stand here. */}
+      {secretTrees.length > 0 && (
+        <div>
+          <SectionTitle title={t('secret_trees')} sub={t('secret_trees_sub')} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {secretTrees.map((tree: Lifetree) => (
+              <div key={tree.id} onClick={() => onViewTree(tree)} className="border border-violet-100 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all flex items-center justify-between group bg-violet-50/30 dark:border-violet-900 dark:bg-violet-950/30">
+                <div className="flex items-center space-x-4">
+                  <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/seed.webp'} className="w-16 h-16 rounded object-cover bg-slate-100 dark:bg-slate-800" />
+                  <div>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100">{tree.name}</h3>
+                    <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span title={t('secret_tree_visibility')} className="inline-flex items-center gap-1 text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5 dark:bg-violet-950/40 dark:text-violet-300"><Icons.Key /> {t('type_secret')}</span>
+                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDeleteTree(tree.id); }}
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                  title={t('delete_tree_title')}
+                >
+                  <Icons.Trash />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Tended — the circle's caring layer: trees you co-own or steward without owning.
           The tree stays its keeper's, so no delete, star, or seven stands here. */}

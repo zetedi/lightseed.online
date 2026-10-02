@@ -1684,8 +1684,10 @@ service cloud.firestore {
       // so the circle can see who was invited, as what, and withdraw; the invitee lists their own.
       // THE OPEN DOOR (ring 2026-10-01; domain/treeInvite): an invitation born with no invitee is a
       // link anyone may hold — readable by the holder, signed in or not, like a community
-      // invitation (its id is the key) — until the first signed-in hand claims it.
-      allow get: if resource.data.get('open', false) == true || (isSignedIn() && (
+      // invitation (its id is the key) — until the first signed-in hand claims it, and only WHILE IT
+      // WAITS: a revoked link opens nothing, not even its tree's name (the mend of 2026-10-02 — a
+      // revoke leaves `open` true on the document, so the door is judged by its status too).
+      allow get: if (resource.data.get('open', false) == true && resource.data.get('status', '') == 'pending') || (isSignedIn() && (
         resource.data.invitedUserId == request.auth.uid ||
         resource.data.invitedByUserId == request.auth.uid ||
         isStaff() ||
@@ -1715,26 +1717,31 @@ service cloud.firestore {
       // Decline (the invitee) / revoke (the inviter, or any keeper of the tree for any invitation
       // on it). One-way marks on a PENDING invitation, touching only the status and its
       // stamp. Acceptance is server-only (acceptTreeInvite, admin SDK).
+      // BOTH doors below stand behind the same two gates — a signed-in hand, a PENDING invitation
+      // (the mend of 2026-10-02: the claim once sat outside them, `&&` binding tighter than `||`,
+      // so a revoked open invitation could still be claimed).
       allow update: if isSignedIn() &&
         resource.data.get('status', '') == 'pending' &&
         (
           (
-            (resource.data.invitedUserId == request.auth.uid && request.resource.data.status == 'declined') ||
-            ((resource.data.invitedByUserId == request.auth.uid || isTreeKeeper(resource.data.lifetreeId) || isStaff())
-              && request.resource.data.status == 'revoked')
-          ) &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'declinedAt', 'revokedAt', 'updatedAt'])
-        )
-        // THE CLAIM: the first signed-in hand through the door takes the invitee seat, once — never
-        // the inviter, never a second hand, nothing else riding along.
-        || (
-          resource.data.get('open', false) == true &&
-          resource.data.get('invitedUserId', '') == '' &&
-          resource.data.invitedByUserId != request.auth.uid &&
-          request.resource.data.get('invitedUserId', '') == request.auth.uid &&
-          request.resource.data.get('open', true) == false &&
-          request.resource.data.get('claimedAt', null) == request.time &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['invitedUserId', 'open', 'claimedAt', 'updatedAt'])
+            (
+              (resource.data.invitedUserId == request.auth.uid && request.resource.data.status == 'declined') ||
+              ((resource.data.invitedByUserId == request.auth.uid || isTreeKeeper(resource.data.lifetreeId) || isStaff())
+                && request.resource.data.status == 'revoked')
+            ) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'declinedAt', 'revokedAt', 'updatedAt'])
+          )
+          // THE CLAIM: the first signed-in hand through the door takes the invitee seat, once — never
+          // the inviter, never a second hand, nothing else riding along.
+          || (
+            resource.data.get('open', false) == true &&
+            resource.data.get('invitedUserId', '') == '' &&
+            resource.data.invitedByUserId != request.auth.uid &&
+            request.resource.data.get('invitedUserId', '') == request.auth.uid &&
+            request.resource.data.get('open', true) == false &&
+            request.resource.data.get('claimedAt', null) == request.time &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['invitedUserId', 'open', 'claimedAt', 'updatedAt'])
+          )
         );
       allow delete: if isStaff();
     }
@@ -1932,6 +1939,13 @@ service cloud.firestore {
           && resource.data.get('rel', '') != 'descends_from')
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeKeeper(resource.data.from))
+        // A KEEPER RELEASES A GUARDIAN (the mend of 2026-10-02). Since 2026-10-01 a guardian link
+        // reads a private tree, so it is a key — and a key its tree's keepers could not take back
+        // (a guardian who stepped in while the tree was public kept reading it after it was drawn
+        // private). Any keeper of the tree may remove a guardian link on it; the guardian still
+        // lays it down themself (the from == uid clause above). Keeper links stay un-removable by
+        // peers, as before.
+        || (resource.data.get('rel', '') == 'guardian' && isTreeKeeper(resource.data.to))
         // grows_in: a tree carer withdraws their tree, or the keeper curates their garden.
         || (resource.data.get('rel', '') == 'grows_in'
             && (isTreeCarer(resource.data.from) || isCommunityKeeper(resource.data.to)))

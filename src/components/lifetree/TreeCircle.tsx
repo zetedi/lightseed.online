@@ -197,6 +197,19 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         setSteppingDown(false);
     };
 
+    // A KEEPER RELEASES A GUARDIAN (the mend of 2026-10-02; rules: the guardian-link delete clause).
+    // A guardian link reads a private tree, so the circle's keepers must be able to take it back.
+    const [releasing, setReleasing] = useState<string | null>(null);
+    const handleReleaseGuardian = async (uid: string, name: string) => {
+        if (!(await showConfirm(spokenLine('guardian_release_q', { name, tree: tree.name || '—' }), { title: 'release', confirmText: 'release', danger: true }))) return;
+        setReleasing(uid);
+        try {
+            await firestoreStore.unlink(uid, 'guardian', treeId);
+            onGuardianChange(); // the shell re-reads the circle
+        } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+        setReleasing(null);
+    };
+
     const handleToggleGuardian = async () => {
         if (!canCareForTree(currentUserId)) return;
         setToggleBusy(true);
@@ -427,16 +440,24 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                                                 <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{labelFor(uid, face)}</p>
                                                 <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{roleName(g.role)}</p>
                                             </div>
-                                            {/* A keeper offers a guardian the deeper seat — an invitation they confirm. */}
+                                            {/* A keeper offers a guardian the deeper seat — an invitation they confirm —
+                                                or releases them (a guardian link reads a private tree: a key the
+                                                keepers can take back). */}
                                             {canInviteRoles && g.role === 'guardian' && uid !== currentUserId && (
-                                                pendingFor(uid) ? (
-                                                    <span className="ml-auto shrink-0 rounded-lg border border-emerald-100 bg-emerald-50/50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-500 dark:border-emerald-900 dark:bg-emerald-950/30">{t('keeping_offered')}</span>
-                                                ) : (
-                                                    <button onClick={() => void handleOfferKeeping(uid)} disabled={offeringTo === uid}
-                                                        className="ml-auto shrink-0 rounded-lg border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">
-                                                        {offeringTo === uid ? '…' : t('offer_keeping')}
+                                                <div className="ml-auto flex shrink-0 items-center gap-1.5">
+                                                    {pendingFor(uid) ? (
+                                                        <span className="rounded-lg border border-emerald-100 bg-emerald-50/50 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-500 dark:border-emerald-900 dark:bg-emerald-950/30">{t('keeping_offered')}</span>
+                                                    ) : (
+                                                        <button onClick={() => void handleOfferKeeping(uid)} disabled={offeringTo === uid}
+                                                            className="rounded-lg border border-emerald-200 bg-white px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">
+                                                            {offeringTo === uid ? '…' : t('offer_keeping')}
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => void handleReleaseGuardian(uid, labelFor(uid, face))} disabled={releasing === uid}
+                                                        className="rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:bg-slate-900 dark:border-red-900">
+                                                        {releasing === uid ? '…' : t('release')}
                                                     </button>
-                                                )
+                                                </div>
                                             )}
                                             {uid === currentUserId && (
                                                 <button onClick={() => handleStepDown(g.role as InvitableRole)} disabled={steppingDown}

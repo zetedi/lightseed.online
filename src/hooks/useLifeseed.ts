@@ -8,25 +8,27 @@ import { onAuthChange, getMyLifetrees, getGuardedTrees, getTendedTrees, checkIsA
 import { getInitiateByUid, type Initiate } from '../domain/initiation';
 import { charter } from '../config/charter';
 import { publicNameOf } from '../domain/publicName';
+import { anchoredTreeLists } from '../domain/secretTree';
 import { type Lightseed, type Lifetree } from '../types';
 
 // The keeper's seat is the charter's (node.json), never a name by heart.
 const SUPERADMIN_EMAIL = charter.keeper.email;
 
 
-// Owned trees split into what a being WEARS (personal lifetrees) and what it GUARDS
-// (nature trees). Legacy nature trees planted before the guardian edge existed are merged
-// into the guarded list and their missing 'guardian' link is self-healed, best-effort.
-const splitTreeLists = (uid: string, owned: Lifetree[], guarded: Lifetree[]): { personal: Lifetree[]; guardedAll: Lifetree[] } => {
-    const personal = owned.filter(t => !t.isNature);
-    const ownedNature = owned.filter(t => t.isNature);
+// Owned trees split into what a being WEARS (personal lifetrees), what it GUARDS (nature
+// trees) and what it keeps in SECRET (domain/secretTree anchoredTreeLists: a secret tree is never
+// worn, so it is never the active tree). Legacy nature trees planted before the guardian edge
+// existed are merged into the guarded list and their missing 'guardian' link is self-healed,
+// best-effort.
+const splitTreeLists = (uid: string, owned: Lifetree[], guarded: Lifetree[]): { personal: Lifetree[]; guardedAll: Lifetree[]; secret: Lifetree[] } => {
+    const { personal, nature: ownedNature, secret } = anchoredTreeLists(owned);
     const guardedIds = new Set(guarded.map(t => t.id));
     for (const t of ownedNature.filter(x => !guardedIds.has(x.id))) {
         setDoc(doc(db, 'links', `${uid}__guardian__${t.id}`),
             { lid: uuidv7(), type: 'link', rel: 'guardian', from: uid, to: t.id, createdAt: serverTimestamp() }).catch(() => {});
     }
     const guardedAll = [...guarded, ...ownedNature.filter(x => !guardedIds.has(x.id))];
-    return { personal, guardedAll };
+    return { personal, guardedAll, secret };
 };
 
 export const useLifeseed = () => {
@@ -36,6 +38,10 @@ export const useLifeseed = () => {
     // Trees tended through the circle's caring layer (keeper/steward links) — not owned,
     // not guarded: the third prism, so an accepted invitation shows on the profile.
     const [tendedTrees, setTendedTrees] = useState<TendedTree[]>([]);
+    // The SECRET trees this being anchors (domain/secretTree) — kept apart from myTrees so none is
+    // ever the active tree; shown on the own profile alone. (Secret trees KEPT beside another
+    // anchor arrive through tendedTrees, as every kept tree does.)
+    const [secretTrees, setSecretTrees] = useState<Lifetree[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [superAdminExists, setSuperAdminExists] = useState(true);
@@ -82,10 +88,11 @@ export const useLifeseed = () => {
                         getGuardedTrees(user.uid),
                         getTendedTrees(user.uid),
                     ]);
-                    const { personal, guardedAll } = splitTreeLists(user.uid, owned, guarded);
+                    const { personal, guardedAll, secret } = splitTreeLists(user.uid, owned, guarded);
                     setMyTrees(personal);
                     setGuardedTrees(guardedAll);
                     setTendedTrees(tended);
+                    setSecretTrees(secret);
                 } catch (e) {
                     console.error("Failed to fetch user trees", e);
                 }
@@ -124,6 +131,7 @@ export const useLifeseed = () => {
                 setMyTrees([]);
                 setGuardedTrees([]);
                 setTendedTrees([]);
+                setSecretTrees([]);
                 setIsAdmin(false);
                 setIsSuperAdmin(false);
                 setInitiate(null);
@@ -156,15 +164,16 @@ export const useLifeseed = () => {
                 getGuardedTrees(lightseed.uid),
                 getTendedTrees(lightseed.uid),
             ]);
-            const { personal, guardedAll } = splitTreeLists(lightseed.uid, owned, guarded);
+            const { personal, guardedAll, secret } = splitTreeLists(lightseed.uid, owned, guarded);
             setMyTrees(personal);
             setGuardedTrees(guardedAll);
             setTendedTrees(tended);
+            setSecretTrees(secret);
         }
     };
 
     // THE SESSION'S TREES FOLLOW THE BUS (ring 2026-09-20): a tree announced with a patch is
-    // merged into every list that holds it (my trees, guarded, tended); announced bare, the
+    // merged into every list that holds it (my trees, guarded, tended, secret); announced bare, the
     // lists re-read. Before this a watering confirmed from a reach left the session's copy dry,
     // so the thread's care ping stayed until the next full load.
     const refreshRef = useRef(refreshTrees);
@@ -178,6 +187,7 @@ export const useLifeseed = () => {
             const mend = (t: Lifetree): Lifetree => (t.id === e.id ? { ...t, ...patch } as Lifetree : t);
             setMyTrees(prev => prev.map(mend));
             setGuardedTrees(prev => prev.map(mend));
+            setSecretTrees(prev => prev.map(mend));
             setTendedTrees(prev => prev.map(item => ('tree' in item && item.tree?.id === e.id ? { ...item, tree: mend(item.tree) } : item)));
         });
     }, [lightseed?.uid]);
@@ -209,5 +219,5 @@ export const useLifeseed = () => {
     // A rename lands in the session at once (onAuthStateChanged does not fire for a profile edit).
     const setDisplayName = (displayName: string) => setLightseed(prev => prev ? { ...prev, displayName } : prev);
 
-    return { lightseed, personLid, myTrees, guardedTrees, tendedTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, anonymous, publicName, nameAs, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees, setDisplayName };
+    return { lightseed, personLid, myTrees, guardedTrees, tendedTrees, secretTrees, activeTree, defaultTreeId, setDefaultTree, defaultVisionId, setDefaultVision, anonymous, publicName, nameAs, isAdmin, isSuperAdmin, superAdminExists, initiate, isInitiate: !!initiate, loading, refreshTrees, setDisplayName };
 };

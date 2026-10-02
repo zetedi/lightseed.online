@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSecretTree, rootsABeing, MAX_SECRET_TREES, SECRET_TREE_TYPE, invitableRolesFor } from '../src/domain/secretTree';
+import { isSecretTree, rootsABeing, MAX_SECRET_TREES, SECRET_TREE_TYPE, invitableRolesFor, anchoredTreeLists } from '../src/domain/secretTree';
 import { isSecretTree as serverIsSecret, rootsABeing as serverRoots, MAX_SECRET_TREES as SERVER_MAX, SECRET_TREE_TYPE as SERVER_TYPE, secretRoleAllowed } from '../functions/src/treeKind';
 import { treePlantingGate } from '../src/domain/limits';
 import { sustainingSeven } from '../src/domain/sustainingSeven';
@@ -78,5 +78,27 @@ describe('witnessed, but no light', () => {
   it('every gate before the light still stands for a secret tree (self-witness, no standing)', () => {
     expect(judgeWitness({ ...facts('SECRET'), witnessUid: 'ana' }).outcome).toBe('reject');
     expect(judgeWitness({ ...facts('SECRET'), witnessSinceMs: null }).outcome).toBe('reject');
+  });
+});
+
+describe('never worn: the session keeps a secret tree apart (the mend of 2026-10-02)', () => {
+  const owned = [
+    { id: 's', treeType: 'SECRET', isNature: false },
+    { id: 'a', treeType: 'LIFETREE', isNature: false },
+    { id: 'n', treeType: 'GUARDED', isNature: true },
+    { id: 'legacy' }, // no kind, no nature flag: a lifetree
+  ];
+  it('a secret tree is neither personal nor nature — so it can never be the active tree', () => {
+    const { personal, nature, secret } = anchoredTreeLists(owned);
+    expect(personal.map(t => t.id)).toEqual(['a', 'legacy']);
+    expect(nature.map(t => t.id)).toEqual(['n']);
+    expect(secret.map(t => t.id)).toEqual(['s']);
+  });
+  it('every anchored tree lands in exactly one list, and what is worn roots a being', () => {
+    const { personal, nature, secret } = anchoredTreeLists(owned);
+    expect(personal.length + nature.length + secret.length).toBe(owned.length);
+    expect(personal.every(t => rootsABeing(t))).toBe(true);
+    // A being who anchors ONLY a secret tree wears nothing: no active tree, no rooted standing.
+    expect(anchoredTreeLists([{ treeType: 'SECRET' }]).personal).toEqual([]);
   });
 });

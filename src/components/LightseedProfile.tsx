@@ -67,7 +67,7 @@ interface LightseedProfileProps {
 export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSetDefaultTree, onViewVision, onViewPulse, onViewAlignment, onPlant, onCreateVision, onEmitPulse, onClaimSuperAdmin, onGrantAdmin, onRevokeAdmin, onOpenNewsletterAdmin, reachPartner, reachAudience, reachOpenSignal, onConsumeReach, onReachTree, onOpenTreeById, onOpenCareById, nodeTheme, placeDomain, placeName }: LightseedProfileProps) => {
     const { t } = useLanguage();
     // Session state comes from context now (was prop-drilled from App).
-    const { lightseed, myTrees, guardedTrees, tendedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
+    const { lightseed, myTrees, guardedTrees, tendedTrees, secretTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
     const [activeTab, setActiveTab] = useState<'trees' | 'light' | 'pulses' | 'events' | 'visions' | 'stays' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
     // A door elsewhere may ask the profile to open on a tab (hooks/useProfileTab) — taken once.
     const requestedTab = useRequestedProfileTab();
@@ -187,6 +187,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
                 <ProfileTrees
                     myTrees={myTrees}
                     tendedTrees={tendedTrees}
+                    secretTrees={secretTrees}
                     guardedOnly={guardedOnly}
                     originalTree={originalTree}
                     defaultTreeId={defaultTreeId}
