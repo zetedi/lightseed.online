@@ -43,6 +43,8 @@ interface NavigationProps {
   isNightMode?: boolean;
   onToggleNightMode?: () => void;
   onOpenReachInbox?: () => void;
+  // When an invitation is the only thing waiting, the envelope opens it (ring 2026-10-02).
+  onOpenInvitations?: () => void;
 }
 
 const languages = [
@@ -206,9 +208,12 @@ export const Navigation = ({
     theme,
     isNightMode = false,
     onToggleNightMode,
-    onOpenReachInbox
+    onOpenReachInbox,
+    onOpenInvitations,
 }: NavigationProps) => {
     const { t, language, setLanguage } = useLanguage();
+    // The envelope's amber badge counts tree-circle invitations; when nothing else waits, it opens them.
+    const onlyInvitations = treeInviteCount > 0 && reachNotificationsCount === 0 && careAlertCount === 0 && !!onOpenInvitations;
     // Session-derived values come straight from context now (no longer prop-drilled from App).
     const { lightseed, guardedTrees, activeTree } = useSession();
     // Choosing a tongue while signed in writes it on the person as a DESIRE (domain/desires),
@@ -431,8 +436,8 @@ export const Navigation = ({
                             <>
                                 {/* Direct messages — letter icon that glows green when there are unread messages */}
                                 <button
-                                    onClick={() => onOpenReachInbox?.()}
-                                    title={t('messages')}
+                                    onClick={() => (onlyInvitations ? onOpenInvitations!() : onOpenReachInbox?.())}
+                                    title={onlyInvitations ? t('tree_circle_invitations') : t('messages')}
                                     aria-label={t('messages')}
                                     className={`relative inline-flex rounded-full border p-2 transition-all ${
                                         careAlertCount > 0
@@ -541,7 +546,7 @@ export const Navigation = ({
                     >
                         {lightseed && reachNotificationsCount > 0 && (
                             <button
-                                onClick={() => { onOpenReachInbox?.(); setIsMenuOpen(false); }}
+                                onClick={() => { if (onlyInvitations) onOpenInvitations!(); else onOpenReachInbox?.(); setIsMenuOpen(false); }}
                                 className="mb-1.5 flex w-full items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 py-2 text-xs font-bold text-red-600 dark:bg-red-950/40 dark:text-red-300"
                             >
                                 <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Mail /></span>

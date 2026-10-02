@@ -6,6 +6,16 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · The envelope opens what it counts** — Zoltán, as his test account: "There is an
+alert on the messaging icon but no messages." The amber badge on the envelope counts tree-circle
+invitations, but the envelope always opened the messages, where invitations do not live — a badge
+pointing into a room that does not hold what it counts. Now, when invitations are the only thing
+waiting, the envelope opens the profile on its Invitations tab (a one-shot request,
+hooks/useProfileTab); with messages or care alerts it opens the messages as before. The arrival
+through a tree invitation lands on the same tab.
+
+---
+
 **2026-10-02 · The door asks where it opens** — Zoltán: "I've created an invitation, pasted it in
 the browser, signed in and I don't see Wachumito." The link worked: the signed-in hand claimed it.
 But the claim only addressed the invitation; the yes still waited under the profile's Invitations,

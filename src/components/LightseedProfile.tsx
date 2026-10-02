@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRequestedProfileTab, clearProfileTab } from '../hooks/useProfileTab';
 import { showAlert } from "./ui/Dialog";
 import { type Lifetree, type Alignment, type Vision, type Pulse, type ReachAudience } from '../types';
 import { getLifetreeById, listenToUserProfile, updateUserProfile, careForTree, auth } from '../services/firebase';
@@ -68,6 +69,14 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     // Session state comes from context now (was prop-drilled from App).
     const { lightseed, myTrees, guardedTrees, tendedTrees, isAdmin, isSuperAdmin, superAdminExists } = useSession();
     const [activeTab, setActiveTab] = useState<'trees' | 'light' | 'pulses' | 'events' | 'visions' | 'stays' | 'history' | 'reaches' | 'invites' | 'appearance' | 'intelligence' | 'settings' | 'admin'>('trees');
+    // A door elsewhere may ask the profile to open on a tab (hooks/useProfileTab) — taken once.
+    const requestedTab = useRequestedProfileTab();
+    useEffect(() => {
+        if (!requestedTab) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- an external one-shot request (the envelope, an arrival) selects the tab, then is cleared
+        setActiveTab(requestedTab.tab as typeof activeTab);
+        clearProfileTab();
+    }, [requestedTab]);
 
     // Live profile state — written by the listenToUserProfile listener below, read across
     // tabs (invites allotment, settings toggles, the appearance draft, intelligence choice).

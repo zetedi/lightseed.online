@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import { requestProfileTab } from './hooks/useProfileTab';
 import {
   logout,
   mintPulse,
@@ -190,7 +191,7 @@ const AppContent = () => {
     const { arrivedInvite, setArrivedInvite, arrivedTreeInvite, pendingTreeInvites, doorPending } = useDoorArrivals({
         authLoading, lightseed, isStaff: isSuperAdmin || isAdmin, tab, inviteParam, beings,
         openAuth: () => doors.setShowAuthModal(true),
-        openProfile: () => setTab('profile'),
+        openProfile: () => { requestProfileTab('invites'); setTab('profile'); },
     });
 
     // Seed the Intelligence Commons (default personas + Gemini Oracle) once a super-admin
@@ -656,6 +657,7 @@ const AppContent = () => {
                     treeInviteCount={pendingTreeInvites}
                     careAlertCount={wateringNeededCount}
                     onOpenReachInbox={openDirectMessages}
+                    onOpenInvitations={() => { beings.closeAll(); requestProfileTab('invites'); setTab('profile'); }}
                     logoUrl={configuredLogoUrl}
                     // The header's name follows the community being viewed AS, like its logo does:
                     // in community view the community's name; else .seed on the node's own hosts,
