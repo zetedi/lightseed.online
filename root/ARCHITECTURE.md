@@ -74,6 +74,10 @@ attestations (`collaborates_with`, `recognises`, `shares_resources_with`; commun
 one truth, `domain/eventLineage`).
 Doc id MUST equal `from__rel__to`
 (rules bind it: authority is resolved by path, so an unbound id would be forgeable).
+`secretLinks`: the SECRET CIRCLE (ring 2026-10-02, `domain/secretTree`): a secret tree's keeper
+seats — the same link, the same id — in a ledger read only by that tree's circle and written only
+by the server (`acceptTreeInvite` mints, `resignTreeKeeper` lays down). Every "does this hand keep
+this tree?" reads both ledgers (rules `isTreeKeeper`, server `secretKeeperRef`, shell `linksToTree`).
 `visions` `communities` (bearing the **door**: open/invite/closed) `lightHouses`
 `stays` `alignments` `supports` (server-only)
 `intelligences` `personas` `memories` `providerCredentials`: the intelligence commons (`authorId`

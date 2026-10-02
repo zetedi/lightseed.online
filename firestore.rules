@@ -161,11 +161,21 @@ service cloud.firestore {
     // hand that planted it, the field the "never keeperless" invariant lives in) and every keeper
     // link holder hold the same powers. Nothing below reads the anchor alone; only resignTreeKeeper
     // (server) moves it, by succession.
+    // THE SECRET CIRCLE (ring 2026-10-02; domain/secretTree): a secret tree's keeper seats live in
+    // `secretLinks` — the same link under the same id, in a ledger only its circle reads — so a seat
+    // there is a keeper seat ON A SECRET TREE, with every power one carries. Only the server's hand
+    // writes it. The ledger is asked ONLY for a secret tree (its document is already read for the
+    // anchor): every other tree spends no lookup on it, so no rule's ten-document budget moves.
+    function hasSecretSeat(treeId) {
+      return exists(/databases/$(database)/documents/secretLinks/$(request.auth.uid + '__keeper__' + treeId));
+    }
     function isTreeKeeper(treeId) {
       return treeId is string && treeId != '' && (
         hasLink('keeper', treeId)
         || (exists(/databases/$(database)/documents/lifetrees/$(treeId))
-            && get(/databases/$(database)/documents/lifetrees/$(treeId)).data.anchorUid == request.auth.uid));
+            && (get(/databases/$(database)/documents/lifetrees/$(treeId)).data.anchorUid == request.auth.uid
+                || (get(/databases/$(database)/documents/lifetrees/$(treeId)).data.get('treeType', '') == 'SECRET'
+                    && hasSecretSeat(treeId)))));
     }
     // CARERS may edit a tree and confirm its watering: keepers and stewards.
     function isTreeCarer(treeId) {
@@ -325,6 +335,7 @@ service cloud.firestore {
         || resource.data.visibility == 'public'
         || (isSignedIn() && resource.data.visibility == 'node')
         || (isSignedIn() && resource.data.anchorUid == request.auth.uid)
+        || (isSignedIn() && resource.data.get('treeType', '') == 'SECRET' && hasSecretSeat(treeId))
         || (isSignedIn() && (hasLink('keeper', treeId) || hasLink('steward', treeId) || hasLink('guardian', treeId) || hasLink('observer', treeId)))
         || isStaff();
     }
@@ -1969,6 +1980,21 @@ service cloud.firestore {
         || (resource.data.get('rel', '') == 'steward'
             && keepsCommunity(resource.data.to)));
       allow update: if false;
+    }
+
+    // THE SECRET CIRCLE (ring 2026-10-02; domain/secretTree). The `links` ledger above is
+    // world-readable, so a secret tree's keeper seats written there told anyone who asked that the
+    // tree exists and who keeps it. They live here instead: read by the seat's own holder, by the
+    // tree's keepers (the circle — isTreeKeeper reads this ledger too) and by staff; a LIST is
+    // proven from its query, so it must pin `from` to the caller or `to` to a tree the caller keeps.
+    // No client hand writes here, ever: seats are minted by acceptTreeInvite and laid down through
+    // resignTreeKeeper (both server). The doc id is `from__keeper__to`, as in the LIN.
+    match /secretLinks/{linkId} {
+      allow read: if isSignedIn() && (
+        resource.data.from == request.auth.uid
+        || isTreeKeeper(resource.data.to)
+        || isStaff());
+      allow write: if false;
     }
 
     // Provider credentials: third-party AI API keys. NEVER readable or writable by any

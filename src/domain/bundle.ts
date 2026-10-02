@@ -95,6 +95,9 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
 
   // The graph
   { path: 'links', mode: 'verbatim', localUidFields: ['from'], deterministicIds: 'from__rel__to — authority resolves by exists() on this exact path; re-keying = everyone silently loses every role. from is usually a uid, with tree, lightHouse and inter-community exceptions — see linkFromIsUid' },
+  // The secret circle (ring 2026-10-02; domain/secretTree): a secret tree's keeper seats — the same
+  // link, the same id, in the ledger only its circle reads. `from` is always a uid here (rel keeper).
+  { path: 'secretLinks', mode: 'verbatim', localUidFields: ['from'], deterministicIds: 'from__keeper__to — authority resolves by exists() on this exact path (rules hasSecretSeat); re-keying = a secret tree\'s keepers silently lose it' },
   { path: 'alignments', mode: 'verbatim', localUidFields: ['initiatorUid', 'targetUid'] },
 
   // Light & the care economy

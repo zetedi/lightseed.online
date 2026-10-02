@@ -17,10 +17,11 @@
 // it is never the session's ACTIVE tree, so it signs no reach, no stay and no anonymous name
 // (anchoredTreeLists below, ring 2026-10-02 — the mend).
 // A keeper holds at most MAX_SECRET_TREES. NOT GUARANTEED: secrecy against the circle itself (any
-// member may tell); that its CIRCLE is hidden — the LIN is world-readable, so who keeps a secret
-// tree, and who welcomed whom into it, can be read by anyone who knows its id: its name, its body
-// and its growth are the circle's, its membership is not; that a growth's photo carries no place
-// in its own bytes; secret trees sprouting from one another (the mycelium — a later ring).
+// member may tell); that the WELCOME is hidden — its keeper seats live in `secretLinks`, read by the
+// circle alone (THE SECRET CIRCLE below), but the `welcomed_by` mark of an arrival stays in the
+// world-readable LIN: it names the newcomer and the hand that welcomed them, never the tree; that a
+// growth's photo carries no place in its own bytes; secret trees sprouting from one another (the
+// mycelium — a later ring).
 //
 // THE ONE LINE THAT KEEPS IT HONEST: a secret tree grants nothing outside itself.
 //
@@ -58,4 +59,29 @@ export const anchoredTreeLists = <T extends { treeType?: string | null; isNature
     nature: open.filter(t => !!t.isNature),
     secret: owned.filter(t => isSecretTree(t)),
   };
+};
+
+// THE SECRET CIRCLE (ring 2026-10-02). Every relation is a LIN link, and the `links` ledger is
+// world-readable — so a secret tree's keeper seats, written there, told anyone who asked that the
+// tree exists and who keeps it. A secret tree's seats live instead in `secretLinks`: the same
+// link, the same id (`from__keeper__to`), a ledger only the tree's own circle (and staff) may
+// read and only the server's hand may write. Plain contract — GUARANTEED (rules, server, emulator
+// tests): a seat on a secret tree is minted into `secretLinks` and nowhere else; it carries every
+// power a keeper link carries (the rules' isTreeKeeper reads both ledgers for a secret tree, and
+// the secret one for no other kind); no one outside the circle can read or list it. NOT GUARANTEED: a seat minted before this ring stays in `links`
+// until `scripts/secret-circle.mjs --write` moves it (both ledgers are honoured meanwhile).
+export const OPEN_LINKS = 'links' as const;
+export const SECRET_LINKS = 'secretLinks' as const;
+export const circleLedgerFor = (t: { treeType?: string | null } | null | undefined): typeof OPEN_LINKS | typeof SECRET_LINKS =>
+  isSecretTree(t) ? SECRET_LINKS : OPEN_LINKS;
+
+// One circle from two ledgers: the same seat found in both (a tree mid-move) is one seat.
+export const mergeLinks = <L extends { from: string; rel: string; to: string }>(...ledgers: readonly L[][]): L[] => {
+  const seen = new Set<string>();
+  const out: L[] = [];
+  for (const l of ledgers.flat()) {
+    const id = `${l.from}__${l.rel}__${l.to}`;
+    if (!seen.has(id)) { seen.add(id); out.push(l); }
+  }
+  return out;
 };

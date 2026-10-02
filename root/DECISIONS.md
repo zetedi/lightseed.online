@@ -6,6 +6,42 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · The secret circle** — Zoltán, on the review's fifth finding: "I don't fully understand
+why the circle is not secret and why not mended." Because it was not a slip but the shape of the
+LIN: every relation is a link, and `links` is world-readable (`allow read: if true`) — so a secret
+tree's keeper seats, written there, told anyone who asked that some private tree exists and who
+keeps it (never its name, its body or its growth; `persons` then turns a uid into a name). A choice
+about the root, so it waited for the keeper's yes; given, it is built. THE MEND: a secret tree's
+seats live in `secretLinks` — the SAME link under the SAME id (`from__keeper__to`), in a ledger read
+only by the seat's holder, the tree's keepers and staff, listed only by a query that pins `from` to
+the caller or `to` to a tree the caller keeps, and written by NO client hand. The law is
+`circleLedgerFor` (domain/secretTree, mirrored in functions/treeKind): a secret tree's ledger is
+`secretLinks`, every other tree's the open LIN. On a secret tree a seat in either ledger is a
+keeper seat: the rules' `isTreeKeeper` and `canReadLifetree` read both (`hasSecretSeat`) — and ask
+the secret ledger ONLY for a secret tree, so it speaks for no other kind and no other rule's
+ten-document budget moves; the server reads both
+wherever it asks who keeps a tree — minting a block, witnessing a watering, the water alert's
+circle, answering an offering, `resignTreeKeeper`'s succession (one keeper per hand, every seat
+laid down) — and `acceptTreeInvite` mints a secret tree's seat into `secretLinks` alone; the shell
+reads both through the Store port (`secretLinksTo` / `secretLinksFrom`, `linksToTree`) for the
+circle view, the trees one tends, the forest and garden loaders, a reach's audience, the export.
+THE MOVE: `scripts/secret-circle.mjs` (dry by default) carries the seats already in the open LIN —
+one tree, two seats today — into the secret ledger, AFTER rules → functions → hosting are deployed;
+both ledgers are honoured before and after, so no keeper is ever locked out. REJECTED: a `hidden`
+flag on links with a read rule that honours it — every one of the ~60 link queries in the shell
+would have to pin it and every existing link be backfilled (the list lesson of 2026-08-25, paid a
+third time); a per-tree subcollection — the rules resolve authority by a path computed from the
+caller's uid, and a subcollection read would need the tree's own read to pass first, a circle of
+its own. NOT GUARANTEED, said plainly: the `welcomed_by` mark of an arrival stays in the open LIN —
+it names the newcomer and the hand that welcomed them, never the tree; a tab still running an older
+bundle after the move sees a secret tree's circle as its anchor alone until refreshed; a deleted
+secret tree leaves its seats behind in the ledger, as every deleted tree leaves its links (unread,
+unreachable — the tree is gone); the graph view (subgraph) draws only the open LIN, so a secret
+circle is absent from it even for its own keepers. The LIN's second invariant now says so: the LIN
+is world-readable, with one quiet room.
+
+---
+
 **2026-10-02 · A secret tree is never worn; a key can be taken back** — Zoltán, looking back over
 two days of fast rings: "I'm afraid there are things messed up a little." A review of the fifteen
 commits of 2026-10-01/02, each finding proven against the emulator or the real code before it was

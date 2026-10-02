@@ -30,6 +30,8 @@ additionally grow a **Council**, the organ by which many become one voice.
 2. **Links, not arrays.** A relationship is itself an entity in the `links`
    collection with deterministic ids (`from__rel__to`). The only arrays permitted
    are rules-ACL denormalisations (e.g. `participantUids` on private reaches).
+   The LIN is world-readable, with one quiet room: a secret tree's keeper seats
+   are the same links under the same ids in `secretLinks`, read by its circle alone.
 3. **The chain is append-only.** Nothing on a chain is ever rewritten or deleted;
    wrong things are *marked* (the guardian veto), never erased.
 4. **Private by default, sensitive to light.** Opening something to the world is

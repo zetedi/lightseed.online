@@ -825,6 +825,54 @@ describe('THE SECRET TREE (ring 2026-10-02): private for its whole life, never a
     await assertSucceeds(getDocs(query(collection(db(ALICE), 'pulses'), where('lifetreeId', '==', 'secret1'), where('visibility', '==', 'private'), where('authorId', '==', ALICE))));
     await assertFails(getDocs(query(collection(db(BOB), 'pulses'), where('lifetreeId', '==', 'secret1'), where('visibility', '==', 'private'), where('authorId', '==', ALICE))));
   });
+  it('THE SECRET CIRCLE (ring 2026-10-02): a seat in secretLinks is a keeper seat — read by the circle alone, written by no client hand', async () => {
+    await seed();
+    const seatId = `${CAROL_UID}__keeper__secret1`;
+    const seat = (uid: string) => ({ lid: 's', type: 'link', rel: 'keeper', from: uid, to: 'secret1', createdAt: 1 });
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'secretLinks', seatId), seat(CAROL_UID));
+      await setDoc(doc(d, 'pulses', 'sc-circle'), { authorId: ALICE, lifetreeId: 'secret1', type: 'tree_growth', visibility: 'circle', hash: 'c1', previousHash: 'g' });
+    });
+    const ledger = (uid: string | undefined, field: 'to' | 'from', value: string) => getDocs(query(collection(db(uid), 'secretLinks'), where(field, '==', value)));
+    // It carries every power a keeper link carries: the tree, its growth, its doorway.
+    await assertSucceeds(getDoc(doc(db(CAROL_UID), 'lifetrees', 'secret1')));
+    await assertSucceeds(updateDoc(doc(db(CAROL_UID), 'lifetrees', 'secret1'), { name: 'Mycelium, kept' }));
+    await assertSucceeds(getDocs(query(collection(db(CAROL_UID), 'pulses'), where('lifetreeId', '==', 'secret1'), where('visibility', '==', 'circle'))));
+    await assertSucceeds(setDoc(doc(db(CAROL_UID), 'treeKeepingInvites', 'sc-open'), { lifetreeId: 'secret1', lifetreeName: 'Mycelium', invitedByUserId: CAROL_UID, invitedUserId: '', open: true, role: 'keeper', status: 'pending', createdAt: 1, updatedAt: 1 }));
+    // The circle reads the ledger: one's own seat, one's own seats, the whole circle of a tree one keeps.
+    await assertSucceeds(getDoc(doc(db(CAROL_UID), 'secretLinks', seatId)));
+    await assertSucceeds(ledger(CAROL_UID, 'from', CAROL_UID));
+    await assertSucceeds(ledger(CAROL_UID, 'to', 'secret1'));
+    await assertSucceeds(ledger(ALICE, 'to', 'secret1'));   // the anchor
+    await assertSucceeds(ledger(BOB, 'to', 'secret1'));     // a keeper whose seat still stands in the open LIN (mid-move)
+    await assertSucceeds(getDoc(doc(db(STAFF), 'secretLinks', seatId)));
+    // No one else: not by id, not by tree, not by another's name, not unpinned, not from the street.
+    await assertFails(getDoc(doc(db(MALLORY), 'secretLinks', seatId)));
+    await assertFails(getDoc(doc(db(), 'secretLinks', seatId)));
+    await assertFails(ledger(MALLORY, 'to', 'secret1'));
+    await assertFails(ledger(MALLORY, 'from', CAROL_UID));
+    await assertFails(ledger(undefined, 'to', 'secret1'));
+    await assertFails(getDocs(query(collection(db(CAROL_UID), 'secretLinks'))));
+    await assertSucceeds(ledger(MALLORY, 'from', MALLORY)); // one's own seats — none
+    // And the stranger still cannot reach the tree, nor does the open LIN name the seat.
+    await assertFails(getDoc(doc(db(MALLORY), 'lifetrees', 'secret1')));
+    expect((await getDocs(query(collection(db(MALLORY), 'links'), where('to', '==', 'secret1')))).docs.map(d => d.id)).toEqual([`${BOB}__keeper__secret1`]);
+    // The ledger speaks only for SECRET trees: a seat there on any other tree opens nothing.
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore();
+      await setDoc(doc(d, 'lifetrees', 'plainPrivate'), { anchorUid: ALICE, name: 'Plain', treeType: 'LIFETREE', visibility: 'private', validated: false, validatorId: null, loveCount: 0 });
+      await setDoc(doc(d, 'secretLinks', `${MALLORY}__keeper__plainPrivate`), { lid: 'x', type: 'link', rel: 'keeper', from: MALLORY, to: 'plainPrivate', createdAt: 1 });
+    });
+    await assertFails(getDoc(doc(db(MALLORY), 'lifetrees', 'plainPrivate')));
+    await assertFails(updateDoc(doc(db(MALLORY), 'lifetrees', 'plainPrivate'), { name: 'Taken' }));
+    // No client hand writes the ledger: not the anchor, not the holder, not a stranger, not staff.
+    await assertFails(setDoc(doc(db(ALICE), 'secretLinks', `${MALLORY}__keeper__secret1`), seat(MALLORY)));
+    await assertFails(setDoc(doc(db(MALLORY), 'secretLinks', `${MALLORY}__keeper__secret1`), seat(MALLORY)));
+    await assertFails(setDoc(doc(db(STAFF), 'secretLinks', `${MALLORY}__keeper__secret1`), seat(MALLORY)));
+    await assertFails(deleteDoc(doc(db(CAROL_UID), 'secretLinks', seatId)));
+    await assertFails(deleteDoc(doc(db(ALICE), 'secretLinks', seatId)));
+  });
   it('the forest and garden loader (getMyPrivateTreesAt) runs for anchor and keeper alike, and finds nothing for a stranger', async () => {
     await seed();
     // The anchor's ask: their own private trees.

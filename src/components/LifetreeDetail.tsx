@@ -21,7 +21,7 @@ import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validat
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 import { treeCircle } from '../domain/views/circle';
 import { beingPath } from '../domain/beingLink';
-import { firestoreStore } from '../adapters/firestore';
+import { firestoreStore, linksToTree } from '../adapters/firestore';
 import { BeingProfile, type BeingSection } from './BeingProfile';
 import { ChainTree } from './sections/ChainTree';
 import { TreeCare } from './lifetree/TreeCare';
@@ -260,7 +260,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [circle, setCircle] = useState<ReturnType<typeof treeCircle>>({ groups: [], size: 0 });
    useEffect(() => {
        let alive = true;
-       firestoreStore.linksTo(tree.id)
+       // (linksToTree: a secret tree's keeper seats are read from the secret circle's own ledger.)
+       linksToTree(tree)
            .then(links => {
                if (!alive) return;
                setCircle(treeCircle(tree.anchorUid, links));
@@ -273,7 +274,8 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
            })
            .catch(() => {});
        return () => { alive = false; };
-   }, [tree.id, tree.anchorUid, currentUserId, guardianNonce]);
+   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the tree's identity and kind, not the object
+   }, [tree.id, tree.treeType, tree.anchorUid, currentUserId, guardianNonce]);
 
    // THE KEEPERS LINE (ring 2026-09-10, widened 2026-09-29): every keeper's public name — the
    // anchor first, then the keeper links — each null when anonymous or unnamed (domain/publicName).

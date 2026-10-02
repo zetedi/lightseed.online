@@ -46,3 +46,30 @@ create policy links_own_withdraw on links for delete
 
 -- No client hand updates a link, ever (`allow update: if false`) — enforced by the
 -- ABSENCE of any update policy while RLS is enabled.
+
+-- THE SECRET CIRCLE (ring 2026-10-02; firestore.rules /secretLinks, domain/secretTree): a secret
+-- tree's keeper seats — the same link under the same id — in a table only its circle reads. The
+-- world-readable LIN above would tell anyone that the tree exists and who keeps it; this one does
+-- not. The id law is schema here too.
+create table if not exists secret_links (
+  from_id    text not null,
+  rel        text not null,
+  to_id      text not null,
+  id         text generated always as (from_id || '__' || rel || '__' || to_id) stored unique,
+  lid        text not null,
+  doc        jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  primary key (from_id, rel, to_id)
+);
+create index if not exists secret_links_to on secret_links (to_id);
+
+alter table secret_links enable row level security;
+
+-- A seat is read by its own holder (the `from == request.auth.uid` clause). The circle's read of
+-- its whole ledger (the rules' isTreeKeeper(to)) and staff's arrive with their own tests, never
+-- silently.
+drop policy if exists secret_links_own_read on secret_links;
+create policy secret_links_own_read on secret_links for select using (from_id = seed.uid());
+
+-- No client hand writes a secret seat, ever (`allow write: if false`) — enforced by the ABSENCE
+-- of any insert, update or delete policy while RLS is enabled. The server's hand mints and lays down.

@@ -1,6 +1,6 @@
-import { collection, query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer } from 'firebase/firestore';
+import { query, orderBy, getDocs, addDoc, serverTimestamp, doc, getDoc, where, updateDoc, limit, startAfter, QueryDocumentSnapshot, arrayUnion, onSnapshot, getCountFromServer } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { type Pulse, type Lifetree, type Vision, type ReachAudience, type Link } from '../../types';
+import { type Pulse, type Lifetree, type Vision, type ReachAudience } from '../../types';
 import { uuidv7 } from '../../utils/id';
 import {
     blockBirthOf, judgeBlockBirth, chainHeadOf, blockSignaturePayload, BLOCK_SIGNATURE_DOMAIN,
@@ -14,6 +14,7 @@ import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../ut
 import { db, auth, functions, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
 import { announce } from '../refreshBus';
 import { myNaming } from './accounts';
+import { linksToTree } from '../../adapters/firestore';
 
 // The visibility levels a plain (viewer-agnostic) list query may request and PROVE to
 // canListPulse: 'public' always, 'node' once signed in. Timelines that pin a communityId or
@@ -291,8 +292,9 @@ export const resolveCircleUids = async (tree: Lifetree, audience: ReachAudience)
     const anchor = tree.anchorUid ? [tree.anchorUid] : [];
     const byRel: Record<string, string[]> = { keeper: [], guardian: [], steward: [], observer: [] };
     try {
-        const links = await getDocs(query(collection(db, 'links'), where('to', '==', tree.id)));
-        links.docs.forEach(d => { const x = d.data() as Partial<Link>; if (x.rel && x.from && byRel[x.rel]) byRel[x.rel].push(x.from); });
+        // (linksToTree: a secret tree's keeper seats are read from the secret circle's own ledger.)
+        const links = await linksToTree(tree);
+        links.forEach(x => { if (x.rel && x.from && byRel[x.rel]) byRel[x.rel].push(x.from); });
     } catch (e) { console.warn('resolveCircleUids: link read failed', e); }
     const ids =
         audience === 'owners' ? [...anchor, ...byRel.keeper]

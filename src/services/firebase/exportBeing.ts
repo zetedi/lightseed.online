@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from './core';
-import { firestoreStore } from '../../adapters/firestore';
+import { firestoreStore, linksToTree } from '../../adapters/firestore';
 import { getPulsesByTreeId } from './pulses';
 import { getCommunityEvents } from './spaces';
 import { chainExport, exportFileName, imageEntriesOf, plainify } from '../../domain/export';
@@ -73,7 +73,7 @@ const treeChain = async (treeId: string) => {
 
 export const exportTree = async (tree: Lifetree): Promise<void> => {
   const [chain, incoming, outgoing] = await Promise.all([
-    treeChain(tree.id), firestoreStore.linksTo(tree.id), firestoreStore.linksFrom(tree.id),
+    treeChain(tree.id), linksToTree(tree), firestoreStore.linksFrom(tree.id),
   ]);
   await buildZip('tree', tree.name || tree.id,
     { tree, chain, links: { incoming, outgoing } },

@@ -8,6 +8,11 @@ export interface Store {
   linksTo(toId: string, rel?: LinkRel): Promise<Link[]>;
   // Read: edges pointing OUT of an actor — e.g. the trees a user guards.
   linksFrom(from: string, rel?: LinkRel): Promise<Link[]>;
+  // Read: THE SECRET CIRCLE (domain/secretTree, ring 2026-10-02) — a secret tree's keeper seats,
+  // kept in a ledger only its circle reads. `secretLinksTo` is refused to anyone outside the tree's
+  // circle; `secretLinksFrom` answers only for the asker's own uid. No write: the server alone mints.
+  secretLinksTo(treeId: string): Promise<Link[]>;
+  secretLinksFrom(uid: string): Promise<Link[]>;
   // Read: every edge of a relation across the network — e.g. all 'guardian' edges (for counts).
   linksByRel(rel: LinkRel): Promise<Link[]>;
   // Write: create / remove an edge. The adapter persists it into the `links` collection

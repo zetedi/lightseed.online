@@ -4,7 +4,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { FieldValue } from "firebase-admin/firestore";
 import { randomUUID } from "node:crypto";
 import { judgeWitness, kindleDayKeyFromMs } from "./mint";
-import { db, mintLid, tsToMs, communityIdOfDomain } from "./core";
+import { db, mintLid, tsToMs, communityIdOfDomain, secretKeeperRef } from "./core";
 
 // ── THE MINT: light kindled from witnessed care (the sun ring; domain/light.ts) ────────────────
 // Light enters the world ONLY through a GUARDIAN witnessing care for the living — and the mint is a
@@ -74,8 +74,11 @@ export const witnessWatering = onCall({ cors: true }, async (request) => {
             // birth time predates the pulse by convention (old links).
             const msOf = (v: any): number => (v && typeof v.toMillis === "function") ? v.toMillis() : 0;
             const standing = (since: number) => { witnessSinceMs = witnessSinceMs === null ? since : Math.min(witnessSinceMs, since); };
-            const linkSnaps = await Promise.all(["guardian", "keeper", "steward"].map((rel) =>
-                t.get(db.doc(`links/${witnessUid}__${rel}__${treeId}`))));
+            // (A secret tree's keeper seat stands in secretLinks — ring 2026-10-02, the secret circle.)
+            const linkSnaps = await Promise.all([
+                ...["guardian", "keeper", "steward"].map((rel) => t.get(db.doc(`links/${witnessUid}__${rel}__${treeId}`))),
+                t.get(secretKeeperRef(witnessUid, treeId)),
+            ]);
             for (const snap of linkSnaps) if (snap.exists) standing(msOf((snap.data() as any)?.createdAt));
             const treeSnap = await t.get(db.doc(`lifetrees/${treeId}`));
             if (treeSnap.exists) {
@@ -158,8 +161,12 @@ const sameUtcDay = (a: number, b: number): boolean => {
 // Resolve a guarded tree's circle (co-guardians + guardians) from the LIN links — the single
 // source of truth (also what the Firestore rules read). Legacy role arrays are not consulted.
 const resolveGuardianUids = async (treeId: string): Promise<string[]> => {
-    const links = await db.collection("links").where("to", "==", treeId).get();
-    const fromLinks = links.docs
+    // Both ledgers: a secret tree's keepers stand in secretLinks (ring 2026-10-02).
+    const [links, secret] = await Promise.all([
+        db.collection("links").where("to", "==", treeId).get(),
+        db.collection("secretLinks").where("to", "==", treeId).get(),
+    ]);
+    const fromLinks = [...links.docs, ...secret.docs]
         .map((d) => d.data())
         .filter((x: any) => x.rel === "guardian" || x.rel === "keeper")
         .map((x: any) => x.from as string);

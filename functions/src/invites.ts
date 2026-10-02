@@ -1,6 +1,6 @@
 // invites.ts — split from index.ts (ring 2026-09-16); every function keeps its name, trigger and options.
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { isSecretTree, rootsABeing, secretRoleAllowed } from "./treeKind";
+import { isSecretTree, rootsABeing, secretRoleAllowed, circleLedgerFor } from "./treeKind";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import { charter, NODE_ORIGIN } from "./charter";
@@ -272,7 +272,13 @@ export const acceptTreeInvite = onCall({ cors: true }, async (request) => {
             }
             setLink(uid, "member", communityId);      // the invitee joins the circle community
         }
-        setLink(uid, invite.role, invite.lifetreeId); // ...and takes their tree-circle role (or guardianship)
+        // ...and takes their tree-circle role (or guardianship). On a SECRET tree the seat is minted
+        // into `secretLinks` — read by the circle alone — never into the world-readable LIN
+        // (ring 2026-10-02, the secret circle; ./treeKind circleLedgerFor).
+        tx.set(db.collection(circleLedgerFor(tree)).doc(`${uid}__${invite.role}__${invite.lifetreeId}`), {
+            lid: mintLid(), type: "link", rel: invite.role, from: uid, to: invite.lifetreeId,
+            createdAt: FieldValue.serverTimestamp(),
+        });
         setWelcome(uid, String(invite.invitedByUserId || ""), inviteId); // the hand that welcomed
         if (validatedNow) {
             // The stamp the shell already reads (validated + validatorId), set by the guardian's yes —
@@ -446,10 +452,24 @@ export const resignTreeKeeper = onCall({ cors: true }, async (request) => {
         const treeRef = db.collection("lifetrees").doc(treeId);
         const tree = (await tx.get(treeRef)).data() as any;
         if (!tree) throw new HttpsError("not-found", "Lifetree not found.");
-        const linksSnap = await tx.get(db.collection("links").where("rel", "==", "keeper").where("to", "==", treeId));
-        const keeperLinks = linksSnap.docs
+        // Both ledgers: a secret tree's keeper seats stand in secretLinks (ring 2026-10-02) — and,
+        // until the move, perhaps still in the open LIN; a hand found in both is one keeper, and
+        // leaving lays down every seat it holds.
+        const [linksSnap, secretSnap] = await Promise.all([
+            tx.get(db.collection("links").where("rel", "==", "keeper").where("to", "==", treeId)),
+            tx.get(db.collection("secretLinks").where("to", "==", treeId)),
+        ]);
+        const seats = [...linksSnap.docs, ...secretSnap.docs.filter((d) => (d.data() as any).rel === "keeper")]
             .map((d) => ({ from: (d.data() as any).from as string, createdAtMs: (d.data() as any).createdAt?.toMillis?.() || 0, ref: d.ref }))
             .filter((l) => l.from !== tree.anchorUid);
+        // One keeper per hand: the earliest seat names their standing, every seat is theirs to lay down.
+        const byHand = new Map<string, { from: string; createdAtMs: number; refs: FirebaseFirestore.DocumentReference[] }>();
+        for (const seat of seats) {
+            const k = byHand.get(seat.from);
+            if (k) { k.createdAtMs = Math.min(k.createdAtMs, seat.createdAtMs); k.refs.push(seat.ref); }
+            else byHand.set(seat.from, { from: seat.from, createdAtMs: seat.createdAtMs, refs: [seat.ref] });
+        }
+        const keeperLinks = [...byHand.values()];
         const isAnchor = tree.anchorUid === uid;
         const ownLink = keeperLinks.find((l) => l.from === uid);
         if (!isAnchor && !ownLink) throw new HttpsError("permission-denied", "You are not a keeper of this tree.");
@@ -458,10 +478,10 @@ export const resignTreeKeeper = onCall({ cors: true }, async (request) => {
             const successor = [...keeperLinks].sort((a, b) =>
                 a.createdAtMs - b.createdAtMs || (a.from < b.from ? -1 : a.from > b.from ? 1 : 0))[0];
             tx.update(treeRef, { anchorUid: successor.from, updatedAt: FieldValue.serverTimestamp() });
-            tx.delete(successor.ref); // the successor IS the anchor now; the link would double-count them
+            for (const ref of successor.refs) tx.delete(ref); // the successor IS the anchor now; the link would double-count them
             return { resigned: uid, successor: successor.from };
         }
-        tx.delete(ownLink!.ref); // anchorUid remains — never keeperless by construction
+        for (const ref of ownLink!.refs) tx.delete(ref); // anchorUid remains — never keeperless by construction
         return { resigned: uid, successor: null };
     });
 });

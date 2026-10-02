@@ -9,3 +9,9 @@ export const secretRoleAllowed = (t: { treeType?: unknown } | null | undefined, 
     !isSecretTree(t) || role === "keeper";
 export const rootsABeing = (t: { treeType?: unknown } | null | undefined): boolean =>
     !!t && t.treeType !== "BED" && t.treeType !== SECRET_TREE_TYPE;
+// THE SECRET CIRCLE (mirror of domain/secretTree circleLedgerFor): a secret tree's keeper seats
+// live in `secretLinks`, read by the circle alone; every other tree's in the world-readable `links`.
+export const OPEN_LINKS = "links";
+export const SECRET_LINKS = "secretLinks";
+export const circleLedgerFor = (t: { treeType?: unknown } | null | undefined): string =>
+    isSecretTree(t) ? SECRET_LINKS : OPEN_LINKS;

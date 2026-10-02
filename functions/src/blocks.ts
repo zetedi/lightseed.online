@@ -14,7 +14,7 @@
 import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import { FieldValue, Timestamp, type Transaction, type DocumentReference } from "firebase-admin/firestore";
 import { randomBytes } from "node:crypto";
-import { db, isStaffUid } from "./core";
+import { db, isStaffUid, secretKeeperRef } from "./core";
 import { staffHandOn } from "./staffHands";
 import { uuidv7 } from "./mint";
 import { charter } from "./charter";
@@ -79,7 +79,11 @@ const bearerPath = (on: ChainBearerKind, id: string) => `${on === "tree" ? "life
 const readStanding = async (t: Transaction, on: ChainBearerKind, id: string, bearer: Record<string, unknown>, uid: string): Promise<boolean> => {
     if (on === "vision") return bearer.authorId === uid;
     if (bearer.anchorUid === uid) return true;
-    const links = await Promise.all(["keeper", "steward"].map((rel) => t.get(db.doc(`links/${uid}__${rel}__${id}`))));
+    // …a secret tree's keeper seat stands in secretLinks (ring 2026-10-02, the secret circle).
+    const links = await Promise.all([
+        ...["keeper", "steward"].map((rel) => t.get(db.doc(`links/${uid}__${rel}__${id}`))),
+        t.get(secretKeeperRef(uid, id)),
+    ]);
     return links.some((l) => l.exists);
 };
 

@@ -7,6 +7,7 @@ import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type LightHouse, type TreeKeepingInvite, type InvitableRole, type Link } from '../../types';
 import { msOf } from '../../domain/time';
 import { tendedTreeRoles, type TendingRole } from '../../domain/treeCircle';
+import { mergeLinks } from '../../domain/secretTree';
 import { createBlock } from '../../utils/crypto';
 import { treePlantingGate, normalizeNodeLimits, DEFAULT_NODE_LIMITS, type NodeLimits } from '../../domain/limits';
 import { BED_DEFAULT_VISIBILITY, BED_TREE_TYPE, bedPlantingProblem, excludeBedTrees, isBedTree, isRealPlace } from '../../domain/bed';
@@ -870,9 +871,13 @@ export const getMyPrivateTreesAt = async (uid: string, domain: string): Promise<
     };
     const own = await getDocs(query(lifetreesCollection, where('anchorUid', '==', uid), where('visibility', '==', 'private'))).catch(() => null);
     own?.docs.forEach(d => take(mapDoc(d) as Lifetree));
-    const seats = await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', 'in', ['keeper', 'steward', 'guardian', 'observer']))).catch(() => null);
-    await Promise.all((seats?.docs || []).map(async l => {
-        const id = String((l.data() as { to?: string }).to || '');
+    // Both ledgers: a secret tree's keeper seats stand in secretLinks (the secret circle, ring 2026-10-02).
+    const [seats, secretSeats] = await Promise.all([
+        getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', 'in', ['keeper', 'steward', 'guardian', 'observer']))).catch(() => null),
+        firestoreStore.secretLinksFrom(uid).catch(() => [] as Link[]),
+    ]);
+    const seatIds = new Set([...(seats?.docs || []).map(l => String((l.data() as { to?: string }).to || '')), ...secretSeats.map(l => l.to)]);
+    await Promise.all([...seatIds].map(async id => {
         if (!id || out.has(id)) return;
         try { const snap = await getDoc(doc(db, 'lifetrees', id)); if (snap.exists()) take(mapDoc(snap) as Lifetree); } catch { /* not a tree, or not ours to read */ }
     }));
@@ -883,9 +888,12 @@ export const getMySecretTreesAt = async (uid: string, domain: string): Promise<L
     (await getMyPrivateTreesAt(uid, domain)).filter(t => t.treeType === 'SECRET');
 
 export const getTendedTrees = async (uid: string): Promise<TendedTree[]> => {
-    const links = await getDocs(query(collection(db, 'links'),
-        where('from', '==', uid), where('rel', 'in', ['keeper', 'steward'])));
-    const roles = tendedTreeRoles(links.docs.map(d => d.data() as { from: string; rel: string; to: string }), uid);
+    // Both ledgers: a secret tree's keeper seats stand in secretLinks (the secret circle, ring 2026-10-02).
+    const [links, secretSeats] = await Promise.all([
+        getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', 'in', ['keeper', 'steward']))),
+        firestoreStore.secretLinksFrom(uid).catch(() => [] as Link[]),
+    ]);
+    const roles = tendedTreeRoles(mergeLinks(links.docs.map(d => d.data() as { from: string; rel: string; to: string }), secretSeats), uid);
     const trees = await Promise.all([...roles.keys()].map(async id => {
         try {
             const snap = await getDoc(doc(db, 'lifetrees', id));

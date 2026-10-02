@@ -126,6 +126,13 @@ export const enforceDailyQuota = async (uid: string, field: string, limit: numbe
 export const keeperLinkRef = (uid: string, communityId: string) =>
     db.collection("links").doc(`${uid}__keeper__${communityId}`);
 
+// THE SECRET CIRCLE (ring 2026-10-02; ./treeKind circleLedgerFor): a secret tree's keeper seat
+// lives in `secretLinks` under the same id. Every hand that asks "does this uid keep this tree?"
+// reads this ref beside the open keeper link. Only acceptTreeInvite mints here, and only for a
+// secret tree (a kind that never changes), so a seat found here is always a secret tree's.
+export const secretKeeperRef = (uid: string, treeId: string) =>
+    db.collection("secretLinks").doc(`${uid}__keeper__${treeId}`);
+
 export const normalizeAnchorDomain = (value: string): string => {
     const withoutScheme = value.trim().toLowerCase().replace(/^https?:\/\//, "");
     const authority = withoutScheme.split(/[/?#]/, 1)[0] || "";

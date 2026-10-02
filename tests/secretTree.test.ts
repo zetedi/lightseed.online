@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { isSecretTree, rootsABeing, MAX_SECRET_TREES, SECRET_TREE_TYPE, invitableRolesFor, anchoredTreeLists } from '../src/domain/secretTree';
-import { isSecretTree as serverIsSecret, rootsABeing as serverRoots, MAX_SECRET_TREES as SERVER_MAX, SECRET_TREE_TYPE as SERVER_TYPE, secretRoleAllowed } from '../functions/src/treeKind';
+import { isSecretTree, rootsABeing, MAX_SECRET_TREES, SECRET_TREE_TYPE, invitableRolesFor, anchoredTreeLists, circleLedgerFor, mergeLinks, SECRET_LINKS, OPEN_LINKS } from '../src/domain/secretTree';
+import { isSecretTree as serverIsSecret, rootsABeing as serverRoots, MAX_SECRET_TREES as SERVER_MAX, SECRET_TREE_TYPE as SERVER_TYPE, secretRoleAllowed, circleLedgerFor as serverLedgerFor } from '../functions/src/treeKind';
 import { treePlantingGate } from '../src/domain/limits';
 import { sustainingSeven } from '../src/domain/sustainingSeven';
 import { isLivingLifetree } from '../src/domain/guardianship';
@@ -100,5 +100,23 @@ describe('never worn: the session keeps a secret tree apart (the mend of 2026-10
     expect(personal.every(t => rootsABeing(t))).toBe(true);
     // A being who anchors ONLY a secret tree wears nothing: no active tree, no rooted standing.
     expect(anchoredTreeLists([{ treeType: 'SECRET' }]).personal).toEqual([]);
+  });
+});
+
+describe('the secret circle: a secret tree\'s seats live where only its circle reads (ring 2026-10-02)', () => {
+  it('a secret tree\'s ledger is secretLinks; every other tree\'s is the open LIN; the server agrees', () => {
+    expect(circleLedgerFor({ treeType: 'SECRET' })).toBe(SECRET_LINKS);
+    expect(SECRET_LINKS).toBe('secretLinks');
+    expect(OPEN_LINKS).toBe('links');
+    for (const k of kinds) {
+      expect(circleLedgerFor(k)).toBe(isSecretTree(k) ? 'secretLinks' : 'links');
+      expect(serverLedgerFor(k)).toBe(circleLedgerFor(k));
+    }
+  });
+  it('two ledgers read as one circle: a seat found in both (a tree mid-move) is one seat', () => {
+    const open = [{ from: 'ana', rel: 'keeper', to: 't' }, { from: 'bo', rel: 'keeper_request', to: 't' }];
+    const secret = [{ from: 'ana', rel: 'keeper', to: 't' }, { from: 'cy', rel: 'keeper', to: 't' }];
+    expect(mergeLinks(open, secret).map(l => `${l.from}:${l.rel}`)).toEqual(['ana:keeper', 'bo:keeper_request', 'cy:keeper']);
+    expect(mergeLinks([], [])).toEqual([]);
   });
 });

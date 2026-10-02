@@ -3,7 +3,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue } from "firebase-admin/firestore";
 import { judgeOfferingAccept, offeringTwinBlocks, type OfferedToKind } from "./offering";
 import { publicNameOf } from "./publicName";
-import { db, mintLid } from "./core";
+import { db, mintLid, secretKeeperRef } from "./core";
 import { sealBlock } from "./blocks";
 
 // --- THE OFFERING OF CARE: acceptance -------------------------------------------------------
@@ -40,7 +40,7 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
             if (receiver) {
                 if (toKind === "tree") {
                     // The tree's carers: its keeper, and keeper / steward links (rules' isTreeCarer).
-                    const links = await Promise.all(["keeper", "steward"].map((rel) => t.get(db.doc(`links/${acceptorUid}__${rel}__${toId}`))));
+                    const links = await Promise.all([...["keeper", "steward"].map((rel) => t.get(db.doc(`links/${acceptorUid}__${rel}__${toId}`))), t.get(secretKeeperRef(acceptorUid, toId))]);
                     standing = receiver.anchorUid === acceptorUid || links.some((l) => l.exists);
                 } else {
                     standing = receiver.authorId === acceptorUid;
@@ -54,7 +54,7 @@ export const acceptOffering = onCall({ cors: true }, async (request) => {
         // steward — read here, inside the transaction, never trusted from the offering's words.
         let fromStanding = false;
         if (fromTree && authorId) {
-            const fromLinks = await Promise.all(["keeper", "steward"].map((rel) => t.get(db.doc(`links/${authorId}__${rel}__${fromTreeId}`))));
+            const fromLinks = await Promise.all([...["keeper", "steward"].map((rel) => t.get(db.doc(`links/${authorId}__${rel}__${fromTreeId}`))), t.get(secretKeeperRef(authorId, fromTreeId))]);
             fromStanding = fromTree.anchorUid === authorId || fromLinks.some((l) => l.exists);
         }
 
