@@ -2,7 +2,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { rootsABeing } from "./treeKind";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
+import { createHash } from "node:crypto";
 import { db } from "./core";
 
 // --- Signing-key epochs -----------------------------------------------------------------------
@@ -68,34 +68,8 @@ const recoveryWitnessPreimage = (claim: RecoveryClaim, witnessUid: string): stri
     String(claim.suspectedSinceMs),
 ].join("\n");
 
-const canonicalBase64 = (value: string): boolean => {
-    try {
-        return Buffer.from(value, "base64").toString("base64") === value;
-    } catch {
-        return false;
-    }
-};
-
-// Exported for the signed block (blocks.ts): one Ed25519 verifier on the server, whatever is signed.
-export const verifiesEd25519 = (pubkey: string, signature: string, preimage: string): boolean => {
-    try {
-        if (!canonicalBase64(pubkey) || !canonicalBase64(signature)) return false;
-        const key = createPublicKey({
-            key: Buffer.from(pubkey, "base64"),
-            format: "der",
-            type: "spki",
-        });
-        return key.asymmetricKeyType === "ed25519"
-            && verifySignature(
-                null,
-                Buffer.from(preimage, "utf8"),
-                key,
-                Buffer.from(signature, "base64"),
-            );
-    } catch {
-        return false;
-    }
-};
+export { verifiesEd25519 } from "./ed25519";
+import { verifiesEd25519 } from "./ed25519";
 
 // A routine rotation is cross-signed by the outgoing and incoming private keys. Auth names whose
 // identity is being changed; the two signatures prove continuity. Frozen keys cannot rotate around

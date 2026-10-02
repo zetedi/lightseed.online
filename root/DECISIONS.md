@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · The gate saw what the desk did not** — the GitHub quality gate had been red on every
+push since the spending gate (2026-09-30): the root typecheck compiles the server laws the root
+tests import, and `functions/decisionSeal` imported the server's `keys` module for its Ed25519
+verifier, which pulls in `firebase-functions` — present on the desk (`functions/node_modules`),
+absent in CI (only the root package is installed). Eight pushes deployed green locally and red in
+the gate. THE MEND: the verifier lives alone in `functions/ed25519` (node:crypto only); `keys`
+re-exports it, the seal check imports it. THE LESSON: a law the root tests import must stand on
+node and the domain alone; and the gate is run here as CI runs it (without the functions packages)
+before a batch is called green.
+
+---
+
 **2026-10-02 · A secret tree stands in its garden, for its circle** — Zoltán: "I can't see Wachumito
 at theohouse.org garden. I'd like to see the secret trees there and with a little secret icon." The
 garden is built from lists a stranger could also run (public and node trees by domain, trees

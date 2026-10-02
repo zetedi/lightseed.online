@@ -10,7 +10,7 @@
 // Held to the domain by tests/decisionSeal.test.ts, which signs with a real Ed25519 key.
 import { createHash } from "node:crypto";
 import { signingPreimage } from "./birth";
-import { verifiesEd25519 } from "./keys";
+import { verifiesEd25519 } from "./ed25519";
 import { keyStandingAt, keyStandingCounts, type KeyEpoch, type KeyEvent } from "./keyEpoch";
 
 export const DECISION_DOMAIN = "lifeseed.decision.v2";
