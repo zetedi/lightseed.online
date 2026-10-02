@@ -143,10 +143,16 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
                 {tree.latestGrowthUrl || tree.imageUrl ? <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl} className="h-full w-full object-cover" alt={tree.name} /> : <div className="h-full w-full" style={{ backgroundColor: placeholderColor }} />}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="break-words text-sm font-bold text-slate-800 dark:text-slate-100">{tree.name}</p>
+                <p className="flex items-center gap-1.5 break-words text-sm font-bold text-slate-800 dark:text-slate-100">
+                  {tree.name}
+                  {/* A secret tree (domain/secretTree) is shown only to its circle — and wears a small key. */}
+                  {tree.treeType === 'SECRET' && (
+                    <span title={t('secret_tree_visibility')} aria-label={t('type_secret')} className="inline-flex shrink-0 items-center text-violet-500 [&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Key /></span>
+                  )}
+                </p>
                 <p className="truncate text-[11px] uppercase tracking-wide text-emerald-600 dark:text-emerald-300">{tree.locationName || '—'}</p>
               </div>
-              <GuardianButton tree={tree} guardian={guardedTreeIds.has(tree.id)} busy={togglingId === tree.id} onToggle={onToggleGuardian} />
+              {tree.treeType !== 'SECRET' && <GuardianButton tree={tree} guardian={guardedTreeIds.has(tree.id)} busy={togglingId === tree.id} onToggle={onToggleGuardian} />}
             </div>
           ))}
         </div>

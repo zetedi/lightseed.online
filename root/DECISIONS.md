@@ -6,6 +6,18 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · A secret tree stands in its garden, for its circle** — Zoltán: "I can't see Wachumito
+at theohouse.org garden. I'd like to see the secret trees there and with a little secret icon." The
+garden is built from lists a stranger could also run (public and node trees by domain, trees
+standing in by link), so a secret tree was never in it. Now the garden also asks for the VIEWER's
+own secret trees rooted at the place — those they anchor (a list the rules allow only to the
+anchor) and those they keep (a keeper link, then a get the circle read admits) — and shows them in
+the tree tab with a small key. Kept apart from the place's other trees on purpose: a secret tree
+never becomes the place's first tree and never flows into its vision page, and it shows no guard
+button (its only seat is keeping). Anyone outside the circle sees the garden exactly as before.
+
+---
+
 **2026-10-02 · A private tree's growth belongs to its circle** — Zoltán, after the first care of the
 secret Wachumito: "The care button didn't save the pulse… no leaf there." The leaf WAS born —
 block 1, sealed, the head moved — but the birth law copied the tree's own visibility onto the block,

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { getMySecretTreesAt } from '../services/firebase/trees';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
@@ -229,6 +230,15 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [isUploadingHero, setIsUploadingHero] = useState(false);
 
   const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
+  // The viewer's SECRET trees rooted here (domain/secretTree): shown in the garden to their circle
+  // alone, kept apart from linkedTrees so a secret tree never becomes the place's first tree or
+  // flows into its vision.
+  const [secretTrees, setSecretTrees] = useState<Lifetree[]>([]);
+  useEffect(() => {
+    let alive = true;
+    if (currentUserId) getMySecretTreesAt(currentUserId, community.domain).then(ts => { if (alive) setSecretTrees(ts); }).catch(() => {});
+    return () => { alive = false; };
+  }, [currentUserId, community.domain]);
   // Trees that joined this community via 'participant' links (invited, or self-joined).
   const [participatingTrees, setParticipatingTrees] = useState<Lifetree[]>([]);
   const [lightHouses, setLightHouses] = useState<LightHouse[]>([]);
@@ -430,8 +440,9 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     const byId = new Map<string, Lifetree>();
     domainTrees.forEach(t => byId.set(t.id, t));
     participatingTrees.forEach(t => byId.set(t.id, t));
+    (currentUserId ? secretTrees : []).forEach(t => byId.set(t.id, t));
     return Array.from(byId.values());
-  }, [domainTrees, participatingTrees]);
+  }, [domainTrees, participatingTrees, secretTrees, currentUserId]);
 
   const handleToggleGuardian = async (tree: Lifetree) => {
     if (!canCareForTree(currentUserId)) { showAlert('err_signin_guard'); return; }

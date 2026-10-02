@@ -857,6 +857,24 @@ export const getGuardedTrees = async (uid: string): Promise<Lifetree[]> => {
 // tendedTreeRoles: keeper outranks steward). Owned trees stay out: ownership needs no link.
 export interface TendedTree { tree: Lifetree; role: TendingRole }
 
+// THE SECRET TREES A VIEWER KEEPS AT A PLACE (ring 2026-10-02; domain/secretTree): a garden shows a
+// secret tree only to its circle — the viewer's own (anchorUid) and those they keep (a keeper link,
+// then a get the circle read admits). Never by a list anyone else could run.
+export const getMySecretTreesAt = async (uid: string, domain: string): Promise<Lifetree[]> => {
+    const place = normalizeDomain(domain);
+    const out = new Map<string, Lifetree>();
+    const take = (t: Lifetree) => { if (t.treeType === 'SECRET' && normalizeDomain(t.domain || '') === place) out.set(t.id, t); };
+    const own = await getDocs(query(lifetreesCollection, where('anchorUid', '==', uid), where('treeType', '==', 'SECRET'))).catch(() => null);
+    own?.docs.forEach(d => take(mapDoc(d) as Lifetree));
+    const kept = await getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', '==', 'keeper'))).catch(() => null);
+    await Promise.all((kept?.docs || []).map(async l => {
+        const id = String((l.data() as { to?: string }).to || '');
+        if (!id || out.has(id)) return;
+        try { const snap = await getDoc(doc(db, 'lifetrees', id)); if (snap.exists()) take(mapDoc(snap) as Lifetree); } catch { /* not a tree, or not ours to read */ }
+    }));
+    return [...out.values()];
+};
+
 export const getTendedTrees = async (uid: string): Promise<TendedTree[]> => {
     const links = await getDocs(query(collection(db, 'links'),
         where('from', '==', uid), where('rel', 'in', ['keeper', 'steward'])));
