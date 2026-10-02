@@ -107,8 +107,9 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
     }, []);
     const [isMapReady, setIsMapReady] = useState(false);
     const [markerCount, setMarkerCount] = useState(0);
-    // A secret tree never stands on a map, not even its keeper's (domain/secretTree).
-    const visibleTrees = useMemo(() => trees.filter(tree => tree.treeType !== 'SECRET' && getTreeCoordinates(tree)), [trees]);
+    // A SECRET tree stands on its circle's map (ring 2026-10-02): the trees handed here are only those
+    // this viewer may read, and the rules let no one outside the circle read a secret tree.
+    const visibleTrees = useMemo(() => trees.filter(tree => getTreeCoordinates(tree)), [trees]);
     const visibleTreeCount = visibleTrees.length;
     // Guardian counts come from the LIN (all 'guardian' edges), fetched and grouped by tree.
     // refreshKey re-fetches after we touch a tree (e.g. join/leave a guardianship in a detail view).
@@ -357,15 +358,21 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
             </div>`;
         }
 
+        // A secret tree wears a violet glow and a small key (domain/secretTree) — seen only by its circle.
+        const secret = tree.treeType === 'SECRET';
+        const secretKey = secret
+            ? `<div class="absolute -top-1.5 -right-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border border-white bg-violet-600 text-white shadow-md" title="${escapeHtml(t('secret_tree_visibility'))}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:11px;height:11px"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/></svg></div>`
+            : '';
         return `
-        <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300" style="${animStyle}" role="button" aria-label="${ariaName}">
+        <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300" style="${animStyle}" role="button" aria-label="${ariaName}${secret ? ', ' + escapeHtml(t('type_secret')) : ''}">
             ${isWateringOverdue(tree) ? '<div class="absolute -inset-1 rounded-full border-2 border-sky-400 animate-pulse z-20"></div>' : ''}
-            <div class="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
+            <div class="absolute inset-0 ${secret ? 'bg-violet-500' : 'bg-emerald-500'} rounded-full animate-ping opacity-20"></div>
             <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white dark:bg-slate-900">
                 <img ${displayImage} style="${imgStyle}" class="w-full h-full object-cover" />
             </div>
-            ${isExplicitlyValidatedTree(tree) ? '<div class="absolute -top-2 -right-2 rounded-full border border-emerald-200 bg-white/95 px-1.5 py-0.5 text-[8px] font-black tracking-[0.2em] text-yellow-400 shadow-sm dark:bg-slate-900/95 dark:border-emerald-900">V<span class="ml-0.5 text-[6px] font-bold tracking-[0.12em] text-emerald-700 dark:text-emerald-300">' + escapeHtml(t('forest_validated_badge')) + '</span></div>' : ''}
+            ${isExplicitlyValidatedTree(tree) ? '<div class="absolute -top-1.5 -right-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border border-white bg-emerald-600 text-[10px] font-black leading-none text-yellow-300 shadow-md" title="' + escapeHtml(t('forest_validated_badge')) + '" aria-label="' + escapeHtml(t('forest_validated_badge')) + '">V</div>' : ''}
             ${isDanger ? `<div class="absolute -top-1 -left-1 z-20 w-3 h-3 bg-red-500 border border-white rounded-full animate-bounce"></div>` : ''}
+            ${secretKey}
         </div>`;
     }
 

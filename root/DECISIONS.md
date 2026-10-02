@@ -6,6 +6,15 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-02 · A secret tree stands on its circle's map** — Zoltán: "I don't see it yet on my map…
+I see it among the trees when on list mode." The secret-tree ring said "no map": that was the
+builder's caution, not the keeper's wish, and it hid the tree from the very circle it belongs to.
+Corrected by this ring: the map shows whatever trees it is handed, and those are only trees the
+viewer may read — the rules let no one outside the circle read a secret tree, so it stands on its
+circle's map alone, with a violet glow and a small key.
+
+---
+
 **2026-10-02 · The gate saw what the desk did not** — the GitHub quality gate had been red on every
 push since the spending gate (2026-09-30): the root typecheck compiles the server laws the root
 tests import, and `functions/decisionSeal` imported the server's `keys` module for its Ed25519
