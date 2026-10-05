@@ -3,7 +3,8 @@ import { notify } from '../ui/Toast';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal, modalButton } from '../ui/Modal';
-import { ImagePicker } from '../ui/ImagePicker';
+import { ImageStrip } from '../ui/ImageStrip';
+import { picturesToStore } from '../../domain/pictures';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { generateImage } from '../../services/gemini';
 import { checkAndIncrementAiUsage, uploadBase64Image, plantBed } from '../../services/firebase';
@@ -21,7 +22,8 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
   const { uploading, handleImageUpload } = useImageUpload();
   const [name, setName] = useState('');
   const [body, setBody] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  // The bed's pictures, in the keeper's order (domain/pictures): the first is its face.
+  const [images, setImages] = useState<string[]>([]);
   const [imagining, setImagining] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -37,7 +39,9 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
       const prompt = `A luminous, inviting portrait of a place to sleep called "${name || 'a bed'}": ${seed}. Rest, warmth, sacred hospitality, a bed that welcomes a traveller. Painterly, natural, glowing. Do not include any text, words, or letters.`;
       const dataUrl = await generateImage(prompt);
       if (dataUrl && dataUrl.startsWith('data:')) {
-        setImageUrl(await uploadBase64Image(dataUrl, `lightHouses/${lightHouse.id}/beds/ai/${Date.now()}`));
+        // A generated picture takes the face; what was uploaded stays behind it.
+        const url = await uploadBase64Image(dataUrl, `lightHouses/${lightHouse.id}/beds/ai/${Date.now()}`);
+        setImages(prev => [url, ...prev]);
       } else {
         setErr('err_vision_no_form');
       }
@@ -52,7 +56,8 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
     if (problem) { setErr(problem); return; }
     setSubmitting(true);
     try {
-      await plantBed({ name: name.trim(), lightHouseId: lightHouse.id, imageUrl: imageUrl || undefined, body: body.trim() || undefined });
+      const stored = picturesToStore(images);
+      await plantBed({ name: name.trim(), lightHouseId: lightHouse.id, imageUrl: stored.imageUrl || undefined, imageUrls: stored.imageUrls.length > 1 ? stored.imageUrls : undefined, body: body.trim() || undefined });
       notify(`🛏️ ${speak('bed_offered_toast')}`);
       announce('beds', lightHouse.id);
       onPlanted?.();
@@ -86,9 +91,13 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
               <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Intelligence /></span>{imagining ? '…' : t('generate_image')}
             </button>
           </div>
-          <ImagePicker
-            onImageSelect={(file) => handleImageUpload(file, `lightHouses/${lightHouse.id}/beds/${Date.now()}`).then(setImageUrl)}
-            previewUrl={imageUrl} loading={uploading} />
+          {/* The bed's pictures, arranged by hand — the first is its face (ui/ImageStrip). */}
+          <ImageStrip
+            images={images}
+            onChange={setImages}
+            onAdd={(file) => handleImageUpload(file, `lightHouses/${lightHouse.id}/beds/${Date.now()}`).then(url => setImages(prev => [...prev, url]))}
+            uploading={uploading}
+            cover />
         </div>
         {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
         <button type="button" onClick={submit} disabled={submitting || !name.trim()}

@@ -620,7 +620,7 @@ export const mintPulse = async (pulseData: Partial<Pulse> & { lifetreeId: string
 export const growVision = async (
     vision: Pick<Vision, 'id'>,
     data: {
-        title?: string; body?: string; imageUrl?: string; growthCategory?: string;
+        title?: string; body?: string; imageUrl?: string; imageUrls?: string[]; growthCategory?: string;
         webLinks?: Pulse['webLinks'];
         authorId: string; authorName?: string; authorPhoto?: string;
         visibility?: Pulse['visibility'];

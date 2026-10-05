@@ -33,7 +33,7 @@ interface CommunityAppearanceProps {
   onRemoveHero: () => void;
   imageUrls: string[];
   onAddImage: (file: File) => void;
-  onRemoveImage: (index: number) => void;
+  onImagesChange: (next: string[]) => void;
   uploadingImage: boolean;
   editSocial: SocialLinks;
   onSocialChange: React.Dispatch<React.SetStateAction<SocialLinks>>;
@@ -75,7 +75,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
   onRemoveHero,
   imageUrls,
   onAddImage,
-  onRemoveImage,
+  onImagesChange,
   uploadingImage,
   editSocial,
   onSocialChange,
@@ -120,7 +120,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
       heroHint={t('hero_hint_community')}
       imageUrls={imageUrls}
       onAddImage={onAddImage}
-      onRemoveImage={onRemoveImage}
+      onImagesChange={onImagesChange}
       uploadingImage={uploadingImage}
       social={editSocial}
       onSocialChange={onSocialChange}

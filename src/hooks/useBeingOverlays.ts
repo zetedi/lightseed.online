@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import type { Alignment, Community, Lifetree, Pulse, Vision } from '../types';
 import type { LightHouse } from '../domain/lightHouse';
-import { getAlignmentById, getLifetreeById } from '../services/firebase';
+import { getAlignmentById, getLifetreeById, getPulseById, getCommunityById, getLightHouseById } from '../services/firebase';
+import { onRefresh, type RefreshEvent } from '../services/refreshBus';
+import { followEdit } from '../domain/refreshFollow';
 
 // THE OPEN BEINGS (ring 2026-09-16, lifted out of App.tsx unchanged). Which being stands
 // on screen: a tree (and the section it should open at), a vision, an alignment, a
@@ -22,6 +24,30 @@ export function useBeingOverlays() {
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
   // A Light House opened into its own profile page (from the map marker or the LightHouse tab).
   const [viewingLightHouse, setViewingLightHouse] = useState<LightHouse | null>(null);
+  // AN EDIT IS SEEN WHERE IT STANDS (ring 2026-10-05; domain/refreshFollow): the open beings
+  // follow the refresh bus. A whisper that names the open being and carries its patch is laid
+  // over the copy; one that names it with no patch re-reads the document whole; every other
+  // whisper is ignored. Before this only the open TREE followed (and only patches), so an edit
+  // announced without its patch — a Light House's place, a mended home — stood stale on screen.
+  useEffect(() => onRefresh((e: RefreshEvent) => {
+    const follow = <T extends { id: string }>(
+      topics: RefreshEvent['topic'][],
+      set: React.Dispatch<React.SetStateAction<T | null>>,
+      read: (id: string) => Promise<T | null>,
+    ) => {
+      if (!topics.includes(e.topic) || !e.id) return;
+      set(open => {
+        const action = followEdit(open?.id, e);
+        if (action.kind === 'merge') return open ? { ...open, ...action.patch } as T : open;
+        if (action.kind === 'reread') read(e.id!).then(fresh => { if (fresh) set(cur => (cur && cur.id === fresh.id ? fresh : cur)); }).catch(() => {});
+        return open;
+      });
+    };
+    follow<Lifetree>(['trees', 'beds'], setSelectedTree, getLifetreeById);
+    follow<Pulse>(['events', 'pulses'], setSelectedPulse, getPulseById);
+    follow<Community>(['communities'], setSelectedCommunity, getCommunityById);
+    follow<LightHouse>(['lightHouses', 'beds'], setViewingLightHouse, getLightHouseById);
+  }), []);
   // Bumped whenever we finish touching a tree (guardianship, edits) so the map re-reads it.
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const bumpMapRefresh = () => setMapRefreshKey(k => k + 1);

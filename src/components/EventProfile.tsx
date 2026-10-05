@@ -26,7 +26,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { spokenLine, speak } from '../utils/translations';
 
 import { Picture } from './ui/Picture';
-import { FullViewButton } from './ui/FullView';
+import { PictureGallery } from './ui/PictureGallery';
+import { picturesOf } from '../domain/pictures';
 // The event view, rendered through the shared profile scaffold (ProfileHero + ProfileLayout) so an
 // event reads like the community / lifetree / lightseed profiles rather than a generic pulse. Events
 // are pulses of type 'event'; this is the read view — editing still goes through EventModal (onEdit).
@@ -123,8 +124,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDu
         setDuplicating(true);
         try { await onDuplicate(); } finally { setDuplicating(false); }
     };
-    const [activeImageIndex, setActiveImageIndex] = useState(0);
-    const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
+    const images = picturesOf(pulse);
     // Whether the details grid renders the place-of-record row (the row itself lives in
     // ui/PlaceOfRecord; the container needs the same law or staff on a strict host would
     // see an empty box).
@@ -236,25 +236,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDu
                 {section === 'about' && (
                     <div>
                         <SectionTitle title={t('event_details')} sub={t('event_details_sub')} />
-                        {images.length > 0 && (
-                            <div className="relative mb-6 h-72 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:bg-slate-900 dark:border-slate-800">
-                                <Picture src={images[activeImageIndex]} size={1200} loading="eager" alt={pulse.title} className="h-full w-full object-cover" />
-                                <FullViewButton src={images[activeImageIndex]} alt={pulse.title} className="right-3 top-3" />
-                                {images.length > 1 && (
-                                    <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto rounded-2xl bg-black/30 p-2 backdrop-blur-md">
-                                        {images.map((url, index) => (
-                                            <button
-                                                key={url}
-                                                onClick={() => setActiveImageIndex(index)}
-                                                className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 ${activeImageIndex === index ? 'border-white' : 'border-white/30'}`}
-                                            >
-                                                <Picture src={url} className="h-full w-full object-cover" alt="" />
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        <PictureGallery images={images} alt={pulse.title} className="mb-6 h-72" eager />
                         {(whenText || pulse.eventLocation || pulse.eventMaxParticipants || showPlace) && (
                             <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800">
                                 {whenText && <div><span className="font-bold">{t('when')}:</span> {whenText}</div>}

@@ -12,13 +12,16 @@ export const CardCarousel = ({ images, alt = '', className = '', imgClassName = 
   className?: string;
   imgClassName?: string;
 }) => {
-  const [idx, setIdx] = useState(0);
+  // The page is remembered by PICTURE, not by index (ring 2026-10-05): when the list changes
+  // under the card (an edit, a re-ordering) a picture still present stays in view, and otherwise
+  // the first — the record's new face — shows. An index would point at whatever moved there.
+  const [chosen, setChosen] = useState<string | null>(null);
   if (images.length === 0) return null;
-  const i = Math.min(idx, images.length - 1);
+  const i = Math.max(0, chosen ? images.indexOf(chosen) : 0);
   const step = (e: React.MouseEvent, d: number) => {
     e.stopPropagation();
     e.preventDefault();
-    setIdx((i + d + images.length) % images.length);
+    setChosen(images[(i + d + images.length) % images.length]);
   };
   return (
     <div className={`group/carousel relative h-full w-full ${className}`}>

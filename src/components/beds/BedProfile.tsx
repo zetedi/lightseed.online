@@ -20,6 +20,8 @@ import { spokenLine } from '../../utils/translations';
 
 import { Picture } from '../ui/Picture';
 import { FullViewButton } from '../ui/FullView';
+import { PictureGallery } from '../ui/PictureGallery';
+import { picturesOf } from '../../domain/pictures';
 // The bed's own profile — a bed IS a Lifetree, so it wears the same face (BeingProfile) and the
 // same chain (ChainTree, each stay a leaf). What's its own: a HOUSED/LOOSE pill, a calendar of
 // nights, and a details card with no tree machinery (no domain, no convert, no steward).
@@ -111,12 +113,19 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
     }
   };
 
+  // The bed's pictures (domain/pictures): the hero wears the first; several open a gallery section.
+  const pictures = picturesOf(bed);
   const sections: BeingSection[] = [
     {
       key: 'calendar', label: t('calendar'), icon: <Icons.Moon />, render: () => (
         <BedCalendar bed={bed} onViewTree={onViewTree} />
       ),
     },
+    ...(pictures.length > 1 ? [{
+      key: 'pictures', label: t('gallery'), icon: <Icons.Image />, render: () => (
+        <PictureGallery images={pictures} alt={bed.name} className="h-72" />
+      ),
+    }] : []),
     {
       key: 'leaves', label: t('who_stayed'), icon: <Icons.Leaf />, render: () => (
         <ChainTree

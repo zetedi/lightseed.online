@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Modal, modalButton } from '../ui/Modal';
 import { Icons } from '../ui/Icons';
 import { showAlert } from '../ui/Dialog';
-import { ImagePicker } from '../ui/ImagePicker';
+import { ImageStrip } from '../ui/ImageStrip';
+import { picturesOf, picturesToStore } from '../../domain/pictures';
 import { useSession } from '../../contexts/SessionContext';
 import { createOffering, updateOffering, uploadImage, getMyBeds } from '../../services/firebase';
 import { offeringProblem, type OfferingKind, type OfferedTo } from '../../domain/offering';
@@ -41,7 +42,8 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
     const [description, setDescription] = useState(offering?.content || offering?.body || '');
     const [appreciation, setAppreciation] = useState(String(offering?.offeringAppreciationLight ?? RAY_UNITS));
     const [url, setUrl] = useState(offering?.offeringUrl || '');
-    const [imageUrl, setImageUrl] = useState(offering?.imageUrl || '');
+    // The offering's pictures, in the author's order (domain/pictures): the first is its face.
+    const [images, setImages] = useState<string[]>(offering ? picturesOf(offering) : []);
     const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [beds, setBeds] = useState<Lifetree[]>([]);
@@ -60,7 +62,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
         const bed = beds.find(b => b.id === id);
         if (bed) {
             if (!title.trim()) setTitle(bed.name);
-            if (!imageUrl && (bed.latestGrowthUrl || bed.imageUrl)) setImageUrl(bed.latestGrowthUrl || bed.imageUrl || '');
+            if (!images.length && (bed.latestGrowthUrl || bed.imageUrl)) setImages([bed.latestGrowthUrl || bed.imageUrl || '']);
         }
     };
 
@@ -79,7 +81,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
     const pickImage = async (file: File) => {
         if (!lightseed) return;
         setUploading(true);
-        try { setImageUrl(await uploadImage(file, `users/${lightseed.uid}/offerings/${Date.now()}`)); }
+        try { const url = await uploadImage(file, `users/${lightseed.uid}/offerings/${Date.now()}`); setImages(prev => [...prev, url]); }
         catch { showAlert('err_image_upload'); }
         setUploading(false);
     };
@@ -98,7 +100,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
                 title: title.trim(),
                 body: description.trim(),
                 content: description.trim(),
-                imageUrl,
+                ...picturesToStore(images),
                 offeringAppreciationLight: suggestedAppreciationLight,
                 offeringUrl: detailUrl,
             };
@@ -115,7 +117,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
                 title: title.trim(),
                 body: description.trim(),
                 content: description.trim(),
-                imageUrl,
+                ...picturesToStore(images),
                 offeringKind: kind,
                 offeringAppreciationLight: suggestedAppreciationLight,
                 offeringActive: true,
@@ -205,7 +207,8 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
                     <span className="mt-1 block text-[10px] text-slate-400">{speak(spokenLine('offer_light_note', { units: RAY_UNITS, coin: coin.name }))}</span>
                 </label>
 
-                <ImagePicker onImageSelect={pickImage} previewUrl={imageUrl} loading={uploading} className="h-40" />
+                {/* The offering's pictures, arranged by hand — the first is its face (ui/ImageStrip). */}
+                <ImageStrip images={images} onChange={setImages} onAdd={pickImage} uploading={uploading} cover />
 
                 {problem && <p className="text-xs font-medium text-rose-600 dark:text-rose-300">{speak(problem)}</p>}
                 <button type="submit" disabled={!!problem || saving || uploading}

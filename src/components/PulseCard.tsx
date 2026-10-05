@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { picturesOf } from '../domain/pictures';
 import { CardCarousel } from './ui/CardCarousel';
 import { type Pulse, type Lightseed } from '../types';
 import { Icons } from './ui/Icons';
@@ -26,7 +27,7 @@ const POP = 'hover:shadow-xl hover:-translate-y-1 active:shadow-xl active:-trans
 export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards' }: PulseCardProps) => {
     const { t } = useLanguage();
     const coin = useCoin();
-    const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
+    const images = picturesOf(pulse); // many in order, the first the face (domain/pictures)
     const isOffering = pulse.type === 'offering';
     const appreciationLight = pulse.offeringAppreciationLight;
     const badge = pulse.type === 'event' ? t('badge_event') : pulse.type === 'tree_growth' ? t('badge_growth') : isOffering ? (pulse.offeringKind === 'bed' ? t('badge_bed') : pulse.offeringKind === 'product' ? t('badge_product') : t('badge_offering')) : '';

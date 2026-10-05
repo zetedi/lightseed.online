@@ -560,9 +560,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     setIsUploadingImage(false);
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImageUrls(prev => prev.filter((_, i) => i !== index));
-  };
+  // A removal or a re-ordering of the gallery (ui/ImageStrip) — the autosave diff releases what left.
+  const handleImagesChange = (next: string[]) => setImageUrls(next);
 
   const handleRemoveHero = () => {
     // Persist immediately (like upload does) — otherwise the old photo returns
@@ -798,7 +797,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             onRemoveHero={handleRemoveHero}
             imageUrls={imageUrls}
             onAddImage={handleAddImage}
-            onRemoveImage={handleRemoveImage}
+            onImagesChange={handleImagesChange}
             uploadingImage={isUploadingImage}
             editSocial={editSocial}
             onSocialChange={setEditSocial}

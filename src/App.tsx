@@ -169,13 +169,12 @@ const AppContent = () => {
         if (e.patch) {
             const patch = e.patch;
             setData(prev => prev.some(item => item.id === e.id) ? prev.map(item => item.id === e.id ? { ...item, ...patch } : item) : prev);
-            // The open tree page follows the same whisper: a mint moves the head (latestHash,
-            // blockHeight, the latest face) and the profile's chain reloads from it.
-            if (e.topic === 'trees') beings.setSelectedTree(prev => (prev && prev.id === e.id ? { ...prev, ...patch } : prev));
+            // (The OPEN beings — tree, pulse, community, Light House — follow the same whisper
+            // from useBeingOverlays: a patch merged, a bare id re-read.)
         } else if (e.topic === 'events' || e.topic === 'pulses') {
             setData(prev => prev.some(item => item.id === e.id) ? prev.filter(item => item.id !== e.id) : prev);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setData and setSelectedTree are stable setters
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setData is a stable setter
     }), []);
 
     // Load the tab's content when the view changes — or when the active node's commons/domain
@@ -351,7 +350,7 @@ const AppContent = () => {
 
     // A contribution sealed onto the vision's own chain. After it commits, refresh the open vision
     // so its chain head (blockHeight/latestHash) and the Contributions view reflect the new leaf.
-    const handleGrowVision = async (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; growthCategory?: string; webLinks?: WebLink[] }) => {
+    const handleGrowVision = async (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; imageUrls?: string[]; growthCategory?: string; webLinks?: WebLink[] }) => {
         if (!lightseed) return;
         await growVision(vision, {
             ...data,

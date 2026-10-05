@@ -305,7 +305,7 @@ export const plantLifetree = async (data: Partial<Lifetree> & { anchorUid: strin
 // housed beds need the house's keeper; loose beds need a place).
 export const plantBed = async (draft: {
     name: string; lightHouseId?: string; latitude?: number; longitude?: number;
-    locationName?: string; imageUrl?: string; body?: string;
+    locationName?: string; imageUrl?: string; imageUrls?: string[]; body?: string;
 }) => {
     const user = auth.currentUser;
     if (!user) throw new Error('err_signin_bed');
@@ -326,6 +326,7 @@ export const plantBed = async (draft: {
         anchorUid: user.uid, // housed: the house's keeper; loose: whoever stands it — bound by the rules
         name: draft.name.trim(),
         ...(draft.imageUrl ? { imageUrl: draft.imageUrl } : {}),
+        ...(draft.imageUrls?.length ? { imageUrls: draft.imageUrls } : {}), // many pictures, the first the face (domain/pictures)
         body: draft.body?.trim() || '',
         treeType: BED_TREE_TYPE,
         // A housed bed carries its house; a loose bed carries NO lightHouseId — its place is enough.

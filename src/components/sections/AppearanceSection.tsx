@@ -36,7 +36,7 @@ interface AppearanceSectionProps {
   heroHint?: string;
   imageUrls: string[];
   onAddImage: (file: File) => void;
-  onRemoveImage: (index: number) => void;
+  onImagesChange: (next: string[]) => void;
   uploadingImage: boolean;
   social: AppearanceSocialLinks;
   onSocialChange: React.Dispatch<React.SetStateAction<AppearanceSocialLinks>>;
@@ -70,7 +70,7 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   heroHint,
   imageUrls,
   onAddImage,
-  onRemoveImage,
+  onImagesChange,
   uploadingImage,
   social,
   onSocialChange,
@@ -115,7 +115,7 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
         onNameChange={onNameChange}
         imageUrls={imageUrls}
         onAddImage={onAddImage}
-        onRemoveImage={onRemoveImage}
+        onImagesChange={onImagesChange}
         uploadingImage={uploadingImage}
       />
 

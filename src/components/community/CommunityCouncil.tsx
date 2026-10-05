@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { notify } from '../ui/Toast';
 import { SuperDot } from '../ui/SuperDot';
 import { Icons } from '../ui/Icons';
@@ -75,11 +76,13 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
   const [spendOfferingId, setSpendOfferingId] = useState('');
   const [spendUnits, setSpendUnits] = useState(String(RAY_UNITS));
   const [spendingId, setSpendingId] = useState<string | null>(null);
+  // An offering retold or answered anywhere re-fetches the council's list (ring 2026-10-05).
+  const offeringsSignal = useRefreshSignal(['pulses']);
   useEffect(() => {
     let alive = true;
     fetchOfferingPulses(undefined, community.domain, communityLevels).then(r => { if (alive) setOfferings(r.items); }).catch(() => {});
     return () => { alive = false; };
-  }, [community.domain, communityLevels]);
+  }, [community.domain, communityLevels, offeringsSignal]);
   const spendDraft = { offeringId: spendOfferingId, units: Number.parseInt(spendUnits, 10) };
   const spendDraftProblem = decNature === 'purchase' ? spendIntentProblem(spendDraft) : null;
   const offeringTitle = (id: string) => offerings.find(o => o.id === id)?.title || id;

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, modalButton } from '../ui/Modal';
-import { Icons } from '../ui/Icons';
-import { ImagePicker } from '../ui/ImagePicker';
+import { ImageStrip } from '../ui/ImageStrip';
 import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { visibilitiesForScope, type PulseScope } from '../../domain/pulseVisibility';
@@ -122,19 +121,8 @@ export const EventModal = ({
             {visibilitiesForScope(scope).map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
           </select>
         </label>
-        <div className="grid grid-cols-3 gap-2">
-          {imageUrls.map((url, index) => (
-            <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
-              <img src={url} className="h-full w-full object-cover" alt="" />
-              <button type="button" onClick={() => setImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm dark:bg-slate-900/90" title={t('remove')}>
-                <Icons.Close />
-              </button>
-            </div>
-          ))}
-          <ImagePicker onImageSelect={addImage} loading={uploading} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:bg-slate-900 dark:border-slate-700">
-            <Icons.Plus />
-          </ImagePicker>
-        </div>
+        {/* The pictures, in the order they are kept — the first is the event's face (ui/ImageStrip). */}
+        <ImageStrip images={imageUrls} onChange={setImageUrls} onAdd={addImage} uploading={uploading} cover />
         <button type="submit" disabled={saving || uploading || !title.trim()} className={modalButton('primary', { hue: 'sky' })}>
           {saving ? t('creating') : (isEdit ? t('save_changes') : t('create_event'))}
         </button>

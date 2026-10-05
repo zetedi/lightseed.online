@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { visionOf } from '../../domain/papers';
 import type { Community, Lightseed, Pulse } from '../../types';
 import { fetchEventPulses } from '../../services/firebase';
@@ -29,6 +30,8 @@ export const HearthHero: React.FC<HearthHeroProps> = ({ community, props, lights
   const accent = community.theme?.accent || '#eab308';
 
   const [events, setEvents] = useState<Pulse[]>([]);
+  // An event edited or removed anywhere re-fetches the hero's gatherings (ring 2026-10-05).
+  const eventsSignal = useRefreshSignal(['events']);
   useEffect(() => {
     if (!showEvents || !community.domain) return;
     let alive = true;
@@ -46,7 +49,7 @@ export const HearthHero: React.FC<HearthHeroProps> = ({ community, props, lights
       })
       .catch(() => {});
     return () => { alive = false; };
-  }, [community.domain, community.reflectsPublic, community.strictScope, lightseed, showEvents, maxEvents, lightseed?.uid]);
+  }, [community.domain, community.reflectsPublic, community.strictScope, lightseed, showEvents, maxEvents, lightseed?.uid, eventsSignal]);
 
   const visionHtml = visionOf(community) ? sanitizeRichText(visionOf(community)).replace(/&nbsp;| /g, ' ') : '';
 

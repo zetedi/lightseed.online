@@ -8,7 +8,8 @@ import { useSession } from '../../contexts/SessionContext';
 import { speak } from '../../utils/translations';
 import { Icons } from '../ui/Icons';
 import { Modal, modalButton } from '../ui/Modal';
-import { ImagePicker } from '../ui/ImagePicker';
+import { ImageStrip } from '../ui/ImageStrip';
+import { picturesToStore } from '../../domain/pictures';
 import { Picture } from '../ui/Picture';
 import { Pulse, Lightseed, Lifetree, Vision } from '../../types';
 import { getMyVisions } from '../../services/firebase';
@@ -28,7 +29,7 @@ interface EmitPulseModalProps {
   onMint: (data: any) => Promise<void>;
   // Grow a vision — seals a CONTRIBUTION onto the VISION'S OWN chain (not the rooted tree).
   // The tree grows by caring (onMint → the tree's chain); the vision by contributions.
-  onGrowVision?: (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; growthCategory?: string; webLinks?: WebLink[] }) => Promise<void>;
+  onGrowVision?: (vision: Vision, data: { title?: string; body?: string; imageUrl?: string; imageUrls?: string[]; growthCategory?: string; webLinks?: WebLink[] }) => Promise<void>;
   onProposeAlignment: (data: any) => Promise<void>;
   // Fired after a tree growth mints, so the caller can refresh the tree's latest image.
   onGrown?: (treeId: string, imageUrl?: string) => void;
@@ -95,7 +96,10 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
   const [pulseTitle, setPulseTitle] = useState('');
   const [pulseBody, setPulseBody] = useState('');
   const [linkRows, setLinkRows] = useState<WebLinkRow[]>([]);
-  const [pulseImageUrl, setPulseImageUrl] = useState(targetVision?.imageUrl || '');
+  // The growth's pictures, in the author's order (domain/pictures): the first is the face — the
+  // one a card wears and the one that becomes the tree's latestGrowthUrl.
+  const [pulseImages, setPulseImages] = useState<string[]>(targetVision?.imageUrl ? [targetVision.imageUrl] : []);
+  const pulseImageUrl = pulseImages[0] || '';
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
@@ -121,13 +125,13 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
 
   const treeImage = growthTree?.latestGrowthUrl || growthTree?.imageUrl || '';
 
-  const chooseTree = () => { setGrowthKind('tree'); setPulseImageUrl(''); goToStep(1); };
+  const chooseTree = () => { setGrowthKind('tree'); setPulseImages([]); goToStep(1); };
   const chooseVision = () => {
     setGrowthKind('vision');
     if (myVisions.length === 1) pickVision(myVisions[0]);
     goToStep(1);
   };
-  const pickVision = (v: Vision) => { setSelectedVision(v); setPulseImageUrl(v.imageUrl || ''); };
+  const pickVision = (v: Vision) => { setSelectedVision(v); setPulseImages(v.imageUrl ? [v.imageUrl] : []); };
 
   const handleGenerate = async () => {
     if (!selectedVision || generating) return;
@@ -136,7 +140,8 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
     try {
       const prompt = `${selectedVision.title}. ${pulseBody}`.trim();
       const img = await generateVisionImage(prompt);
-      if (img) setPulseImageUrl(img);
+      // A generated picture takes the face and replaces an earlier generation; uploads stay.
+      if (img) setPulseImages(prev => [img, ...prev.filter(u => !u.startsWith('data:'))]);
       else setGenError('err_image_gen');
     } catch (e: any) {
       // Inline (the old showAlert appeared *behind* the modal).
@@ -163,10 +168,11 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
       const doors = webLinksOf(linkRows);
       if (doors.problem) { showAlert(speak(doors.problem)); setIsSubmitting(false); return; }
       const webLinks = doors.links.length ? { webLinks: doors.links } : {};
-      let finalImageUrl = pulseImageUrl;
-      if (pulseImageUrl.startsWith('data:')) {
-        finalImageUrl = await uploadBase64Image(pulseImageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
-      }
+      // A generated picture is still bytes in the page: store each before the seal.
+      const stored = picturesToStore(await Promise.all(pulseImages.map((u, i) =>
+        u.startsWith('data:') ? uploadBase64Image(u, `users/${lightseed.uid}/pulses/ai/${Date.now()}-${i}`) : Promise.resolve(u))));
+      const finalImageUrl = stored.imageUrl;
+      const manyImages = stored.imageUrls.length > 1 ? { imageUrls: stored.imageUrls } : {};
 
       if (growthKind === 'vision' && selectedVision) {
         // Seal the contribution onto the vision's own chain (growVision), not the rooted tree.
@@ -175,6 +181,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
           title: pulseTitle.trim() || undefined,
           body: pulseBody,
           imageUrl: finalImageUrl || undefined,
+          ...manyImages,
           growthCategory: growthCategory || undefined,
           ...webLinks,
         });
@@ -190,6 +197,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
         title: pulseTitle.trim() || t('growth_of').replace('{name}', growthTree?.name || t('the_tree')),
         body: pulseBody,
         imageUrl: finalImageUrl,
+        ...manyImages,
         ...webLinks,
         authorId: lightseed.uid,
         authorName: nameAs(growthTree?.name) || t('someone'),
@@ -234,7 +242,7 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
     : true;
   const isLast = step === pageKeys.length - 1;
 
-  const uploadImage = (file: File) => handleImageUpload(file, `users/${lightseed?.uid}/pulses/${Date.now()}`).then(setPulseImageUrl);
+  const uploadImage = (file: File) => handleImageUpload(file, `users/${lightseed?.uid}/pulses/${Date.now()}`).then(url => setPulseImages(prev => [...prev, url]));
 
   return (
     <Modal title={matchCandidate ? t('propose_alignment') : (targetTree ? t('grow_name').replace('{name}', (targetTree as Lifetree).name) : (targetVision ? t('grow_name').replace('{name}', targetVision.title) : t('emit_pulse')))} onClose={onClose}>
@@ -292,7 +300,8 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                           : <div className="flex h-full items-center justify-center text-slate-300"><Icons.Tree /></div>}
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3"><p className="truncate text-sm font-bold text-white drop-shadow">{growthTree?.name}</p></div>
                       </div>
-                      <ImagePicker onImageSelect={uploadImage} previewUrl={pulseImageUrl} loading={uploading} />
+                      {/* The growth's pictures, arranged by hand — the first is its face (ui/ImageStrip). */}
+                      <ImageStrip images={pulseImages} onChange={setPulseImages} onAdd={uploadImage} uploading={uploading} cover />
                       <p className="text-xs leading-relaxed text-emerald-800/80">{t('growth_photo_note')}</p>
                     </div>
                   ) : growthKind === 'vision' ? (
@@ -319,6 +328,8 @@ export const EmitPulseModal: React.FC<EmitPulseModalProps> = ({
                             </label>
                           </div>
                           {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(genError)}</p>}
+                          {/* Several pictures: arrange them, the first is the face (ui/ImageStrip). */}
+                          {pulseImages.length > 0 && <ImageStrip images={pulseImages} onChange={setPulseImages} cover />}
                         </div>
                       )}
 

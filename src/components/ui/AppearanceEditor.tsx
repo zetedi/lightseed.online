@@ -1,5 +1,6 @@
 import { Icons } from './Icons';
 import { ImagePicker } from './ImagePicker';
+import { ImageStrip } from './ImageStrip';
 import { Loading } from './Loading';
 import { Picture } from './Picture';
 import { ThemeEditor, type ThemeValue } from './ThemeEditor';
@@ -17,7 +18,7 @@ export const AppearanceEditor = ({
   logoUrl, onLogoUpload, uploadingLogo, logoLabel, logoHint,
   heroUrl, onHeroUpload, uploadingHero, onRemoveHero, heroHint,
   name, onNameChange, nameLabel,
-  imageUrls, onAddImage, onRemoveImage, uploadingImage,
+  imageUrls, onAddImage, onImagesChange, uploadingImage,
 }: {
   theme: ThemeValue;
   onThemeChange: (t: ThemeValue) => void;
@@ -37,7 +38,8 @@ export const AppearanceEditor = ({
   nameLabel?: string;
   imageUrls?: string[];
   onAddImage?: (file: File) => void;
-  onRemoveImage?: (index: number) => void;
+  // The whole next list — a removal or a re-ordering (ui/ImageStrip); the caller owns the state.
+  onImagesChange?: (next: string[]) => void;
   uploadingImage?: boolean;
 }) => {
   const { t } = useLanguage();
@@ -87,22 +89,11 @@ export const AppearanceEditor = ({
       </div>
 
       {/* Gallery (communities only) */}
-      {imageUrls && onAddImage && onRemoveImage && (
+      {imageUrls && onAddImage && onImagesChange && (
         <div>
           <label className="mb-2 block text-[10px] font-bold uppercase text-slate-400">{t('gallery')}</label>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {imageUrls.map((url, index) => (
-              <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
-                <Picture src={url} className="h-full w-full object-cover" alt="" />
-                <button type="button" onClick={() => onRemoveImage(index)} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm dark:bg-slate-900/90" title={t('remove')}>
-                  <Icons.Close />
-                </button>
-              </div>
-            ))}
-            <ImagePicker onImageSelect={onAddImage} loading={uploadingImage} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:bg-slate-900 dark:border-slate-700">
-              <Icons.Plus />
-            </ImagePicker>
-          </div>
+          {/* The slides, in the order the carousel shows them (ui/ImageStrip). */}
+          <ImageStrip images={imageUrls} onChange={onImagesChange} onAdd={onAddImage} uploading={uploadingImage} cols={4} />
         </div>
       )}
 

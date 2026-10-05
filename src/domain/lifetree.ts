@@ -24,6 +24,7 @@ export interface Lifetree extends Being {
   shortTitle?: string;
   body: string; // the tree's vision text (canonical)
   imageUrl?: string;
+  imageUrls?: string[]; // a bed's many pictures, in its keeper's order (domain/pictures): imageUrl stays the first
   latestGrowthUrl?: string; // URL of the most recent growth pulse image
   
   // Tree Circle roles (guardian / keeper / steward / observer) live in the `links`

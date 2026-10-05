@@ -6,6 +6,51 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-05 · Pictures are arranged by hand** — Zoltán: "Make it possible to change the order of
+images where applicable, creating events, pulses, editing them etc." Three places let a being add
+and remove many pictures — the event modal, the events section's form, and a community's gallery —
+each with the same strip copied by hand, and none let the order change; yet the order IS the record:
+`imageUrls` as saved, with the first the face a card and an OG card wear (`imageUrl`). THE MEND: one
+shell, `ui/ImageStrip`, in all three — a tile moves by its two arrows (every pointer, the keyboard,
+a thumb; "earlier"/"later", so Arabic reads them right) or by being dragged onto another tile (a
+mouse); the first tile wears a Cover chip where the first is the cover; the law of a move is
+`domain/order` (`moveItem`: nothing lost, nothing doubled, a no-op returns the same array), tested.
+The event forms also stopped drawing a stored picture with a raw `<img>` — the strip asks through
+`<Picture>`, as every seat must. THEN, THE SAME DAY — Zoltán: "it would be nice and cheap now to have
+multiple images [on] a growth pulse, an offering, a vision and a bed" — each of the four carried ONE
+picture; now each carries many, arranged in the same strip: the growth modal (a generated picture
+takes the face and replaces an earlier generation, uploads stay; every picture is stored before the
+seal), the offering modal (create and retell — the rules already allowed `imageUrls`), the vision
+modal, the bed modal; the records keep `imageUrl` equal to the first, so a card, an OG card and a
+tree's latestGrowthUrl see the face as before, and a chain block's `imageUrls` was already a field
+the birth law admits and the seal hashes. The law of reading is `domain/pictures` (`picturesOf`,
+`faceOf`, `picturesToStore`), tested — the one place the "list, else the single picture" rule is
+spelled out, where seven seats had written it by hand; and the gallery seat is one shell too
+(`ui/PictureGallery`: the chosen picture large, thumbnails over its foot), drawn before by hand in
+the event and pulse profiles and now also in the offering's details, the vision's page and a bed's
+own gallery tab. NOT GUARANTEED: dragging on a touch screen (HTML drag-and-drop is a mouse's; the
+arrows are the thumb's); a vision or a bed, once born, has no door yet to retell its pictures (only
+an event and an offering are edited after birth); this change was not walked in a browser — the
+domain is tested, the shell typechecked and linted, and Zoltán walks it locally first.
+THEN, FROM THE FIRST WALK — Zoltán: "Refresh item after edit, check this everywhere. Now I've
+updated the event, but the image change was not reflected." The save had landed (the record's
+pictures stood re-ordered in the data, the face the new first); what stood stale was on screen.
+Three seams, read across every edit path: (1) the gallery and the card carousel remembered the
+chosen picture by INDEX — re-order the pictures and the index points at whatever moved there; now
+both remember the picture itself (kept while it stands, else the first, the new face); (2) only the
+open TREE followed the refresh bus, and only for patches — a Light House's edited place
+(announced with no patch) or a mended home stood stale until reopened; now EVERY open being (tree,
+pulse, community, Light House) follows, by one law (`domain/refreshFollow`: a patch is merged, a
+bare id re-read, anything else kept), from `useBeingOverlays`; (3) five lists held a copy and never
+listened — the landing's hearth events, the profile's offerings and pulses, the council's
+offerings, the offerings at a being's door; each now re-fetches on its topics (useRefreshSignal).
+ALSO: an event's edit stamps `updatedAt` (the rules allowed it; nothing wrote it, so the newest
+edit sorted as its birth). NOT GUARANTEED: a vision has no refresh topic (it is not edited after
+birth; a contribution re-reads it in handleGrowVision); a list that merges a patch rather than
+re-fetching (the live feed) shows exactly what the edit said and nothing the server added.
+
+---
+
 **2026-10-02 · A house is released by its own keeper** — found by the rules compiler while the
 secret circle was deployed ("Invalid variable name: treeId"): the keeper ring of 2026-09-29 pasted
 the TREE's delete clause into the Light House block, where `treeId` names nothing — so the clause

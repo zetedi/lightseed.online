@@ -18,7 +18,8 @@ import { mintBeingQr } from '../services/firebase/beings';
 import { useLanguage } from '../contexts/LanguageContext';
 
 import { Picture } from './ui/Picture';
-import { FullViewButton } from './ui/FullView';
+import { PictureGallery } from './ui/PictureGallery';
+import { picturesOf } from '../domain/pictures';
 // The generic pulse view — a PROFILE, not a modal: the same ProfileHero + full-page scaffold as
 // VisionProfile / EventProfile / AlignmentView, so every entity (tree, vision, event, alignment,
 // pulse) opens into one profile anatomy (Indra's net). It still renders inside App's
@@ -35,8 +36,7 @@ interface PulseDetailProps {
 
 export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, onEdit }: PulseDetailProps) => {
     const { t } = useLanguage();
-    const [activeImageIndex, setActiveImageIndex] = useState(0);
-    const images = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
+    const images = picturesOf(pulse);
 
     // The guardians' conscience — on a growth mint, the tree's guardians may consensus-veto
     // (domain/guardianVeto). The chain stays append-only: a vetoed mint is marked, not erased.
@@ -188,25 +188,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
             {/* Body — the pulse itself: images, event/watering context, and the text. */}
             <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
                 <div className="rounded-2xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg dark:bg-slate-900 dark:border-slate-800">
-                    {images.length > 0 && (
-                        <div className="relative mb-6 h-96 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm group dark:bg-slate-900 dark:border-slate-800">
-                            <FullViewButton src={images[activeImageIndex]} alt={pulse.title} className="right-3 top-3" />
-                            <Picture src={images[activeImageIndex]} size={1200} loading="eager" alt={pulse.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                            {images.length > 1 && (
-                                <div className="absolute bottom-4 left-4 right-4 flex gap-2 overflow-x-auto rounded-2xl bg-black/30 p-2 backdrop-blur-md">
-                                    {images.map((url, index) => (
-                                        <button
-                                            key={url}
-                                            onClick={() => setActiveImageIndex(index)}
-                                            className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 ${activeImageIndex === index ? 'border-white' : 'border-white/30'}`}
-                                        >
-                                            <Picture src={url} className="h-full w-full object-cover" alt="" />
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    <PictureGallery images={images} alt={pulse.title} className="mb-6 h-96" eager />
 
                     {pulse.type === 'event' && (
                         <div className="mb-4 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200">

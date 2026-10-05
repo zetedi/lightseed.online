@@ -454,7 +454,7 @@ export const updateEvent = async (
     eventId: string,
     data: Partial<Pick<Pulse, 'communityId' | 'title' | 'body' | 'content' | 'imageUrl' | 'imageUrls' | 'eventDate' | 'eventLocation' | 'eventMaxParticipants' | 'webLinks' | 'visibility'>>,
 ) => {
-    await updateDoc(doc(db, 'pulses', eventId), { ...data });
+    await updateDoc(doc(db, 'pulses', eventId), { ...data, updatedAt: serverTimestamp() });
     // The edit whispers its patch — every open list merges it (ring 2026-08-22).
     announce('events', eventId, data as Record<string, unknown>);
 };
@@ -617,7 +617,7 @@ export const setOfferingActive = async (id: string, active: boolean): Promise<vo
 // bed it stands for stay frozen (the rules refuse them), so a service never becomes a bed.
 export const updateOffering = async (
     id: string,
-    data: Partial<Pick<Pulse, 'title' | 'body' | 'content' | 'imageUrl' | 'offeringAppreciationLight' | 'offeringUrl' | 'visibility'>>,
+    data: Partial<Pick<Pulse, 'title' | 'body' | 'content' | 'imageUrl' | 'imageUrls' | 'offeringAppreciationLight' | 'offeringUrl' | 'visibility'>>,
 ): Promise<void> => {
     await updateDoc(doc(pulsesCollection, id), { ...data, updatedAt: serverTimestamp() });
     announce('pulses', id, data as Record<string, unknown>);

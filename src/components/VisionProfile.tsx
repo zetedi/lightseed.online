@@ -26,7 +26,8 @@ import { TreeParticipants } from './TreeParticipants';
 import { Lifetree } from '../types';
 
 import { Picture } from './ui/Picture';
-import { FullViewButton } from './ui/FullView';
+import { PictureGallery } from './ui/PictureGallery';
+import { picturesOf } from '../domain/pictures';
 import { tabTone } from '../utils/tabTheme';
 import { OfferingsTo } from './offerings/OfferingsTo';
 // The vision's genesis is a sealed block, not a pulse (like a bed) — so the chain view draws its
@@ -317,12 +318,8 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 <span className="shrink-0 text-emerald-600 dark:text-emerald-300"><Icons.ArrowRight /></span>
                             </button>
                         )}
-                        {vision.imageUrl && (
-                            <div className="relative mb-6 h-64 w-full overflow-hidden rounded-2xl border border-slate-100 bg-amber-50 shadow-sm dark:border-slate-800 dark:bg-amber-950/40">
-                                <Picture size={1200} src={vision.imageUrl} alt={vision.title} className="h-full w-full object-cover" />
-                                <FullViewButton src={vision.imageUrl} alt={vision.title} className="right-3 top-3" />
-                            </div>
-                        )}
+                        {/* The vision's pictures, the first its face (domain/pictures; ui/PictureGallery). */}
+                        <PictureGallery images={picturesOf(vision)} alt={vision.title} className="mb-6 h-64" />
                         <p dir="auto" className="whitespace-pre-wrap font-serif text-xl leading-relaxed text-slate-700 dark:text-slate-200">
                             {vision.body}
                         </p>

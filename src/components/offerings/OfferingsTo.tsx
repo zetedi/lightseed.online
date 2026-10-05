@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { getOfferingsTo } from '../../services/firebase';
 import { offeringStatusOf } from '../../domain/offering';
 import { formatLight } from '../../domain/light';
@@ -14,11 +15,13 @@ export const OfferingsTo = ({ kind, id, onView }: { kind: 'tree' | 'vision'; id:
     const { t } = useLanguage();
     const coin = useCoin();
     const [offerings, setOfferings] = useState<Pulse[] | null>(null);
+    // An offering retold or answered anywhere re-fetches what stands at this door (ring 2026-10-05).
+    const pulsesSignal = useRefreshSignal(['pulses']);
     useEffect(() => {
         let live = true;
         getOfferingsTo(kind, id).then(list => { if (live) setOfferings(list); }).catch(() => { if (live) setOfferings([]); });
         return () => { live = false; };
-    }, [kind, id]);
+    }, [kind, id, pulsesSignal]);
     if (!offerings || offerings.length === 0) return null;
     const rank = (p: Pulse) => (offeringStatusOf(p) === 'open' ? 0 : 1);
     const statusKey = (p: Pulse) => `offering_status_${offeringStatusOf(p) || 'open'}` as const;

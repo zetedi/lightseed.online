@@ -4,6 +4,8 @@ import { Icons } from '../ui/Icons';
 import { OutwardLink } from '../ui/OutwardLink';
 import { Picture } from '../ui/Picture';
 import { FullViewButton } from '../ui/FullView';
+import { PictureGallery } from '../ui/PictureGallery';
+import { picturesOf } from '../../domain/pictures';
 import { linkLabel } from '../../domain/webLink';
 import { BeingQr } from '../ui/BeingQr';
 import { LoveButton } from '../ui/LoveButton';
@@ -170,8 +172,9 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
   const HEART = tabTone('offerings');
   const isBed = offering.offeringKind === 'bed';
   const isProduct = offering.offeringKind === 'product';
-  // The same face the card wears: the first of imageUrls, else the single imageUrl.
-  const img = offering.imageUrls?.length ? offering.imageUrls[0] : (offering.imageUrl || '');
+  // The same face the card wears: the first picture (domain/pictures).
+  const pictures = picturesOf(offering);
+  const img = pictures[0] || '';
 
   const toggleActive = async () => {
     if (!isAuthor || busy) return;
@@ -215,6 +218,8 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
     {
       key: 'details', label: t('details'), icon: <Icons.Info />, render: () => (
         <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-6 dark:bg-slate-900 dark:border-slate-800">
+          {/* Several pictures: the gallery (the hero already wears the first). */}
+          {pictures.length > 1 && <PictureGallery images={pictures} alt={offering.title} className="h-64" />}
           {(offering.content || offering.body) && (
             <div>
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('the_offering')}</div>

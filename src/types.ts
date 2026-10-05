@@ -34,6 +34,8 @@ export interface Vision extends Being {
   description?: string;
   link?: string;
   imageUrl?: string;
+  // Many pictures, in the author's order (domain/pictures): imageUrl stays the first.
+  imageUrls?: string[];
   createdAt: Timestamp;
   // Joins live in the `links` collection ('joined' rel) — the legacy joinedUserIds array
   // is gone from both the type and the data (dropLegacyArrays cleared the docs).

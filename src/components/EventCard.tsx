@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { picturesOf } from '../domain/pictures';
 import { CardCarousel } from './ui/CardCarousel';
 import { Icons } from './ui/Icons';
 import { LoveButton } from './ui/LoveButton';
@@ -55,8 +56,8 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
     return (
         <button onClick={onOpen} className={`group relative flex h-full flex-col self-stretch overflow-hidden rounded-xl border text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'} ${className ?? 'w-full'}`}>
             <div className={`relative aspect-[4/3] w-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                {(event.imageUrls?.length || event.imageUrl)
-                    ? <CardCarousel images={event.imageUrls?.length ? event.imageUrls : [event.imageUrl!]} alt={event.title} />
+                {picturesOf(event).length
+                    ? <CardCarousel images={picturesOf(event)} alt={event.title} />
                     : <div className="flex h-full w-full items-center justify-center text-slate-300"><Icons.Loc /></div>}
 
                 {/* top-left: how soon */}

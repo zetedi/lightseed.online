@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Pulse } from '../../types';
@@ -29,6 +30,8 @@ export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse, 
   // Starts true: the component mounts fresh on every tab activation and fetches immediately.
   const [loading, setLoading] = useState(true);
 
+  // A pulse edited or a growth minted anywhere re-fetches the list (ring 2026-10-05).
+  const pulsesSignal = useRefreshSignal(['pulses', 'events', 'trees']);
   useEffect(() => {
     let alive = true;
     getMyPulses(uid)
@@ -41,7 +44,7 @@ export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse, 
       .catch((e) => console.error('Fetch profile data error', e))
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [uid]);
+  }, [uid, pulsesSignal]);
 
   const kinds = pulseKinds(pulses.map(p => p.type));
   const shown = pulses.filter(p => matchesKind(p.type, kind));

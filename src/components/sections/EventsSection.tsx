@@ -14,7 +14,7 @@ import { Pulse } from '../../types';
 // updateEvent and deleteCommunityEvent are scope-agnostic despite the latter's name: both
 // operate on a pulse id in the one ledger (events are pulses of type 'event' everywhere).
 import { updateEvent, deleteCommunityEvent, uploadImage, duplicateEvent } from '../../services/firebase';
-import { ImagePicker } from '../ui/ImagePicker';
+import { ImageStrip } from '../ui/ImageStrip';
 import { SectionTitle } from '../ui/SectionTitle';
 import { EventWeather } from '../ui/EventWeather';
 import { visibilitiesForScope } from '../../domain/pulseVisibility';
@@ -246,19 +246,8 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               {visibilitiesForScope(visibilityScope).map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
             </select>
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            {eventImageUrls.map((url, index) => (
-              <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
-                <img src={url} className="h-full w-full object-cover" alt={`${t('events')} ${index + 1}`} />
-                <button type="button" onClick={() => setEventImageUrls(prev => prev.filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-red-500 shadow-sm dark:bg-slate-900/90" title={t('remove')}>
-                  <Icons.Close />
-                </button>
-              </div>
-            ))}
-            <ImagePicker onImageSelect={handleAddEventImage} loading={isUploadingEventImage} className="flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white text-slate-400 hover:border-emerald-400 hover:text-emerald-600 dark:bg-slate-900 dark:border-slate-700">
-              <Icons.Plus />
-            </ImagePicker>
-          </div>
+          {/* The pictures, in the order they are kept — the first is the event's face (ui/ImageStrip). */}
+          <ImageStrip images={eventImageUrls} onChange={setEventImageUrls} onAdd={handleAddEventImage} uploading={isUploadingEventImage} cover alt={i => `${t('events')} ${i + 1}`} />
           <button type="submit" disabled={isEventSaving || isUploadingEventImage || !eventTitle.trim()} className="w-full rounded-2xl btn-theme py-3 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all disabled:opacity-50">
             {isEventSaving ? t('creating') : (editingEventId ? t('save_changes') : t('create_event'))}
           </button>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { picturesOf } from '../../domain/pictures';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { SuperDot } from '../ui/SuperDot';
@@ -161,7 +162,7 @@ export const ChainTree: React.FC<ChainTreeProps> = ({
                         // index 0, 2, 4 (Even) -> Right Side (Desktop)
                         // index 1, 3, 5 (Odd) -> Left Side (Desktop)
                         const isRightSide = index % 2 === 0;
-                        const pulseImages = pulse.imageUrls?.length ? pulse.imageUrls : (pulse.imageUrl ? [pulse.imageUrl] : []);
+                        const pulseImages = picturesOf(pulse); // many in order, the first the face (domain/pictures)
                         const pulseBadge = pulse.type === 'event' ? 'EVENT' : pulse.type === 'tree_growth' ? 'GROWTH' : 'PULSE';
                         const blockHref = hrefForBlock?.(pulse);
                         const CardTag: React.ElementType = blockHref ? 'a' : 'div';

@@ -5,7 +5,8 @@ import { normalizeWebLink, webLinkProblem } from '../../domain/webLink';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Modal, modalButton } from '../ui/Modal';
-import { ImagePicker } from '../ui/ImagePicker';
+import { ImageStrip } from '../ui/ImageStrip';
+import { picturesToStore } from '../../domain/pictures';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { Lightseed, Lifetree } from '../../types';
 import { generateVisionImage } from '../../services/gemini';
@@ -37,7 +38,8 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   const [visionTitle, setVisionTitle] = useState('');
   const [visionBody, setVisionBody] = useState('');
   const [visionLink, setVisionLink] = useState('');
-  const [visionImageUrl, setVisionImageUrl] = useState('');
+  // The vision's pictures, in the author's order (domain/pictures): the first is its face.
+  const [visionImages, setVisionImages] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<'public' | 'node' | 'private'>('public');
   // Grounding — the tree this vision is rooted in, and the community/site domain it links to.
   const groundOptions = trees.length ? trees : (activeTree ? [activeTree] : []);
@@ -57,7 +59,8 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
         if (!allowed) { setGenError(t('ai_login_required')); return; }
 
         const url = await generateVisionImage(visionBody);
-        if (url) setVisionImageUrl(url);
+        // A generated picture takes the face and replaces an earlier generation; uploads stay.
+        if (url) setVisionImages(prev => [url, ...prev.filter(u => !u.startsWith('data:'))]);
         else setGenError('err_ai_no_image');
     } catch (e: any) {
          setGenError(e?.message || t('daily_limit_image'));
@@ -71,10 +74,9 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
     setIsSubmitting(true);
 
     try {
-        let finalImageUrl = visionImageUrl;
-        if (visionImageUrl.startsWith('data:')) {
-            finalImageUrl = await uploadBase64Image(visionImageUrl, `users/${lightseed.uid}/visions/ai/${Date.now()}`);
-        }
+        // A generated picture is still bytes in the page: store each before the vision is born.
+        const stored = picturesToStore(await Promise.all(visionImages.map((u, i) =>
+            u.startsWith('data:') ? uploadBase64Image(u, `users/${lightseed.uid}/visions/ai/${Date.now()}-${i}`) : Promise.resolve(u))));
 
         // What is stored is what will be followed (domain/webLink): a bare host gains its
         // scheme here, once, rather than every screen guessing later.
@@ -86,7 +88,8 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             title: visionTitle,
             body: visionBody,
             link: normalizeWebLink(visionLink) || '',
-            imageUrl: finalImageUrl,
+            imageUrl: stored.imageUrl,
+            ...(stored.imageUrls.length > 1 ? { imageUrls: stored.imageUrls } : {}),
             visibility,
             domain: visionDomain.trim() || undefined,
         });
@@ -99,10 +102,13 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   return (
     <Modal title={t('create_vision')} onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <ImagePicker 
-            onImageSelect={(file) => handleImageUpload(file, `users/${lightseed?.uid}/visions/${Date.now()}`).then(setVisionImageUrl)} 
-            previewUrl={visionImageUrl} 
-            loading={uploading || localUploading} 
+        {/* The vision's pictures, arranged by hand — the first is its face (ui/ImageStrip). */}
+        <ImageStrip
+            images={visionImages}
+            onChange={setVisionImages}
+            onAdd={(file) => handleImageUpload(file, `users/${lightseed?.uid}/visions/${Date.now()}`).then(url => setVisionImages(prev => [...prev, url]))}
+            uploading={uploading || localUploading}
+            cover
         />
         
         <div className="flex justify-end">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Pulse } from '../../types';
@@ -23,6 +24,8 @@ export const ProfileOfferings: React.FC<ProfileOfferingsProps> = ({ uid, onViewO
   const [offerings, setOfferings] = useState<Pulse[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // An offering retold or answered anywhere re-fetches the list (ring 2026-10-05).
+  const pulsesSignal = useRefreshSignal(['pulses']);
   useEffect(() => {
     let alive = true;
     getMyPulses(uid)
@@ -33,7 +36,7 @@ export const ProfileOfferings: React.FC<ProfileOfferingsProps> = ({ uid, onViewO
       .catch(() => { if (alive) setOfferings([]); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [uid]);
+  }, [uid, pulsesSignal]);
 
   // What still stands comes first; the answered and the withdrawn settle below it.
   const rank = (p: Pulse) => (offeringStatusOf(p) === 'open' ? 0 : 1);
