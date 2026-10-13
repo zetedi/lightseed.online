@@ -11,9 +11,11 @@ import type { DomainKey } from './words';
 //   3. every door opened in a new tab, including doors that lead back into this same shell.
 //
 // The law: a stored link is ALWAYS absolute and always http(s) — nothing else is a web door, and
-// `javascript:` is not a door at all. Where it points decides the tab: another host is a new tab
-// (with the opener sealed), this host is the same tab, because leaving your own house through a
-// new window is not travel.
+// `javascript:` is not a door at all. Where it points decides the tab: another house is a new tab
+// (with the opener sealed), this house is the same tab, because leaving your own house through a
+// new window is not travel. This house is the host itself, its www coat, and the house directly
+// above or below it (ring 2026-10-13): a seed on a subdomain and the mother site at its apex are
+// one house with two hearths, so the door home opens where the reader stands.
 //
 // Plain contract — guaranteed: normalizeWebLink answers an absolute https(s) URL or null;
 // webLinkProblem answers a DOMAIN key for what a person can fix; hostOf reads the host of a
@@ -73,10 +75,19 @@ export const normalizeHostname = (raw: string | null | undefined): string | null
 // www is a coat, not a name: two hosts that differ only by it are the same place.
 const bareHost = (host: string): string => host.replace(/^www\./, '');
 
+// ONE HOUSE, TWO HEARTHS (ring 2026-10-13). The hybrid shape puts the living web on a subdomain
+// of the mother site — seed.theohouse.org stands INSIDE theohouse.org — so the two are the same
+// house and the door between them, in either direction, is not travel. Only the house directly
+// above or below counts, and only at a whole label: a look-alike (theohouse.org.evil.com,
+// nottheohouse.org) is not of the house at all, and a SIBLING subdomain is another hearth —
+// the shape names a mother and her seed, nothing wider yet.
+const sameHouse = (a: string, b: string): boolean =>
+  a === b || a.endsWith(`.${b}`) || b.endsWith(`.${a}`);
+
 export const isSameHost = (raw: string | null | undefined, currentHost: string | null | undefined): boolean => {
   const host = hostOf(raw);
   const here = String(currentHost ?? '').toLowerCase().trim();
-  return !!host && !!here && bareHost(host) === bareHost(here);
+  return !!host && !!here && sameHouse(bareHost(host), bareHost(here));
 };
 
 export interface LinkTarget {
@@ -86,7 +97,8 @@ export interface LinkTarget {
 }
 
 // How to render a door: absolute always; a door to elsewhere opens a new tab with the opener
-// sealed; a door back into this same shell opens where the reader already stands.
+// sealed; a door back into this same house — the shell, or the mother site it is the seed of —
+// opens where the reader already stands.
 export const linkTarget = (raw: string | null | undefined, currentHost: string | null | undefined): LinkTarget | null => {
   const href = normalizeWebLink(raw);
   if (!href) return null;

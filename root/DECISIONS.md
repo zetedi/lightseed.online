@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-13 · One house, two hearths: the door home opens where you stand** — Zoltán: "The link
+back to the seed opens up a new window, I think it might be on the seed side... I'd like the
+transition back and forth as smooth as possible." It was the seed's side. The mother site's doors
+into the seed are plain anchors and its floating seed button walks the same tab; but the seed's
+corner door home (motherDoorUrl, ring 2026-08-22) is rendered through ui/OutwardLink, and the door
+law (ring 2026-09-11) read theohouse.org and seed.theohouse.org as two houses — so the way home
+opened a new window. THE MEND is in the law, not the seat: domain/webLink's isSameHost now knows
+that a seed on a subdomain and the mother site at its apex are ONE house — the host itself, its
+www coat, or the house directly above or below it (one is the other's whole-label suffix) — so the
+door home, and any being's link that points back to the mother site, open where the reader
+stands, in both directions. Pinned by tests: a look-alike (theohouse.org.evil.com,
+nottheohouse.org) is still another house, because only a whole label may be the seam; a SIBLING
+subdomain is another hearth and still opens outward — the hybrid shape names a mother and her
+seed, nothing wider yet. NOT GUARANTEED: the preview host (theohouse.web.app) is nobody's child,
+so from there the door home still opens a new tab; two origins cannot share a view transition,
+so the step is a plain navigation and the back button is the way back.
+
 **2026-10-05 · Pictures are arranged by hand** — Zoltán: "Make it possible to change the order of
 images where applicable, creating events, pulses, editing them etc." Three places let a being add
 and remove many pictures — the event modal, the events section's form, and a community's gallery —

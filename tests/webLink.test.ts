@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   normalizeWebLink, webLinkProblem, hostOf, normalizeHostname,
-  linkTarget, linkLabel, webLinksOf, isWebLinkList, MAX_WEB_LINKS, MAX_WEB_LINK_LABEL,
+  linkTarget, linkLabel, isSameHost, webLinksOf, isWebLinkList, MAX_WEB_LINKS, MAX_WEB_LINK_LABEL,
 } from '../src/domain/webLink';
 import { DOMAIN_KEYS } from '../src/domain/words';
 
@@ -70,6 +70,27 @@ describe('linkTarget — where a door opens', () => {
     });
     // www is a coat, not a name
     expect(linkTarget('https://www.lightseed.online/x', 'lightseed.online')?.target).toBeUndefined();
+  });
+  it('one house, two hearths: the seed and its mother site open where the reader stands (ring 2026-10-13)', () => {
+    // the door home, from the seed
+    expect(linkTarget('https://theohouse.org', 'seed.theohouse.org')).toEqual({ href: 'https://theohouse.org/' });
+    expect(linkTarget('https://www.theohouse.org/about', 'seed.theohouse.org')?.target).toBeUndefined();
+    // and the doors in, from the mother site
+    expect(linkTarget('https://seed.theohouse.org/events', 'theohouse.org')?.target).toBeUndefined();
+    expect(linkTarget('https://seed.theohouse.org/events', 'www.theohouse.org')?.target).toBeUndefined();
+    expect(isSameHost('seed.theohouse.org', 'theohouse.org')).toBe(true);
+    expect(isSameHost('theohouse.org', 'seed.theohouse.org')).toBe(true);
+  });
+  it('only a whole label is the seam: a look-alike is another house', () => {
+    expect(linkTarget('https://theohouse.org.evil.com', 'seed.theohouse.org')?.target).toBe('_blank');
+    expect(linkTarget('https://nottheohouse.org', 'seed.theohouse.org')?.target).toBe('_blank');
+    expect(linkTarget('https://theohouse.org', 'nottheohouse.org')?.target).toBe('_blank');
+    expect(isSameHost('evil-theohouse.org', 'theohouse.org')).toBe(false);
+  });
+  it('a sibling subdomain is another hearth, and still opens outward', () => {
+    expect(linkTarget('https://blog.theohouse.org', 'seed.theohouse.org')?.target).toBe('_blank');
+    // the preview host is nobody's child: from there the door home is still a new tab
+    expect(linkTarget('https://theohouse.org', 'theohouse.web.app')?.target).toBe('_blank');
   });
   it('a link that is no link renders nothing at all', () => {
     expect(linkTarget('javascript:alert(1)', 'lightseed.online')).toBeNull();
