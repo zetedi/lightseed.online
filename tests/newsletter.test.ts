@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { subscriptionIdOf, audienceOf, newsletterSendRefusal, normalizePlaceDomain, isSubscriberEmail, subscribedToPlace} from '../src/domain/newsletter';
+import { subscriptionIdOf, audienceOf, newsletterSendRefusal, normalizePlaceDomain, isSubscriberEmail, subscribedToPlace, subscribeSeatOf } from '../src/domain/newsletter';
 import { DOMAIN_KEYS } from '../src/domain/words';
 import { audienceOf as sAudienceOf, newsletterSendRefusal as sNewsletterSendRefusal, normalizePlaceDomain as sNormalizePlaceDomain } from '../functions/src/newsletter';
 
@@ -72,5 +72,22 @@ describe('subscribedToPlace — the map speaks, the old boolean only for the nod
   });
   it('reads a place the way every other door does (case and www folded)', () => {
     expect(subscribedToPlace({ newsletterPlaces: { 'a.org': true } }, 'WWW.A.ORG', 'node.org')).toBe(true);
+  });
+});
+
+describe('subscribeSeatOf — a signed-in being is offered one link, not a field (ring 2026-10-19)', () => {
+  it('told when already on the list, whoever they are', () => {
+    expect(subscribeSeatOf({ place: 'theohouse.org', subscribed: true, accountEmail: 'ana@example.org' })).toBe('told');
+    expect(subscribeSeatOf({ place: 'theohouse.org', subscribed: true })).toBe('told');
+  });
+  it('one click with a usable account address; the field otherwise', () => {
+    expect(subscribeSeatOf({ place: 'theohouse.org', subscribed: false, accountEmail: 'Ana@Example.org' })).toBe('one_click');
+    expect(subscribeSeatOf({ place: 'theohouse.org', subscribed: false, accountEmail: '' })).toBe('ask_email');
+    expect(subscribeSeatOf({ place: 'theohouse.org', subscribed: false, accountEmail: null })).toBe('ask_email');
+    expect(subscribeSeatOf({ place: 'theohouse.org', subscribed: false, accountEmail: 'phone-only' })).toBe('ask_email');
+    expect(subscribeSeatOf({ place: 'theohouse.org', subscribed: false })).toBe('ask_email');
+  });
+  it('no place, no seat', () => {
+    expect(subscribeSeatOf({ place: '', subscribed: false, accountEmail: 'ana@example.org' })).toBe('none');
   });
 });

@@ -6,6 +6,21 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-19 · The footer asks the signed-in for one click, not an address** — Zoltán: "if I'm
+logged in, I don't need to enter my email in the footer to subscribe to newsletter, so a
+subscribe link would be enough." The footer's letter form asked everyone alike for an address —
+a visitor rightly, a signed-in being needlessly, whose account already carries one. THE LAW
+(domain/newsletter subscribeSeatOf, tested): no place, no seat; already on the list, told; a
+usable account address, ONE LINK; otherwise the field, as before. The link subscribes through
+the same hand as the profile's toggle (setNewsletterSubscription: the subscription stamped with
+the place, the profile mirror, the confirmation letter), so the line turns into "You receive the
+letter of …" the moment the mirror lands, and the profile agrees with the footer. The link's
+title names the address it will use. NOT GUARANTEED: an account without an address (a phone or
+anonymous sign-in) is asked for one, exactly as a visitor is. REJECTED: prefilling the field with
+the account's address (still a field to confirm, and the visitor's path dressed as the member's).
+
+---
+
 **2026-10-18 · A flyer is kept whole** — Zoltán: "When uploading image make it possible to use the
 original aspect ratio / full image. I'd like to be able to see the full flyer of the event when
 uploading flyer as image." Every picture picked anywhere walked through the crop window — a square

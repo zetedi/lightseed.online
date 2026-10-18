@@ -5,10 +5,10 @@ import type { Community } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { headerSurface } from '../../domain/themeSurface';
 import { LegalModal, type LegalDoc } from './LegalModal';
-import { subscribeToNewsletter, listenToUserProfile } from '../../services/firebase';
+import { subscribeToNewsletter, setNewsletterSubscription, listenToUserProfile } from '../../services/firebase';
 import { useSession } from '../../contexts/SessionContext';
 import { charter } from '../../config/charter';
-import { isSubscriberEmail, subscribedToPlace } from '../../domain/newsletter';
+import { isSubscriberEmail, subscribedToPlace, subscribeSeatOf } from '../../domain/newsletter';
 import { notify } from './Toast';
 import { speak } from '../../utils/translations';
 
@@ -73,6 +73,21 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
     }
     setSubscribing(false);
   };
+  // ONE LINK FOR THE SIGNED-IN (domain/newsletter subscribeSeatOf, ring 2026-10-19): the account's
+  // own address subscribes, through the same hand as the profile's toggle, so the profile mirror
+  // flips `alreadyHere` the moment it lands and the confirmation letter goes out.
+  const seat = subscribeSeatOf({ place, subscribed: alreadyHere, accountEmail: lightseed?.email });
+  const subscribeAsMe = async () => {
+    if (!lightseed?.uid || !lightseed.email || subscribing) return;
+    setSubscribing(true);
+    try {
+      await setNewsletterSubscription(lightseed.uid, lightseed.email, true, place);
+      notify(`🌱 ${speak('subscribed_success')} ${lightseed.email}`);
+    } catch {
+      notify(speak('subscription_failed'), 'error');
+    }
+    setSubscribing(false);
+  };
   const legal: { doc: LegalDoc; label: string }[] = [
     { doc: 'privacy', label: t('privacy') },
     { doc: 'terms', label: t('terms') },
@@ -99,10 +114,20 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
 
         {/* The letter of this place — subscribe here; unsubscribe in the letter or the profile.
             A being already on the list is simply told so, in one quiet line. */}
-        {place && alreadyHere && (
+        {seat === 'told' && (
           <p className="text-[11px]" style={{ color: surface.muted }}>{t('footer_already_subscribed').replace('{place}', name)}</p>
         )}
-        {place && !alreadyHere && (
+        {seat === 'one_click' && (
+          <p className="text-[11px]" style={{ color: surface.muted }}>
+            {t('footer_subscribe_label').replace('{place}', name)}
+            <span className="mx-1.5 opacity-40">·</span>
+            <button type="button" onClick={subscribeAsMe} disabled={subscribing} title={lightseed?.email || ''}
+                    className="font-bold underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-100 disabled:opacity-50" style={{ opacity: 0.85 }}>
+              {t('footer_subscribe_cta')}
+            </button>
+          </p>
+        )}
+        {seat === 'ask_email' && (
           <form onSubmit={subscribe} className="flex w-full max-w-sm flex-col items-center gap-1.5">
             <label htmlFor="footer-subscribe" className="text-[11px]" style={{ color: surface.muted }}>{t('footer_subscribe_label').replace('{place}', name)}</label>
             <div className="flex w-full items-center gap-2">

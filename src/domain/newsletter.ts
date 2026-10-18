@@ -74,3 +74,19 @@ export const subscribedToPlace = (
   if (here in places) return !!places[here];
   return !!profile?.newsletterSubscribed && here === normalizePlaceDomain(nodeDomain || '');
 };
+
+// THE FOOTER'S ASK (ring 2026-10-19). A being who is signed in with an address on their account
+// is not asked to type it again: the footer offers ONE LINK, and the subscription is made in the
+// account's own name (the profile mirror, the confirmation letter), exactly as the profile's
+// toggle makes it. A visitor, or an account without a usable address, is asked for one as before;
+// a being already on the list is simply told.
+//
+// Plain contract — guaranteed: no place, no seat; subscribed wins over everything; one_click only
+// when the account's address would pass isSubscriberEmail. Enforced by tests/newsletter.test.ts.
+export type SubscribeSeat = 'none' | 'told' | 'one_click' | 'ask_email';
+
+export const subscribeSeatOf = (f: { place: string; subscribed: boolean; accountEmail?: string | null }): SubscribeSeat => {
+  if (!normalizePlaceDomain(f.place || '')) return 'none';
+  if (f.subscribed) return 'told';
+  return f.accountEmail && isSubscriberEmail(f.accountEmail) ? 'one_click' : 'ask_email';
+};
