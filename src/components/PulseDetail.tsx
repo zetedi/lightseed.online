@@ -189,7 +189,8 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
             {/* Body — the pulse itself: images, event/watering context, and the text. */}
             <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
                 <div className="rounded-2xl border border-slate-100 bg-white p-4 sm:p-6 shadow-lg dark:bg-slate-900 dark:border-slate-800">
-                    <PictureGallery images={images} alt={pulse.title} className="mb-6 h-96" eager />
+                    {/* An event's picture is seen whole — a flyer (ring 2026-10-18); a pulse's fills its frame. */}
+                    <PictureGallery images={images} alt={pulse.title} className={pulse.type === 'event' ? 'mb-6' : 'mb-6 h-96'} fit={pulse.type === 'event' ? 'contain' : 'cover'} eager />
 
                     {pulse.type === 'event' && (
                         <div className="mb-4 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200">

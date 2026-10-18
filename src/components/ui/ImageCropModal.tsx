@@ -3,12 +3,18 @@ import { createPortal } from 'react-dom';
 import { Icons } from './Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { MODAL_BACKDROP, MODAL_PANEL, MODAL_TITLE, MODAL_CLOSE, modalButton } from './Modal';
+import { fitInside } from '../../domain/imageFit';
 
 // A dependency-free image cropper: pan (drag) + zoom (slider/wheel) over a fixed-aspect
 // window, then draw the visible region to a canvas and hand back a cropped File. Rendered
 // on a high z-index overlay so it sits above whatever modal opened the picker.
 //
 // `aspect` is width/height of the crop window (1 = square, 16/9 = wide banner, …).
+//
+// THE WHOLE PICTURE (ring 2026-10-18): a flyer wants to be kept entire, not framed. The second
+// choice shows the picture whole, fitted inside the panel (domain/imageFit), and hands the
+// ORIGINAL file on — nothing cut, nothing re-encoded here; the upload itself fits every primary
+// inside IMAGE_PRIMARY_MAX_EDGE (services/firebase/media), so a large original costs no more.
 export const ImageCropModal = ({
     file,
     aspect = 1,
@@ -28,6 +34,8 @@ export const ImageCropModal = ({
     const [zoom, setZoom] = useState(1);
     const [pos, setPos] = useState({ x: 0, y: 0 });
     const [busy, setBusy] = useState(false);
+    // 'crop' frames the window; 'whole' keeps the picture as it is.
+    const [mode, setMode] = useState<'crop' | 'whole'>('crop');
     const imgRef = useRef<HTMLImageElement | null>(null);
     const drag = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
     // Active touch/mouse pointers, for pinch-to-zoom on mobile (two fingers) + drag (one).
@@ -132,8 +140,12 @@ export const ImageCropModal = ({
         setPos(clamp({ x: cx - imgX * newScale, y: cy - imgY * newScale }));
     };
 
+    // The whole picture, fitted inside the panel's width and a little over half the screen.
+    const wholeView = nat ? fitInside(nat, { w: view.w, h: Math.round((typeof window !== 'undefined' ? window.innerHeight : 640) * 0.55) }) : null;
+
     const confirm = async () => {
         if (!nat) return;
+        if (mode === 'whole') { onConfirm(file); return; }
         setBusy(true);
         try {
             // Map the crop window back to source-image pixels.
@@ -178,6 +190,12 @@ export const ImageCropModal = ({
                     <button type="button" onClick={onCancel} aria-label={t('close')} className={`${MODAL_CLOSE} [&>svg]:h-5 [&>svg]:w-5`}><Icons.Close /></button>
                 </div>
 
+                {mode === 'whole' ? (
+                    <div className="relative mx-auto overflow-hidden rounded-xl bg-slate-900" style={{ width: wholeView?.w ?? view.w, height: wholeView?.h ?? view.h }}>
+                        {url && <img src={url} draggable={false} alt="" className="h-full w-full object-contain" />}
+                        {!nat && <div className="absolute inset-0 flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-white/40 border-t-transparent" /></div>}
+                    </div>
+                ) : (
                 <div
                     className="relative mx-auto touch-none overflow-hidden rounded-xl bg-slate-900 select-none"
                     // eslint-disable-next-line react-hooks/refs -- cursor only matters mid-drag, when setPos already re-renders every pointermove; promoting drag to state would add renders
@@ -201,16 +219,29 @@ export const ImageCropModal = ({
                     <div className="pointer-events-none absolute inset-0 ring-1 ring-white/30" />
                     {!nat && <div className="absolute inset-0 flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-white/40 border-t-transparent" /></div>}
                 </div>
+                )}
 
-                <div className="mt-4 flex items-center gap-3">
-                    <Icons.Camera />
-                    <input
-                        type="range" min={1} max={4} step={0.01} value={zoom}
-                        onChange={e => applyZoom(parseFloat(e.target.value))}
-                        className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-slate-200 accent-emerald-600 dark:bg-slate-800"
-                    />
+                {/* Frame it, or keep it whole — a flyer is kept whole. */}
+                <div role="radiogroup" aria-label={t('crop_image')} className="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 text-xs font-bold dark:bg-slate-800">
+                    {(['crop', 'whole'] as const).map(m => (
+                        <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => setMode(m)}
+                            className={`rounded-lg px-3 py-1.5 transition-colors ${mode === m ? 'bg-white text-emerald-700 shadow-sm dark:bg-slate-900 dark:text-emerald-300' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}>
+                            {m === 'crop' ? t('crop_frame') : t('crop_whole')}
+                        </button>
+                    ))}
                 </div>
-                <p className="mt-2 text-center text-[11px] text-slate-400">{t('crop_hint')}</p>
+
+                {mode === 'crop' && (
+                    <div className="mt-3 flex items-center gap-3">
+                        <Icons.Camera />
+                        <input
+                            type="range" min={1} max={4} step={0.01} value={zoom}
+                            onChange={e => applyZoom(parseFloat(e.target.value))}
+                            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-slate-200 accent-emerald-600 dark:bg-slate-800"
+                        />
+                    </div>
+                )}
+                <p className="mt-2 text-center text-[11px] text-slate-400">{mode === 'whole' ? t('crop_whole_hint') : t('crop_hint')}</p>
 
                 <div className="mt-4 flex gap-3">
                     <button type="button" onClick={onCancel} className={modalButton('secondary', { extra: 'flex-1' })}>{t('cancel')}</button>

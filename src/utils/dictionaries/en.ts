@@ -823,6 +823,8 @@ const en = {
   signout_confirm: "Are you sure you want to sign out?",
   crop_hint: "Drag to reposition · scroll or slide to zoom", offline: "No internet connection",
   use_photo: "Use photo", cropping: "Cropping…",
+  // The whole picture (ring 2026-10-18): frame it, or keep it entire — a flyer is kept entire.
+  crop_frame: "Crop", crop_whole: "Whole picture", crop_whole_hint: "The picture is kept as it is, nothing cut away.",
   intel_choose_memory: "Choose an intelligence in the Intelligence tab to add or view its memory.",
   growth_seed_set: "The seed is set, but no trees have sprouted on this node yet.",
   growth_plant_begin: "Plant a lifetree on this domain and the model begins to grow.",

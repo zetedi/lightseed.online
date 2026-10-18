@@ -823,6 +823,7 @@ const zh = {
   signout_confirm: "确定要退出登录吗？",
   crop_hint: "拖动以调整位置 · 滚动或滑动以缩放", offline: "没有网络连接",
   use_photo: "使用照片", cropping: "裁剪中…",
+  crop_frame: "裁剪", crop_whole: "完整图片", crop_whole_hint: "图片按原样保留，不裁去任何部分。",
   intel_choose_memory: "在智能标签页选择一个智能，以添加或查看其记忆。",
   growth_seed_set: "种子已就位，但此节点上还没有树发芽。",
   growth_plant_begin: "在这个域名上种一棵生命树，模型便开始生长。",

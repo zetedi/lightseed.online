@@ -240,7 +240,8 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDu
                 {section === 'about' && (
                     <div>
                         <SectionTitle title={t('event_details')} sub={t('event_details_sub')} />
-                        <PictureGallery images={images} alt={pulse.title} className="mb-6 h-72" eager />
+                        {/* A flyer is seen whole (ring 2026-10-18): the frame follows the picture. */}
+                        <PictureGallery images={images} alt={pulse.title} className="mb-6" fit="contain" eager />
                         {(whenText || pulse.eventLocation || pulse.eventMaxParticipants || showPlace) && (
                             <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800">
                                 {whenText && <div><span className="font-bold">{t('when')}:</span> {whenText}{spanDays && spanDays > 1 ? ` · ${say('event_span_days', { n: spanDays })}` : ''}</div>}

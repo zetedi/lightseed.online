@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-18 · A flyer is kept whole** — Zoltán: "When uploading image make it possible to use the
+original aspect ratio / full image. I'd like to be able to see the full flyer of the event when
+uploading flyer as image." Every picture picked anywhere walked through the crop window — a square
+by default, whose zoom goes only IN (the window is always covered) — so a portrait flyer could
+only ever lose its top and bottom; and the event face then cut it again to a fixed frame. TWO
+MENDS, each a choice and not a new default. (1) THE CROP WINDOW offers a second way: Crop, or
+Whole picture — the whole shows the picture entire, fitted inside the panel (domain/imageFit,
+tested: aspect kept, never enlarged), and on Use photo hands the ORIGINAL file on, nothing cut and
+nothing re-encoded in the browser; the upload itself already fits every primary inside 1600px and
+recodes it (ring 2026-09-06), so a large original costs the bucket nothing more. Cropping stays
+the first choice everywhere, because an avatar, a hero and a card are frames. (2) THE GALLERY SEAT
+(ui/PictureGallery) learns `fit`: 'cover' as before for every seat, 'contain' for the EVENT face
+(EventProfile, and PulseDetail when it shows an event) — the frame takes the picture's own aspect,
+learned as it loads, capped at 32rem, and the picture's blurred self fills what the cap leaves
+beside it; the full view stays the door to the primary. Cards keep their 4:3 cover — a grid of
+letterboxed thumbnails would read as broken, and the card's full-view corner already opens the
+flyer whole. NOT GUARANTEED: the Whole choice is not remembered between pictures (each picked file
+asks again); an old flyer uploaded through the square crop stays cropped (the bytes are what they
+are — pick it again whole). REJECTED: zooming OUT inside the crop window (a square with black bars
+is not a whole flyer); contain on every gallery (a growth photo wants to fill its frame; the seat
+decides); a per-seat aspect for event uploads (a 4:3 crop still cuts an A4 poster).
+
+---
+
 **2026-10-18 · A gathering may last days: the end rides beside the beginning** — Zoltán: "make it
 possible for an event to be from – to, so a multi-day event (so a retreat basically)." An event
 had one moment, `eventDate`; a retreat has a first day and a last. THE SHAPE: a second field on the
