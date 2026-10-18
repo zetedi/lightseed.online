@@ -84,6 +84,12 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
 
 ## The gathering (an event's two doors)
 
+- **The span:** `src/domain/eventSpan.ts` (ring 2026-10-18) — `eventEndDate` beside `eventDate`;
+  the end counts only after the beginning; phase, countdown and day count are day-granular where the
+  reader stands (`tests/eventSpan.test.ts`). Readers: `eventsOnView` (past = last moment passed),
+  `domain/eventOrder` (a running span is upcoming; past by its end), `utils/eventWhen` (the words),
+  the From/Until pair in `EventModal` and `EventsSection`, the Now corner of `EventCard`, the face feed's
+  seventh field, `duplicateEvent`'s copy list, the rules' two event-edit key sets.
 - **Duplicate = lineage:** `functions/src/circles.ts` `duplicateEvent` — a new occurrence in the
   duplicator's name with its `descends_from` edge (server-only, append-only); the law of what a
   lineage says is `src/domain/eventLineage.ts` (root, generation, refinement, reach;

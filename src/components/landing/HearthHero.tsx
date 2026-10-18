@@ -5,6 +5,7 @@ import type { Community, Lightseed, Pulse } from '../../types';
 import { fetchEventPulses } from '../../services/firebase';
 import { eventFeedScope, eventsOnView } from '../../domain/pulseVisibility';
 import { sanitizeRichText } from '../../utils/sanitize';
+import { whenOf } from '../../utils/eventWhen';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 import { Picture } from '../ui/Picture';
@@ -97,8 +98,8 @@ export const HearthHero: React.FC<HearthHeroProps> = ({ community, props, lights
                 )}
                 <span className="min-w-0">
                   <span dir="auto" className="block truncate text-sm font-bold text-slate-800 group-hover:text-slate-900 dark:text-slate-100">{ev.title}</span>
-                  {ev.eventDate && (
-                    <span className="block text-xs text-slate-500">{new Date(ev.eventDate).toLocaleString()}</span>
+                  {whenOf(ev) && (
+                    <span className="block text-xs text-slate-500">{whenOf(ev)}</span>
                   )}
                   {ev.eventLocation && <span className="block truncate text-xs text-slate-400">{ev.eventLocation}</span>}
                 </span>

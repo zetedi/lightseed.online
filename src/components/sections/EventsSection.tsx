@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { webLinksOf, type WebLink } from '../../domain/webLink';
+import { spanProblem } from '../../domain/eventSpan';
+import { whenOf } from '../../utils/eventWhen';
 import { WebLinksEditor, rowsOf, type WebLinkRow } from '../ui/WebLinksEditor';
 import { notify } from '../ui/Toast';
 import { speak } from '../../utils/translations';
@@ -38,6 +40,7 @@ export interface EventDraft {
   imageUrl: string;
   imageUrls: string[];
   eventDate: string;
+  eventEndDate: string; // the span's end, '' on a single moment (domain/eventSpan)
   eventLocation: string;
   visibility: PulseVisibility;
   webLinks?: WebLink[];
@@ -92,6 +95,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const [events, setEvents] = useState<Pulse[]>([]);
   const [eventTitle, setEventTitle] = useState('');
   const [eventDate, setEventDate] = useState('');
+  const [eventEndDate, setEventEndDate] = useState('');
   const [eventLocation, setEventLocation] = useState('');
   const [eventBody, setEventBody] = useState('');
   const [eventVisibility, setEventVisibility] = useState<PulseVisibility>('public');
@@ -145,6 +149,8 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     if (!currentUserId || !eventTitle.trim() || isEventSaving) return;
     const doors = webLinksOf(eventLinkRows);
     if (doors.problem) { showAlert(speak(doors.problem)); return; }
+    const span = spanProblem(eventDate, eventEndDate);
+    if (span) { showAlert(speak(span)); return; }
     setIsEventSaving(true);
     try {
       const payload = {
@@ -154,6 +160,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
         imageUrl: eventImageUrls[0] || '',
         imageUrls: eventImageUrls,
         eventDate: eventDate || '',
+        eventEndDate: eventEndDate || '',
         eventLocation: eventLocation.trim(),
         webLinks: doors.links,
         visibility: eventVisibility,
@@ -170,6 +177,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       }
       setEventTitle('');
       setEventDate('');
+      setEventEndDate('');
       setEventLocation('');
       setEventBody('');
       setEventVisibility('public');
@@ -213,6 +221,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     setEventTitle(ev.title || '');
     setEventBody(ev.content || ev.body || '');
     setEventDate(ev.eventDate || '');
+    setEventEndDate(ev.eventEndDate || '');
     setEventLocation(ev.eventLocation || '');
     setEventVisibility((ev.visibility as PulseVisibility) || 'public');
     setEventImageUrls(ev.imageUrls?.length ? ev.imageUrls : (ev.imageUrl ? [ev.imageUrl] : []));
@@ -234,10 +243,18 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       {canEdit && showEventForm && (
         <form onSubmit={handleCreateEvent} className="mb-8 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 dark:bg-slate-900/50 dark:border-slate-800">
           <input dir="auto" value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('event_title_ph')} required />
+          {/* The span (domain/eventSpan): from, and for a retreat until — optional, after the beginning. */}
           <div className="grid gap-3 sm:grid-cols-2">
-            <input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
-            <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('location')} />
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('event_from')}</span>
+              <input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('event_until')}</span>
+              <input type="datetime-local" value={eventEndDate} min={eventDate || undefined} onChange={e => setEventEndDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+            </label>
           </div>
+          <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('location')} />
           <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('event_details_ph')} />
           <WebLinksEditor rows={eventLinkRows} onChange={setEventLinkRows} />
           <label className="block">
@@ -270,7 +287,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               <div className="min-w-0 flex-1">
                 <p className="break-words text-sm font-bold text-slate-800 dark:text-slate-100">{ev.title}</p>
                 <p className="truncate text-xs text-slate-500">
-                  {ev.eventDate ? new Date(ev.eventDate).toLocaleString() : ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
+                  {whenOf(ev) || ''}{ev.eventLocation ? ` · ${ev.eventLocation}` : ''}
                 </p>
               </div>
               <EventWeather location={ev.eventLocation} dateIso={ev.eventDate} className="shrink-0 rounded-full bg-sky-50 px-2 py-1 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200" />

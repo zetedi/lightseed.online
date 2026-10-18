@@ -78,6 +78,9 @@ export interface Pulse extends Being {
   imageUrl?: string;
   imageUrls?: string[];
   eventDate?: string;
+  // THE SPAN (domain/eventSpan, ring 2026-10-18): the gathering's end, when it has one — a retreat's
+  // last day. Absent on a single moment; counts only when it comes after eventDate.
+  eventEndDate?: string;
   eventLocation?: string;
   // The gathering's room: how many trees may stand around this event (unset/null = unbounded).
   eventMaxParticipants?: number | null;

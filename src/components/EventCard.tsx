@@ -10,9 +10,11 @@ import { say } from '../utils/translations';
 
 import { Picture } from './ui/Picture';
 import { useEventCommunity } from '../hooks/useEventCommunity';
+import { countdownOf } from '../domain/eventSpan';
+import { whenOf } from '../utils/eventWhen';
 // ONE event card, shared by the home hero banner and the Events section (DRY). A solid card, so
 // it reads the same on a coloured banner or a white page. The image carries four corners:
-//   top-left  — the countdown (In / N / days; Today in one word)
+//   top-left  — the countdown (In / N / days; Today in one word; Now while a span runs)
 //   top-right — the full view of the picture (ui/FullView, worn by the carousel)
 //   bottom-left  — the EVENT'S OWN community's face (a door to it; hooks/useEventCommunity)
 //   bottom-right — the loves, and the seats (participants, N/max) beneath them (ring 2026-09-16)
@@ -41,12 +43,9 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
 
     // eslint-disable-next-line react-hooks/purity -- a countdown reads "now"; frequent re-renders keep it honest
     const nowMs = Date.now();
-    const days = (() => {
-        if (!event.eventDate) return null;
-        const ms = Date.parse(event.eventDate);
-        if (Number.isNaN(ms) || ms < nowMs) return null; // a past event wears no countdown
-        return Math.ceil((ms - nowMs) / 86400000);
-    })();
+    // Calendar days to the first day; Today on it; Now once a span that began earlier still runs;
+    // nothing after the last day has ended (domain/eventSpan countdownOf).
+    const countdown = countdownOf(event, nowMs);
     const max = event.eventMaxParticipants || 0;
     const face = useEventCommunity(event, community);
     const faceName = event.communityName || face?.name || t('community_label');
@@ -61,15 +60,17 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                     : <div className="flex h-full w-full items-center justify-center text-slate-300"><Icons.Loc /></div>}
 
                 {/* top-left: how soon */}
-                {days !== null && (
+                {countdown && (
                     <span className="absolute left-1.5 top-1.5 flex flex-col items-center rounded-md bg-black/30 px-1.5 py-0.5 leading-tight text-white backdrop-blur-sm">
-                        {days === 0 ? (
+                        {countdown.kind === 'now' ? (
+                            <span className="text-[10px] font-bold">{t('countdown_now')}</span>
+                        ) : countdown.kind === 'today' ? (
                             <span className="text-[10px] font-bold">{t('today')}</span>
                         ) : (
                             <>
                                 <span className="text-[8px] uppercase tracking-wide text-white/75">{t('countdown_in')}</span>
-                                <span className="text-xs font-bold tabular-nums">{days}</span>
-                                <span className="text-[8px] uppercase tracking-wide text-white/75">{days === 1 ? t('countdown_day') : t('countdown_days')}</span>
+                                <span className="text-xs font-bold tabular-nums">{countdown.days}</span>
+                                <span className="text-[8px] uppercase tracking-wide text-white/75">{countdown.days === 1 ? t('countdown_day') : t('countdown_days')}</span>
                             </>
                         )}
                     </span>
@@ -127,7 +128,7 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
                 <div className="min-w-0 flex-1">
                     <p className={`truncate text-base font-light tracking-wide ${isDark ? 'text-slate-100' : 'text-slate-800 dark:text-slate-100'}`}>{event.title}</p>
                     <p className={`truncate text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : ''}{event.eventLocation ? ` · ${event.eventLocation}` : ''}{max ? ` · ${t('max_n').replace('{n}', String(max))}` : ''}
+                        {whenOf(event, 'date') || ''}{event.eventLocation ? ` · ${event.eventLocation}` : ''}{max ? ` · ${t('max_n').replace('{n}', String(max))}` : ''}
                     </p>
                     {/* The event's own words, small, beneath the place; a hairline parts them. */}
                     {(event.content || event.body) && (

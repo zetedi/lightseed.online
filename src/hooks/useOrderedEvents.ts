@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Lifetree, Pulse } from '../types';
 import { orderEvents } from '../domain/eventOrder';
+import { eventEndMs, eventStartMs } from '../domain/eventSpan';
 import { distanceM } from '../domain/support';
 import { treeCoordinates } from '../domain/views/forest';
 import { geocode } from '../services/weather';
@@ -57,7 +58,8 @@ export const useOrderedEvents = (
       return {
         inMyDomain: !!home && (e.domain || '') === home,
         distanceMeters: from && coord ? distanceM(from, coord) : null,
-        eventDateMs: e.eventDate && Number.isFinite(Date.parse(e.eventDate)) ? Date.parse(e.eventDate) : null,
+        eventDateMs: eventStartMs(e),
+        eventEndMs: eventEndMs(e),
       };
     }, dayStart.getTime());
   // eslint-disable-next-line react-hooks/exhaustive-deps -- geoVersion carries the cache's growth

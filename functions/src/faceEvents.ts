@@ -15,6 +15,7 @@ export type FaceFeedEvent = {
     title: string;
     body: string;
     eventDate: string;
+    eventEndDate: string;
     visibility: string;
     imageUrl: string;
 };
@@ -66,6 +67,7 @@ export const faceFeedOf = (rows: Array<Record<string, unknown>>): FaceFeedEvent[
             title: str(row.title),
             body: str(row.body),
             eventDate: str(row.eventDate),
+            eventEndDate: str(row.eventEndDate),
             visibility: normalizedVisibility(row.visibility) ?? 'public',
             imageUrl: faceImageOf(row),
         }))

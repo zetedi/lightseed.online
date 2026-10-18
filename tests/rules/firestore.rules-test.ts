@@ -1274,6 +1274,26 @@ describe('a keeper adopts a standalone event into their place (ring 2026-09-21)'
   });
 });
 
+describe('a gathering may span days — the end rides beside the beginning (ring 2026-10-18)', () => {
+  const EV4 = 'ev-retreat';
+  const seed = () => env.withSecurityRulesDisabled(async (ctx) => {
+    const d = ctx.firestore();
+    await setDoc(doc(d, 'communities', 'com-pa'), { name: 'Per Auset', anchorUid: ALICE, domain: 'seed.perauset.org' });
+    await setDoc(doc(d, 'pulses', EV4), { authorId: MALLORY, type: 'event', title: 'Retreat', domain: 'seed.perauset.org', communityId: 'com-pa', visibility: 'public', eventDate: '2026-11-06T18:00' });
+  });
+
+  it('the author and the keeper may set or clear the end; a stranger may not', async () => {
+    await seed();
+    await assertSucceeds(updateDoc(doc(db(MALLORY), 'pulses', EV4), { eventEndDate: '2026-11-08T12:00', updatedAt: 1 }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'pulses', EV4), { eventDate: '2026-11-07T18:00', eventEndDate: '', updatedAt: 2 }));
+    await assertFails(updateDoc(doc(db(BOB), 'pulses', EV4), { eventEndDate: '2026-11-08T12:00', updatedAt: 3 }));
+  });
+
+  it('a gathering is born with its span', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'ev-born-spanning'), { authorId: ALICE, type: 'event', title: 'Retreat', previousHash: 'EVENT', hash: 'e1', visibility: 'public', eventDate: '2026-11-06T18:00', eventEndDate: '2026-11-08T12:00' }));
+  });
+});
+
 describe('the doors a record carries outward — webLinks on events (ring 2026-09-30)', () => {
   const EV3 = 'ev-with-doors';
   const seed = () => env.withSecurityRulesDisabled(async (ctx) => {

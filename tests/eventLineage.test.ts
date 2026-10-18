@@ -26,6 +26,7 @@ describe('refinement — what a host changed against the parent', () => {
     expect(refinementOf(parent, { ...parent, eventDate: '2026-10-20T12:00', imageUrls: ['a', 'b'] })).toEqual(['imageUrls', 'eventDate']);
     expect(refinementOf(parent, { ...parent, eventMaxParticipants: undefined })).toEqual([]); // null and absent are one
     expect([...REFINABLE_EVENT_FIELDS]).toContain('visibility');
+    expect([...REFINABLE_EVENT_FIELDS]).toContain('eventEndDate'); // the span is part of the frame
   });
 });
 

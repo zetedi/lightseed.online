@@ -60,17 +60,27 @@ describe('faceFeedOf — shape and order', () => {
     expect(feed.map(e => e.title)).toEqual(['sooner', 'later', 'whenever', 'unreadable']);
   });
 
-  it('shapes to the six feed fields and normalizes the legacy cloak', () => {
+  it('shapes to the seven feed fields and normalizes the legacy cloak', () => {
     const [row] = faceFeedOf([event({ visibility: undefined, authorId: 'never-on-the-feed' })]);
     expect(row).toEqual({
       lid: '019ea86e-0000-7000-8000-00000000bf17',
       title: 'The Heart Fire',
       body: 'The fourth fire at The O House.',
       eventDate: '2026-09-11T19:37',
+      eventEndDate: '',
       visibility: 'public',
       imageUrl: '',
     });
     expect('authorId' in row).toBe(false);
+  });
+
+  it('carries the end of a span beside its beginning, and orders by the beginning', () => {
+    const feed = faceFeedOf([
+      event({ eventDate: '2026-11-10T09:00', title: 'later single' }),
+      event({ eventDate: '2026-11-06T18:00', eventEndDate: '2026-11-12T12:00', title: 'retreat' }),
+    ]);
+    expect(feed.map(e => [e.title, e.eventEndDate])).toEqual([['retreat', '2026-11-12T12:00'], ['later single', '']]);
+    expect(faceFeedOf([event({ eventEndDate: 42 })])[0].eventEndDate).toBe('');
   });
 
   it('never lets two dateless gatherings shuffle the sort (NaN comparator)', () => {
@@ -143,6 +153,7 @@ describe('the functions mirror stays true', () => {
       event({ type: 'reach' }),
       event({ imageUrls: ['blob:nope', 'https://a/1.webp'], imageUrl: 'https://a/2.webp', title: 'pictured' }),
       event({ imageUrl: 'javascript:alert(1)', title: 'unpictured' }),
+      event({ eventEndDate: '2026-09-13T12:00', title: 'spanning' }),
     ];
     expect(serverFaceFeedOf(rows)).toEqual(faceFeedOf(rows));
     for (const row of rows) expect(serverFaceImageOf(row)).toBe(faceImageOf(row));

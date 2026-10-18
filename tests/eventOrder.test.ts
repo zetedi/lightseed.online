@@ -43,6 +43,19 @@ describe('event order — my ground, then nearness, then soonness', () => {
     expect(compareEventFacts(pastNew, pastOld, NOW)).toBeLessThan(0);
   });
 
+  it('a span is upcoming until its last moment; a retreat under way leads; past spans by their end', () => {
+    const underWay = facts({ eventDateMs: NOW - 2 * DAY, eventEndMs: NOW + 2 * DAY });
+    const tomorrow = facts({ eventDateMs: NOW + DAY });
+    const dateless = facts({});
+    expect(compareEventFacts(underWay, tomorrow, NOW)).toBeLessThan(0); // upcoming, and it began soonest
+    expect(compareEventFacts(underWay, dateless, NOW)).toBeLessThan(0); // never 'past' while it runs
+    const longAgoEndedLate = facts({ eventDateMs: NOW - 12 * DAY, eventEndMs: NOW - DAY });
+    const recentEvening = facts({ eventDateMs: NOW - 5 * DAY });
+    expect(compareEventFacts(longAgoEndedLate, recentEvening, NOW)).toBeLessThan(0); // freshest END first
+    const badEnd = facts({ eventDateMs: NOW - 5 * DAY, eventEndMs: null });
+    expect(compareEventFacts(recentEvening, badEnd, NOW)).toBe(0); // no end = the moment itself
+  });
+
   it('sorts stably — ties keep the feed order', () => {
     const a = { id: 'a' }, b = { id: 'b' };
     const same = () => facts({ eventDateMs: NOW + DAY });

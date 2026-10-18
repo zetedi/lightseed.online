@@ -23,7 +23,9 @@ import { SectionMenu, SectionItem } from './ui/SectionMenu';
 import { PulseInsightPanel } from './ui/PulseInsightPanel';
 import { TreeParticipants } from './TreeParticipants';
 import { useLanguage } from '../contexts/LanguageContext';
-import { spokenLine, speak } from '../utils/translations';
+import { spokenLine, speak, say } from '../utils/translations';
+import { whenOf } from '../utils/eventWhen';
+import { eventSpanDays } from '../domain/eventSpan';
 
 import { Picture } from './ui/Picture';
 import { PictureGallery } from './ui/PictureGallery';
@@ -147,7 +149,9 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDu
         { key: 'reflect', label: t('reflect'), icon: <Icons.Intelligence /> },
     ];
 
-    const whenText = pulse.eventDate ? new Date(pulse.eventDate).toLocaleString() : null;
+    // One moment, or a span read "beginning – end" (domain/eventSpan); a retreat also says its days.
+    const whenText = whenOf(pulse);
+    const spanDays = eventSpanDays(pulse);
 
     // The visibility chip — a level is an enum in the data and a word on the screen.
     const visibilityChip = (level?: string): string =>
@@ -239,7 +243,7 @@ export const EventProfile = ({ pulse, activeTree, onClose, canEdit, onEdit, onDu
                         <PictureGallery images={images} alt={pulse.title} className="mb-6 h-72" eager />
                         {(whenText || pulse.eventLocation || pulse.eventMaxParticipants || showPlace) && (
                             <div className="mb-6 grid gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-800">
-                                {whenText && <div><span className="font-bold">{t('when')}:</span> {whenText}</div>}
+                                {whenText && <div><span className="font-bold">{t('when')}:</span> {whenText}{spanDays && spanDays > 1 ? ` · ${say('event_span_days', { n: spanDays })}` : ''}</div>}
                                 {pulse.eventLocation && <div><span className="font-bold">{t('where')}:</span> {pulse.eventLocation}</div>}
                                 {!!pulse.eventMaxParticipants && <div><span className="font-bold">{t('participants')}:</span> {t('up_to_n').replace('{n}', String(pulse.eventMaxParticipants))}</div>}
                                 {/* The place-of-record stamp — staff sight, staff mend; PlaceOfRecord hides

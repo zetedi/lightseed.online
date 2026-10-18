@@ -2,6 +2,7 @@ import type { Pulse, PulseVisibility } from './pulse';
 import type { Community } from './community';
 import { reflectsInstancePublic } from './communityDoor';
 import { isPastEvent } from './calendar';
+import { eventLastIso, type EventSpan } from './eventSpan';
 
 // The visibility generator — the single source of truth for "who may see a pulse".
 // The Firestore rules (firestore.rules → canReadPulse) mirror canView() exactly, and the
@@ -144,14 +145,16 @@ export function ownMergeUid(
 
 // The viewer-side cut both event surfaces share: signed-out visitors see only the node's own
 // happenings (not every community/tree event), and past gatherings — a day fully ended
-// (domain/calendar isPastEvent) — rest hidden unless deliberately asked for.
-export function eventsOnView<T extends ScopedPulse & { eventDate?: string }>(
+// (domain/calendar isPastEvent) — rest hidden unless deliberately asked for. A gathering that
+// spans days ends with its LAST day (domain/eventSpan eventLastIso), so a retreat under way
+// is never a past event.
+export function eventsOnView<T extends ScopedPulse & EventSpan>(
   events: T[],
   view: { signedIn: boolean; showPast: boolean; nowMs: number },
 ): T[] {
   return events
     .filter(ev => view.signedIn || pulseScope(ev) === 'node')
-    .filter(ev => view.showPast || !isPastEvent(ev.eventDate, view.nowMs));
+    .filter(ev => view.showPast || !isPastEvent(eventLastIso(ev), view.nowMs));
 }
 
 // MEMBERS-ONLY EVENTS ON A FACE (ring 2026-09-21). Some happenings are sensitive to light, or

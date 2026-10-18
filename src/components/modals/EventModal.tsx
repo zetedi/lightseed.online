@@ -8,6 +8,7 @@ import { beingStoragePath } from '../../domain/beingIndex';
 import { useSession } from '../../contexts/SessionContext';
 import type { Pulse, PulseVisibility } from '../../domain/pulse';
 import { webLinksOf } from '../../domain/webLink';
+import { spanProblem } from '../../domain/eventSpan';
 import { WebLinksEditor, rowsOf } from '../ui/WebLinksEditor';
 import { speak } from '../../utils/translations';
 
@@ -38,6 +39,8 @@ export const EventModal = ({
   const isEdit = !!event;
   const [title, setTitle] = useState(event?.title || '');
   const [date, setDate] = useState(event?.eventDate || '');
+  // THE SPAN (domain/eventSpan): a gathering that lasts days names its end beside its beginning.
+  const [endDate, setEndDate] = useState(event?.eventEndDate || '');
   const [location, setLocation] = useState(event?.eventLocation || '');
   // The gathering's room, kept as text while typing; parsed (or cleared) on save.
   const [maxParticipants, setMaxParticipants] = useState(event?.eventMaxParticipants ? String(event.eventMaxParticipants) : '');
@@ -66,6 +69,8 @@ export const EventModal = ({
     if (!title.trim() || saving || !lightseed) return;
     const doors = webLinksOf(linkRows);
     if (doors.problem) { showAlert(speak(doors.problem)); return; }
+    const span = spanProblem(date, endDate);
+    if (span) { showAlert(speak(span)); return; }
     setSaving(true);
     try {
       const base = {
@@ -75,6 +80,7 @@ export const EventModal = ({
         imageUrl: imageUrls[0] || '',
         imageUrls,
         eventDate: date || '',
+        eventEndDate: endDate || '',
         eventLocation: location.trim(),
         // A positive number bounds the gathering; anything else clears the bound (null, not
         // undefined, so an edit can REMOVE a previously set limit).
@@ -100,10 +106,18 @@ export const EventModal = ({
     <Modal title={isEdit ? t('edit_event') : t('create_event')} onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
         <input dir="auto" value={title} onChange={e => setTitle(e.target.value)} required placeholder={t('event_title_ph')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+        {/* The span: from, and (for a retreat) until — the end is optional, and must follow the beginning. */}
         <div className="grid gap-3 sm:grid-cols-2">
-          <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
-          <input dir="auto" value={location} onChange={e => setLocation(e.target.value)} placeholder={t('location')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+          <label className="block">
+            <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('event_from')}</span>
+            <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('event_until')}</span>
+            <input type="datetime-local" value={endDate} min={date || undefined} onChange={e => setEndDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+          </label>
         </div>
+        <input dir="auto" value={location} onChange={e => setLocation(e.target.value)} placeholder={t('location')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
         <input
           type="number"
           min="1"

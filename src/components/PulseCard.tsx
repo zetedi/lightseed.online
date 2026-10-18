@@ -5,6 +5,7 @@ import { CardCarousel } from './ui/CardCarousel';
 import { type Pulse, type Lightseed } from '../types';
 import { Icons } from './ui/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
+import { whenOf } from '../utils/eventWhen';
 import { LoveButton } from './ui/LoveButton';
 import { formatLight } from '../domain/light';
 import { useCoin } from '../hooks/useCoin';
@@ -32,7 +33,8 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
     const appreciationLight = pulse.offeringAppreciationLight;
     const badge = pulse.type === 'event' ? t('badge_event') : pulse.type === 'tree_growth' ? t('badge_growth') : isOffering ? (pulse.offeringKind === 'bed' ? t('badge_bed') : pulse.offeringKind === 'product' ? t('badge_product') : t('badge_offering')) : '';
     const isEvent = pulse.type === 'event';
-    const meta = isEvent && pulse.eventDate ? `${new Date(pulse.eventDate).toLocaleDateString()} · ${pulse.eventLocation || pulse.body}` : pulse.body;
+    const when = isEvent ? whenOf(pulse, 'date') : null; // one day, or a span's days (domain/eventSpan)
+    const meta = when ? `${when} · ${pulse.eventLocation || pulse.body}` : pulse.body;
 
     // The shared heart on this pulse (routed to lovePulse for pulses), sized per density below.
     const love = (countClassName: string, className = 'text-slate-400') => (
@@ -148,10 +150,10 @@ export const PulseCard = ({ pulse, lightseed, onMatch, onView, density = 'cards'
 
             <div className="flex flex-1 flex-col p-3">
                 {/* Text-only cards already show the body above — don't repeat it here. */}
-                {(images.length > 0 || (isEvent && pulse.eventDate)) && (
+                {(images.length > 0 || !!when) && (
                     <p dir="auto" className="text-slate-600 text-xs font-light leading-relaxed truncate dark:text-slate-300">{meta}</p>
                 )}
-                <div className={`mt-auto flex items-center justify-between ${images.length > 0 || (isEvent && pulse.eventDate) ? 'pt-2 border-t border-slate-100 dark:border-slate-800' : ''}`}>
+                <div className={`mt-auto flex items-center justify-between ${images.length > 0 || !!when ? 'pt-2 border-t border-slate-100 dark:border-slate-800' : ''}`}>
                     {love('text-xs', 'text-slate-500')}
 
                     {lightseed && lightseed.uid !== pulse.authorId && !pulse.isMatch && (

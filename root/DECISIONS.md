@@ -6,6 +6,36 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-18 · A gathering may last days: the end rides beside the beginning** — Zoltán: "make it
+possible for an event to be from – to, so a multi-day event (so a retreat basically)." An event
+had one moment, `eventDate`; a retreat has a first day and a last. THE SHAPE: a second field on the
+same record, `eventEndDate`, in the same datetime-local form, OPTIONAL — an older event has no end
+and is a span of one moment, so nothing moves for it (no migration, no new being, no array). THE
+LAW is domain/eventSpan: an end COUNTS only when it is readable and comes after the beginning —
+absent, unreadable or earlier reads as "no end", so a record written badly never hides a gathering
+nor ages it out early; the form is stricter than the reader (spanProblem refuses an end without a
+beginning, or at or before it) because tolerance is for records, not for new writes. WHAT CHANGED
+WITH IT, each a reader of the law: "past" is judged by the span's LAST moment (eventsOnView,
+day-granular as before), so a retreat under way is never a past event; the feed from my ground
+(domain/eventOrder) keeps a running span among the upcoming — first among them, since it began
+soonest — and orders past gatherings by the moment they ENDED; the card's corner learns a third
+word, Now, for a span that began on an earlier day and still runs (and the countdown now counts
+CALENDAR days, so a gathering later today says Today, where it used to say "In 1 day"); every
+face that spoke the date speaks the span (utils/eventWhen: one moment as before, "from – to",
+the end shortened to its hour on the same day; the profile also counts the days); the face feed
+carries the end beside the beginning for the mother sites (an additive seventh field); a copy
+inherits the whole span (functions/duplicateEvent) and the lineage counts the end among what a
+host refines; the rules name the key on both edit branches (author, keeper, staff — the same
+hands as eventDate), held by the emulator suite; the sealed content of a block names it beside
+eventDate in both mirrors. NOT GUARANTEED: the rules hold the key, not the end's value or order
+(the same trust eventDate has always had); wall-clock strings are read where the reader stands,
+never in the gathering's own zone; the weather chip still reads the FIRST day's sky. REJECTED: a
+duration in days instead of an end (a retreat ends at an hour, and a day count cannot say when);
+an occurrence per day as a lineage (one retreat is one gathering, its circle one circle); refusing
+bad ends at read time (hiding a being over a typo).
+
+---
+
 **2026-10-13 · One house, two hearths: the door home opens where you stand** — Zoltán: "The link
 back to the seed opens up a new window, I think it might be on the seed side... I'd like the
 transition back and forth as smooth as possible." It was the seed's side. The mother site's doors

@@ -23,7 +23,7 @@ import { sha256 } from './hash';
 // seal of an otherwise-untampered block).
 export const BLOCK_CONTENT_FIELDS = [
   'lid', 'lifetreeId', 'visionId', 'communityId', 'type', 'visibility',
-  'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation',
+  'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventEndDate', 'eventLocation',
   'reachTreeId', 'reachTreeName', 'recipientUid', 'recipientName',
   'threadId', 'participantUids', 'audience', 'threadName', 'isGroup',
   'care', 'careAlert',

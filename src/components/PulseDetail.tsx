@@ -20,6 +20,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Picture } from './ui/Picture';
 import { PictureGallery } from './ui/PictureGallery';
 import { picturesOf } from '../domain/pictures';
+import { whenOf } from '../utils/eventWhen';
 // The generic pulse view — a PROFILE, not a modal: the same ProfileHero + full-page scaffold as
 // VisionProfile / EventProfile / AlignmentView, so every entity (tree, vision, event, alignment,
 // pulse) opens into one profile anatomy (Indra's net). It still renders inside App's
@@ -192,7 +193,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
 
                     {pulse.type === 'event' && (
                         <div className="mb-4 grid gap-2 rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
-                            {pulse.eventDate && <div><span className="font-bold">{t('when')}:</span> {new Date(pulse.eventDate).toLocaleString()}</div>}
+                            {whenOf(pulse) && <div><span className="font-bold">{t('when')}:</span> {whenOf(pulse)}</div>}
                             {pulse.eventLocation && <div><span className="font-bold">{t('where')}:</span> {pulse.eventLocation}</div>}
                         </div>
                     )}

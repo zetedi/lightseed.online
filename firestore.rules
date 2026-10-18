@@ -1171,7 +1171,7 @@ service cloud.firestore {
              && (isStaff() || resource.data.authorId == request.auth.uid || keepsCommunity(resource.data.get('communityId', '')))
              && webLinksInShape()
              && request.resource.data.diff(resource.data).affectedKeys()
-                  .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'eventMaxParticipants', 'webLinks', 'visibility', 'updatedAt'])
+                  .hasOnly(['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventEndDate', 'eventLocation', 'eventMaxParticipants', 'webLinks', 'visibility', 'updatedAt'])
            )
         // (f2) A KEEPER ADOPTS a standalone event into their place (ring 2026-09-21): an event
         //      born at a door with no community may be given exactly ONE community — the one
@@ -1188,7 +1188,7 @@ service cloud.firestore {
              && get(/databases/$(database)/documents/communities/$(request.resource.data.communityId)).data.get('domain', '') == resource.data.get('domain', '')
              && webLinksInShape()
              && request.resource.data.diff(resource.data).affectedKeys()
-                  .hasOnly(['communityId', 'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'eventMaxParticipants', 'webLinks', 'visibility', 'updatedAt'])
+                  .hasOnly(['communityId', 'title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventEndDate', 'eventLocation', 'eventMaxParticipants', 'webLinks', 'visibility', 'updatedAt'])
            )
 
         // (g) The guardians' veto — a guardian of the pulse's tree may append exactly their

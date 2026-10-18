@@ -34,7 +34,7 @@ export const lineageOfCopy = (parent: Pick<LineageNode, 'id' | 'lineageRootId' |
 });
 
 // The fields a host refines between occurrences (the event's own words and frame).
-export const REFINABLE_EVENT_FIELDS = ['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventLocation', 'eventMaxParticipants', 'visibility'] as const;
+export const REFINABLE_EVENT_FIELDS = ['title', 'body', 'content', 'imageUrl', 'imageUrls', 'eventDate', 'eventEndDate', 'eventLocation', 'eventMaxParticipants', 'visibility'] as const;
 
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 

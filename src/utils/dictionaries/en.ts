@@ -668,6 +668,9 @@ const en = {
   event_circle_already: "This gathering stands in its circle.",
   event_circle_no_participants: "No tree has joined this gathering yet — a circle needs at least one.",
   event_duplicate_not_hand: "Only the event's host, its place's keeper or staff may duplicate it.",
+  // The span of a gathering (domain/eventSpan, ring 2026-10-18) — what the form refuses.
+  event_end_before_start: "The end must come after the beginning.",
+  event_end_without_start: "Give the gathering a beginning before an end.",
   event_circle_gather: "Gather this occurrence's trees into the circle", event_circle_gathered: "{n} gathered into {name}.",
   event_lineage_root: "First held as \u201c{title}\u201d", event_lineage_generation: "Occurrence {n} of this gathering",
   event_lineage_children: "{n} later occurrences", event_lineage_open_root: "Open the first",
@@ -1219,6 +1222,9 @@ const en = {
   countdown_in: "In",
   countdown_day: "day",
   countdown_days: "days",
+  // A gathering that spans days (domain/eventSpan): the form's two moments, the card's word
+  // while it runs, the day count on its face.
+  event_from: "From", event_until: "Until", countdown_now: "Now", event_span_days: "{n} days",
   max_n: "max {n}",
   resonance_reread: "Re-read the field",
   beds_elsewhere: "Elsewhere in the network",

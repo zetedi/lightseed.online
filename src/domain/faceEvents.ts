@@ -9,8 +9,8 @@
 //
 // Plain contract — guaranteed now: isFaceFeedVisible admits exactly 'public', 'node' and
 // the legacy absent-visibility (= public) forms; faceFeedOf keeps only type 'event' rows
-// that pass it, shapes them to the six feed fields, and orders dated gatherings soonest
-// first with dateless ones last. The feed carries ONE face per gathering (imageUrl): the
+// that pass it, shapes them to the seven feed fields (the span's end among them, '' on a
+// single moment), and orders dated gatherings soonest first with dateless ones last. The feed carries ONE face per gathering (imageUrl): the
 // first http(s) entry of the pulse's imageUrls, else its single imageUrl — the same
 // preference the seed's own card has — or '' when the gathering has no picture. Not
 // guaranteed: past-event hiding (consumers decide, as domain/calendar does for the seed's
@@ -25,6 +25,7 @@ export type FaceFeedEvent = {
   title: string;
   body: string;
   eventDate: string;
+  eventEndDate: string;
   visibility: string;
   imageUrl: string;
 };
@@ -76,6 +77,7 @@ export const faceFeedOf = (rows: Array<Record<string, unknown>>): FaceFeedEvent[
       title: str(row.title),
       body: str(row.body),
       eventDate: str(row.eventDate),
+      eventEndDate: str(row.eventEndDate),
       visibility: normalizedVisibility(row.visibility) ?? 'public',
       imageUrl: faceImageOf(row),
     }))
