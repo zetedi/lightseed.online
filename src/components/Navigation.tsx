@@ -13,6 +13,7 @@ import { crownName, type CrownRole } from '../domain/dataAuthority';
 import { Picture } from './ui/Picture';
 import { saveDesires } from '../services/firebase';
 import type { Language } from '../domain/tongues';
+import { brandLinesOf } from '../domain/brandName';
 interface NavigationProps {
   activeTab: string;
   setTab: (tab: string) => void;
@@ -352,7 +353,16 @@ export const Navigation = ({
                         </div>
                         {/* The name renders EXACTLY as the keeper wrote it (the appearance hint promises it) —
                         no forced case: '.seed' is lowercase because it is WRITTEN lowercase. */}
-                        <span dir="ltr" className="hidden max-w-[160px] truncate font-light text-2xl tracking-wide sm:inline">{appName}</span>
+                        {(() => {
+                            // A long name breaks into two balanced lines at a smaller size instead of
+                            // ending in an ellipsis (domain/brandName, ring 2026-10-19).
+                            const brand = brandLinesOf(appName);
+                            return (
+                                <span dir="ltr" className={`hidden max-w-[160px] font-light tracking-wide sm:block ${brand.small ? 'text-sm leading-tight' : 'text-2xl'}`}>
+                                    {brand.lines.map((line, i) => <span key={i} className="block truncate">{line}</span>)}
+                                </span>
+                            );
+                        })()}
                         {/* Mobile: the current page's name lives up here, next to the logo — the
                             page headers below carry no title, so this is the "where am I". Quiet:
                             small, in the same colour as the hamburger lines. (Tablet gets the

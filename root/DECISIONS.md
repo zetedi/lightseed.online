@@ -6,6 +6,22 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-19 · A long name breaks into two lines in the header** — Zoltán, seeing "Enlightened …"
+beside the logo: "if the community name is too long to show in the header, break it into two lines,
+half font size or similar." The header's name seat is 160px beside the logo, one line at full size,
+ending in an ellipsis — so the place's own name was the one thing the header cut. THE LAW
+(domain/brandName brandLinesOf, tested): a name within twelve characters stays one line at full
+size; a longer one breaks into TWO lines at one of its own spaces, the break chosen so the longer
+line is as short as it can be ("Enlightened" / "Nations"; "Mama Way" / "Community Garden"), and
+reads at the small size with tight leading — two lines of it stand within the logo's 40px, so the
+header never grows; a single long word has no boundary and only shrinks. The name is never altered,
+only broken at its spaces, so it still renders exactly as the keeper wrote it. NOT GUARANTEED: a
+line that is itself longer than the seat still ends in an ellipsis (the seat's width is the
+header's, not the name's). REJECTED: letting CSS wrap at its own whim (an unbalanced break like
+"Enlightened Nations" / "Garden" reads as a mistake); widening the seat (the tabs need the room).
+
+---
+
 **2026-10-19 · The footer asks the signed-in for one click, not an address** — Zoltán: "if I'm
 logged in, I don't need to enter my email in the footer to subscribe to newsletter, so a
 subscribe link would be enough." The footer's letter form asked everyone alike for an address —
