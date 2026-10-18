@@ -1652,7 +1652,7 @@ const zh = {
   my_offerings_sub: "你供献过的一切：仍然成立的、已被接受的、你已撤回的。",
   no_offerings_yet: "你还没有供献过什么。",
   offered_to: "供献给 {name}",
-  footer_already_subscribed: "你正在接收 {place} 的来信。",
+  footer_already_subscribed: "你正在接收 {place} 的来信。", footer_unsubscribe_cta: "取消订阅",
   visions_endeavours: "愿景与志业",
   link_not_web: "链接通向网络：它以 http:// 或 https:// 开头。",
   link_not_valid: "这不是一个地址。可以试试 example.org 这样的写法。",

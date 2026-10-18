@@ -1654,7 +1654,7 @@ const ar = {
   my_offerings_sub: "كل ما عرضتَه: ما هو قائم، وما قُبل، وما سحبتَه.",
   no_offerings_yet: "لم تعرض شيئًا بعد.",
   offered_to: "مُقدَّم إلى {name}",
-  footer_already_subscribed: "أنت تتلقّى رسالة {place}.",
+  footer_already_subscribed: "أنت تتلقّى رسالة {place}.", footer_unsubscribe_cta: "إلغاء الاشتراك",
   visions_endeavours: "الرؤى والمساعي",
   link_not_web: "الرابط يفتح على الويب: يبدأ بـ http:// أو https://.",
   link_not_valid: "هذا ليس عنوانًا. جرّب شيئًا مثل example.org.",

@@ -90,3 +90,8 @@ export const subscribeSeatOf = (f: { place: string; subscribed: boolean; account
   if (f.subscribed) return 'told';
   return f.accountEmail && isSubscriberEmail(f.accountEmail) ? 'one_click' : 'ask_email';
 };
+
+// A being told they receive the letter may let it go from the same line — only when the account's
+// address can name the subscription (the same address the one click would have used).
+export const canReleaseFromFooter = (f: { subscribed: boolean; accountEmail?: string | null }): boolean =>
+  f.subscribed && !!f.accountEmail && isSubscriberEmail(f.accountEmail);

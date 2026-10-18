@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { subscriptionIdOf, audienceOf, newsletterSendRefusal, normalizePlaceDomain, isSubscriberEmail, subscribedToPlace, subscribeSeatOf } from '../src/domain/newsletter';
+import { subscriptionIdOf, audienceOf, newsletterSendRefusal, normalizePlaceDomain, isSubscriberEmail, subscribedToPlace, subscribeSeatOf, canReleaseFromFooter } from '../src/domain/newsletter';
 import { DOMAIN_KEYS } from '../src/domain/words';
 import { audienceOf as sAudienceOf, newsletterSendRefusal as sNewsletterSendRefusal, normalizePlaceDomain as sNormalizePlaceDomain } from '../functions/src/newsletter';
 
@@ -89,5 +89,11 @@ describe('subscribeSeatOf — a signed-in being is offered one link, not a field
   });
   it('no place, no seat', () => {
     expect(subscribeSeatOf({ place: '', subscribed: false, accountEmail: 'ana@example.org' })).toBe('none');
+  });
+  it('the told may let go from the same line, only by a usable account address', () => {
+    expect(canReleaseFromFooter({ subscribed: true, accountEmail: 'ana@example.org' })).toBe(true);
+    expect(canReleaseFromFooter({ subscribed: true, accountEmail: '' })).toBe(false);
+    expect(canReleaseFromFooter({ subscribed: true, accountEmail: 'phone-only' })).toBe(false);
+    expect(canReleaseFromFooter({ subscribed: false, accountEmail: 'ana@example.org' })).toBe(false);
   });
 });

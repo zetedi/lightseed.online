@@ -18,6 +18,11 @@ letter of …" the moment the mirror lands, and the profile agrees with the foot
 title names the address it will use. NOT GUARANTEED: an account without an address (a phone or
 anonymous sign-in) is asked for one, exactly as a visitor is. REJECTED: prefilling the field with
 the account's address (still a field to confirm, and the visitor's path dressed as the member's).
+THEN, THE SAME DAY — Zoltán: "put an unsubscribe link, the same style if I'm subscribed." The told
+line gains the same link the other way (canReleaseFromFooter: subscribed, and a usable account
+address to name the subscription), through the same hand with `false` — the profile mirror flips
+the line back to the one-click offer. Unsubscribing now lives in three places that agree: the
+letter's one click, the profile's toggle, the footer's link.
 
 ---
 

@@ -8,7 +8,7 @@ import { LegalModal, type LegalDoc } from './LegalModal';
 import { subscribeToNewsletter, setNewsletterSubscription, listenToUserProfile } from '../../services/firebase';
 import { useSession } from '../../contexts/SessionContext';
 import { charter } from '../../config/charter';
-import { isSubscriberEmail, subscribedToPlace, subscribeSeatOf } from '../../domain/newsletter';
+import { isSubscriberEmail, subscribedToPlace, subscribeSeatOf, canReleaseFromFooter } from '../../domain/newsletter';
 import { notify } from './Toast';
 import { speak } from '../../utils/translations';
 
@@ -77,17 +77,20 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
   // own address subscribes, through the same hand as the profile's toggle, so the profile mirror
   // flips `alreadyHere` the moment it lands and the confirmation letter goes out.
   const seat = subscribeSeatOf({ place, subscribed: alreadyHere, accountEmail: lightseed?.email });
-  const subscribeAsMe = async () => {
+  // The same link the other way: a being told they receive the letter lets it go here too.
+  const canRelease = canReleaseFromFooter({ subscribed: alreadyHere, accountEmail: lightseed?.email });
+  const setMySubscription = async (subscribe: boolean) => {
     if (!lightseed?.uid || !lightseed.email || subscribing) return;
     setSubscribing(true);
     try {
-      await setNewsletterSubscription(lightseed.uid, lightseed.email, true, place);
-      notify(`🌱 ${speak('subscribed_success')} ${lightseed.email}`);
+      await setNewsletterSubscription(lightseed.uid, lightseed.email, subscribe, place);
+      notify(subscribe ? `🌱 ${speak('subscribed_success')} ${lightseed.email}` : speak('newsletter_unsubscribed'));
     } catch {
       notify(speak('subscription_failed'), 'error');
     }
     setSubscribing(false);
   };
+  const footerLink = 'font-bold underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-100 disabled:opacity-50';
   const legal: { doc: LegalDoc; label: string }[] = [
     { doc: 'privacy', label: t('privacy') },
     { doc: 'terms', label: t('terms') },
@@ -115,14 +118,23 @@ export const Footer = ({ community, theme, isDark = false }: { community?: Commu
         {/* The letter of this place — subscribe here; unsubscribe in the letter or the profile.
             A being already on the list is simply told so, in one quiet line. */}
         {seat === 'told' && (
-          <p className="text-[11px]" style={{ color: surface.muted }}>{t('footer_already_subscribed').replace('{place}', name)}</p>
+          <p className="text-[11px]" style={{ color: surface.muted }}>
+            {t('footer_already_subscribed').replace('{place}', name)}
+            {canRelease && (
+              <>
+                <span className="mx-1.5 opacity-40">·</span>
+                <button type="button" onClick={() => setMySubscription(false)} disabled={subscribing} title={lightseed?.email || ''} className={footerLink} style={{ opacity: 0.85 }}>
+                  {t('footer_unsubscribe_cta')}
+                </button>
+              </>
+            )}
+          </p>
         )}
         {seat === 'one_click' && (
           <p className="text-[11px]" style={{ color: surface.muted }}>
             {t('footer_subscribe_label').replace('{place}', name)}
             <span className="mx-1.5 opacity-40">·</span>
-            <button type="button" onClick={subscribeAsMe} disabled={subscribing} title={lightseed?.email || ''}
-                    className="font-bold underline decoration-dotted underline-offset-2 transition-opacity hover:opacity-100 disabled:opacity-50" style={{ opacity: 0.85 }}>
+            <button type="button" onClick={() => setMySubscription(true)} disabled={subscribing} title={lightseed?.email || ''} className={footerLink} style={{ opacity: 0.85 }}>
               {t('footer_subscribe_cta')}
             </button>
           </p>

@@ -1686,7 +1686,7 @@ const en = {
   my_offerings_sub: "Everything you have offered: what stands, what was taken up, what you withdrew.",
   no_offerings_yet: "You have offered nothing yet.",
   offered_to: "Offered to {name}",
-  footer_already_subscribed: "You receive the letter of {place}.",
+  footer_already_subscribed: "You receive the letter of {place}.", footer_unsubscribe_cta: "Unsubscribe",
   visions_endeavours: "Visions & Endeavours",
   link_not_web: "A link opens on the web: it begins with http:// or https://.",
   link_not_valid: "That is not an address. Try something like example.org.",
