@@ -198,12 +198,12 @@ service cloud.firestore {
     // THE CHAIN IS THE SERVER'S (ring 2026-09-23, server-held heads). A chain LINK is a pulse
     // whose previousHash is another block's hash; a STANDALONE record is rooted in a sentinel
     // (domain/bundle NON_CHAIN_ROOTS — events, offerings, decisions, person-reaches, water
-    // alerts, Light House care) and moves no head. Links are born only by the server's hand
+    // alerts and the tree's thanks, Light House care) and moves no head. Links are born only by the server's hand
     // (functions/mintBlock and its twins), which reads the head inside its transaction and
     // seals the block over the bytes it stores; a client births only standalone records, and
     // names a tree as its chain only for a person's reach (the two sentinel-rooted reach kinds).
     function isChainRoot(prev) {
-      return prev in ['0', 'PERSON_REACH', 'DECISION', 'EVENT', 'OFFERING', 'COMMUNITY_EVENT', 'WATER_ALERT', 'OFFER_NOTICE', 'LIGHT_HOUSE'];
+      return prev in ['0', 'PERSON_REACH', 'DECISION', 'EVENT', 'OFFERING', 'COMMUNITY_EVENT', 'WATER_ALERT', 'WATER_NOTICE', 'OFFER_NOTICE', 'LIGHT_HOUSE'];
     }
     // A chain block: a sealed record that names a tree or a vision as its chain (the guard the
     // unmint ring drew for tree blocks, widened to visions), or that follows another block's
@@ -219,6 +219,18 @@ service cloud.firestore {
           (!('lifetreeId' in request.resource.data) && !('visionId' in request.resource.data))
           || (request.resource.data.get('type', '') == 'reach'
               && request.resource.data.get('previousHash', '') in ['PERSON_REACH', 'OFFER_NOTICE'])
+          // THE TREE'S OWN NUDGES (ring 2026-10-21): the thirst ask (WATER_ALERT) and the thanks for
+          // a watering or its taking-back (WATER_NOTICE) are the tree speaking into its guardians'
+          // thread — a message, never a chain block — by a hand of its circle: keeper, steward
+          // or guardian, or the staff hand that may water for them. (The thanks was a tree-sent
+          // reach ON the chain before, and sat on top of the watering it announced, so the
+          // watering could never be the head to take back; and the keeper's own "remind now"
+          // ask had been shut out of this function since the server-held head ring.)
+          || (request.resource.data.get('type', '') == 'reach'
+              && request.resource.data.get('previousHash', '') in ['WATER_ALERT', 'WATER_NOTICE']
+              && (isStaff()
+                  || isTreeCarer(request.resource.data.get('lifetreeId', ''))
+                  || hasLink('guardian', request.resource.data.get('lifetreeId', ''))))
         )
         // A watering is a link on a tree's chain or nothing: its light mint reads a chain block.
         && request.resource.data.get('care', '') != 'watering';

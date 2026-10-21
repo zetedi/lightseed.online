@@ -6,6 +6,45 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-21 · A watering may be taken back until it is witnessed; the link lifts its touch** —
+Zoltán: "I'd like to be able to remove the last watering mint also, before the guardian
+confirmation." The unmint law (ring 2026-08-15) already allowed it on paper — an unwitnessed
+watering is the author's word at the head, nothing co-held — and in the living data it never
+could. THREE SEAMS. (1) The tree's thanks stood ON TOP OF the watering: every watering path
+posted "watered me — thank you" into the guardians' thread as a tree-sent reach, which is a
+chain block, so the watering was never the head, and the thanks above it — read by the very
+guardians it was for — was co-held the moment anyone opened the thread. (The off-chain "I
+watered today", which promises no chain advance, advanced the chain the same way.) NOW the
+thanks is a NUDGE, like the thirst ask: a private reach rooted in the WATER_NOTICE sentinel,
+born by a hand of the tree's circle (keeper, steward, guardian — the rules bind it, and the same
+clause now admits the keeper's own "remind now" thirst ask, WATER_ALERT, which the server-held
+head ring had shut out of clientBornStandalone without a test noticing). The chain holds the
+care; the thread holds the talk. (2) The unmint shortened the chain and LEFT THE TOUCH: a
+growth block also writes the tree in its own transaction — its face (latestGrowthUrl), its care
+stamp (lastCaredAt), a watering's clock (lastWateredAt/By/ByName, overdue, nextDueAt) — so a
+watering taken back still read "last watered today, by you". NOW THE MINT REMEMBERS: the block
+carries `bearerBefore`, what the tree wore at exactly the fields the mint writes (null where it
+had nothing), outside the seal like a read receipt, gone with the block; and the unmint LIFTS
+the touch in the transaction that shortens the chain — prior values return, created fields
+clear — but only while the tree still wears THIS block's touch: the clock equal to the block's
+mintedAt, the stamp equal to the block's birth (one commit, one server time), the face equal to
+the block's picture. A later off-chain tick that moved the clock stands; its word is newer.
+domain/unmint (TOUCH_FIELDS, touchMemoryOf, touchRestoreOf, stillWorn), mirrored in
+functions/src/birth.ts and held equal by tests/birth.test.ts; applied by functions/mintBlock
+and functions/unmintBlock. (3) THE DOOR: the care tab's "awaiting a witness" list now carries,
+on the carer's own line, the same Unmint the tree page wears — live while the law allows,
+disabled with the reason — so a steward who watered has a door too (the tree page's pill was
+the keeper's alone). And the circle hears the taking-back where it heard the thanks: "took back
+the watering", the same nudge. The confirm's words changed with the truth: "what it changed on
+the tree returns to how it was" (it used to promise that nothing else moves).
+NOT GUARANTEED: a block minted before this ring carries no memory — its touch stays when it is
+unminted; the thanks already minted as blocks stay blocks, and a pending watering beneath one of
+them is still below the head (a staff unwind is the way); a schedule changed between a watering
+and its unmint keeps the clock the memory holds (nextDueAt restored, not recomputed); the staff
+unwind script shortens only. 7 unit laws, a mirror test, one rules test with seven questions.
+
+---
+
 **2026-10-19 · A long name breaks into two lines in the header** — Zoltán, seeing "Enlightened …"
 beside the logo: "if the community name is too long to show in the header, break it into two lines,
 half font size or similar." The header's name seat is 160px beside the logo, one line at full size,

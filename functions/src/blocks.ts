@@ -14,7 +14,7 @@
 import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import { FieldValue, Timestamp, type Transaction, type DocumentReference } from "firebase-admin/firestore";
 import { randomBytes } from "node:crypto";
-import { db, isStaffUid, secretKeeperRef } from "./core";
+import { db, isStaffUid, secretKeeperRef, tsToMs } from "./core";
 import { staffHandOn } from "./staffHands";
 import { uuidv7 } from "./mint";
 import { charter } from "./charter";
@@ -24,7 +24,8 @@ import { verifiesEd25519 } from "./keys";
 import {
     judgeBlockBirth, blockRecordOf, wateringResetOf, unmintRefusal, STAFF_OVERRIDABLE_REFUSALS,
     judgeBlockSignature, blockSignaturePayload, blockSignaturePreimage, isBlockSignatureClaim,
-    type ChainBearerKind, type BlockBirthRefusal, type BlockSignatureRefusal, type UnmintPulseFacts, type SignerFacts,
+    touchMemoryOf, touchRestoreOf,
+    type ChainBearerKind, type BlockBirthRefusal, type BlockSignatureRefusal, type UnmintPulseFacts, type SignerFacts, type TouchMemory,
 } from "./birth";
 
 // ── the seal: one law for every server-born block ────────────────────────────────────────
@@ -95,6 +96,9 @@ export const stageBlock = async (t: Transaction, p: {
     content: Record<string, unknown>; previousHash: string; blockHeight: number;
     authorId: string; domain: string; mintedAt: number;
     bearerPatch?: Record<string, unknown>;
+    // THE MINT'S TOUCH, REMEMBERED (domain/unmint, ring 2026-10-21): what the bearer wore at the
+    // fields the patch writes — stored on the block OUTSIDE the seal, so the unmint can lift it.
+    memory?: TouchMemory | null;
 }): Promise<BornBlock> => {
     const ref = db.collection("pulses").doc();
     const record = blockRecordOf({
@@ -102,7 +106,7 @@ export const stageBlock = async (t: Transaction, p: {
         lid: uuidv7(p.mintedAt, randomBytes(10)), id: ref.id, domain: p.domain, mintedAt: p.mintedAt, previousHash: p.previousHash,
     });
     const seal = await sealBlock(p.previousHash, p.mintedAt, record);
-    t.set(ref, { ...record, hashVersion: seal.hashVersion, hash: seal.hash, createdAt: FieldValue.serverTimestamp() });
+    t.set(ref, { ...record, ...(p.memory ? { bearerBefore: p.memory } : {}), hashVersion: seal.hashVersion, hash: seal.hash, createdAt: FieldValue.serverTimestamp() });
     t.update(db.doc(bearerPath(p.on, p.bearerId)), { latestHash: seal.hash, blockHeight: p.blockHeight, ...(p.bearerPatch || {}) });
     return { ref, record, hash: seal.hash, blockHeight: p.blockHeight };
 };
@@ -193,6 +197,7 @@ export const mintBlock = onCall({ cors: true }, async (request) => {
             on, bearerId: id, content,
             previousHash: judgment.previousHash, blockHeight: judgment.blockHeight,
             authorId: uid, domain: domainOf(bearer.domain, request), mintedAt, bearerPatch,
+            memory: touchMemoryOf(bearer, bearerPatch),
         });
         return {
             pulseId: born.ref.id,
@@ -212,6 +217,9 @@ export const mintBlock = onCall({ cors: true }, async (request) => {
 // guards (co-held, not-author) wearing the amber dot; the structural ones bend to no one.
 // The delete and the rollback are one transaction, so the chain only ever shortens by its
 // newest link. An unmint is an erasure, said plainly; below the head, retraction is the way.
+// THE TOUCH IS LIFTED WITH THE LINK (ring 2026-10-21): what the block changed on its tree — the
+// face, the care stamp, a watering's clock — returns to what the block remembers, in the same
+// transaction, while the tree still wears this block's touch (domain/unmint touchRestoreOf).
 export const unmintBlock = onCall({ cors: true }, async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in to unmint.");
     const uid = request.auth.uid;
@@ -239,9 +247,25 @@ export const unmintBlock = onCall({ cors: true }, async (request) => {
 
         const latestHash = String(pulse.previousHash || "");
         const blockHeight = Math.max(0, (Number(tree.blockHeight) || 1) - 1);
+        const watering = (tree.watering && typeof tree.watering === "object" ? tree.watering : {}) as Record<string, unknown>;
+        const restore = touchRestoreOf({
+            memory: (pulse.bearerBefore && typeof pulse.bearerBefore === "object" ? pulse.bearerBefore : null) as TouchMemory | null,
+            block: {
+                mintedAtMs: typeof pulse.mintedAt === "number" ? pulse.mintedAt : null,
+                createdAtMs: tsToMs(pulse.createdAt) || null,
+                imageUrl: typeof pulse.imageUrl === "string" ? pulse.imageUrl : null,
+            },
+            tree: {
+                latestGrowthUrl: typeof tree.latestGrowthUrl === "string" ? tree.latestGrowthUrl : null,
+                lastCaredAtMs: tsToMs(tree.lastCaredAt) || null,
+                lastWateredAtMs: tsToMs(watering.lastWateredAt) || null,
+            },
+        });
+        const lifted: Record<string, unknown> = { ...restore.set };
+        for (const k of restore.clear) lifted[k] = FieldValue.delete();
         t.delete(pulseRef);
-        t.update(treeRef, { latestHash, blockHeight, updatedAt: FieldValue.serverTimestamp() });
-        return { latestHash, blockHeight };
+        t.update(treeRef, { latestHash, blockHeight, updatedAt: FieldValue.serverTimestamp(), ...lifted });
+        return { latestHash, blockHeight, lifted: [...Object.keys(restore.set), ...restore.clear] };
     });
 });
 

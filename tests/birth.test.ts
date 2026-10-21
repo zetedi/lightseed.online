@@ -11,7 +11,7 @@ import {
 } from '../src/domain/chain';
 import { signingPreimage } from '../src/domain/signing';
 import { keypairFromSeed, signPayload, verifyPayload, subtleEd25519Available } from '../src/services/signingCrypto';
-import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../src/domain/unmint';
+import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS, touchMemoryOf, touchRestoreOf, TOUCH_FIELDS } from '../src/domain/unmint';
 import { DOMAIN_KEYS } from '../src/domain/words';
 import {
   judgeBlockBirth as serverJudge, blockBirthOf as serverBirthOf, blockRecordOf as serverRecordOf,
@@ -19,6 +19,7 @@ import {
   BLOCK_BIRTH_FIELDS as SERVER_BIRTH_FIELDS, TREE_BLOCK_TYPES as SERVER_TREE_TYPES,
   VISION_BLOCK_TYPES as SERVER_VISION_TYPES, BLOCK_VISIBILITIES as SERVER_VISIBILITIES,
   unmintRefusal as serverUnmintRefusal, STAFF_OVERRIDABLE_REFUSALS as SERVER_STAFF_OVERRIDABLE,
+  touchMemoryOf as serverTouchMemoryOf, touchRestoreOf as serverTouchRestoreOf, TOUCH_FIELDS as SERVER_TOUCH_FIELDS,
   SIGNED_BLOCK_FIELDS as SERVER_SIGNED_FIELDS, BLOCK_SIGNATURE_DOMAIN as SERVER_SIGNATURE_DOMAIN,
   signedContentOf as serverSignedContentOf, blockSignaturePayload as serverSignaturePayload,
   blockSignaturePreimage as serverSignaturePreimage, blockSignaturePayloadOf as serverSignaturePayloadOf,
@@ -234,6 +235,29 @@ describe('the functions mirror of the birth law stays true', () => {
       expect(serverUnmintRefusal(pulse, tree, uid)).toBe(unmintRefusal(pulse, tree, uid));
     }
     expect([...SERVER_STAFF_OVERRIDABLE].sort()).toEqual([...STAFF_OVERRIDABLE_REFUSALS].sort());
+  });
+  it("the mint's touch is mirrored — what is remembered, and what the unmint lifts", () => {
+    expect([...SERVER_TOUCH_FIELDS]).toEqual([...TOUCH_FIELDS]);
+    const stamp = (ms: number) => ({ toMillis: () => ms, ms });
+    const bearers: Record<string, unknown>[] = [
+      { latestGrowthUrl: 'old', lastCaredAt: stamp(1), watering: { mode: 'scheduled', lastWateredAt: stamp(1), lastWateredBy: ANA, overdue: true } },
+      { name: 'bare' },
+      {},
+    ];
+    const patch = { latestGrowthUrl: 'new', lastCaredAt: 'T', 'watering.lastWateredAt': stamp(5), 'watering.lastWateredBy': 'bakr', 'watering.lastWateredByName': 'B', 'watering.overdue': false, 'watering.nextDueAt': stamp(9) };
+    for (const bearer of bearers) {
+      const memory = touchMemoryOf(bearer, patch);
+      expect(serverTouchMemoryOf(bearer, patch)).toEqual(memory);
+      for (const tree of [
+        { latestGrowthUrl: 'new', lastCaredAtMs: 7, lastWateredAtMs: 5 },
+        { latestGrowthUrl: 'new', lastCaredAtMs: 9, lastWateredAtMs: 9 },
+        { latestGrowthUrl: 'other', lastCaredAtMs: null, lastWateredAtMs: null },
+      ]) {
+        const facts = { memory, block: { mintedAtMs: 5, createdAtMs: 7, imageUrl: 'new' }, tree };
+        expect(serverTouchRestoreOf(facts)).toEqual(touchRestoreOf(facts));
+      }
+    }
+    expect(serverTouchRestoreOf({ memory: null, block: {}, tree: {} })).toEqual(touchRestoreOf({ memory: null, block: {}, tree: {} }));
   });
 });
 

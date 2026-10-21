@@ -710,7 +710,7 @@ const en = {
   // The unmint (domain/unmint, ring 2026-08-15) \u2014 the accidental head mint, taken back whole.
   tree_actions: "Tree Actions",
   unmint_newest_link: "Unmint newest link",
-  unmint: "Unmint", unmint_confirm: "Take back this mint? The chain shortens by its newest link; nothing else moves.",
+  unmint: "Unmint", unmint_confirm: "Take back this mint? The chain shortens by its newest link, and what it changed on the tree returns to how it was.",
   unmint_not_author: "Only the hand that minted it may take it back.",
   unmint_not_mint: "Only a block on a tree's chain can be taken back.",
   unmint_not_last: "Only the newest block can be taken back \u2014 below the head, the chain is sealed.",

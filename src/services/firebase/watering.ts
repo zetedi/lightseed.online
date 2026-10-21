@@ -5,7 +5,7 @@ import { uuidv7 } from '../../utils/id';
 import { daysOverdue, computeNextDueMillis, wateringAlertedToday, standingAlertId, type TreeStage, type WateringSchedule, type WateringAnalysis } from '../../domain/watering';
 import { buildGroupThreadId } from '../../utils/reachPermissions';
 import { db, functions, pulsesCollection } from './core';
-import { mintPulse, resolveCircleUids, sendThreadMessage } from './pulses';
+import { mintPulse, resolveCircleUids, sendThreadMessage, postGuardiansNotice } from './pulses';
 import { uploadImage } from './media';
 import { announce } from '../refreshBus';
 import { myNaming } from './accounts';
@@ -55,36 +55,15 @@ export const setWateringSchedule = async (
 // Tell the guardians' thread the tree was cared for. A normal (newest) message is also what clears
 // the blue 'water me' careAlert border — newest message wins (see domain/views/threads) — so
 // EVERY watering path must post one, or a resolved alert lingers in the inbox. Best-effort.
-const postWateredNotice = async (
+// A NUDGE, NOT A BLOCK (ring 2026-10-21): the thanks is the tree's off-chain word into its circle
+// (postGuardiansNotice, the WATER_ALERT shape). It was a tree-sent reach minted ON the chain, which
+// sat on top of the watering it announced — so a watering could never be the head to take back —
+// and advanced the chain even for the off-chain tick that promises no chain advance.
+const postWateredNotice = (
     tree: Lifetree,
     sender: { uid: string; displayName?: string | null; photoURL?: string | null },
     text: string,
-) => {
-    try {
-        if (!tree.anchorUid) return;
-        const participantUids = await resolveCircleUids(tree, 'guardians');
-        if (participantUids.length > 1) {
-            await sendThreadMessage({
-                thread: {
-                    threadId: buildGroupThreadId(tree.id, 'guardians', tree.anchorUid),
-                    participantUids,
-                    reachTreeId: tree.id,
-                    reachTreeName: tree.name,
-                    threadName: `${tree.name} · Guardians`,
-                    audience: 'guardians',
-                    isGroup: true,
-                },
-                fromTree: tree,
-                sender,
-                text,
-            });
-            // An open inbox is a mounted view, and this message landed in a thread it is
-            // already showing — tell the bus, or the guardians' thread keeps its stale alert
-            // until the reader leaves the tab and comes back.
-            announce('reaches', tree.id);
-        }
-    } catch (e) { console.warn('Watered notice could not be posted', e); }
-};
+) => postGuardiansNotice(tree, sender, text);
 
 // Off-chain "I Watered Today" — the default: resets the cadence WITHOUT minting a growth block
 // or storing a photo (no chain advance), for routine watering you don't want on the tree's

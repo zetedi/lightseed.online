@@ -352,3 +352,72 @@ export const isWebLinkList = (v: unknown): v is WebLink[] =>
         !!r && typeof r === 'object' && Object.keys(r).every(k => k === 'url' || k === 'label')
         && typeof (r as WebLink).url === 'string' && normalizeWebLink((r as WebLink).url) === (r as WebLink).url
         && ((r as WebLink).label === undefined || (typeof (r as WebLink).label === 'string' && (r as WebLink).label!.length <= MAX_WEB_LINK_LABEL && (r as WebLink).label!.trim().length > 0)));
+
+// ── THE MINT'S TOUCH, REMEMBERED (mirror of src/domain/unmint.ts, ring 2026-10-21) ─────────
+// What a growth block changed on its tree is remembered on the block (bearerBefore) and lifted
+// by the unmint — only while the tree still wears this block's touch. Held equal to the domain
+// by tests/birth.test.ts.
+export const TOUCH_FIELDS: readonly string[] = [
+    'latestGrowthUrl', 'lastCaredAt',
+    'watering.lastWateredAt', 'watering.lastWateredBy', 'watering.lastWateredByName', 'watering.overdue', 'watering.nextDueAt',
+];
+export type TouchMemory = Record<string, unknown>;
+
+const readPath = (bearer: Record<string, unknown>, path: string): unknown => {
+    let cur: unknown = bearer;
+    for (const seg of path.split('.')) {
+        if (!cur || typeof cur !== 'object') return undefined;
+        cur = (cur as Record<string, unknown>)[seg];
+    }
+    return cur;
+};
+
+export const touchMemoryOf = (bearer: Record<string, unknown>, patch: Record<string, unknown>): TouchMemory | null => {
+    const memory: TouchMemory = {};
+    for (const path of Object.keys(patch)) {
+        const value = readPath(bearer, path);
+        const before = value === undefined ? null : value;
+        const dot = path.indexOf('.');
+        if (dot < 0) { memory[path] = before; continue; }
+        const head = path.slice(0, dot);
+        const inner = (memory[head] && typeof memory[head] === 'object' ? memory[head] : {}) as Record<string, unknown>;
+        inner[path.slice(dot + 1)] = before;
+        memory[head] = inner;
+    }
+    return Object.keys(memory).length ? memory : null;
+};
+
+export interface TouchRestoreFacts {
+    memory?: TouchMemory | null;
+    block: { mintedAtMs?: number | null; createdAtMs?: number | null; imageUrl?: string | null };
+    tree: { latestGrowthUrl?: string | null; lastCaredAtMs?: number | null; lastWateredAtMs?: number | null };
+}
+export interface TouchRestore { set: Record<string, unknown>; clear: string[] }
+
+const sameMoment = (a: number | null | undefined, b: number | null | undefined): boolean =>
+    typeof a === 'number' && typeof b === 'number' && a > 0 && a === b;
+
+export const stillWorn = (path: string, f: TouchRestoreFacts): boolean => {
+    if (path.startsWith('watering.')) return sameMoment(f.tree.lastWateredAtMs, f.block.mintedAtMs);
+    if (path === 'latestGrowthUrl') return !!f.block.imageUrl && f.tree.latestGrowthUrl === f.block.imageUrl;
+    if (path === 'lastCaredAt') return sameMoment(f.tree.lastCaredAtMs, f.block.createdAtMs);
+    return false;
+};
+
+export const touchRestoreOf = (f: TouchRestoreFacts): TouchRestore => {
+    const out: TouchRestore = { set: {}, clear: [] };
+    const m = f.memory;
+    if (!m || typeof m !== 'object' || Array.isArray(m)) return out;
+    const flat: Array<[string, unknown]> = [];
+    for (const [k, v] of Object.entries(m)) {
+        if (k === 'watering' && v && typeof v === 'object' && !Array.isArray(v)) {
+            for (const [sk, sv] of Object.entries(v as Record<string, unknown>)) flat.push([`watering.${sk}`, sv]);
+        } else flat.push([k, v]);
+    }
+    for (const [path, before] of flat) {
+        if (!TOUCH_FIELDS.includes(path) || !stillWorn(path, f)) continue;
+        if (before === null || before === undefined) out.clear.push(path);
+        else out.set[path] = before;
+    }
+    return out;
+};

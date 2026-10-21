@@ -309,6 +309,8 @@ export const TreeCare: React.FC<TreeCareProps> = ({
                     currentUserId={currentUserId}
                     canWitness={canWitness}
                     onWitnessed={onChainRefresh}
+                    latestHash={tree.latestHash}
+                    onUnminted={onChainRefresh}
                 />
             )}
 

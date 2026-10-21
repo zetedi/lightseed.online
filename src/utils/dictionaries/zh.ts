@@ -712,7 +712,7 @@ const zh = {
   community_domain_confirm: "将“{name}”迁至 {domain}？其页面将按新地址取景；现有的树与脉动保留旧印记，直到被重新安家。",
   tree_actions: "树的操作",
   unmint_newest_link: "撤回最新一环",
-  unmint: "撤回铸造", unmint_confirm: "撤回这次铸造？链条缩短最新一环；其余一切不动。",
+  unmint: "撤回铸造", unmint_confirm: "撤回这次铸造？链条缩短最新一环，它在树上改动的一切复原如初。",
   unmint_not_author: "只有铸造它的手才能撤回它。",
   unmint_not_mint: "只能撤回树链上的区块。",
   unmint_not_last: "只能撤回最新的一环——头部以下，链条已封。",

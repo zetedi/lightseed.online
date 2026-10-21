@@ -178,6 +178,11 @@ export interface Pulse extends Being {
     confirmedByUid?: string; // the guardian, when confirmed by a human
     confirmedAt?: Stamp;
   };
+  // THE MINT'S TOUCH, REMEMBERED (domain/unmint, ring 2026-10-21): what the tree wore before this
+  // growth block touched it (its face, its care stamp, the watering clock), nested as the tree
+  // nests them, null where it had nothing. Written by the server's mint OUTSIDE the seal, so the
+  // unmint can lift the touch; it dies with the block.
+  bearerBefore?: Record<string, unknown>;
 
   // Alignment Logic (On Chain) (Legacy)
   isMatch?: boolean;

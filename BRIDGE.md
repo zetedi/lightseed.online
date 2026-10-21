@@ -35,7 +35,9 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
 - **The head is the server's** (ring 2026-09-23): every chain link is born by
   `functions/src/blocks.ts` (`mintBlock`, `unmintBlock`, `acceptAlignment`; `acceptOffering` and
   the stay leaf share its seal). The birth law: `src/domain/chain/birth.ts`, mirrored in
-  `functions/src/birth.ts`, held equal by `tests/birth.test.ts`. The rules (`clientBornStandalone`,
+  `functions/src/birth.ts`, held equal by `tests/birth.test.ts`. The unmint and the mint's touch
+  (what a growth changed on its tree, remembered on the block and lifted with the link, ring
+  2026-10-21): `src/domain/unmint.ts`, mirrored there too. The rules (`clientBornStandalone`,
   `isChainBlock`, the frozen head keys) are held by `tests/rules/firestore.rules-test.ts` ("the
   chain is the server's") and the living walk (`tests/living`) mints through the real callable.
 - **Light moves only through a gate** (ring 2026-09-30): `functions/src/lightCalls.ts`

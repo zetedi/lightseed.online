@@ -670,6 +670,30 @@ describe('the births are bound — every being is born signed by its own hand (r
     await assertFails(updateDoc(doc(db(ALICE), 'pulses', 'waterAsk'), { careAlert: 'watering', type: 'observation' }));
   });
 
+  it("the tree's thanks is a nudge, not a block: its circle speaks it, a stranger cannot, and it is never a watering", async () => {
+    // WATER_NOTICE (ring 2026-10-21): the watered-me thanks and the taking-back line are the tree's
+    // off-chain word into its guardians' thread, like the thirst ask (WATER_ALERT) — born by a hand
+    // of the circle (keeper, steward, guardian), private, and never carrying the watering itself.
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'links', `${BOB}__guardian__treeA`), { lid: 'g', type: 'link', rel: 'guardian', from: BOB, to: 'treeA', createdAt: Timestamp.fromMillis(1) });
+    });
+    const notice = (authorId: string, over: Record<string, unknown> = {}) => ({
+      type: 'reach', authorId, lifetreeId: 'treeA', threadId: 'grp__treeA__guardians__' + ALICE,
+      participantUids: [ALICE, BOB], audience: 'guardians', isGroup: true, visibility: 'private',
+      body: 'Bob watered me — thank you!', content: 'Bob watered me — thank you!',
+      previousHash: 'WATER_NOTICE', hash: 'notice-id', loveCount: 0, commentCount: 0, ...over,
+    });
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'thanks1'), notice(ALICE)));   // the keeper
+    await assertSucceeds(setDoc(doc(db(BOB), 'pulses', 'thanks2'), notice(BOB)));       // a guardian
+    await assertSucceeds(setDoc(doc(db(STAFF), 'pulses', 'thanks6'), notice(STAFF)));   // the staff hand (the lent watering hand, parity with the server)
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'thanks3'), notice(MALLORY, { participantUids: [ALICE, BOB, MALLORY] }))); // a stranger
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'thanks4'), notice(ALICE, { care: 'watering' })));     // never the watering itself
+    await assertFails(setDoc(doc(db(ALICE), 'pulses', 'thanks5'), notice(ALICE, { visibility: 'public' }))); // addressed → private
+    // The thirst ask is raised by the same hands — the keeper's "remind now", never a stranger's.
+    await assertSucceeds(setDoc(doc(db(ALICE), 'pulses', 'ask1'), notice(ALICE, { previousHash: 'WATER_ALERT', careAlert: 'watering' })));
+    await assertFails(setDoc(doc(db(MALLORY), 'pulses', 'ask2'), notice(MALLORY, { previousHash: 'WATER_ALERT', careAlert: 'watering', participantUids: [ALICE, BOB, MALLORY] })));
+  });
+
   it('anonymity is the person\'s own switch: they set it on their world-readable person, no one else does', async () => {
     // ANONYMOUS (ring 2026-09-10): persons/{uid}.anonymous + defaultTreeId are the being's own
     // hand (every reader of a name must see the flag); another being cannot flip it.

@@ -55,11 +55,76 @@ export const getMyHeadBlock = async (treeId: string, latestHash: string, uid: st
 // delete and the rollback happen there, in one transaction, under the same law the UI
 // checked first (unmintRefusal); a mint that stopped being last between click and call
 // refuses instead of severing. The tree's new head is announced so every loaded copy follows.
-export const unmintLastPulse = async (pulse: Pick<Pulse, 'id' | 'lifetreeId'>): Promise<{ latestHash: string; blockHeight: number }> => {
-    const fn = httpsCallable<{ pulseId: string }, { latestHash: string; blockHeight: number }>(functions, 'unmintBlock');
+export const unmintLastPulse = async (pulse: Pick<Pulse, 'id' | 'lifetreeId'> & Partial<Pick<Pulse, 'care'>>): Promise<{ latestHash: string; blockHeight: number }> => {
+    const fn = httpsCallable<{ pulseId: string }, { latestHash: string; blockHeight: number; lifted?: string[] }>(functions, 'unmintBlock');
     const head = (await fn({ pulseId: pulse.id })).data;
-    if (pulse.lifetreeId) announce('trees', pulse.lifetreeId, head);
+    if (pulse.lifetreeId) {
+        // THE TOUCH IS LIFTED WITH THE LINK (domain/unmint, ring 2026-10-21): the server restored what
+        // the block had changed on the tree — the face, the care stamp, a watering's clock. The tree
+        // is read once so every loaded copy wears what it wears now, not only the new head.
+        const fresh = await getLifetreeById(pulse.lifetreeId).catch(() => null);
+        announce('trees', pulse.lifetreeId, fresh
+            ? { latestHash: head.latestHash, blockHeight: head.blockHeight, watering: fresh.watering, latestGrowthUrl: fresh.latestGrowthUrl, lastCaredAt: fresh.lastCaredAt }
+            : head);
+        // A watering taken back is said where its thanks was said: in the circle's thread.
+        const me = auth.currentUser;
+        if (pulse.care === 'watering' && fresh && me) {
+            const naming = await myNaming();
+            await postGuardiansNotice(fresh, { uid: me.uid, displayName: me.displayName, photoURL: me.photoURL }, `💧 ${naming.name || 'A guardian'} took back the watering.`);
+        }
+    }
     return head;
+};
+
+// THE TREE'S OWN NOTICE TO ITS CIRCLE (ring 2026-10-21): a line the tree speaks into its guardians'
+// thread — "watered me, thank you", "the watering was taken back" — a nudge like the thirst ask
+// (WATER_ALERT), rooted in the WATER_NOTICE sentinel, never a chain block. Before this the thanks
+// was minted as a tree-sent reach ON the chain: it sat on top of the watering it announced, so the
+// watering could never be the head to take back, and an off-chain tick advanced the chain after
+// all. Needs a circle beyond the hand itself; the rules bind the hand to the tree's circle. Best-
+// effort: the care stands even when the thread cannot hear. Announces the thread.
+export const postGuardiansNotice = async (
+    tree: Lifetree,
+    sender: { uid: string; displayName?: string | null; photoURL?: string | null },
+    text: string,
+): Promise<boolean> => {
+    try {
+        if (!tree.anchorUid) return false;
+        const circle = await resolveCircleUids(tree, 'guardians');
+        if (circle.filter(u => u !== sender.uid).length === 0) return false;
+        const participantUids = Array.from(new Set([sender.uid, ...circle].filter(Boolean)));
+        await addDoc(pulsesCollection, {
+            lid: uuidv7(),
+            lifetreeId: tree.id,
+            type: 'reach',
+            visibility: 'private',
+            title: `Reach: ${tree.name} -> ${tree.name} (Guardians)`,
+            body: text,
+            content: text,
+            reachTreeId: tree.id,
+            reachTreeName: tree.name,
+            recipientName: tree.name,
+            recipientUid: null,
+            participantUids,
+            threadId: buildGroupThreadId(tree.id, 'guardians', tree.anchorUid),
+            threadName: `${tree.name} · Guardians`,
+            audience: 'guardians',
+            isGroup: true,
+            seenBy: [],
+            authorId: sender.uid,
+            authorName: tree.name,
+            authorPhoto: tree.imageUrl || undefined,
+            domain: tree.domain || '',
+            loveCount: 0,
+            commentCount: 0,
+            previousHash: 'WATER_NOTICE', // a nudge, not a chain block (the WATER_ALERT shape)
+            hash: uuidv7(),               // a plain unique id — never chain-verified
+            createdAt: serverTimestamp(),
+        });
+        // An open inbox is a mounted view showing this thread — tell the bus, or it keeps its stale alert.
+        announce('reaches', tree.id);
+        return true;
+    } catch (e) { console.warn('The circle could not hear the notice', e); return false; }
 };
 
 // Newest first, on the server, scoped or not: the composite indexes (domain[, type]
