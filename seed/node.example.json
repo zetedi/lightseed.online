@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "nodeLid": "REPLACE_WITH_A_NEW_UUID_V7",
+  "name": "Example node",
+  "shortName": "Example",
+  "tagline": "Growing together",
+  "description": "An independent Lightseed node",
+  "domain": "node.example",
+  "aliases": [],
+  "repo": "https://code.example/node",
+  "keeper": { "email": "keeper@node.example" },
+  "mail": { "from": "Example <hello@node.example>" },
+  "push": { "subject": "mailto:keeper@node.example", "publicKey": "" },
+  "theme": { "color": "#123456", "background": "#ffffff" },
+  "backend": { "kind": "postgres" },
+  "faces": [{ "id": "home", "door": "node.example", "domains": [] }]
+}

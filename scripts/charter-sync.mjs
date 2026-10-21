@@ -28,6 +28,7 @@ const charter = JSON.parse(readFileSync(charterPath, 'utf8'));
 const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const DOMAIN = /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/;
 const fail = (why) => { console.error(`charter-sync: ${why}`); process.exit(1); };
+if (charter.version === 2) fail('Independent charters use seed:configure. The application backend is not yet ported; refusing to overwrite Firebase build configuration.');
 if (charter.version !== 1) fail('version must be 1');
 if (!UUID_V7.test(charter.nodeLid || '')) fail('nodeLid is not a true name');
 if (!DOMAIN.test(charter.domain || '')) fail('domain is not a domain');

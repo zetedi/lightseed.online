@@ -3,7 +3,7 @@ import { notify } from '../ui/Toast';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import { canCareForTree } from '../../domain/policy';
 import { SectionCard } from '../ui/SectionCard';
 import { fetchAllLifetrees, getPersonName, createTreeInvite, getSentTreeInvites, revokeTreeInvite, resignTreeKeeper, getPendingTreeInvites, acceptTreeInvite, declineTreeInvite } from '../../services/firebase';
@@ -191,7 +191,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             // A KEEPER steps down by the server's hand (resignTreeKeeper): a link holder simply
             // leaves; the anchor hands the anchor on, and never leaves the tree keeperless.
             if (role === 'keeper') await resignTreeKeeper(treeId);
-            else await firestoreStore.unlink(currentUserId, role, treeId);
+            else await graphStore.unlink(currentUserId, role, treeId);
             onGuardianChange(); // the shell re-reads the circle
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setSteppingDown(false);
@@ -204,7 +204,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         if (!(await showConfirm(spokenLine('guardian_release_q', { name, tree: tree.name || '—' }), { title: 'release', confirmText: 'release', danger: true }))) return;
         setReleasing(uid);
         try {
-            await firestoreStore.unlink(uid, 'guardian', treeId);
+            await graphStore.unlink(uid, 'guardian', treeId);
             onGuardianChange(); // the shell re-reads the circle
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setReleasing(null);
@@ -214,7 +214,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         if (!canCareForTree(currentUserId)) return;
         setToggleBusy(true);
         try {
-            await (isGuardian ? firestoreStore.unlink(currentUserId, 'guardian', treeId) : firestoreStore.link(currentUserId, 'guardian', treeId));
+            await (isGuardian ? graphStore.unlink(currentUserId, 'guardian', treeId) : graphStore.link(currentUserId, 'guardian', treeId));
             onGuardianChange(); // the shell re-reads the circle, which flips isGuardian
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
         setToggleBusy(false);
@@ -229,7 +229,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
     const [askNonce, setAskNonce] = useState(0);
     useEffect(() => {
         let alive = true;
-        firestoreStore.linksTo(treeId, 'keeper_request').then(async links => {
+        graphStore.linksTo(treeId, 'keeper_request').then(async links => {
             if (!alive) return;
             setMyAsk(!!currentUserId && links.some(l => l.from === currentUserId));
             const rows = await Promise.all(links.map(async l =>
@@ -244,8 +244,8 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
         setAskBusy(true);
         try {
             await (myAsk
-                ? firestoreStore.unlink(currentUserId, 'keeper_request', treeId)
-                : firestoreStore.link(currentUserId, 'keeper_request', treeId));
+                ? graphStore.unlink(currentUserId, 'keeper_request', treeId)
+                : graphStore.link(currentUserId, 'keeper_request', treeId));
             if (!myAsk) notify(speak('keeper_request_sent'));
             setAskNonce(n => n + 1);
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
@@ -254,7 +254,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
 
     const handleDeclineAsk = async (uid: string) => {
         try {
-            await firestoreStore.unlink(uid, 'keeper_request', treeId);
+            await graphStore.unlink(uid, 'keeper_request', treeId);
             setAskNonce(n => n + 1);
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
     };
@@ -279,7 +279,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                 invitedByName: currentUserName || undefined,
                 message: askRole === 'guardian' ? translations.en.guard_ask : `Would you join the circle of ${tree.name || 'this tree'} as ${translations.en[roleLabelKey(askRole)].toLowerCase()}?`,
             });
-            await firestoreStore.unlink(r.uid, 'keeper_request', treeId);
+            await graphStore.unlink(r.uid, 'keeper_request', treeId);
             setAskNonce(n => n + 1);
             setInviteNonce(n => n + 1);
             notify(speak(spokenLine('circle_invite_sent', { name: r.name, role: roleName(askRole).toLowerCase(), tree: tree.name || '—' })));

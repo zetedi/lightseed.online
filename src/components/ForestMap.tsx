@@ -8,7 +8,7 @@ import { isWateringOverdue } from '../domain/watering';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
 import { treeCoordinates as getTreeCoordinates, forestMarkers } from '../domain/views/forest';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { loadLeaflet } from '../services/leaflet';
 import type { LightHouse } from '../domain/lightHouse';
 import { useVisibleLightHouses } from '../hooks/useVisibleLightHouses';
@@ -119,7 +119,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
     const treeIdsKey = useMemo(() => visibleTrees.map(t => t.id).sort().join(','), [visibleTrees]);
     useEffect(() => {
         let alive = true;
-        firestoreStore.linksByRel('guardian').then(links => {
+        graphStore.linksByRel('guardian').then(links => {
             if (!alive) return;
             const counts = new Map<string, number>();
             for (const l of links) counts.set(l.to, (counts.get(l.to) || 0) + 1);

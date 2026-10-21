@@ -3,7 +3,7 @@ import { picturesOf } from '../domain/pictures';
 import { CardCarousel } from './ui/CardCarousel';
 import { Icons } from './ui/Icons';
 import { LoveButton } from './ui/LoveButton';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import type { Community, Pulse } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { say } from '../utils/translations';
@@ -36,7 +36,7 @@ export const EventCard = ({ event, onOpen, community, onOpenCommunity, participa
     useEffect(() => {
         if (typeof participantCount === 'number') return;
         let alive = true;
-        firestoreStore.linksTo(event.id, 'participant').then(l => { if (alive) setFetched(l.length); }).catch(() => {});
+        graphStore.linksTo(event.id, 'participant').then(l => { if (alive) setFetched(l.length); }).catch(() => {});
         return () => { alive = false; };
     }, [event.id, participantCount]);
     const count = typeof participantCount === 'number' ? participantCount : (fetched ?? 0);

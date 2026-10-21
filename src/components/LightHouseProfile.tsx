@@ -15,7 +15,7 @@ import { getCommunityById, updateLightHouse, getLifetreeById, getBedsForLightHou
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
 import { PlantBedModal } from './modals/PlantBedModal';
 import { useSession } from '../contexts/SessionContext';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { LocationPicker } from './ui/LocationPicker';
 import { announce } from '../services/refreshBus';
 import { notify } from './ui/Toast';
@@ -81,7 +81,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
     const [homes, setHomes] = useState<Community[] | null>(null);
     useEffect(() => {
         let alive = true;
-        firestoreStore.linksFrom(lightHouse.id, 'shelters')
+        graphStore.linksFrom(lightHouse.id, 'shelters')
             .then(links => {
                 const ids = [...new Set([...(lightHouse.communityId ? [lightHouse.communityId] : []), ...links.map(l => l.to)])];
                 return Promise.all(ids.map(id => getCommunityById(id).catch(() => null)));
@@ -102,7 +102,7 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
     const [isRooting, setIsRooting] = useState(false);
     useEffect(() => {
         let alive = true;
-        firestoreStore.linksFrom(lightHouse.id, 'rooted')
+        graphStore.linksFrom(lightHouse.id, 'rooted')
             .then(async links => {
                 const tid = links[0]?.to;
                 const t = tid ? await getLifetreeById(tid).catch(() => null) : null;
@@ -115,8 +115,8 @@ export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = fa
         if (isRooting) return;
         setIsRooting(true);
         try {
-            if (rootTree) await firestoreStore.unlink(lightHouse.id, 'rooted', rootTree.id);
-            await firestoreStore.link(lightHouse.id, 'rooted', tree.id);
+            if (rootTree) await graphStore.unlink(lightHouse.id, 'rooted', rootTree.id);
+            await graphStore.link(lightHouse.id, 'rooted', tree.id);
             setRootTree(tree);
             notify(t('lh_rooted_toast').replace('{house}', lightHouse.name).replace('{tree}', tree.name));
         } catch (e: any) { showAlert(e?.message || 'err_lh_root'); }

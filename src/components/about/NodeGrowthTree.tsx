@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Community, Lifetree, LinkRel } from '../../types';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 // The Node Growth Tree — a living diagram of the node's model *instance*, generated on the fly from
@@ -34,7 +34,7 @@ export const NodeGrowthTree = ({ community, trees, onViewTree }: NodeGrowthTreeP
   const [edges, setEdges] = useState<Map<string, TreeEdges>>(new Map());
   useEffect(() => {
     let alive = true;
-    Promise.all(CIRCLE_RELS.map(rel => firestoreStore.linksByRel(rel))).then(perRel => {
+    Promise.all(CIRCLE_RELS.map(rel => graphStore.linksByRel(rel))).then(perRel => {
       if (!alive) return;
       const counts = new Map<string, TreeEdges>();
       perRel.forEach((links, i) => {

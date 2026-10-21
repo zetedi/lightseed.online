@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from './core';
-import { firestoreStore, linksToTree } from '../../adapters/firestore';
+import { graphStore, linksToTree } from '../../services/store';
 import { getPulsesByTreeId } from './pulses';
 import { getCommunityEvents } from './spaces';
 import { chainExport, exportFileName, imageEntriesOf, plainify } from '../../domain/export';
@@ -73,7 +73,7 @@ const treeChain = async (treeId: string) => {
 
 export const exportTree = async (tree: Lifetree): Promise<void> => {
   const [chain, incoming, outgoing] = await Promise.all([
-    treeChain(tree.id), linksToTree(tree), firestoreStore.linksFrom(tree.id),
+    treeChain(tree.id), linksToTree(tree), graphStore.linksFrom(tree.id),
   ]);
   await buildZip('tree', tree.name || tree.id,
     { tree, chain, links: { incoming, outgoing } },
@@ -82,7 +82,7 @@ export const exportTree = async (tree: Lifetree): Promise<void> => {
 
 export const exportCommunity = async (community: Community): Promise<void> => {
   const [incoming, outgoing, events] = await Promise.all([
-    firestoreStore.linksTo(community.id), firestoreStore.linksFrom(community.id),
+    graphStore.linksTo(community.id), graphStore.linksFrom(community.id),
     getCommunityEvents(community.id).catch(() => [] as Pulse[]),
   ]);
   await buildZip('community', community.name,
@@ -102,7 +102,7 @@ export const exportPerson = async (uid: string, displayName?: string | null): Pr
     readDoc(`persons/${uid}`), readDoc(`users/${uid}`),
     readQuery('lifetrees', 'anchorUid'),
     readQuery('pulses', 'authorId'),
-    firestoreStore.linksFrom(uid), firestoreStore.linksTo(uid),
+    graphStore.linksFrom(uid), graphStore.linksTo(uid),
     readQuery('visions', 'authorId'),
     readQuery('lightHouses', 'anchorUid'),
   ]);

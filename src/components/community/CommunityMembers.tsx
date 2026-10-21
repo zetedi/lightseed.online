@@ -8,7 +8,7 @@ import { Timestamp } from 'firebase/firestore';
 import { Community, CommunityInvite } from '../../types';
 import { doorOf, communityInviteUrl, inviteStatus, leaveRefusal, type CommunityDoor } from '../../domain/communityDoor';
 import { SectionTitle } from '../ui/SectionTitle';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { spokenLine, type TranslationKey } from '../../utils/translations';
 import {
@@ -80,11 +80,11 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   const load = useCallback(async () => {
     try {
       const [memberLinks, requestLinks, stewardLinks, kLinks, kAsks] = await Promise.all([
-        firestoreStore.linksTo(community.id, 'member'),
-        firestoreStore.linksTo(community.id, 'join_request'),
-        firestoreStore.linksTo(community.id, 'steward'),
-        firestoreStore.linksTo(community.id, 'keeper'),
-        firestoreStore.linksTo(community.id, 'keeper_request'),
+        graphStore.linksTo(community.id, 'member'),
+        graphStore.linksTo(community.id, 'join_request'),
+        graphStore.linksTo(community.id, 'steward'),
+        graphStore.linksTo(community.id, 'keeper'),
+        graphStore.linksTo(community.id, 'keeper_request'),
       ]);
       // The owner is implicitly a member even without a link (legacy circles).
       const memberUids = Array.from(new Set([community.anchorUid, ...memberLinks.map(l => l.from)].filter(Boolean)));
@@ -210,8 +210,8 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   const handleAccept = async (uid: string) => {
     setBusyUid(uid);
     try {
-      await firestoreStore.link(uid, 'member', community.id);
-      await firestoreStore.unlink(uid, 'join_request', community.id);
+      await graphStore.link(uid, 'member', community.id);
+      await graphStore.unlink(uid, 'join_request', community.id);
       await load();
     } catch (e: any) { showAlert(e?.message || 'err_request_accept'); }
     setBusyUid(null);
@@ -220,7 +220,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   const handleDecline = async (uid: string) => {
     setBusyUid(uid);
     try {
-      await firestoreStore.unlink(uid, 'join_request', community.id);
+      await graphStore.unlink(uid, 'join_request', community.id);
       setRequests(prev => prev.filter(r => r.uid !== uid));
     } catch (e: any) { showAlert(e?.message || 'err_request_decline'); }
     setBusyUid(null);
@@ -230,11 +230,11 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
     if (!(await showConfirm(spokenLine('member_remove_confirm', { name: row.name, community: community.name }), { title: 'member_remove', confirmText: 'remove', danger: true }))) return;
     setBusyUid(row.uid);
     try {
-      await firestoreStore.unlink(row.uid, 'member', community.id);
+      await graphStore.unlink(row.uid, 'member', community.id);
       // Expulsion must take the deed with the membership: a lingering steward link keeps full
       // keeper power (and re-entry) invisibly. Strip it too so Remove really removes.
       if (stewardUids.has(row.uid)) {
-        await firestoreStore.unlink(row.uid, 'steward', community.id);
+        await graphStore.unlink(row.uid, 'steward', community.id);
         setStewardUids(prev => { const next = new Set(prev); next.delete(row.uid); return next; });
       }
       setMembers(prev => prev ? prev.filter(m => m.uid !== row.uid) : prev);
@@ -256,9 +256,9 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
     if (!(await showConfirm(spokenLine('leave_community_confirm', { community: community.name }), { title: 'leave_community', confirmText: 'confirm', danger: true }))) return;
     setBusyUid(currentUserId);
     try {
-      await firestoreStore.unlink(currentUserId, 'member', community.id);
+      await graphStore.unlink(currentUserId, 'member', community.id);
       if (stewardUids.has(currentUserId)) {
-        await firestoreStore.unlink(currentUserId, 'steward', community.id);
+        await graphStore.unlink(currentUserId, 'steward', community.id);
         setStewardUids(prev => { const next = new Set(prev); next.delete(currentUserId); return next; });
       }
       setMembers(prev => prev ? prev.filter(m => m.uid !== currentUserId) : prev);
@@ -271,8 +271,8 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
   const handleSteward = async (row: Row, make: boolean) => {
     setBusyUid(row.uid);
     try {
-      if (make) await firestoreStore.link(row.uid, 'steward', community.id);
-      else await firestoreStore.unlink(row.uid, 'steward', community.id);
+      if (make) await graphStore.link(row.uid, 'steward', community.id);
+      else await graphStore.unlink(row.uid, 'steward', community.id);
       setStewardUids(prev => {
         const next = new Set(prev);
         if (make) next.add(row.uid); else next.delete(row.uid);

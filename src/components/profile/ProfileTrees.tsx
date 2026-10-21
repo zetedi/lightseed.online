@@ -5,7 +5,7 @@ import { Icons } from '../ui/Icons';
 import { Lifetree } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
 import { ValidationBadge } from '../ValidationBadge';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import type { TendedTree } from '../../services/firebase';
 import { roleLabelKey } from '../../domain/treeCircle';
 import { isWateringOverdue } from '../../domain/watering';
@@ -77,7 +77,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
     // Only the guardian links INTO my own trees — not the whole network-wide graph (Lumo's review,
     // 2026-07-20). One scoped read per tree (few); each is the tree's own incoming guardians.
     Promise.all(treeIdsKey.split(',').map(id =>
-      firestoreStore.linksTo(id, 'guardian').then(links => links.map(l => ({ from: l.from, to: l.to }))).catch(() => [] as GuardianEdge[]),
+      graphStore.linksTo(id, 'guardian').then(links => links.map(l => ({ from: l.from, to: l.to }))).catch(() => [] as GuardianEdge[]),
     )).then(perTree => { if (alive) setGuardianEdges(perTree.flat()); });
     return () => { alive = false; };
   }, [viewerUid, treeIdsKey]);

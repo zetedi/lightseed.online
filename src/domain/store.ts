@@ -1,8 +1,8 @@
 import type { Link, LinkRel } from './link';
 
-// The persistence PORT — the backend-agnostic contract the core depends on. The core never
-// imports Firestore; an adapter (src/adapters/firestore.ts) implements this. Swapping the
-// adapter swaps the backend. Kept minimal; it grows as views adopt it (linksFrom, getEntity…).
+// The GRAPH persistence port — the backend-agnostic relationship contract.
+// services/store selects its adapter. This does not yet cover documents, authentication,
+// media, subscriptions or server operations; changing it alone cannot swap the app backend.
 export interface Store {
   // Read: edges pointing INTO an entity — e.g. a tree's circle members → the tree.
   linksTo(toId: string, rel?: LinkRel): Promise<Link[]>;

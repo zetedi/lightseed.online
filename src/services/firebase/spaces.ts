@@ -5,7 +5,7 @@ import type { Stamp } from '../../domain/time';
 import { uuidv7 } from '../../utils/id';
 import { type PulseVisibility } from '../../domain/pulse';
 import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import { nodeCapacityGate, DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { chooseDomainClaimant } from '../../domain/communityDoor';
 import { isDomainVerified } from '../../domain/domainVerification';
@@ -257,7 +257,7 @@ export const revokeCommunityInvite = (inviteId: string) =>
 
 // Step in through an OPEN door — the joiner mints their own member link.
 export const joinCommunityOpen = (uid: string, communityId: string) =>
-    firestoreStore.link(uid, 'member', communityId);
+    graphStore.link(uid, 'member', communityId);
 
 // Arrive holding an invitation: the member edge carries the invite as provenance, and the
 // append-only 'invited_by' mark (newcomer → community, inviter recoverable via inviteId)
@@ -265,15 +265,15 @@ export const joinCommunityOpen = (uid: string, communityId: string) =>
 // the invitation is real (a keeper minted it for this community). Returns whether the durable
 // mark was written, so the caller never claims remembrance the code did not keep.
 export const joinCommunityWithInvite = async (uid: string, invite: CommunityInvite): Promise<{ remembered: boolean }> => {
-    await firestoreStore.link(uid, 'member', invite.communityId, { inviteId: invite.id });
+    await graphStore.link(uid, 'member', invite.communityId, { inviteId: invite.id });
     // The marks are best-effort: membership must stand even if provenance is somehow refused.
     try {
-        await firestoreStore.link(uid, 'invited_by', invite.communityId, { inviteId: invite.id });
+        await graphStore.link(uid, 'invited_by', invite.communityId, { inviteId: invite.id });
         // …and the HAND that welcomed them (ring 2026-08-21): newcomer __welcomed_by__ the
         // invite's creator — the person-to-person thread of the growing web, append-only,
         // granting nothing. The rules verify the inviter against the invitation itself.
         if (invite.createdBy && invite.createdBy !== uid) {
-            try { await firestoreStore.link(uid, 'welcomed_by', invite.createdBy, { inviteId: invite.id }); } catch { /* provenance, not membership */ }
+            try { await graphStore.link(uid, 'welcomed_by', invite.createdBy, { inviteId: invite.id }); } catch { /* provenance, not membership */ }
         }
         return { remembered: true };
     } catch { return { remembered: false }; }
@@ -533,7 +533,7 @@ export interface KeeperInvite {
 // The circle as stored: the anchor plus every keeper link, distinct, anchor first
 // (mirrors domain/keeperCircle.keepersOf on live links).
 export const keepersOfCommunity = async (community: Pick<Community, 'id' | 'anchorUid'>): Promise<string[]> => {
-    const links = await firestoreStore.linksTo(community.id, 'keeper');
+    const links = await graphStore.linksTo(community.id, 'keeper');
     const out = [community.anchorUid];
     for (const l of links) if (l.from && !out.includes(l.from)) out.push(l.from);
     return out;
@@ -566,13 +566,13 @@ export const declineKeeperInvite = (inviteId: string) =>
 // A knock for keepership — at a community or at a lifetree (the same rel; the rules bind
 // the target's existence, the answerers differ). Withdrawing is deleting your own knock.
 export const requestKeepership = (uid: string, targetId: string) =>
-    firestoreStore.link(uid, 'keeper_request', targetId);
+    graphStore.link(uid, 'keeper_request', targetId);
 export const withdrawKeeperRequest = (uid: string, targetId: string) =>
-    firestoreStore.unlink(uid, 'keeper_request', targetId);
+    graphStore.unlink(uid, 'keeper_request', targetId);
 export const fetchKeeperRequests = (targetId: string) =>
-    firestoreStore.linksTo(targetId, 'keeper_request');
+    graphStore.linksTo(targetId, 'keeper_request');
 export const declineKeeperRequest = (requesterUid: string, targetId: string) =>
-    firestoreStore.unlink(requesterUid, 'keeper_request', targetId);
+    graphStore.unlink(requesterUid, 'keeper_request', targetId);
 
 // The three server hands — the ONLY writers of keeper links and the anchorUid anchor.
 export const acceptKeeperInvite = async (inviteId: string): Promise<{ communityId: string }> =>

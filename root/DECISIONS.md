@@ -6,6 +6,21 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-22 · The second node prepares its own soil** — The independent node is a
+section of Architecture, with a full-feature, Firebase-free Docker release contract.
+This round establishes preparation tools, not a finished independent application:
+version-2 charters without Firebase fields; versioned, transactional PostgreSQL
+migrations; private backup handling; an additive signed-bundle merge proposal; and
+a single composition point for the existing application's graph adapter. Unported
+database collections deny access by default. A separate provisioning command creates
+a restricted server login with generated credentials and a SCRAM verifier, tested
+against actual PostgreSQL with no owner or RLS-bypass privileges. The live app still
+selects Firebase. End-user authentication, the API, full permission/feature parity,
+media and executable imports remain explicit unfinished boundaries. Existing paths
+are checked by the ordinary quality gate, Firestore rule and workflow tests; SQL
+migrations, isolation and provisioning have their own real-database suite. These
+checks do not claim that a complete node has been deployed on a VPS.
+
 **2026-10-21 · A watering may be taken back until it is witnessed; the link lifts its touch** —
 Zoltán: "I'd like to be able to remove the last watering mint also, before the guardian
 confirmation." The unmint law (ring 2026-08-15) already allowed it on paper — an unwitnessed

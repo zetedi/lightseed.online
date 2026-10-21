@@ -12,7 +12,7 @@ import { ChainTree } from '../sections/ChainTree';
 import { TreeCircle } from '../lifetree/TreeCircle';
 import { BedCalendar } from './BedCalendar';
 import { getPulsesByTreeId, getLightHouseById, updateLifetree, deleteLifetree } from '../../services/firebase';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import { treeCircle } from '../../domain/views/circle';
 import { isHousedBed } from '../../domain/bed';
 import { type Pulse, type Lifetree } from '../../types';
@@ -58,7 +58,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
   const [circle, setCircle] = useState<ReturnType<typeof treeCircle>>({ groups: [], size: 0 });
   useEffect(() => {
     let alive = true;
-    firestoreStore.linksTo(bed.id).then(links => { if (alive) setCircle(treeCircle(bed.anchorUid, links)); }).catch(() => {});
+    graphStore.linksTo(bed.id).then(links => { if (alive) setCircle(treeCircle(bed.anchorUid, links)); }).catch(() => {});
     return () => { alive = false; };
   }, [bed.id, bed.anchorUid, circleNonce]);
 

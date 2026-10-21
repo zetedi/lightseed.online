@@ -14,7 +14,7 @@ import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../ut
 import { db, auth, functions, toMillis, mapDoc, mapPulse, pulsesCollection } from './core';
 import { announce } from '../refreshBus';
 import { myNaming } from './accounts';
-import { linksToTree } from '../../adapters/firestore';
+import { linksToTree } from '../../services/store';
 
 // The visibility levels a plain (viewer-agnostic) list query may request and PROVE to
 // canListPulse: 'public' always, 'node' once signed in. Timelines that pin a communityId or

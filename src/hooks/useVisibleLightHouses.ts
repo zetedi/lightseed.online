@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '../contexts/SessionContext';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { getAllLightHouses, getLightHousesByDomain } from '../services/firebase/trees';
 import { canViewLightHouse, type LightHouse } from '../domain/lightHouse';
 import { useRefreshSignal } from './useRefreshSignal';
@@ -20,7 +20,7 @@ export const useVisibleLightHouses = (domain: string | null, refreshKey = 0, pub
         // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async links fetch below
         if (!viewerUid) { setMemberCommunityIds(prev => prev.size === 0 ? prev : new Set()); return; }
         let alive = true;
-        firestoreStore.linksFrom(viewerUid, 'member')
+        graphStore.linksFrom(viewerUid, 'member')
             .then(links => { if (alive) setMemberCommunityIds(new Set(links.map(l => l.to))); })
             .catch(() => {});
         return () => { alive = false; };
@@ -36,7 +36,7 @@ export const useVisibleLightHouses = (domain: string | null, refreshKey = 0, pub
         const opts = { publicOnly: !viewerUid || publicOnly, viewerUid, memberCommunityIds: [...memberCommunityIds] };
         Promise.all([
             (domain ? getLightHousesByDomain(domain, opts) : getAllLightHouses(opts)),
-            viewerUid ? firestoreStore.linksByRel('shelters').catch(() => []) : Promise.resolve([]),
+            viewerUid ? graphStore.linksByRel('shelters').catch(() => []) : Promise.resolve([]),
         ])
             .then(([list, links]) => {
                 if (!alive) return;

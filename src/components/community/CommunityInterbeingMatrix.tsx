@@ -13,7 +13,7 @@ import {
 } from '../../domain/interbeingMatrix';
 import { isDomainVerified } from '../../domain/domainVerification';
 import { isTreeCircle } from '../../domain/treeCircle';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import { fetchCommunities } from '../../services/firebase';
 import { SectionTitle } from '../ui/SectionTitle';
 import { notify } from '../ui/Toast';
@@ -43,8 +43,8 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
   const readMatrix = useCallback(async () => {
     const [all, outgoing, incoming] = await Promise.all([
       fetchCommunities(),
-      firestoreStore.linksFrom(community.id),
-      firestoreStore.linksTo(community.id),
+      graphStore.linksFrom(community.id),
+      graphStore.linksTo(community.id),
     ]);
     const byId = new Map([...outgoing, ...incoming].map(link => [`${link.from}__${link.rel}__${link.to}`, link]));
     return {
@@ -79,8 +79,8 @@ export const CommunityInterbeingMatrix: React.FC<CommunityInterbeingMatrixProps>
     const key = `${otherId}__${rel}`;
     setBusyKey(key);
     try {
-      if (create) await firestoreStore.link(community.id, rel, otherId);
-      else await firestoreStore.unlink(community.id, rel, otherId);
+      if (create) await graphStore.link(community.id, rel, otherId);
+      else await graphStore.unlink(community.id, rel, otherId);
       notify(t(create ? 'interbeing_attestation_stands' : 'interbeing_attestation_withdrawn'));
       try {
         applyMatrix(await readMatrix());

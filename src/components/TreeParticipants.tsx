@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Lifetree } from '../types';
 import { Icons } from './ui/Icons';
 import { showAlert } from './ui/Dialog';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { getParticipatingTrees } from '../services/firebase';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -45,8 +45,8 @@ export const TreeParticipants = ({ entityId, currentUserId, myTrees = [], maxPar
         if (busyId) return;
         setBusyId(tree.id);
         try {
-            if (joining) await firestoreStore.link(tree.id, 'participant', entityId);
-            else await firestoreStore.unlink(tree.id, 'participant', entityId);
+            if (joining) await graphStore.link(tree.id, 'participant', entityId);
+            else await graphStore.unlink(tree.id, 'participant', entityId);
             setNonce(n => n + 1);
         } catch (e: any) {
             showAlert(e?.message || 'err_participation');

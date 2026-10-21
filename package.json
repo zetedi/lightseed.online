@@ -37,7 +37,12 @@
     "deploy:faces": "firebase deploy --only hosting",
     "charter": "node scripts/charter-sync.mjs",
     "charter:check": "node scripts/charter-sync.mjs --check",
-    "node:create": "node scripts/create-node.mjs"
+    "node:create": "node scripts/create-node.mjs",
+    "node:merge:plan": "node scripts/plan-node-merge.mjs",
+    "seed:migrate": "node scripts/migrate-seed.mjs",
+    "test:seed": "vitest run --config vitest.seed.config.ts",
+    "seed:configure": "node scripts/configure-seed.mjs",
+    "seed:provision": "node scripts/provision-seed.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

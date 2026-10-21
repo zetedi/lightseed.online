@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { LightHouse } from '../types';
 import { getLightHouseCareRecord, witnessLightHouseCare, mintLightHouseCare, getCommunityById } from '../services/firebase';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { consecrationObserved } from '../domain/lightHouse';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
@@ -34,7 +34,7 @@ export const LightHouseCareCard = ({ lightHouse, currentUserId }: { lightHouse: 
     }
     Promise.all([
       getCommunityById(communityId).catch(() => null),
-      firestoreStore.linksFrom(currentUserId, 'keeper').catch(() => []),
+      graphStore.linksFrom(currentUserId, 'keeper').catch(() => []),
     ]).then(([c, keeperLinks]) => {
       if (alive) setIsKeeper(c?.anchorUid === currentUserId || keeperLinks.some(l => l.to === communityId));
     });

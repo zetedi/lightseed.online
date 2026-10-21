@@ -155,7 +155,8 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
 
 ## The seed (the database port — a node on its own soil)
 
-- **Soil:** `seed/docker-compose.yml` — Postgres 16, schema applied at first boot;
+- **Soil:** `seed/docker-compose.yml` — Postgres 16; `npm run seed:migrate` installs
+  and upgrades reviewed schema files with a checksum ledger and transactional rollback;
   `seed/backup.sh` (pg_dump, pruned). Data and backups gitignored.
 - **Schema:** `seed/schema/001_collections.sql` — JSONB-first, one table per travelling
   TRAVEL_PLAN collection, excluded ones absent by law; `002_links.sql` — the LIN as real
@@ -163,7 +164,10 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
   policies. `seed.uid()` (000) is the one identity seam.
 - **Guard:** `tests/seedSchema.test.ts` — the schema mirrors the travel plan or the gate
   fails. The rules→RLS translation proceeds law by law, rules tests leading.
-- **Contract & growth path:** `seed/README.md`; the ring 2026-08-31.
+- **Architecture & release contract:** `root/ARCHITECTURE.md` → Independent node;
+  delivery sequence in `root/ROADMAP.md`, operational commands in `seed/README.md`.
+  The graph port is selected by `src/services/store.ts`; it is not yet a complete
+  backend replacement. The original database foundation is the ring 2026-08-31.
 
 ## The export ceremony (a being's data leaves in its own hands)
 

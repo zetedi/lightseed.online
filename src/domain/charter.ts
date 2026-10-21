@@ -33,8 +33,7 @@ export interface CharterFace {
   domains: string[]; // custom domains served by this site
 }
 
-export interface Charter {
-  version: 1;
+export interface CharterIdentity {
   nodeLid: string;
   name: string;
   shortName: string;
@@ -47,6 +46,11 @@ export interface Charter {
   mail: { from: string };
   push: { subject: string; publicKey: string };
   theme: { color: string; background: string };
+}
+
+// Version 1 remains the existing Firebase deployment contract.
+export interface Charter extends CharterIdentity {
+  version: 1;
   firebase: {
     projectId: string;
     region: string;
@@ -57,6 +61,15 @@ export interface Charter {
   // Face hosts wired to serve as their own auth domain (see charterAuthHosts); optional.
   authHosts?: string[];
 }
+
+// Version 2 describes independent deployment intent. Connection strings, passwords,
+// signing keys and provider credentials belong to installation secrets, never here.
+export interface IndependentCharter extends CharterIdentity {
+  version: 2;
+  backend: { kind: 'postgres' };
+  faces: Array<{ id: string; door: string; domains: string[] }>;
+}
+export type NodeCharter = Charter | IndependentCharter;
 
 const DOMAIN_RE = /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/;
 const SLUG_RE = /^[a-z][a-z0-9-]{1,30}$/;
@@ -97,21 +110,22 @@ export const charterProblem = (c: Charter): DomainKey | null => {
 // Every host this node answers at: each face's web.app door, every named domain, the auth
 // domain. A request from any other host is not one of ours (canonicalHost falls back to the
 // node's own domain).
-export const charterHosts = (c: Charter): string[] => {
-  const hosts = new Set<string>([c.domain, ...c.aliases, c.firebase.web.authDomain]);
+export const charterHosts = (c: NodeCharter): string[] => {
+  const hosts = new Set<string>([c.domain, ...c.aliases]);
+  if (c.version === 1) hosts.add(c.firebase.web.authDomain);
   for (const f of c.faces) {
-    hosts.add(`${f.site}.web.app`);
+    if ('site' in f) hosts.add(`${f.site}.web.app`);
     hosts.add(f.door);
     for (const d of f.domains) hosts.add(d);
   }
   return [...hosts].map((h) => h.toLowerCase()).sort();
 };
 
-export const charterOrigin = (c: Charter): string => `https://${c.domain}`;
+export const charterOrigin = (c: Pick<CharterIdentity, 'domain'>): string => `https://${c.domain}`;
 
 // The domains that are the node ITSELF (its own shell, its own auth domain), as opposed to
 // the faces of other places it hosts.
-export const charterOwnDomains = (c: Charter): string[] => [c.domain, ...c.aliases];
+export const charterOwnDomains = (c: Pick<CharterIdentity, 'domain' | 'aliases'>): string[] => [c.domain, ...c.aliases];
 
 // THE HOSTS THAT MAY BE THEIR OWN AUTH DOMAIN (ring 2026-09-16). The Google sign-in screen
 // names the auth domain the shell hands it, and the helper pages load from there. The node's
@@ -151,7 +165,7 @@ export const charterFaceDoor = (c: Charter, target: string): string | null =>
 
 // What a stranger may know: the node's public envelope at /.well-known/lightseed.json — the
 // first sentence of nodes speaking to nodes.
-export const charterPublicOf = (c: Charter) => ({
+export const charterPublicOf = (c: NodeCharter) => ({
   version: c.version,
   nodeLid: c.nodeLid,
   name: c.name,

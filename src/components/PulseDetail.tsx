@@ -6,7 +6,7 @@ import { SuperDot } from './ui/SuperDot';
 import { ProfileHero } from './ui/ProfileHero';
 import { PulseInsightPanel } from './ui/PulseInsightPanel';
 import { useSession } from '../contexts/SessionContext';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { vetoGrowthPulse, unmintLastPulse } from '../services/firebase/pulses';
 import { getLifetreeById } from '../services/firebase';
 import { announce } from '../services/refreshBus';
@@ -50,7 +50,7 @@ export const PulseDetail = ({ pulse, activeTree, onClose, backLabel, canEdit, on
     useEffect(() => {
         if (!isGrowthMint) return;
         let alive = true;
-        firestoreStore.linksTo(pulse.lifetreeId!, 'guardian')
+        graphStore.linksTo(pulse.lifetreeId!, 'guardian')
             .then(links => { if (alive) setGuardians(links.map(l => ({ uid: l.from, sinceMs: (l as any).createdAt?.toMillis?.() || 0 }))); })
             .catch(() => {});
         return () => { alive = false; };

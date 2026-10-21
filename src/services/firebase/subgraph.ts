@@ -1,6 +1,6 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './core';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import type { SubgraphEdge, SubgraphNode } from '../../domain/subgraph';
 
 // THE GRAPH LOADER (ring 2026-08-25) — gathers the neighborhood the longitudinal walk
@@ -82,8 +82,8 @@ export const loadSubgraphAround = async (
       if (expanded.has(id)) return;
       expanded.add(id);
       const [out, into] = await Promise.all([
-        firestoreStore.linksFrom(id).catch(() => []),
-        firestoreStore.linksTo(id).catch(() => []),
+        graphStore.linksFrom(id).catch(() => []),
+        graphStore.linksTo(id).catch(() => []),
       ]);
       for (const l of [...out, ...into]) {
         const shape = REL_ENDPOINTS[l.rel];

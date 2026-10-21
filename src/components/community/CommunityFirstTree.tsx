@@ -3,7 +3,7 @@ import { Icons } from '../ui/Icons';
 import { Community, Lifetree } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
 import { tabTone } from '../../utils/tabTheme';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import { GuardianButton } from './GuardianButton';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -36,7 +36,7 @@ export const CommunityFirstTree: React.FC<CommunityFirstTreeProps> = ({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset when there is no featured tree, before the async links fetch below
     if (!firstTreeId) { setFirstTreeGuardians(0); return; }
     let alive = true;
-    firestoreStore.linksTo(firstTreeId, 'guardian')
+    graphStore.linksTo(firstTreeId, 'guardian')
       .then(links => { if (alive) setFirstTreeGuardians(links.length); })
       .catch(() => {});
     return () => { alive = false; };

@@ -3,6 +3,48 @@
 The growing tips: what is alive now, next, later, and deliberately not yet.
 Tend this file when seasons turn; don't let it promise what the roots can't hold.
 
+## Independent node (2026-10-20)
+
+The architecture and release contract live in `ARCHITECTURE.md` → **Independent
+node**: fresh installation, every current feature, no Firebase runtime dependency,
+and export/import with merging. The sequence below is implementation order, not
+permission to ship a reduced-feature node.
+
+1. Separate the application's backend dependencies behind explicit contracts.
+   Add a self-hosted charter/build path without Firebase configuration and a
+   versioned database migration runner. Keep the current backend working.
+   The graph boundary now exists: UI and aggregate callers use `services/store.ts`;
+   backend-neutral circle assembly lives in `services/graph.ts`. Documents, sessions,
+   media, subscriptions and server operations still need their own boundaries.
+   Versioned schema installation/upgrades now use `seed:migrate`, with a checksum
+   ledger, serialized execution and transactional rollback, exercised against real
+   PostgreSQL by `test:seed`. A version-2 independent charter can now be validated
+   and prepared with `seed:configure`; the self-hosted application build is still pending.
+2. Connect self-hosted identity and enforce access with non-owner database roles.
+   The database now denies access to unported collections by default. Non-owner
+   PostgreSQL tests cover initial link policies, secret-seat isolation, permanent
+   links and transaction-local identity cleanup. `seed:provision` now creates a restricted
+   database login, tested using real SCRAM password authentication. End-user identity
+   and the API remain pending; guardian self-service stays closed until its visibility gate is ported.
+   Test private reads, ownership, roles, session isolation and secret keeper seats
+   against PostgreSQL. Port record validation and transactional operations beside
+   the policies.
+3. Port session/profile, communities, trees, media, LID lookup and chain append;
+   walk sign-in → community → tree → photo → signed block → QR. Verify concurrent
+   appends and failure rollback. This is an integration milestone, not the release.
+4. Port every remaining responsibility exported by `functions/src/index.ts`,
+   plus client data access and subscriptions. Replace triggers and schedules with
+   durable, idempotent background work.
+5. Implement complete signed exports, identity enrollment, media transport,
+   transactional import execution and conflict resolution. The additive merge
+   planner and offline signature-verified report exist; actual importing does not.
+6. Bootstrap authority and the first keeper without a public first-visitor claim.
+   Verify a clean Compose installation, persistence, complete backup/restore and
+   overlapping imports. Walk all supported features with Firebase access blocked.
+
+Database configuration and backup hardening are implemented. Container runtime,
+PostgreSQL authorization and full browser verification remain outstanding.
+
 ## Alive now (before Lion's Gate, 8/8/2026)
 
 - **Bind every Being's birth before growing new kinds.** DONE 2026-08-17 (the

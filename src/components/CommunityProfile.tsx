@@ -38,7 +38,7 @@ import { useRefreshSignal } from '../hooks/useRefreshSignal';
 import { LoreSection, loreTabs, type LoreTabId } from './about/AboutSections';
 import { NodeGrowthTree } from './about/NodeGrowthTree';
 import { queryableLevels, ownMergeUid } from '../domain/pulseVisibility';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { isParticipant } from '../domain/views/participation';
 import { canCareForTree } from '../domain/policy';
 import { speak, spokenLine } from '../utils/translations';
@@ -114,7 +114,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [section, setSection] = useState<string | undefined>(undefined);
   useEffect(() => {
     let alive = true;
-    firestoreStore.linksTo(community.id)
+    graphStore.linksTo(community.id)
       .then(links => {
         if (!alive) return;
         setMemberByLink(isParticipant(links.filter(l => l.rel === 'member'), currentUserId));
@@ -142,7 +142,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     if (!currentUserId) { showAlert('err_signin_join'); return; }
     setJoining(true);
     try {
-      await firestoreStore.link(currentUserId, 'join_request', community.id);
+      await graphStore.link(currentUserId, 'join_request', community.id);
       setJoinRequested(true);
       notify(`🌱 ${spokenLine('join_request_sent', { name: community.name })}`);
     } catch (e: any) { showAlert(e?.message || 'err_join_request'); }
@@ -252,7 +252,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async links fetch below
     if (!currentUserId) { setGuardedTreeIds(new Set()); return; }
     let alive = true;
-    firestoreStore.linksFrom(currentUserId, 'guardian')
+    graphStore.linksFrom(currentUserId, 'guardian')
       .then(links => { if (alive) setGuardedTreeIds(new Set(links.map(l => l.to))); })
       .catch(() => {});
     return () => { alive = false; };
@@ -378,7 +378,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   useEffect(() => {
     if (!canEdit || !currentUserId) { return; }
     let alive = true;
-    Promise.all([getAllLightHouses(), firestoreStore.linksByRel('shelters')])
+    Promise.all([getAllLightHouses(), graphStore.linksByRel('shelters')])
       .then(([all, shelterLinks]) => {
         if (!alive) return;
         const homesOf = new Map<string, string[]>();
@@ -404,7 +404,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   const [shelterHomes, setShelterHomes] = useState<Map<string, string[]>>(new Map());
   useEffect(() => {
     let alive = true;
-    firestoreStore.linksByRel('shelters').then(links => {
+    graphStore.linksByRel('shelters').then(links => {
       if (!alive) return;
       const m = new Map<string, string[]>();
       for (const l of links) m.set(l.from, [...(m.get(l.from) || []), l.to]);
@@ -449,7 +449,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     const join = !guardedTreeIds.has(tree.id);
     setTogglingId(tree.id);
     try {
-      await (join ? firestoreStore.link(currentUserId, 'guardian', tree.id) : firestoreStore.unlink(currentUserId, 'guardian', tree.id));
+      await (join ? graphStore.link(currentUserId, 'guardian', tree.id) : graphStore.unlink(currentUserId, 'guardian', tree.id));
       setGuardedTreeIds(prev => {
         const next = new Set(prev);
         if (join) next.add(tree.id); else next.delete(tree.id);
@@ -587,7 +587,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   useEffect(() => {
     if (!isUnformedCircle || !currentUserId || !community.rootLifetreeId) { setTreeKeeper(false); return; }
     let alive = true;
-    firestoreStore.linksFrom(currentUserId, 'keeper')
+    graphStore.linksFrom(currentUserId, 'keeper')
       .then(links => { if (alive) setTreeKeeper(links.some(l => l.to === community.rootLifetreeId)); })
       .catch(() => {});
     return () => { alive = false; };

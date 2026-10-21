@@ -35,12 +35,121 @@ and `FIREBASE_ACCOUNT=<email>` makes the CLI act as the node's own account (afte
 file directly, so a checkout can be built for any charter it knows.
 Leaflet is bundled from npm, lazy-loaded on first map render (`services/leaflet.ts`).
 
+## Independent node
+
+**Release contract (2026-10-20).** A fresh node on a VPS, run with Docker Compose,
+with every current feature and no Firebase runtime dependency. It must also export
+and import into an existing node by merging. A database-only container or a
+reduced-feature application does not satisfy this contract. The current Firebase
+deployment remains supported during the migration.
+
+### Intended deployment
+
+The node owns its identity service, PostgreSQL database, media and background work.
+A TLS reverse proxy serves the existing React application and its API. The node's
+charter names its identity, domains, faces and backend without requiring a Firebase
+project, bucket or Hosting site. Credentials belong to the installation, not the
+public charter or browser bundle.
+
+The server verifies the identity provider's issuer, audience, expiry and signature.
+The authenticated identity is bound to each database transaction and cleared before
+a pooled connection is reused. A browser cannot choose `seed.uid()`. Request-serving
+roles must not own tables or bypass Row-Level Security; migration credentials are
+separate. Unported operations remain inaccessible rather than inheriting broad
+database permissions.
+
+Domain laws stay shared. Backend-specific adapters implement persistence, sessions,
+media, subscriptions and server operations. The build selects the implementation at
+the application's composition boundary, including the SSO entry point. No independent
+operation may fall back to the origin node's Firebase project.
+
+Chain append verifies the actor and signing state, reads/locks the head, validates
+and seals the block, and advances the head in one transaction. LIN relations remain
+entities; private keeper seats remain private. Firestore triggers become explicit
+transactional work or durable jobs. Retries must not duplicate chain records,
+settlements or notifications.
+
+`functions/src/index.ts` is the inventory of server responsibilities to preserve:
+keys and recovery; invitations and keeper succession; domain and door proofs;
+chains and agreements; care and light; beds and occupancy; events and circles;
+accounts and SSO; media and variants; mail and push; intelligence and quotas;
+LID indexes, previews, feeds and sitemap. Optional mail/AI providers still need
+configuration; absence must be reported without borrowing another node's credentials.
+
+### Merging and identity
+
+Import is additive and reviewed, not a database replacement. A bundle's custodian
+signature is checked against a key trusted outside the bundle. Identical records are
+idempotent; changed records and conflicting LIDs require resolution. Local authority,
+configuration and staff grants are not inherited from an export. Derived indexes
+are rebuilt. Export exclusions describe what must not travel, not which tables a
+running node needs: queues, quotas and credentials must be recreated locally.
+
+Identity binding must establish the same person, not merely a matching email or UID.
+Portable LIDs and signed history survive unchanged. Renaming UIDs inside signed
+records or silently choosing one chain head is not an acceptable merge. Media,
+identity enrollment, authorization and record validation are part of the eventual
+import transaction/workflow, not guarantees provided by a merge report.
+
+### Implemented now and remaining boundaries
+
+- `seed/docker-compose.yml` starts PostgreSQL only, requires an explicit password
+  and binds its development SQL port to loopback. `npm run seed:migrate` installs and
+  upgrades the schema: a database advisory lock serializes runners, a checksum ledger
+  binds applied files, and one transaction holds the pending batch. Edited/missing
+  history and untracked existing databases are refused, never silently baselined.
+- `seed/schema/` covers the bundle travel plan, with deterministic LIN identifiers
+  and initial link RLS policies. Migration 003 enables RLS across existing collections,
+  denying access where policies have not been ported. It closes premature guardian
+  insertion and protects all eight permanent link kinds from own-hand withdrawal.
+  `seed:provision` creates a fresh restricted LOGIN with a private generated password
+  and SCRAM verifier, granting only the initial graph operations. Real PostgreSQL
+  tests authenticate with that account and verify privilege refusal. Full authorization
+  parity and API/session implementation remain pending. `seed.uid()` is a trusted server session-setting
+  seam, not authentication; never expose SQL or owner credentials to clients.
+- `seed/backup.sh` publishes completed private database dumps and preserves previous
+  backups on failure. It does not back up future identity/media volumes.
+- `src/domain/bundleMerge.ts` plans additive merges and binds each proposal to a
+  destination snapshot digest. `npm run node:merge:plan` verifies Ed25519 provenance
+  and writes a private offline report. It does not execute an import. The browser's
+  existing export ZIP is not yet the complete signed bundle this planner accepts.
+- Version-2 independent charters describe PostgreSQL deployment intent without
+  Firebase fields. `independentCharterProblem` validates identity and unambiguous
+  host assignments; `seed:configure` writes an isolated private configuration,
+  public envelope and host list. It neither deploys services nor changes the app's
+  backend. The existing Firebase sync refuses version 2 to prevent accidental fallback.
+- The application's data, authentication, media and server actions still use Firebase.
+  The existing `Store` interface covers relationships only. Its callers now use
+  `services/store.ts`, which selects the graph adapter in one place; the backend-neutral
+  `services/graph.ts` assembles open/private tree circles using the existing domain
+  law. Views and aggregates no longer import the Firestore graph adapter directly.
+  Replacing this adapter alone still cannot migrate the full application.
+
+Merge, backup and migration-source tests run in the ordinary quality gate. The schema
+coverage test checks SQL text. `npm run test:seed` separately runs the actual schema
+and migration CLI in an isolated PostgreSQL cluster, testing rollback, repeat runs,
+concurrency, history validation, non-owner access, secret-seat isolation and identity
+cleanup between transactions; it does not yet establish full authorization
+parity. Compose configuration has been validated, but container startup and the
+independent browser journey have not. Local PostgreSQL can exercise migrations even
+while Docker is unavailable.
+
+**Release proof:** on a clean VPS, complete the current user journeys with Firebase
+access blocked, including private-data refusal, signing/recovery, concurrent chain
+appends, media access and background work. Restart without losing state; restore
+database, media and identities into an empty installation; merge an overlapping
+export without changing authority or signed history. Required checks include
+`npm run check`, PostgreSQL/API authorization and concurrency tests, and the browser
+walk against Compose. The delivery sequence lives in `ROADMAP.md`; operational
+commands live in `seed/README.md`.
+
 ## Layers: the dependency direction
 
 ```
 domain/     pure rules, no backend, no React: ALWAYS testable (tests/ mirrors it)
-adapters/   the Store port (firestoreStore: links CRUD by deterministic id)
-services/   Firebase aggregates (barrel: services/firebase.ts) + weather, refreshBus
+adapters/   implementations of the graph Store port (Firestore today)
+services/   store.ts selects the graph adapter; graph.ts assembles tree circles;
+            Firebase aggregates (barrel: services/firebase.ts) + weather, refreshBus
 hooks/      session (useLifeseed → SessionContext), feeds, facts, visible-lightHouses
 components/ the faces; components/sections/ = the shared Being anatomy (8 organs);
             components/app/ = the conductor's own limbs (main content, overlays, being detail)

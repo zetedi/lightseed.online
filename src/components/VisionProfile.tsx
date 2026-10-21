@@ -15,7 +15,7 @@ import { linkLabel } from '../domain/webLink';
 import { showsPlaceOfRecord } from '../domain/communityDoor';
 import { PlaceOfRecord } from './ui/PlaceOfRecord';
 import { getLifetreeById, getPulsesByVisionId, getPulsesByTreeId, mendVisionDomain } from '../services/firebase';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { participants, isParticipant } from '../domain/views/participation';
 import { ProfileHero } from './ui/ProfileHero';
 import { ProfileLayout } from './ui/ProfileLayout';
@@ -145,7 +145,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     // Participation as a prism over the LIN: the vision's incoming 'joined' links.
     useEffect(() => {
         let alive = true;
-        firestoreStore.linksTo(vision.id, 'joined').then(links => {
+        graphStore.linksTo(vision.id, 'joined').then(links => {
             if (!alive) return;
             setIsJoined(isParticipant(links, currentUserId));
             setParticipantCount(participants(links).length);
@@ -158,11 +158,11 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
         setIsUpdating(true);
         try {
             if (isJoined) {
-                await firestoreStore.unlink(currentUserId, 'joined', vision.id);
+                await graphStore.unlink(currentUserId, 'joined', vision.id);
                 setIsJoined(false);
                 setParticipantCount(prev => Math.max(0, prev - 1));
             } else {
-                await firestoreStore.link(currentUserId, 'joined', vision.id);
+                await graphStore.link(currentUserId, 'joined', vision.id);
                 setIsJoined(true);
                 setParticipantCount(prev => prev + 1);
             }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { getMyCommunities } from '../services/firebase';
 import { isSeedShellHost } from './useConfig';
 import type { GuardianEdge } from '../domain/sustainingSeven';
@@ -53,12 +53,12 @@ export const usePathwayFacts = (lightseed: Lightseed | null, myTrees: Lifetree[]
     let alive = true;
     const treeIds = treeIdsKey ? treeIdsKey.split(',') : [];
     Promise.all([
-      firestoreStore.linksFrom(uid, 'member').catch(() => []),
-      firestoreStore.linksFrom(uid, 'joined').catch(() => []),
-      Promise.all(treeIds.map(id => firestoreStore.linksTo(id).catch(() => []))),
+      graphStore.linksFrom(uid, 'member').catch(() => []),
+      graphStore.linksFrom(uid, 'joined').catch(() => []),
+      Promise.all(treeIds.map(id => graphStore.linksTo(id).catch(() => []))),
       getMyCommunities(uid).catch(() => []),
-      firestoreStore.linksFrom(uid, 'keeper').catch(() => []),
-      firestoreStore.linksFrom(uid, 'steward').catch(() => []),
+      graphStore.linksFrom(uid, 'keeper').catch(() => []),
+      graphStore.linksFrom(uid, 'steward').catch(() => []),
     ]).then(async ([memberLinks, joinedLinks, perTreeLinks, communities, keeperLinksAll, stewardLinks]) => {
       if (!alive) return;
       // A keeper link may point at a community or a tree (one word, one meaning); only the

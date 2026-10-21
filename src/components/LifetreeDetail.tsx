@@ -21,7 +21,7 @@ import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validat
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 import { treeCircle } from '../domain/views/circle';
 import { beingPath } from '../domain/beingLink';
-import { firestoreStore, linksToTree } from '../adapters/firestore';
+import { graphStore, linksToTree } from '../services/store';
 import { BeingProfile, type BeingSection } from './BeingProfile';
 import { ChainTree } from './sections/ChainTree';
 import { TreeCare } from './lifetree/TreeCare';
@@ -87,7 +87,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
    const [holdingLightHouses, setHoldingLightHouses] = useState<LightHouse[]>([]);
    useEffect(() => {
        let alive = true;
-       firestoreStore.linksTo(tree.id, 'rooted')
+       graphStore.linksTo(tree.id, 'rooted')
            .then(links => Promise.all(links.map(l => getLightHouseById(l.from).catch(() => null))))
            .then(list => { if (alive) setHoldingLightHouses((list || []).filter(Boolean) as LightHouse[]); })
            .catch(() => {});

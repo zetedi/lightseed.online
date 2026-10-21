@@ -12,7 +12,7 @@ import { communitiesOnView } from '../domain/communityDoor';
 import { isTreeCircle } from '../domain/treeCircle';
 import { isDomainVerified } from '../domain/domainVerification';
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
-import { firestoreStore } from '../adapters/firestore';
+import { graphStore } from '../services/store';
 import { notify } from './ui/Toast';
 import { communityThemePresets } from '../utils/theme';
 import { sanitizeRichText } from '../utils/sanitize';
@@ -168,8 +168,8 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
     if (!currentUserId) return;
     let alive = true;
     Promise.all([
-      firestoreStore.linksFrom(currentUserId, 'member').catch(() => []),
-      firestoreStore.linksFrom(currentUserId, 'join_request').catch(() => []),
+      graphStore.linksFrom(currentUserId, 'member').catch(() => []),
+      graphStore.linksFrom(currentUserId, 'join_request').catch(() => []),
     ]).then(([members, requests]) => {
       if (!alive) return;
       setMemberIds(new Set(members.map(l => l.to)));
@@ -191,7 +191,7 @@ export const CommunityList: React.FC<CommunityListProps> = ({ onSelect, myTrees,
   const handleJoin = async (c: Community) => {
     if (!currentUserId) { showAlert('err_signin_join'); return; }
     try {
-      await firestoreStore.link(currentUserId, 'join_request', c.id);
+      await graphStore.link(currentUserId, 'join_request', c.id);
       setRequestedIds(prev => new Set([...prev, c.id]));
       notify(speak(spokenLine('join_request_sent', { name: c.name })));
     } catch (e: any) {

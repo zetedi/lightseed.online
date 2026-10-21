@@ -2,7 +2,7 @@ import { collection, query, orderBy, getDocs, addDoc, setDoc, serverTimestamp, d
 import { charter } from '../../config/charter';
 import { announce } from '../refreshBus';
 import { LIGHT_HOUSE_ROOT, type LightHouseCareAct } from '../../domain/lightHouse';
-import { firestoreStore } from '../../adapters/firestore';
+import { graphStore } from '../../services/store';
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree, type LightHouse, type TreeKeepingInvite, type InvitableRole, type Link } from '../../types';
 import { msOf } from '../../domain/time';
@@ -530,18 +530,18 @@ export const fetchAllLifetrees = async (domainFilter?: string, anchorUid?: strin
 // The tree's `domain` stays its one place-of-record; these edges only widen which
 // community forests SHOW it. The rules hold the door: open → owner self-serve; else keeper.
 export const standTreeInCommunity = (treeId: string, communityId: string) =>
-    firestoreStore.link(treeId, 'grows_in', communityId);
+    graphStore.link(treeId, 'grows_in', communityId);
 
 export const withdrawTreeFromCommunity = (treeId: string, communityId: string) =>
-    firestoreStore.unlink(treeId, 'grows_in', communityId);
+    graphStore.unlink(treeId, 'grows_in', communityId);
 
 export const communitiesTreeStandsIn = async (treeId: string): Promise<string[]> =>
-    (await firestoreStore.linksFrom(treeId, 'grows_in')).map(l => l.to);
+    (await graphStore.linksFrom(treeId, 'grows_in')).map(l => l.to);
 
 // Every tree standing in this community through a grows_in edge — fetched one by one so a
 // tree this viewer may not read simply stays unseen (per-doc rules refusals are absorbed).
 export const treesStandingIn = async (communityId: string): Promise<Lifetree[]> => {
-    const links = await firestoreStore.linksTo(communityId, 'grows_in');
+    const links = await graphStore.linksTo(communityId, 'grows_in');
     const docs = await Promise.all(links.map(l =>
         getDoc(doc(db, 'lifetrees', l.from)).then(d => (d.exists() ? ({ id: d.id, ...d.data() } as Lifetree) : null)).catch(() => null)));
     return excludeBedTrees(docs.filter((t): t is Lifetree => !!t));
@@ -875,7 +875,7 @@ export const getMyPrivateTreesAt = async (uid: string, domain: string): Promise<
     // Both ledgers: a secret tree's keeper seats stand in secretLinks (the secret circle, ring 2026-10-02).
     const [seats, secretSeats] = await Promise.all([
         getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', 'in', ['keeper', 'steward', 'guardian', 'observer']))).catch(() => null),
-        firestoreStore.secretLinksFrom(uid).catch(() => [] as Link[]),
+        graphStore.secretLinksFrom(uid).catch(() => [] as Link[]),
     ]);
     const seatIds = new Set([...(seats?.docs || []).map(l => String((l.data() as { to?: string }).to || '')), ...secretSeats.map(l => l.to)]);
     await Promise.all([...seatIds].map(async id => {
@@ -892,7 +892,7 @@ export const getTendedTrees = async (uid: string): Promise<TendedTree[]> => {
     // Both ledgers: a secret tree's keeper seats stand in secretLinks (the secret circle, ring 2026-10-02).
     const [links, secretSeats] = await Promise.all([
         getDocs(query(collection(db, 'links'), where('from', '==', uid), where('rel', 'in', ['keeper', 'steward']))),
-        firestoreStore.secretLinksFrom(uid).catch(() => [] as Link[]),
+        graphStore.secretLinksFrom(uid).catch(() => [] as Link[]),
     ]);
     const roles = tendedTreeRoles(mergeLinks(links.docs.map(d => d.data() as { from: string; rel: string; to: string }), secretSeats), uid);
     const trees = await Promise.all([...roles.keys()].map(async id => {
