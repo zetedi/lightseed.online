@@ -230,8 +230,8 @@ describe('the Grove — the living path, walked in parallel', () => {
     const head = blocks[blocks.length - 1];
     await expect(httpsCallable(bakr.fns, 'unmintBlock')({ pulseId: head.id })).rejects.toThrow(/unmint_not_author/);
     await expect(httpsCallable(ana.fns, 'unmintBlock')({ pulseId: a.pulseId })).rejects.toThrow(/unmint_not_last/);
-    const rolled = (await httpsCallable<{ pulseId: string }, { latestHash: string; blockHeight: number }>(ana.fns, 'unmintBlock')({ pulseId: head.id })).data;
-    expect(rolled).toEqual({ latestHash: a.hash, blockHeight: 2 });
+    const rolled = (await httpsCallable<{ pulseId: string }, { latestHash: string; blockHeight: number; lifted: string[] }>(ana.fns, 'unmintBlock')({ pulseId: head.id })).data;
+    expect(rolled).toEqual({ latestHash: a.hash, blockHeight: 2, lifted: [] });
     expect((await adminDbA().doc(`pulses/${head.id}`).get()).exists).toBe(false); // gone — the admin's sight, since a missing doc has no rule to read it by
     const after = (await getDoc(doc(ana.db, 'lifetrees', ids.treeAna))).data() as any;
     expect(after.latestHash).toBe(a.hash);

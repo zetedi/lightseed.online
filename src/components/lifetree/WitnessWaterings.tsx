@@ -44,8 +44,11 @@ export const WitnessWaterings: React.FC<WitnessWateringsProps> = ({ treeName, pu
     const waiting = awaitingWitness(pulses).slice(0, 8);
     if (waiting.length === 0) return null;
 
-    const handleUnmint = async (p: Pulse) => {
-        if (unminting || !(await showConfirm('unmint_confirm', { title: 'unmint', confirmText: 'unmint', danger: true }))) return;
+    const handleUnmint = async (p: Pulse, refusal: string | null) => {
+        if (unminting) return;
+        // A refused door says why, aloud: a silent disabled button reads as "nothing happened".
+        if (refusal) { await showAlert(refusal, 'unmint'); return; }
+        if (!(await showConfirm('unmint_confirm', { title: 'unmint', confirmText: 'unmint', danger: true }))) return;
         setUnminting(p.id);
         try {
             await unmintLastPulse(p);
@@ -74,7 +77,7 @@ export const WitnessWaterings: React.FC<WitnessWateringsProps> = ({ treeName, pu
             <div className="space-y-1.5">
                 {waiting.map(p => {
                     const mine = !!currentUserId && p.authorId === currentUserId;
-                    // The door is honest in both states: live while the law allows, disabled with the reason.
+                    // The door is honest in both states: live while the law allows, muted with the reason spoken on tap.
                     const refusal = mine && latestHash ? unmintRefusal(p, { latestHash }, currentUserId) : 'unmint_not_author';
                     const when = p.createdAt?.toMillis ? new Date(p.createdAt.toMillis()).toLocaleDateString() : t('a_watering');
                     return (
@@ -100,10 +103,10 @@ export const WitnessWaterings: React.FC<WitnessWateringsProps> = ({ treeName, pu
                             {mine && refusal !== 'unmint_not_author' && (
                                 <button
                                     type="button"
-                                    onClick={() => handleUnmint(p)}
-                                    disabled={!!refusal || unminting === p.id}
+                                    onClick={() => handleUnmint(p, refusal)}
+                                    disabled={unminting === p.id}
                                     title={refusal ? t(refusal) : t('unmint_confirm')}
-                                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-bold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:bg-slate-900 dark:text-rose-300"
+                                    className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-bold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:bg-slate-900 dark:text-rose-300 ${refusal ? 'opacity-60' : ''}`}
                                 >
                                     <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Trash /></span>{unminting === p.id ? '…' : t('unmint')}
                                 </button>
