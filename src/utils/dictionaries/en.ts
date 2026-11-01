@@ -618,6 +618,7 @@ const en = {
   no_users_found: "No users found.", admin_newsletter_note: "Send a network update to all subscribers.",
   send_newsletter: "Send Newsletter", admin_you_hold: "You hold admin privileges in this network.",
   being_link_unseen: "This link names a being you cannot see from here.",
+  being_link_not_public: "This link names a being that is not public. Sign in — it may open for you.",
   invite_not_found: "This invitation could not be found.",
   lh_released: "The Light House was released.", lh_visibility_now: "The Light House is now: {v}",
   err_save_retry: "Could not save. Please try again.",

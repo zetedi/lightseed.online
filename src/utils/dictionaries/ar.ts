@@ -629,6 +629,7 @@ const ar = {
   no_users_found: "لا مستخدمين.", admin_newsletter_note: "أرسل تحديث الشبكة إلى كل المشتركين.",
   send_newsletter: "أرسل النشرة", admin_you_hold: "تحمل صلاحيات إشراف في هذه الشبكة.",
   being_link_unseen: "هذا الرابط يسمّي كائنًا لا تراه من هنا.",
+  being_link_not_public: "هذا الرابط يسمّي كائنًا غير عامّ. سجّل الدخول — فقد يُفتح لك.",
   invite_not_found: "تعذّر العثور على هذه الدعوة.",
   lh_released: "أُطلق بيت النور.", lh_visibility_now: "بيت النور الآن: {v}",
   err_save_retry: "تعذّر الحفظ. حاول من جديد.",

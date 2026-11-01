@@ -154,3 +154,49 @@ export const beingStoragePath = (lid: string, folder: string): string | null => 
   if (!clean || clean.includes('..')) return null;
   return `beings/${lid}/${clean}`;
 };
+
+// ── After the index has spoken ────────────────────────────────────────────────────────────
+// What the door's SEARCH may still ask once the index has answered (ring 2026-11-01). The
+// index is a finding aid, so the search stays behind it — but not blindly: eight refused
+// queries once held the loader five seconds before the "not public" word was spoken.
+//
+//   found    — the index opened the being: nothing more to ask.
+//   unseen   — the index named a kind /b/ does not open (a person), or the client gate refused
+//              a Light House the rules allowed: the search would refuse the same way.
+//   refused  — the index named the address and the RULES refused the read. Every visibility-
+//              pinned list the search would run is a subset of that refused get, so one bare
+//              ask of the named collection is all that remains: a list rule may know a reader
+//              the get rule does not (a pulse's participant), and that is all it can add.
+//   silent   — no entry, a stale address, an unknown kind: the full search, as before.
+export type IndexWord =
+  | { word: 'found' }
+  | { word: 'unseen' }
+  | { word: 'refused'; collection: string }
+  | { word: 'silent' };
+
+// The collections the search asks, in the order it asks them. Persons are not searched: /b/
+// does not open a person yet. Communities are read by all, so they are never pinned.
+export const SEARCHED_COLLECTIONS = ['lifetrees', 'lightHouses', 'visions', 'pulses', 'communities'] as const;
+export type SearchedCollection = typeof SEARCHED_COLLECTIONS[number];
+export const isSearchedCollection = (c: string): c is SearchedCollection =>
+  (SEARCHED_COLLECTIONS as readonly string[]).includes(c);
+
+// One ask: a collection, BARE (the list rule judges the single match — staff and permissive
+// rules answer here) or PINNED to the visibility levels the reader can prove without the
+// document's circle being read (public; node when signed in).
+export interface SearchAsk { collection: SearchedCollection; pinned: boolean }
+
+export const searchAfterIndex = (word: IndexWord): SearchAsk[] => {
+  switch (word.word) {
+    case 'found':
+    case 'unseen':
+      return [];
+    case 'refused':
+      return isSearchedCollection(word.collection) ? [{ collection: word.collection, pinned: false }] : [];
+    case 'silent':
+      return SEARCHED_COLLECTIONS.flatMap((collection): SearchAsk[] =>
+        collection === 'communities'
+          ? [{ collection, pinned: false }]
+          : [{ collection, pinned: false }, { collection, pinned: true }]);
+  }
+};

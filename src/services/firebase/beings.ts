@@ -1,19 +1,22 @@
 import { getDocs, getDoc, query, where, limit, doc, updateDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, functions, mapDoc, mapPulse, lifetreesCollection, lightHousesCollection, visionsCollection, pulsesCollection } from './core';
-import type { Lifetree, Vision, Pulse, LightHouse, Link } from '../../types';
+import { db, functions, mapDoc, mapPulse, lifetreesCollection, lightHousesCollection, visionsCollection, pulsesCollection, communitiesCollection } from './core';
+import type { Lifetree, Vision, Pulse, LightHouse, Link, Community } from '../../types';
 import { canViewLightHouse } from '../../domain/lightHouse';
+import { searchAfterIndex, type IndexWord, type SearchAsk } from '../../domain/beingIndex';
 
 // Being resolution — the /b/<lid> door. A lid names exactly one being somewhere in the
-// collections; we ask each in turn. Every query is wrapped: one the rules refuse (visibility
-// gates the reader can't prove) resolves to nothing instead of failing the whole search —
-// a QR scan shows what the scanner may see, and no more.
+// collections; the index says where (one read), and the search asks the collections only as
+// far as the index's answer leaves open (domain/beingIndex searchAfterIndex). Every query is
+// wrapped: one the rules refuse (visibility gates the reader can't prove) resolves to nothing
+// instead of failing the whole search — a QR scan shows what the scanner may see, and no more.
 
 export type FoundBeing =
     | { kind: 'tree'; tree: Lifetree }
     | { kind: 'lightHouse'; lightHouse: LightHouse }
     | { kind: 'vision'; vision: Vision }
-    | { kind: 'pulse'; pulse: Pulse };
+    | { kind: 'pulse'; pulse: Pulse }
+    | { kind: 'community'; community: Community };
 
 const tryOne = async (q: ReturnType<typeof query>): Promise<any | null> => {
     try {
@@ -41,80 +44,87 @@ const gateLightHouse = async (
     return { kind: 'lightHouse', lightHouse };
 };
 
+// What the index said, and what it opened.
+interface IndexAnswer { word: IndexWord; found: FoundBeing | null }
+const SILENT: IndexAnswer = { word: { word: 'silent' }, found: null };
+const UNSEEN: IndexAnswer = { word: { word: 'unseen' }, found: null };
+
 // THE LID INDEX, read side (ring 2026-08-09): beings/{lid} says where the name lives, so the
 // door opens with ONE read instead of eight queries. It is a finding aid and never an authority:
-// a lid with no entry, an entry pointing at a document that is gone, or one the reader may not
-// prove they can see all fall through to the search below. Emptying beings/ costs speed, nothing
-// else. Returns undefined for "the index had nothing to say", null for "it said: not for you".
+// a lid with no entry or an entry pointing at a document that is gone leaves the search its
+// full way (silent). One the RULES refuse (ring 2026-11-01) names its collection, so the search
+// asks that collection once, bare, and nothing else — the pinned lists it would otherwise run
+// are subsets of the get just refused. Emptying beings/ costs speed, nothing else.
 const throughIndex = async (
     lid: string,
     viewer?: { uid?: string; isStaff?: boolean },
-): Promise<FoundBeing | null | undefined> => {
+): Promise<IndexAnswer> => {
     let entry: { kind?: string; collection?: string; docId?: string } | undefined;
     try {
         entry = (await getDoc(doc(db, 'beings', lid))).data();
-    } catch { return undefined; }
-    if (!entry?.collection || !entry?.docId) return undefined;
+    } catch { return SILENT; }
+    if (!entry?.collection || !entry?.docId) return SILENT;
 
-    // Persons and communities are indexed (they own storage, and the door may one day open them)
-    // but /b/ does not resolve them yet. Say so at once rather than searching for what we know
-    // the search cannot find either.
-    if (entry.kind === 'person' || entry.kind === 'community') return null;
+    // Persons are indexed (they own storage, and the door may one day open them) but /b/ does
+    // not resolve them yet. Say so at once rather than searching for what we know the search
+    // cannot find either.
+    if (entry.kind === 'person') return UNSEEN;
 
     let snap;
     try {
         snap = await getDoc(doc(db, entry.collection, entry.docId));
-    } catch { return undefined; } // refused: let the visibility-provable queries below try
-    if (!snap.exists()) return undefined; // the address is stale — the search still knows the way
+    } catch { return { word: { word: 'refused', collection: entry.collection }, found: null }; }
+    if (!snap.exists()) return SILENT; // the address is stale — the search still knows the way
 
+    const opened = (found: FoundBeing | null): IndexAnswer => (found ? { word: { word: 'found' }, found } : UNSEEN);
     switch (entry.kind) {
-        case 'tree': return { kind: 'tree', tree: mapDoc(snap) as Lifetree };
-        case 'vision': return { kind: 'vision', vision: mapDoc(snap) as Vision };
-        case 'pulse': return { kind: 'pulse', pulse: mapPulse(snap) as Pulse };
-        case 'lightHouse': return gateLightHouse(mapDoc(snap) as LightHouse, viewer);
-        default: return undefined;
+        case 'tree': return opened({ kind: 'tree', tree: mapDoc(snap) as Lifetree });
+        case 'vision': return opened({ kind: 'vision', vision: mapDoc(snap) as Vision });
+        case 'pulse': return opened({ kind: 'pulse', pulse: mapPulse(snap) as Pulse });
+        case 'lightHouse': return opened(await gateLightHouse(mapDoc(snap) as LightHouse, viewer));
+        // A community's door (ring 2026-11-01): CommunityMembers mints /b/<community lid>, and the
+        // community is read by all — the door opens it as the /i/ door does.
+        case 'community': return opened({ kind: 'community', community: mapDoc(snap) as Community });
+        default: return SILENT;
     }
 };
 
 export const findBeingByLid = async (lid: string, signedIn: boolean, viewer?: { uid?: string; isStaff?: boolean }): Promise<FoundBeing | null> => {
-    const indexed = await throughIndex(lid, viewer);
-    if (indexed !== undefined) return indexed;
+    const answer = await throughIndex(lid, viewer);
+    const asks = searchAfterIndex(answer.word);
+    if (asks.length === 0) return answer.found;
 
     const byLid = where('lid', '==', lid);
-
-    // Trees — bare query first (staff / permissive rules), then visibility-provable fallbacks.
-    for (const q1 of [
-        query(lifetreesCollection, byLid, limit(1)),
-        query(lifetreesCollection, byLid, where('visibility', 'in', signedIn ? ['public', 'node'] : ['public']), limit(1)),
-    ]) {
-        const d = await tryOne(q1);
-        if (d) return { kind: 'tree', tree: mapDoc(d) as Lifetree };
+    // The levels a reader can prove without the document's circle being read.
+    const provable = signedIn ? ['public', 'node'] : ['public'];
+    const ask = async ({ collection: name, pinned }: SearchAsk): Promise<FoundBeing | null> => {
+        switch (name) {
+            case 'lifetrees': {
+                const d = await tryOne(pinned ? query(lifetreesCollection, byLid, where('visibility', 'in', provable), limit(1)) : query(lifetreesCollection, byLid, limit(1)));
+                return d ? { kind: 'tree', tree: mapDoc(d) as Lifetree } : null;
+            }
+            case 'lightHouses': {
+                const d = await tryOne(pinned ? query(lightHousesCollection, byLid, where('visibility', '==', 'public'), limit(1)) : query(lightHousesCollection, byLid, limit(1)));
+                return d ? gateLightHouse(mapDoc(d) as LightHouse, viewer) : null;
+            }
+            case 'visions': {
+                const d = await tryOne(pinned ? query(visionsCollection, byLid, where('visibility', 'in', provable), limit(1)) : query(visionsCollection, byLid, limit(1)));
+                return d ? { kind: 'vision', vision: mapDoc(d) as Vision } : null;
+            }
+            case 'pulses': {
+                const d = await tryOne(pinned ? query(pulsesCollection, byLid, where('visibility', 'in', provable), limit(1)) : query(pulsesCollection, byLid, limit(1)));
+                return d ? { kind: 'pulse', pulse: mapPulse(d) as Pulse } : null;
+            }
+            case 'communities': {
+                const d = await tryOne(query(communitiesCollection, byLid, limit(1)));
+                return d ? { kind: 'community', community: mapDoc(d) as Community } : null;
+            }
+        }
+    };
+    for (const a of asks) {
+        const hit = await ask(a);
+        if (hit) return hit;
     }
-
-    for (const q2 of [
-        query(lightHousesCollection, byLid, limit(1)),
-        query(lightHousesCollection, byLid, where('visibility', '==', 'public'), limit(1)),
-    ]) {
-        const d = await tryOne(q2);
-        if (d) return gateLightHouse(mapDoc(d) as LightHouse, viewer);
-    }
-
-    for (const q3 of [
-        query(visionsCollection, byLid, limit(1)),
-        query(visionsCollection, byLid, where('visibility', 'in', signedIn ? ['public', 'node'] : ['public']), limit(1)),
-    ]) {
-        const d = await tryOne(q3);
-        if (d) return { kind: 'vision', vision: mapDoc(d) as Vision };
-    }
-
-    for (const q4 of [
-        query(pulsesCollection, byLid, limit(1)),
-        query(pulsesCollection, byLid, where('visibility', 'in', signedIn ? ['public', 'node'] : ['public']), limit(1)),
-    ]) {
-        const d = await tryOne(q4);
-        if (d) return { kind: 'pulse', pulse: mapPulse(d) as Pulse };
-    }
-
     return null;
 };
 

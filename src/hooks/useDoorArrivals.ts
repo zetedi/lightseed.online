@@ -119,10 +119,14 @@ export function useDoorArrivals(params: {
     // the hosting rewrite serves the shell for it, and this effect re-opens the being.
     window.history.replaceState(window.history.state, '', beingPath(lid));
     findBeingByLid(lid, !!lightseed, { uid: lightseed?.uid, isStaff }).then(found => {
-      if (!found) { notify(speak('being_link_unseen')); return; }
+      // Nothing the reader may see. Signed out, the honest word is "not public — sign in, it may
+      // open for you"; signed in, the being is kept by a circle the reader is not in. (The toast
+      // is said while the shell still holds its loader; the bus holds it for the host.)
+      if (!found) { notify(speak(lightseed ? 'being_link_unseen' : 'being_link_not_public')); return; }
       if (found.kind === 'tree') beings.setSelectedTree(found.tree);
       else if (found.kind === 'lightHouse') beings.setViewingLightHouse(found.lightHouse);
       else if (found.kind === 'vision') beings.setSelectedVision(found.vision);
+      else if (found.kind === 'community') beings.setSelectedCommunity(found.community);
       else beings.setSelectedPulse(found.pulse);
     }).catch(() => {}).finally(() => setDoorPending(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot door: runs when auth settles; the path is consumed on first resolution

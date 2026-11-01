@@ -1,32 +1,33 @@
 import { speak } from '../../utils/translations';
 import { useEffect, useRef, useState } from 'react';
+import { toastBus, type ToastKind, type ToastNote } from './toastBus';
+
+export type { ToastKind } from './toastBus';
 
 // A confirmation toast — the visible "done" for background work (saves, flips, consecrations).
 // Sits just below the header so an important result is seen, glows green when all is well and
 // red when something failed. Fire-and-forget: notify('🌱 Saved.') or notify('Could not save.',
 // 'error') from anywhere; the single ToastHost (mounted once in App) shows it briefly and fades.
-
-export type ToastKind = 'success' | 'error';
-
-let listener: ((message: string, kind: ToastKind) => void) | null = null;
+// A word said before the host stands is HELD by the bus (./toastBus) and spoken when it mounts.
 
 // The toast SPEAKS (ring 2026-09-19): a key, or a spoken line `key::{json}`, is said in the
 // reader's tongue here; a composed sentence passes through untouched. Offering keepership
 // showed `keeper_offer_sent::{"name":…}` raw because this boundary let the line through.
-export const notify = (message: string, kind: ToastKind = 'success'): void => { listener?.(speak(message), kind); };
+export const notify = (message: string, kind: ToastKind = 'success'): void => { toastBus.say({ message: speak(message), kind }); };
 
 export const ToastHost = () => {
-  const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);
+  const [toast, setToast] = useState<ToastNote | null>(null);
   const timer = useRef(0);
 
   useEffect(() => {
-    listener = (message, kind) => {
-      setToast({ message, kind });
+    const hear = (note: ToastNote) => {
+      setToast(note);
       window.clearTimeout(timer.current);
       // Errors linger a touch longer — they usually ask the reader to do something.
-      timer.current = window.setTimeout(() => setToast(null), kind === 'error' ? 4200 : 2800);
+      timer.current = window.setTimeout(() => setToast(null), note.kind === 'error' ? 4200 : 2800);
     };
-    return () => { listener = null; window.clearTimeout(timer.current); };
+    toastBus.attach(hear);
+    return () => { toastBus.detach(hear); window.clearTimeout(timer.current); };
   }, []);
 
   if (!toast) return null;

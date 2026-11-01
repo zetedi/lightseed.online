@@ -627,6 +627,7 @@ const zh = {
   no_users_found: "未找到用户。", admin_newsletter_note: "向所有订阅者发送网络更新。",
   send_newsletter: "发送通讯", admin_you_hold: "你在此网络中持有管理员权限。",
   being_link_unseen: "这个链接指向一个你在此处看不见的存在。",
+  being_link_not_public: "这个链接指向一个非公开的存在。登录后，它或许会向你敞开。",
   invite_not_found: "找不到这个邀请。",
   lh_released: "光之屋已释放。", lh_visibility_now: "光之屋现在：{v}",
   err_save_retry: "无法保存。请再试一次。",

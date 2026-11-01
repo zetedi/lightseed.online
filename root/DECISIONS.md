@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-01 · A closed door is heard** — Zoltán opened a shared tree link signed out and saw
+nothing at all. The /b/ door's refusal toast ("a being you cannot see from here") was spoken
+while the shell still held its neutral loader (the pending door of 2026-09-29), so no ToastHost
+was mounted to hear it — the word was dropped for every refused visitor, signed in or out, since
+that ring. The toast now has a plain bus (components/ui/toastBus, tested): a word said to an
+empty room is held and spoken the moment the host mounts, let go after ten seconds (a
+custom-landing domain mounts no host; a stale word belongs to a page already left). The refusal
+also learns who it speaks to: signed out, "not public — sign in, it may open for you"
+(being_link_not_public); signed in, the circle word as before. Two mends from the same review
+(Zoltán: "add 1 and 2"): the COMMUNITY LINK — CommunityMembers mints /b/<community lid>, and the
+index answered "not for you" for communities though they are read by all — now opens the
+community as the /i/ door does; and a REFUSED DOOR no longer searches blind — once the index
+has named the address and the rules refused the read, every visibility-pinned list the search
+would run is a subset of that refused get, so one bare ask of the named collection remains
+(domain/beingIndex searchAfterIndex, tested): eight refused round trips had held the loader
+five seconds before the word. Not decided here: a door that offers sign-in / membership in a
+modal (next), and a Light House's secondary homes, which the client gate admits and the read
+rule does not.
+
 **2026-10-31 · A true name finds only what its reader may see** — Independent
 local LID lookup queries authoritative records with current visibility, returning
 only their kind and address. Public person identities use a narrow projection;
