@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
-// Firestore security-rules tests — run ONLY under the emulator:
-//   npm run test:rules      (wraps: firebase emulators:exec --only firestore "vitest run --config …")
+// Firestore and Storage security-rules tests — run ONLY under the emulators:
+//   npm run test:rules      (wraps: firebase emulators:exec --only firestore,storage "vitest run --config …")
 // Separate config so `npm test` stays instant and emulator-free.
 export default defineConfig({
   test: {

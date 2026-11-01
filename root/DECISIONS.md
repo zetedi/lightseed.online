@@ -5164,3 +5164,16 @@ default with deliberate Circle→Public flips; H2H translation fidelity ethics
 (preserve intensity, label inference; humans hallucinate too — sometimes heads
 of state); 12+132=144; initiated = validated; the Light Path as each community's
 future ruleset. See BRIDGE.md and git history for the deeper rings.
+
+### 2026-10-27 — A house's plans open to signed-in beings only
+
+`storage.rules` no longer opens the whole bucket to anonymous reads: the top-level
+`plans/{face}/…` shelf is readable by any signed-in being and refuses anonymous gets and
+listings. Every other path stays public, root-level files included. The carve-out keys on
+the first path segment, because a `**` wildcard binds a path that has no `.matches` (an
+earlier draft would have closed every picture; the emulator caught it). Staff alone write
+there, as anywhere. `tests/rules/storage.rules-test.ts` proves both sides, and `test:rules`
+now starts the Storage emulator. theohouse.org reads its plan with its own SSO session and
+shows the viewer a `blob:` address. Guaranteed: no anonymous fetch reaches a plan. Not
+guaranteed: any membership or keeper boundary (any account can read), and the independent
+API does not mirror this shelf yet.

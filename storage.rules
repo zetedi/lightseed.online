@@ -17,10 +17,19 @@ service firebase.storage {
         || firestore.get(/databases/(default)/documents/config/superadmin).data.uid == request.auth.uid);
     }
 
-    // Everyone may read every picture; staff may write anywhere.
+    // Staff may write anywhere.
     match /{allPaths=**} {
-      allow read: if true;
       allow write: if isStaff();
+    }
+
+    // Everyone may read every picture but the PLANS (ring 2026-10-27): plans/{face}/… holds a
+    // house's drawings-in-progress, open to any signed-in being, never to an anonymous fetch.
+    // Rules OR together, so the shelf is carved out of the public read by its first segment
+    // (a {top} wildcard binds a string; a ** one binds a path, which has no .matches) rather
+    // than denied in a match of its own. ** matches zero segments too, so a file at the
+    // bucket's root stays open. (No documents spent.)
+    match /{top}/{allPaths=**} {
+      allow read: if top != 'plans' || request.auth != null;
     }
 
     // The OLD name, kept: an auth uid is local to this auth provider and dies with it, but
