@@ -14,7 +14,11 @@ that ring. The toast now has a plain bus (components/ui/toastBus, tested): a wor
 empty room is held and spoken the moment the host mounts, let go after ten seconds (a
 custom-landing domain mounts no host; a stale word belongs to a page already left). The refusal
 also learns who it speaks to: signed out, "not public — sign in, it may open for you"
-(being_link_not_public); signed in, the circle word as before. Two mends from the same review
+(being_link_not_public); signed in, the circle word as before. Seen live, Zoltán asked for more
+presence: the toast now wears the node's own light — a larger halo in the theme's primary,
+breathing, red for errors, stilled under reduced motion (index.css .toast-glow) — and dwells as
+long as its words need (toastBus dwellMs: a base per kind plus a breath per character, capped;
+the refusal sentence stays about six seconds). Two mends from the same review
 (Zoltán: "add 1 and 2"): the COMMUNITY LINK — CommunityMembers mints /b/<community lid>, and the
 index answered "not for you" for communities though they are read by all — now opens the
 community as the /i/ door does; and a REFUSED DOOR no longer searches blind — once the index

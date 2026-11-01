@@ -1,6 +1,6 @@
 import { speak } from '../../utils/translations';
 import { useEffect, useRef, useState } from 'react';
-import { toastBus, type ToastKind, type ToastNote } from './toastBus';
+import { toastBus, dwellMs, type ToastKind, type ToastNote } from './toastBus';
 
 export type { ToastKind } from './toastBus';
 
@@ -23,8 +23,8 @@ export const ToastHost = () => {
     const hear = (note: ToastNote) => {
       setToast(note);
       window.clearTimeout(timer.current);
-      // Errors linger a touch longer — they usually ask the reader to do something.
-      timer.current = window.setTimeout(() => setToast(null), note.kind === 'error' ? 4200 : 2800);
+      // As long as the words need (toastBus dwellMs): errors linger, long sentences stay to be read.
+      timer.current = window.setTimeout(() => setToast(null), dwellMs(note.message, note.kind));
     };
     toastBus.attach(hear);
     return () => { toastBus.detach(hear); window.clearTimeout(timer.current); };
@@ -36,14 +36,14 @@ export const ToastHost = () => {
     // z-[99]: above modals (98) and the mobile menu (95) so a result is always seen, below
     // dialogs (100). Just below the header, centred.
     <div className="pointer-events-none fixed inset-x-0 top-24 z-[99] flex justify-center px-4">
-      {/* Quieter on the phone: smaller type, a hairline border and a softer glow; the desktop
-          keeps its fuller voice. */}
-      <div className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-lg sm:px-5 sm:py-2.5 sm:shadow-xl animate-in fade-in slide-in-from-top-4 ${
+      {/* Quieter on the phone: smaller type and a softer halo; the desktop keeps its fuller voice.
+          The glow is the node's own light (index.css .toast-glow), not a hand-painted emerald. */}
+      <div className={`flex items-center gap-2 rounded-full border px-4 py-2 sm:px-6 sm:py-3 animate-in fade-in slide-in-from-top-4 ${
         isError
-          ? 'border-red-200 sm:border-red-300 bg-red-50 text-red-700 shadow-[0_0_14px_rgba(239,68,68,0.4)] sm:shadow-[0_0_26px_rgba(239,68,68,0.55)] dark:border-red-900 dark:bg-red-950/40 dark:text-red-300'
-          : 'border-emerald-200 sm:border-emerald-300 bg-emerald-50 text-emerald-800 shadow-[0_0_14px_rgba(16,185,129,0.4)] sm:shadow-[0_0_26px_rgba(16,185,129,0.55)] dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
+          ? 'toast-glow-error border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300'
+          : 'toast-glow border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
       }`}>
-        <span className="text-xs font-semibold sm:text-sm">{toast.message}</span>
+        <span className="text-sm font-semibold sm:text-base">{toast.message}</span>
       </div>
     </div>
   );

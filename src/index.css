@@ -84,6 +84,32 @@ body,
 .btn-theme:hover { background-color: color-mix(in srgb, var(--color-primary) 84%, black); }
 .btn-theme:disabled:hover { background-color: var(--color-primary); }
 
+/* THE TOAST'S GLOW (ring 2026-11-01). A word said below the header wears the node's own light:
+   a halo in the theme's primary, larger than the emerald shadow it replaces, breathing slowly so
+   the eye finds it; an error glows red. Reduced motion stills the breath, the halo stays. */
+.toast-glow {
+  --toast-glow: color-mix(in srgb, var(--color-primary) 42%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, white);
+  box-shadow: 0 0 16px 4px color-mix(in srgb, var(--color-primary) 32%, transparent), 0 5px 16px rgba(2, 6, 23, 0.1);
+  animation: toast-breathe 2.6s ease-in-out infinite;
+}
+.toast-glow-error {
+  --toast-glow: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 16px 4px rgba(239, 68, 68, 0.32), 0 5px 16px rgba(2, 6, 23, 0.1);
+  animation: toast-breathe 2.6s ease-in-out infinite;
+}
+@media (min-width: 640px) {
+  .toast-glow { box-shadow: 0 0 28px 8px color-mix(in srgb, var(--color-primary) 40%, transparent), 0 8px 22px rgba(2, 6, 23, 0.11); }
+  .toast-glow-error { box-shadow: 0 0 28px 8px rgba(239, 68, 68, 0.36), 0 8px 22px rgba(2, 6, 23, 0.11); }
+}
+@keyframes toast-breathe {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50% { filter: drop-shadow(0 0 11px var(--toast-glow)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-glow, .toast-glow-error { animation: none; }
+}
+
 /* The ink, by day. */
 :root[data-palette="reach"][data-mode="light"] :is(.text-slate-950, .text-slate-900, .text-slate-800) { color: var(--color-text); }
 :root[data-palette="reach"][data-mode="light"] .text-slate-700 { color: var(--ink-90); }

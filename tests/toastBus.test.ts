@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createToastBus, TOAST_HOLD_MS } from '../src/components/ui/toastBus';
+import { createToastBus, TOAST_HOLD_MS, TOAST_DWELL, dwellMs } from '../src/components/ui/toastBus';
 
 // The toast bus's law: a word spoken to an empty room is held for the host, and spoken the
 // moment the host arrives — if it is still fresh. The /b/ door's "not public" was dropped for
@@ -74,5 +74,28 @@ describe('a word spoken while a host listens', () => {
     expect(bus.say({ message: 'still heard', kind: 'success' }, 2)).toBe('spoken');
     expect(current).toHaveBeenCalledTimes(1);
     expect(old).not.toHaveBeenCalled();
+  });
+});
+
+describe('how long a word stays', () => {
+  it('a short word keeps the base dwell of its kind; errors linger', () => {
+    expect(dwellMs('Saved.', 'success')).toBe(TOAST_DWELL.base.success);
+    expect(dwellMs('Could not save.', 'error')).toBe(TOAST_DWELL.base.error);
+    expect(TOAST_DWELL.base.error).toBeGreaterThan(TOAST_DWELL.base.success);
+  });
+
+  it("the door's refusal sentence earns a breath per character beyond the short line", () => {
+    const line = 'This link names a being that is not public. Sign in — it may open for you.';
+    const expected = TOAST_DWELL.base.success + ([...line].length - TOAST_DWELL.freeChars) * TOAST_DWELL.perChar;
+    expect(dwellMs(line, 'success')).toBe(expected);
+    expect(expected).toBeGreaterThanOrEqual(5500);
+  });
+
+  it('never beyond the cap', () => {
+    expect(dwellMs('x'.repeat(500), 'error')).toBe(TOAST_DWELL.max);
+  });
+
+  it('counts code points, not UTF-16 units', () => {
+    expect(dwellMs('🌱'.repeat(TOAST_DWELL.freeChars + 6), 'success')).toBe(TOAST_DWELL.base.success + 6 * TOAST_DWELL.perChar);
   });
 });

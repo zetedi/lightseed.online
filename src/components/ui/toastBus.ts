@@ -14,6 +14,14 @@ export type ToastListener = (note: ToastNote) => void;
 
 export const TOAST_HOLD_MS = 10_000;
 
+// HOW LONG A WORD STAYS (ring 2026-11-01): long enough to be read. A base per kind (errors
+// linger — they usually ask the reader to do something) plus a breath per character beyond a
+// short line, capped: "Saved." keeps its three-and-a-half seconds, the door's refusal sentence
+// earns about six. Code points, not UTF-16 units — a tongue's letters are counted as letters.
+export const TOAST_DWELL = { base: { success: 3600, error: 5000 }, freeChars: 24, perChar: 45, max: 9000 } as const;
+export const dwellMs = (message: string, kind: ToastKind): number =>
+  Math.min(TOAST_DWELL.max, TOAST_DWELL.base[kind] + Math.max(0, [...message].length - TOAST_DWELL.freeChars) * TOAST_DWELL.perChar);
+
 export const createToastBus = () => {
   let listener: ToastListener | null = null;
   let held: (ToastNote & { at: number }) | null = null;
