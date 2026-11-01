@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { listenToUserProfile } from '../services/firebase';
-import { setActiveIntelligenceId, setActiveIntelligenceDuties } from '../services/intelligence';
+import { listenToUserProfile } from '@backend';
+import { setActiveIntelligenceId, setActiveIntelligenceDuties } from '@backend/intelligence';
 import type { CommunityThemePreset } from '../utils/theme';
 import { desiresOf } from '../domain/desires';
 import type { Language } from '../domain/tongues';

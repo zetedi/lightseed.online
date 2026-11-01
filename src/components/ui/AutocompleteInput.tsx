@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Community } from '../../types';
-import { fetchCommunities } from '../../services/firebase';
+import { fetchCommunities } from '@backend';
 
 interface AutocompleteInputProps {
   label?: string;

@@ -9,7 +9,7 @@ import {
   getSigningKeyRecoveryPreview, witnessSigningKeyRecovery, activateSigningKeyRecovery,
   type PendingRecovery, type RecoveryPreview,
   signingAvailable, SigningKeyNeedsRestoreError, RestoreKeyMismatchError,
-} from '../../services/keys';
+} from '@backend/keys';
 import { parsePhrase, keyCustody, type KeyCustody } from '../../domain/signing';
 import { KEY_RECOVERY_QUORUM } from '../../domain/keyEpoch';
 import { speak } from '../../utils/translations';

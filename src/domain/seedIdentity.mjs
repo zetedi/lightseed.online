@@ -15,7 +15,7 @@ export function seedIdentityRealm(appOrigin, enrollment = 'closed') {
       directAccessGrantsEnabled: false, serviceAccountsEnabled: false,
       redirectUris: [appOrigin + '/auth/callback'], webOrigins: [appOrigin],
       attributes: { 'pkce.code.challenge.method': 'S256', 'post.logout.redirect.uris': appOrigin + '/' },
-      defaultClientScopes: ['lightseed:api'], optionalClientScopes: [],
+      defaultClientScopes: ['lightseed:api', 'lightseed:name'], optionalClientScopes: [],
     }],
     clientScopes: [{ name: 'lightseed:api', protocol: 'openid-connect',
       attributes: { 'include.in.token.scope': 'true', 'display.on.consent.screen': 'true' },
@@ -25,6 +25,19 @@ export function seedIdentityRealm(appOrigin, enrollment = 'closed') {
         } }, { name: 'lightseed-subject', protocol: 'openid-connect',
         protocolMapper: 'oidc-sub-mapper', config: { 'access.token.claim': 'true' },
       }],
+    }, {
+      // THE CLAIMED NAME (ring 2026-11-01): the person's own name and username ride in the ID
+      // token alone, so a first sign-in can write its first profile (the shell's
+      // ensurePersonEntity) — a courtesy, never identity: the API binds the subject, not the name.
+      name: 'lightseed:name', protocol: 'openid-connect',
+      attributes: { 'include.in.token.scope': 'false', 'display.on.consent.screen': 'false' },
+      protocolMappers: [{ name: 'lightseed-full-name', protocol: 'openid-connect',
+        protocolMapper: 'oidc-full-name-mapper', config: { 'id.token.claim': 'true', 'access.token.claim': 'false', 'userinfo.token.claim': 'true' },
+      }, { name: 'lightseed-username', protocol: 'openid-connect',
+        protocolMapper: 'oidc-usermodel-attribute-mapper', config: {
+          'user.attribute': 'username', 'claim.name': 'preferred_username', 'jsonType.label': 'String',
+          'id.token.claim': 'true', 'access.token.claim': 'false', 'userinfo.token.claim': 'true',
+        } }],
     }],
   };
 }

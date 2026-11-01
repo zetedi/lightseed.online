@@ -40,5 +40,13 @@ services:
         condition: service_healthy
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+    # The edge network alone is shared with the node's proxy (seed/docker-compose.yml, created
+    # there as lightseed_edge); the identity database stays on this project's own network.
+    networks: [default, edge]
+networks:
+  default: {}
+  edge:
+    name: lightseed_edge
+    external: true
 volumes:
   identity_data:

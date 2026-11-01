@@ -10,9 +10,9 @@ import { ImagePicker } from '../ui/ImagePicker';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { LocationPicker } from '../ui/LocationPicker';
 import { Lightseed } from '../../types';
-import { generateLifetreeBio, generateImage } from '../../services/gemini';
-import { checkAndIncrementAiUsage, uploadBase64Image } from '../../services/firebase';
-import { Timestamp } from 'firebase/firestore';
+import { generateLifetreeBio, generateImage } from '@backend/gemini';
+import { checkAndIncrementAiUsage, uploadBase64Image } from '@backend';
+import { stampOfMs } from '@backend/core';
 import { plantedProvenance, type PhotoProvenance } from '../../domain/exif';
 
 interface PlantTreeModalProps {
@@ -180,7 +180,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
             // witnessed — sealed only when the photo carried them, never guessed.
             ...(photoPlace ? (() => {
                 const { plantedAtMs, ...place } = plantedProvenance(photoPlace);
-                return { ...place, ...(plantedAtMs !== undefined ? { plantedAt: Timestamp.fromMillis(plantedAtMs) } : {}) };
+                return { ...place, ...(plantedAtMs !== undefined ? { plantedAt: stampOfMs(plantedAtMs) } : {}) };
             })() : {}),
             isNature: isNature,
             treeType: treeType,

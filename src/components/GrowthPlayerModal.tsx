@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { fetchGrowthPulses, getLifetreeById } from '../services/firebase';
+import { fetchGrowthPulses, getLifetreeById } from '@backend';
 import { Modal } from './ui/Modal';
 import { Icons } from './ui/Icons';
 import { speak } from '../utils/translations';

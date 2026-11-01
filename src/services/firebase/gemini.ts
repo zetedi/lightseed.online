@@ -1,14 +1,14 @@
 
 import { httpsCallable } from "firebase/functions";
-import { speak } from '../utils/translations';
-import { auth, functions } from "./firebase";
-import { Lifetree, Vision, VisionSynergy } from "../types";
-import type { WateringAnalysis } from "../domain/watering";
-import { buildTranslationPrompt, type TranslationRequest, type TranslationResponse } from "../domain/translation";
-import config from "../../lifeseed.config.json";
+import { speak } from '../../utils/translations';
+import { auth, functions } from './core';
+import { Lifetree, Vision, VisionSynergy } from "../../types";
+import type { WateringAnalysis } from "../../domain/watering";
+import { buildTranslationPrompt, type TranslationRequest, type TranslationResponse } from "../../domain/translation";
+import config from "../../../lifeseed.config.json";
 import { sendIntelligenceMessage, getIntelligence, getPersona, getActiveIntelligenceId, resolveIntelligenceMemoryText, DEFAULT_INTELLIGENCE_ID } from "./intelligence";
-import type { IntelligenceDuty } from "../domain/intelligenceDuty";
-import type { IntelligenceRef, Persona } from "../domain/intelligence";
+import type { IntelligenceDuty } from "../../domain/intelligenceDuty";
+import type { IntelligenceRef, Persona } from "../../domain/intelligence";
 
 // Default model as requested: gemini-3.5-flash
 const MODEL = config.model || 'gemini-3.5-flash';
@@ -468,7 +468,7 @@ ${visionsList}`;
 // Living Intelligence Network — Human-to-Human Translation (NVC-grounded).
 // The reading itself (five distinctions, fidelity commitments, depth-as-context) lives in
 // src/domain/translation.ts — a pure, tested module. This is only the engine call.
-export type { TranslationRequest, TranslationResponse } from '../domain/translation';
+export type { TranslationRequest, TranslationResponse } from '../../domain/translation';
 
 export const translatePulse = async (req: TranslationRequest, intelligenceId?: string): Promise<TranslationResponse> => {
     const prompt = buildTranslationPrompt(req);

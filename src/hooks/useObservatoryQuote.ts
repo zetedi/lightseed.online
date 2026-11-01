@@ -10,7 +10,7 @@ export function useObservatoryQuote(tab: string) {
   useEffect(() => {
     // The oracle's service arrives with the first ask, not with the shell (App mounts this hook).
     if (tab === 'collab' && !observatoryQuote) {
-      import('../services/gemini').then(({ generateOracleQuote }) => generateOracleQuote()).then(setObservatoryQuote).catch(() => {});
+      import('@backend/gemini').then(({ generateOracleQuote }) => generateOracleQuote()).then(setObservatoryQuote).catch(() => {});
     }
   }, [tab, observatoryQuote]);
 

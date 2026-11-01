@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Icons } from '../ui/Icons';
 import { Intelligence, Persona } from '../../types';
-import { getSelectableIntelligences, listPersonas, type CredentialScope } from '../../services/intelligence';
+import { getSelectableIntelligences, listPersonas, type CredentialScope } from '@backend/intelligence';
 import { SectionTitle } from '../ui/SectionTitle';
 import { IntelligencePanel } from '../intelligence/IntelligencePanel';
 import type { DutyAssignment, IntelligenceDuty } from '../../domain/intelligenceDuty';

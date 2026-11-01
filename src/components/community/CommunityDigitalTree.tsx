@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { visionOf } from '../../domain/papers';
 import { ChainTree } from '../sections/ChainTree';
-import { getPulsesByCommunity } from '../../services/firebase';
+import { getPulsesByCommunity } from '@backend';
 import type { Community, Pulse } from '../../types';
 
 // A COMMUNITY IS A BEING, so it has a digital tree too: its own chain of pulses (events,

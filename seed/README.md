@@ -518,7 +518,9 @@ The imported realm enables authorization-code flow with mandatory S256 PKCE for
 a redirect and the application origin as its web origin. Password grant, implicit
 flow and service accounts are disabled. API access tokens last five minutes.
 The default `lightseed:api` scope maps the subject and adds the `lightseed-api` audience to access tokens
-only. Refresh tokens rotate; browser session idle/max limits apply. This initial
+only. The default `lightseed:name` scope (2026-11-01) puts the person's name and username in the
+ID token alone — the application's first sign-in writes its first profile from it; the API never
+reads a name from a token. Refresh tokens rotate; browser session idle/max limits apply. This initial
 realm disables self-registration by default. The generator’s `--open-registration`
 option enables it; configure matching API enrollment and email delivery.
 
@@ -607,6 +609,46 @@ token at the API. That is a protocol integration test, not an automated full-bro
 journey. The existing React application and its Firebase sessions are unchanged;
 complete application feature wiring and browser journey verification
 remain to be completed.
+
+## Build the application itself for the independent node
+
+Since 2026-11-01 the ORIGINAL application (not only the preview above) builds for this soil:
+
+```sh
+SEED_WEB_ORIGIN=https://app.your-node.example \
+SEED_IDENTITY_ISSUER=https://identity.your-node.example/realms/lightseed \
+npm run build:independent
+```
+
+The output is `dist-independent/`. The build resolves the whole service layer (`@backend`) to
+`src/services/independent`, builds no SSO door, and fails if any Firebase module reaches the
+bundle. Serve it exactly as the preview: the HTML at the application origin, `/auth/callback`
+to `index.html`, `/v1/*` proxied to the API. What the node has not grown yet refuses by name
+when asked ("This node has not grown that yet"); `seed/PARITY.md` counts those hands.
+
+## Serve the node behind TLS (the edge)
+
+`seed/Caddyfile` and the `edge` profile put one TLS reverse proxy in front of the node: the
+built application at `SEED_APP_HOST` (every door — `/b/<lid>`, `/i/<id>`, `/auth/callback`,
+`/events` … — serves the shell), `/v1/*` to the API on the same origin, and the identity
+issuer at `SEED_IDENTITY_HOST`. The issuer's compose joins only the shared `lightseed_edge`
+network, never the application database's.
+
+```sh
+# seed/.env: SEED_APP_HOST, SEED_IDENTITY_HOST, SEED_TLS=acme, SEED_ACME_EMAIL, SEED_NODE_ORIGIN, SEED_FACE_DOORS (optional)
+SEED_WEB_ORIGIN=https://$SEED_APP_HOST SEED_IDENTITY_ISSUER=https://$SEED_IDENTITY_HOST/realms/lightseed npm run build:independent
+cd seed && docker compose --profile api --profile edge up -d --build --wait
+docker compose --env-file identity/.env -f identity/compose.yml up -d   # after the edge created the network
+```
+
+On a VPS the certificates come from ACME: `SEED_ACME_EMAIL` must be set, ports 80/443 open,
+and both hosts must resolve to the machine. For a local walk set `SEED_TLS=internal`,
+hosts under `.localhost` (`seed.localhost`, `identity.localhost` — Chrome resolves them to
+loopback) and ports such as `SEED_EDGE_HTTPS_PORT=8443`; Caddy is then its own certificate
+authority. Trust its root (`docker compose cp proxy:/data/caddy/pki/authorities/local/root.crt .`)
+or bypass the warning per host. Under Docker Desktop (macOS) give the database a NAMED volume
+in a local override instead of the `./data` bind mount, which breaks `initdb` on ownership. The
+API is reached by the browser only through the edge; its own port stays on loopback.
 
 ## Reproduce the Docker proof
 
@@ -1492,3 +1534,74 @@ changes and removals cannot leave a stale secondary registry. This does not impl
 immutable registry bindings, staff backfill/audit, federation, identity reconciliation
 or the original application's `/b/<lid>` navigation. PostgreSQL/HTTP tests cover privacy,
 account switching, malformed requests, duplicate identities and current-record lookup.
+
+### The document door (migrations 050–053)
+
+Every document hand of the application reaches the independent node through one door:
+`GET /v1/docs/<collection>` (`id`, `parent`, `f.<field>`, `has.<field>`, `in.<field>`,
+`order=newest`, `after`, `limit`) and `POST /v1/docs/command` (create, set, update, delete,
+love). The law of `firestore.rules` is translated collection by collection into SQL rule
+functions (`seed.rule_<collection>`), the row-level SELECT policies call the same `list`
+rule, and `seed.doc_write` locks the row and judges every write with the Firestore-shaped
+patch (server time, delete, array union/remove, increment, dotted keys, set-merge, `expect`
+for optimistic checks). Node-local records that never travel (push subscriptions, bed holds)
+live in the `seed` schema. `tests/seedDocs.test.ts` holds the registry to the SQL map;
+`tests/seed/documents.postgres-test.ts` proves the refusals through the API.
+
+### The organs (migration 054)
+
+The server hands `functions/src/index.ts` kept for the origin node, grown here as
+context/apply pairs the API drives (facts read under locks → the pure domain law from the
+shared runtime bundle → one apply in the same transaction):
+
+- `POST /v1/light/command` — `witness` (the circle confirms a watering; the carer's ray and the
+  witness's seventh are born with the confirmation), `appreciate` (a receiver's light to the
+  offering it received), `spend` (a passed purchase decision, its seal re-verified), `reset`
+  (the node's keeper alone).
+- `POST /v1/blocks/command` `{ "action": "unmint", "pulseId" }` — the head taken back under
+  `domain/unmint`, the block's touch on the tree lifted.
+- `POST /v1/staff/command` — `grant_admin` / `revoke_admin`, the superadmin's hand.
+- `POST /v1/account/command` — `delete_mine` (optionally `heirUid`: the last spend through the
+  prism) and `delete_as_staff`; content, light, profile and the login binding go in one transaction.
+- `POST /v1/domains/command` — `start_verification` / `check_verification` (the anchor's TXT proof,
+  observed by the node), `start_door` / `check_door` / `grant_door` / `withdraw_door` / `list_doors`.
+  `SEED_FACE_DOORS` (comma-separated hostnames) names this node's face doors: a keeper's claim on
+  one waits for the steward's grant (staff hand `door_grant`) instead of a DNS proof.
+
+The node's keeper is appointed by the installation, never by a public first-visitor claim:
+
+```bash
+npm run seed:keeper -- <uid>            # against the Compose database
+npm run seed:keeper -- <uid> --replace  # a standing keeper is replaced only on purpose
+```
+
+`tests/seed/organs.postgres-test.ts` walks every refusal through the API.
+
+### The crossing (migration 055, `seed:export` / `seed:import`)
+
+A node leaves by its travel plan (`src/domain/bundle.ts` TRAVEL_PLAN) and arrives at another
+by additive merge (`src/domain/bundleMerge.ts`). Both run as the migration owner through the
+`PG*` environment (the same hand that runs `seed:migrate --local`), never as the API's role.
+
+```bash
+# On the source node: the custodian's Ed25519 key (PKCS#8 PEM) stays outside the node.
+npm run seed:export -- --charter node.json --key custodian.pem [--without-authority] bundle.json
+# → bundle.json (owner-only) and bundle.json.anchor.json (the PUBLIC anchor: hand it over by another road)
+
+# On the receiving node: plan first, then apply.
+npm run seed:import -- bundle.json --anchor bundle.json.anchor.json --identities identities.json --report plan.json
+npm run seed:import -- bundle.json --anchor bundle.json.anchor.json --identities identities.json --apply
+```
+
+What the law guarantees: the bundle carries exactly the travelling collections (census and
+per-record hashes, the beings index as a witness computed from the body), sealed by the
+custodian over the manifest; the importer verifies structure and seal, plans inside one
+serializable transaction under the crossing's advisory lock, lands every planned record in
+that transaction or nothing, and records the crossing in `seed.crossings`. Identical records
+are idempotent; a differing record, a LID collision or an unbound identity blocks the whole
+proposal; `admins` and `config` never merge (export `--without-authority`, or decide locally).
+An identity is anchored on the far side by a person record carrying the same LID, or by a
+login the installation bound to that uid by reviewed configuration (an explicit binding in the
+auth trust file) — then the person arrives with the import. Not carried: media files, queues,
+quotas, credentials, challenges (the travel plan's exclusions, said out loud in the plan).
+`tests/seed/crossing.postgres-test.ts` exports from one database and lands it in another.

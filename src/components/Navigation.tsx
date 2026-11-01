@@ -11,7 +11,7 @@ import { crownName, type CrownRole } from '../domain/dataAuthority';
 
 
 import { Picture } from './ui/Picture';
-import { saveDesires } from '../services/firebase';
+import { saveDesires } from '@backend';
 import type { Language } from '../domain/tongues';
 import { brandLinesOf } from '../domain/brandName';
 interface NavigationProps {

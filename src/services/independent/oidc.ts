@@ -1,4 +1,4 @@
-import { InMemoryWebStorage, UserManager, WebStorageStateStore } from 'oidc-client-ts';
+import { UserManager, WebStorageStateStore } from 'oidc-client-ts';
 import type { SeedBrowserConfig } from '../../domain/seedBrowser';
 import type { IdentityClient } from './session';
 
@@ -9,8 +9,11 @@ export function createSeedIdentity(config: SeedBrowserConfig): IdentityClient {
     redirect_uri: config.appOrigin + '/auth/callback', post_logout_redirect_uri: config.appOrigin + '/',
     response_type: 'code', scope: 'openid lightseed:api', loadUserInfo: false, disablePKCE: false,
     automaticSilentRenew: true, revokeTokensOnSignout: true,
-    // Access/refresh tokens stay in this tab's memory; only pending PKCE/state crosses a redirect.
-    userStore: new WebStorageStateStore({ store: new InMemoryWebStorage() }),
+    // THE SESSION SURVIVES A RELOAD (ring 2026-11-02): the tokens rest in THIS TAB's own session
+    // storage — never shared with another tab, gone when the tab closes, the browser OIDC client's
+    // standard seat — so a reload re-reads the hand it had instead of forgetting it. An expired
+    // access token is renewed silently from the refresh token; a dead refresh token signs out.
+    userStore: new WebStorageStateStore({ store: window.sessionStorage, prefix: 'seed.oidc.user.' }),
     stateStore: new WebStorageStateStore({ store: window.sessionStorage, prefix: 'seed.oidc.' }),
     monitorSession: false, staleStateAgeInSeconds: 600,
   });

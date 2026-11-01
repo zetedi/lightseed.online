@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Lifetree } from '../types';
-import { mintPulse } from '../services/firebase';
+import { mintPulse } from '@backend';
 
 // CARRYING A BEING'S VOICE (ring 2026-09-16, lifted out of App.tsx unchanged; the bridge
 // itself is BRIDGE.md "Carrying"). Superadmin "carry this being's voice" (Aspen/Lumo …) —

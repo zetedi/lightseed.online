@@ -14,7 +14,7 @@ import type { useDashboardStats } from '../../hooks/useDashboardStats';
 import type { ViewMode } from '../../hooks/useAppRouting';
 import { useSession } from '../../contexts/SessionContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { validateLifetree, unvalidateLifetree, claimSuperAdmin, grantAdmin, revokeAdmin } from '../../services/firebase';
+import { validateLifetree, unvalidateLifetree, claimSuperAdmin, grantAdmin, revokeAdmin } from '@backend';
 import { placeOfRecordDomain } from '../../domain/pulseVisibility';
 import { tabTone, tabFg, CTA_GLOW } from '../../utils/tabTheme';
 import { Icons } from '../ui/Icons';

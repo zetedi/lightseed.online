@@ -9,7 +9,7 @@ import { sanitizeRichText } from '../../utils/sanitize';
 import RichTextEditor from '../ui/RichTextEditor';
 import { ownMergeUid } from '../../domain/pulseVisibility';
 import { challengeHostLabel, challengeZone, isDomainVerified } from '../../domain/domainVerification';
-import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, exportCommunity, startDoorClaim, checkDoorClaim, grantDoor, withdrawDoor, listDoorClaims, type DomainChallengeRecord, type DoorClaim } from '../../services/firebase';
+import { getTreesByDomain, getPulsesByTreeId, updateCommunity, startDomainVerification, checkDomainVerification, exportCommunity, startDoorClaim, checkDoorClaim, grantDoor, withdrawDoor, listDoorClaims, type DomainChallengeRecord, type DoorClaim } from '@backend';
 import { doorRows, normalizeDoor } from '../../domain/doors';
 import { isCanonicallySealed, verifyBlockSeal, type ChainBlock } from '../../domain/chain';
 import { normalizePlaceOfRecord } from '../../domain/communityDoor';

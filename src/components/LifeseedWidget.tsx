@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { getTreesByDomain } from '../services/firebase';
+import { getTreesByDomain } from '@backend';
 import { type Lifetree } from '../types';
 import Logo from './Logo';
 import { speak } from '../utils/translations';

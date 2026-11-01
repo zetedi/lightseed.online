@@ -33,6 +33,11 @@ jobs:
         env:
           SEED_WEB_ORIGIN: https://app.example.test
           SEED_IDENTITY_ISSUER: https://identity.example.test/realms/lightseed
+      - name: Independent application build (the original app, Firebase imports forbidden)
+        run: npm run build:independent
+        env:
+          SEED_WEB_ORIGIN: https://app.example.test
+          SEED_IDENTITY_ISSUER: https://identity.example.test/realms/lightseed
       - name: Firestore rules tests (emulator)
         run: npx firebase-tools emulators:exec --only firestore "npx vitest run --config vitest.rules.config.ts" --project demo-lifeseed
 

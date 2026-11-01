@@ -3,7 +3,7 @@ import { Lifetree } from '../types';
 import { Icons } from './ui/Icons';
 import { showAlert } from './ui/Dialog';
 import { graphStore } from '../services/store';
-import { getParticipatingTrees } from '../services/firebase';
+import { getParticipatingTrees } from '@backend';
 import { useLanguage } from '../contexts/LanguageContext';
 
 import { Picture } from './ui/Picture';

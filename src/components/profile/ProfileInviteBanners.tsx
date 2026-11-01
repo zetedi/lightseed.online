@@ -4,7 +4,7 @@ import { type TreeKeepingInvite, roleLabelKey } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSession } from '../../contexts/SessionContext';
 import { speak, spokenLine } from '../../utils/translations';
-import { getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getMyCommunityTreeInvites, respondCommunityTreeInvite, type CommunityTreeInvite, fetchKeeperInvitesFor, acceptKeeperInvite, declineKeeperInvite, getPersonName, type KeeperInvite } from '../../services/firebase';
+import { getPendingTreeInvites, acceptTreeInvite, declineTreeInvite, getMyCommunityTreeInvites, respondCommunityTreeInvite, type CommunityTreeInvite, fetchKeeperInvitesFor, acceptKeeperInvite, declineKeeperInvite, getPersonName, type KeeperInvite } from '@backend';
 
 interface ProfileInviteBannersProps {
   uid: string;

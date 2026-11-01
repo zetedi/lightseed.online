@@ -11,7 +11,7 @@ import { holdBlocks, type Hold } from '../../domain/hold';
 import {
   requestStay, getBedStaysForHost, getMyBedStays, readBedOccupancy, setStayStatus, withdrawStay,
   placeHold, releaseHold, getBedHolds, getLifetreeById,
-} from '../../services/firebase';
+} from '@backend';
 import type { Lifetree } from '../../types';
 import { speak } from '../../utils/translations';
 

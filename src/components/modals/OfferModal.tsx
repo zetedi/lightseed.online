@@ -5,7 +5,7 @@ import { showAlert } from '../ui/Dialog';
 import { ImageStrip } from '../ui/ImageStrip';
 import { picturesOf, picturesToStore } from '../../domain/pictures';
 import { useSession } from '../../contexts/SessionContext';
-import { createOffering, updateOffering, uploadImage, getMyBeds } from '../../services/firebase';
+import { createOffering, updateOffering, uploadImage, getMyBeds } from '@backend';
 import { offeringProblem, type OfferingKind, type OfferedTo } from '../../domain/offering';
 import { normalizeWebLink, webLinkProblem } from '../../domain/webLink';
 import { formatLight, RAY_UNITS } from '../../domain/light';

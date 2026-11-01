@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Community, Pulse } from '../../types';
-import { createCommunityEvent, getCommunityEvents, fetchEventPulses } from '../../services/firebase';
+import { createCommunityEvent, getCommunityEvents, fetchEventPulses } from '@backend';
 import { domainWideLevels, mergeAuthored } from '../../domain/pulseVisibility';
 import { tabTone } from '../../utils/tabTheme';
 import type { PulseVisibility } from '../../domain/pulse';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Community, DataAuthority } from '../types';
-import { ensureGenesis, syncInitiatesMirror, getCommunityByDomain, getDataAuthority } from '../services/firebase';
+import { ensureGenesis, syncInitiatesMirror, getCommunityByDomain, getDataAuthority } from '@backend';
 import { isSeedShellHost } from './useConfig';
 import { dataDomainFor } from '../domain/communityDoor';
 import { setChainLocked } from '../domain/chain';

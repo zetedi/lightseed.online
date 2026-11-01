@@ -1,6 +1,6 @@
 import type { Store } from '../domain/store';
 import type { Link, LinkRel } from '../domain/link';
-import { db } from '../services/firebase/core';
+import { db } from '@backend/core';
 import { collection, doc, getDocs, query, where, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { uuidv7 } from '../utils/id';
 import { SECRET_LINKS } from '../domain/secretTree';

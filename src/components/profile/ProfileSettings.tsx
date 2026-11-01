@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, setAnonymous, deleteUserAccount, logout, fetchAllLifetrees, exportPerson } from '../../services/firebase';
-import { fetchMyRays } from '../../services/firebase/light';
+import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, setAnonymous, deleteUserAccount, logout, fetchAllLifetrees, exportPerson } from '@backend';
+import { fetchMyRays } from '@backend/light';
 import type { Lifetree } from '../../types';
 import { isLightPathOn, setLightPathOn } from '../PathwayCTA';
 import { SectionTitle } from '../ui/SectionTitle';
@@ -10,7 +10,7 @@ import { Modal } from '../ui/Modal';
 import { SigningKeyModal } from '../modals/SigningKeyModal';
 import { speak } from '../../utils/translations';
 import { useSession } from '../../contexts/SessionContext';
-import { pushState, enablePush, disablePush, type PushState } from '../../services/push';
+import { pushState, enablePush, disablePush, type PushState } from '@backend/push';
 
 import { Picture } from '../ui/Picture';
 // Module-scope (not created during render) so React keeps the DOM node between renders.

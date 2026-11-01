@@ -3,7 +3,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Community } from '../../types';
 import RichTextEditor from '../ui/RichTextEditor';
 import { uuidv7 } from '../../utils/id';
-import { uploadImage } from '../../services/firebase';
+import { uploadImage } from '@backend';
 import { useCallback } from 'react';
 import { normalizeTheme } from '../../utils/theme';
 import { nodeDefaultTheme } from '../../hooks/useConfig';

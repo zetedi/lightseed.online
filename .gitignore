@@ -162,3 +162,5 @@ seed/web-dist/
 
 # Compiled shared laws for the independent runtime
 seed/generated/
+dist-independent/
+seed/local/

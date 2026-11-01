@@ -1,8 +1,6 @@
 
-// Fix: Use proper type imports to resolve "no exported member" errors in some TS environments.
-import type { User as FirebaseUser } from 'firebase/auth';
-import type { Timestamp } from 'firebase/firestore';
 import type { Being } from './domain/being';
+import type { Stamp } from './domain/time';
 
 export * from './domain/being';
 export * from './domain/person';
@@ -20,7 +18,10 @@ export * from './domain/intelligence';
 export * from './domain/lightHouse';
 export * from './domain/treeCircle';
 
-export type Lightseed = Pick<FirebaseUser, 'uid' | 'email' | 'displayName' | 'photoURL'>;
+// THE SIGNED-IN HAND as the shell knows it (ring 2026-11-01): four fields, named by no vendor.
+// Firebase's User satisfies this; the independent session supplies the same four from its OIDC
+// identity and local profile. Nothing else of a provider's user object reaches the app.
+export interface Lightseed { uid: string; email: string | null; displayName: string | null; photoURL: string | null }
 
 export type VisionStatus = "seed" | "growing" | "flowering" | "dormant";
 
@@ -36,7 +37,7 @@ export interface Vision extends Being {
   imageUrl?: string;
   // Many pictures, in the author's order (domain/pictures): imageUrl stays the first.
   imageUrls?: string[];
-  createdAt: Timestamp;
+  createdAt: Stamp;
   // Joins live in the `links` collection ('joined' rel) — the legacy joinedUserIds array
   // is gone from both the type and the data (dropLegacyArrays cleared the docs).
   // Grounding — where this vision is rooted. lifetreeId (above) is the tree; these link it to a
@@ -64,7 +65,7 @@ export interface Vision extends Being {
 export interface AlignmentNote {
   by: string;   // author uid (must be one of the two participants)
   text: string;
-  at: Timestamp;
+  at: Stamp;
 }
 
 // Off-Chain Alignment Handshake (Former MatchProposal) — a Being like every other.
@@ -83,7 +84,7 @@ export interface Alignment extends Being {
   // responds, and it stays open (recursive) until the target finalises with Accept. Lives while
   // PENDING; ACCEPTED means finalised (a sync-block is on both chains).
   messages?: AlignmentNote[];
-  createdAt: Timestamp;
+  createdAt: Stamp;
 }
 
 export interface Comment {
@@ -91,7 +92,7 @@ export interface Comment {
   body: string;
   authorId: string;
   authorName: string;
-  createdAt: Timestamp;
+  createdAt: Stamp;
 }
 
 export interface VisionSynergy {

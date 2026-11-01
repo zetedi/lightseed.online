@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { uploadImage } from '../services/firebase';
+import { uploadImage } from '@backend';
 
 // The shared image-upload flag + handler used by every modal (Event / PlantTree / EmitPulse /
 // CreateVision) and by handleQuickSnap. Extracted verbatim from App — behaviour-preserving:

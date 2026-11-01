@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Lifetree, Lightseed, Pulse } from '../types';
-import { listenToMyReaches } from '../services/firebase';
+import { listenToMyReaches } from '@backend';
 
 // The live unread-reach count powering the nav's red envelope indicator. Two Firestore listeners —
 // reaches addressed to me (recipientUid) AND reaches aimed at any of my trees (reachTreeId, a safety

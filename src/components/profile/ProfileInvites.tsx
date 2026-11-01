@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { QueryDocumentSnapshot } from 'firebase/firestore';
+import type { InvitePageCursor } from '@backend';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { createNetworkInvite, getSentInvites, getInviteRequests, approveInviteRequest, declineInviteRequest, triggerSystemEmail } from '../../services/firebase';
+import { createNetworkInvite, getSentInvites, getInviteRequests, approveInviteRequest, declineInviteRequest, triggerSystemEmail } from '@backend';
 import { SectionTitle } from '../ui/SectionTitle';
 import { ProfileInviteBanners } from './ProfileInviteBanners';
 import { Modal } from '../ui/Modal';
@@ -44,10 +44,10 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
   const [sendingInvite, setSendingInvite] = useState(false);
 
   const [sentInvites, setSentInvites] = useState<SentInvite[]>([]);
-  const [sentCursor, setSentCursor] = useState<QueryDocumentSnapshot | null>(null);
+  const [sentCursor, setSentCursor] = useState<InvitePageCursor | null>(null);
   const [sentHasMore, setSentHasMore] = useState(false);
   const [inviteRequests, setInviteRequests] = useState<InviteRequest[]>([]);
-  const [reqCursor, setReqCursor] = useState<QueryDocumentSnapshot | null>(null);
+  const [reqCursor, setReqCursor] = useState<InvitePageCursor | null>(null);
   const [reqHasMore, setReqHasMore] = useState(false);
   const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
   const [showDeclinedRequests, setShowDeclinedRequests] = useState(false);

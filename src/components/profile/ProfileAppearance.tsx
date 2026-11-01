@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { updateUserSiteTheme, uploadImage, releasePicture } from '../../services/firebase';
+import { updateUserSiteTheme, uploadImage, releasePicture } from '@backend';
 import { normalizeTheme, type CommunityThemePreset } from '../../utils/theme';
 import { AppearanceEditor } from '../ui/AppearanceEditor';
 import { notify as toast } from '../ui/Toast';

@@ -9,8 +9,8 @@ import { ImageStrip } from '../ui/ImageStrip';
 import { picturesToStore } from '../../domain/pictures';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { Lightseed, Lifetree } from '../../types';
-import { generateVisionImage } from '../../services/gemini';
-import { checkAndIncrementAiUsage } from '../../services/firebase';
+import { generateVisionImage } from '@backend/gemini';
+import { checkAndIncrementAiUsage } from '@backend';
 import { speak } from '../../utils/translations';
 
 interface CreateVisionModalProps {

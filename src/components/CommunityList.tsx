@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from './ui/Icons';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, Lifetree } from '../types';
-import { fetchCommunities, createCommunity, getCommunityByDomain, getMyVisions } from '../services/firebase';
+import { fetchCommunities, createCommunity, getCommunityByDomain, getMyVisions } from '@backend';
 import { matchCommunities, type CommunityMatch } from '../domain/match';
 import { communitiesOnView } from '../domain/communityDoor';
 import { isTreeCircle } from '../domain/treeCircle';

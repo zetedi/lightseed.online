@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
-import { getAdmins, deleteUserAsAdmin, listUsersAsAdmin, triggerSystemEmail, getNodeLimits, setNodeLimits, setNodeAiValidatedOnly, exportNode } from '../../services/firebase';
-import { resetLight } from '../../services/firebase/light';
-import { backfillLidIndex } from '../../services/firebase/beings';
-import type { AdminUserRow } from '../../services/firebase';
+import { getAdmins, deleteUserAsAdmin, listUsersAsAdmin, triggerSystemEmail, getNodeLimits, setNodeLimits, setNodeAiValidatedOnly, exportNode } from '@backend';
+import { resetLight } from '@backend/light';
+import { backfillLidIndex } from '@backend/beings';
+import type { AdminUserRow } from '@backend';
 import { DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { STAFF_HANDS, staffHandOn, type StaffHandSwitches } from '../../domain/staffHands';
-import { listenStaffHands, setStaffHand } from '../../services/firebase/staffHands';
+import { listenStaffHands, setStaffHand } from '@backend/staffHands';
 import { SectionTitle } from '../ui/SectionTitle';
 import { speak, spokenLine, say } from '../../utils/translations';
 

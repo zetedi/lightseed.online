@@ -5,7 +5,7 @@ import type { ModalDoors } from '../../hooks/useModalDoors';
 import type { useSiteTheme } from '../../hooks/useSiteTheme';
 import { useSession } from '../../contexts/SessionContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { validateLifetree, unvalidateLifetree, duplicateEvent } from '../../services/firebase';
+import { validateLifetree, unvalidateLifetree, duplicateEvent } from '@backend';
 import { canEditEvent } from '../../domain/pulseVisibility';
 import { isBedTree } from '../../domain/bed';
 import { notify } from '../ui/Toast';

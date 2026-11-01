@@ -244,9 +244,12 @@ export const getNetworkInvite = async (inviteId: string): Promise<any | null> =>
 const INVITE_PAGE = 12;
 // An invitation or a request as the admin lists read it: the three fields every row has, the rest as stored.
 export type InviteRow = { id: string; email: string; status: string } & DocumentData;
-type Paged = { items: InviteRow[]; lastDoc: QueryDocumentSnapshot | null; hasMore: boolean };
+// The page's bookmark is this backend's own (a snapshot here, a string on the independent node);
+// the shell carries it back unopened.
+export type InvitePageCursor = QueryDocumentSnapshot;
+type Paged = { items: InviteRow[]; lastDoc: InvitePageCursor | null; hasMore: boolean };
 
-export const getSentInvites = async (userId: string, lastDoc?: QueryDocumentSnapshot): Promise<Paged> => {
+export const getSentInvites = async (userId: string, lastDoc?: InvitePageCursor): Promise<Paged> => {
     let q = query(networkInvitesCollection, where('invitedByUserId', '==', userId), orderBy('createdAt', 'desc'), limit(INVITE_PAGE));
     if (lastDoc) q = query(q, startAfter(lastDoc));
     const snap = await getDocs(q);
@@ -271,7 +274,7 @@ export const createInviteRequest = async (email: string, reason: string) => {
 };
 
 // Requests (pending + approved + declined), newest first, paginated — the admin filters the view.
-export const getInviteRequests = async (lastDoc?: QueryDocumentSnapshot): Promise<Paged> => {
+export const getInviteRequests = async (lastDoc?: InvitePageCursor): Promise<Paged> => {
     let q = query(inviteRequestsCollection, orderBy('createdAt', 'desc'), limit(INVITE_PAGE));
     if (lastDoc) q = query(q, startAfter(lastDoc));
     const snap = await getDocs(q);
@@ -319,6 +322,14 @@ export const saveDesires = (userId: string, desires: Desires) =>
 
 export const updateUserProfile = (userId: string, data: Record<string, unknown>) =>
     setDoc(doc(db, 'users', userId), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+
+// The closest tree, chosen (ring 2026-11-01: lifted from useLifeseed, which wrote the person
+// itself): the private profile keeps it, and the world-readable person mirrors it so an
+// anonymous being is named by the right tree (domain/publicName).
+export const setDefaultTreeOnProfile = async (userId: string, treeId: string): Promise<void> => {
+    await updateUserProfile(userId, { defaultTreeId: treeId });
+    await setDoc(doc(db, 'persons', userId), { defaultTreeId: treeId }, { merge: true }).catch(() => {});
+};
 
 // A being renames itself (ring 2026-09-07): the auth profile (what the session reads at sign-in)
 // and the users document (what the server and the letters read) move together. The caller has

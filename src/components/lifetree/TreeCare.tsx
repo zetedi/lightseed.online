@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Timestamp } from 'firebase/firestore';
+import { stampOfMs } from '@backend/core';
 import { Icons } from '../ui/Icons';
-import { setWateringSchedule, recordWatering, markWateredOffChain, sendWateringAlert, requestStewardship, fileToWebpBase64 } from '../../services/firebase';
-import { analyzeWateringPhoto } from '../../services/gemini';
+import { setWateringSchedule, recordWatering, markWateredOffChain, sendWateringAlert, requestStewardship, fileToWebpBase64 } from '@backend';
+import { analyzeWateringPhoto } from '@backend/gemini';
 import { Pulse, type Lifetree } from '../../types';
 import { isOnWateringSchedule, isWateringOverdue, daysUntilWatering, daysOverdue, lastWateredMillis, wateringAlertedToday, treeStage, computeNextDueMillis, type TreeStage } from '../../domain/watering';
 import { SectionCard } from '../ui/SectionCard';
@@ -132,10 +132,10 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             onUpdate?.({ watering: {
                 ...(tree.watering || {}),
                 overdue: false,
-                lastWateredAt: Timestamp.fromMillis(now),
+                lastWateredAt: stampOfMs(now),
                 lastWateredBy: currentUserId,
                 lastWateredByName: currentUserName || '',
-                ...(iv ? { nextDueAt: Timestamp.fromMillis(computeNextDueMillis(now, iv)) } : {}),
+                ...(iv ? { nextDueAt: stampOfMs(computeNextDueMillis(now, iv)) } : {}),
             } });
             setWaterMsg(t('watered_offchain'));
         } catch (e) { setWaterMsg(errMsg(e, 'err_watered_mark')); }
@@ -159,10 +159,10 @@ export const TreeCare: React.FC<TreeCareProps> = ({
             onUpdate?.({ watering: {
                 ...(tree.watering || {}),
                 overdue: false,
-                lastWateredAt: Timestamp.fromMillis(now),
+                lastWateredAt: stampOfMs(now),
                 lastWateredBy: currentUserId,
                 lastWateredByName: currentUserName || '',
-                ...(iv ? { nextDueAt: Timestamp.fromMillis(computeNextDueMillis(now, iv)) } : {}),
+                ...(iv ? { nextDueAt: stampOfMs(computeNextDueMillis(now, iv)) } : {}),
             } });
             onChainRefresh();
             setWaterMsg(t(confirmedBy === 'ai' ? 'water_done_ai' : 'water_done_awaiting')

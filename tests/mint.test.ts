@@ -182,3 +182,35 @@ describe('the lid: server-minted rays are UUIDv7 beings (the LIN invariant)', ()
     expect(() => uuidv7(at, new Uint8Array(4))).toThrow();
   });
 });
+
+// THE DOMAIN SPEAKS THE JUDGMENT ITSELF (ring 2026-11-02): the independent node's API asks
+// src/domain/light for the mint's judgment, the departing ray and the day key — the same law the
+// functions mirror. Both are held here to one answer on every branch the walk above takes.
+import {
+  judgeWitness as domainJudgeWitness, releaseRay as domainReleaseRay, kindleDayKeyFromMs as domainDayKey,
+  NODE_GLOW_HOME as DOMAIN_GLOW_HOME,
+} from '../src/domain/light';
+describe('the mirror: the domain and the functions judge every witnessing alike', () => {
+  const variants: Array<(f: WitnessFacts) => void> = [
+    () => {}, f => { f.pulse.exists = false; }, f => { f.pulse.care = 'note'; }, f => { f.pulse.carerUid = ''; }, f => { f.pulse.treeId = ''; },
+    f => { f.pulse.createdAtMs = null; }, f => { f.witnessUid = 'alice'; }, f => { f.witnessSinceMs = null; },
+    f => { f.witnessSinceMs = f.pulse.createdAtMs! + 1; }, f => { f.witnessSinceMs = f.pulse.createdAtMs!; },
+    f => { f.tree.exists = false; }, f => { f.tree.treeType = 'BED'; }, f => { f.tree.treeType = 'SECRET'; }, f => { f.tree.diedAtMs = 1; },
+    f => { f.pulse.wateringConfirmedBy = 'guardian'; }, f => { f.carerRayExists = true; }, f => { f.witnessRayExists = true; },
+  ];
+  it('every branch of the judgment is one law', () => {
+    for (const mutate of variants) {
+      const a = sound(); mutate(a);
+      const b = sound(); mutate(b);
+      expect(domainJudgeWitness(a)).toEqual(judgeWitness(b));
+    }
+  });
+  it('the departing ray, the day key and the home of last resort are one law', () => {
+    for (const ray of [{ units: 108, communityId: 'c1' }, { units: 15, communityId: null }, { units: 0, communityId: null }, { units: 2.5, communityId: 'c1' }]) {
+      expect(domainReleaseRay(ray, true)).toEqual(releaseRay(ray, true));
+      expect(domainReleaseRay(ray, false)).toEqual(releaseRay(ray, false));
+    }
+    expect(domainDayKey(Date.UTC(2026, 6, 21, 23, 59))).toBe(kindleDayKeyFromMs(Date.UTC(2026, 6, 21, 23, 59)));
+    expect(DOMAIN_GLOW_HOME).toBe(NODE_GLOW_HOME);
+  });
+});

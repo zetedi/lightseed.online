@@ -5,7 +5,7 @@ import type { Community } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { headerSurface } from '../../domain/themeSurface';
 import { LegalModal, type LegalDoc } from './LegalModal';
-import { subscribeToNewsletter, setNewsletterSubscription, listenToUserProfile } from '../../services/firebase';
+import { subscribeToNewsletter, setNewsletterSubscription, listenToUserProfile } from '@backend';
 import { useSession } from '../../contexts/SessionContext';
 import { charter } from '../../config/charter';
 import { isSubscriberEmail, subscribedToPlace, subscribeSeatOf, canReleaseFromFooter } from '../../domain/newsletter';

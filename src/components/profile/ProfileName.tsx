@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSession } from '../../contexts/SessionContext';
-import { renamePerson } from '../../services/firebase';
+import { renamePerson } from '@backend';
 import { PERSON_NAME_MAX, normalizePersonName, personNameProblem } from '../../domain/personName';
 import { EditableName } from '../ui/EditableName';
 

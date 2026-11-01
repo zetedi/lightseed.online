@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Alignment, Community, Lifetree, Pulse, Vision } from '../types';
 import type { LightHouse } from '../domain/lightHouse';
-import { getAlignmentById, getLifetreeById, getPulseById, getCommunityById, getLightHouseById } from '../services/firebase';
+import { getAlignmentById, getLifetreeById, getPulseById, getCommunityById, getLightHouseById } from '@backend';
 import { onRefresh, type RefreshEvent } from '../services/refreshBus';
 import { followEdit } from '../domain/refreshFollow';
 

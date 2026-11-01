@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Pulse } from '../../types';
-import { createEvent, getMyEvents } from '../../services/firebase';
+import { createEvent, getMyEvents } from '@backend';
 import { beingStoragePath } from '../../domain/beingIndex';
 import { useSession } from '../../contexts/SessionContext';
 import { EventsSection, type EventDraft } from '../sections/EventsSection';

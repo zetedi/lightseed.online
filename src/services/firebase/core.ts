@@ -6,11 +6,12 @@ import { charter, nodeAuthHosts } from '../../config/charter';
 import { initializeApp } from 'firebase/app';
 import type { DocumentData } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, onAuthStateChanged, GoogleAuthProvider, type User as FirebaseUser } from 'firebase/auth';
-import { initializeFirestore, connectFirestoreEmulator, collection, doc } from 'firebase/firestore';
+import { initializeFirestore, connectFirestoreEmulator, collection, doc, Timestamp } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
-import { type Pulse } from '../../types';
+import { type Pulse, type Lightseed } from '../../types';
 import { normalizePulseType } from '../../domain/pulse';
+import type { Stamp } from '../../domain/time';
 
 // Robustly read a millisecond timestamp from a Firestore Timestamp, a JS Date, or nothing.
 export const toMillis = (value: unknown): number => {
@@ -18,6 +19,12 @@ export const toMillis = (value: unknown): number => {
     const stamp = value as { toMillis?: () => number } | null | undefined;
     return typeof stamp?.toMillis === 'function' ? stamp.toMillis() : 0;
 };
+
+// STORED MOMENTS the shell makes itself (ring 2026-11-01): this backend's own Stamp, so no
+// component names Firestore's Timestamp. Here the real Timestamp — Firestore keeps it as a
+// moment, not a map; the independent backend answers the same two names with a plain Stamp.
+export const stampOfMs = (ms: number): Stamp => Timestamp.fromMillis(ms);
+export const stampNow = (): Stamp => Timestamp.now();
 
 // One doc → one being: the id beside the fields. Firestore's DocumentData is untyped at
 // the boundary; the caller names the shape it expects (mapDoc<Lifetree>(snap)).
@@ -100,4 +107,22 @@ export const networkInvitesCollection = collection(db, 'networkInvites');
 export const communityInvitesCollection = collection(db, 'communityInvites');
 export const newsletterConfigRef = doc(db, 'config', 'newsletter');
 
-export const onAuthChange = (callback: (user: FirebaseUser | null) => void) => onAuthStateChanged(auth, callback);
+// The signed-in hand as the shell knows it (types.ts Lightseed): four fields of the provider's
+// user, nothing else of it — the same four the independent session supplies (ring 2026-11-01).
+const lightseedOf = (user: FirebaseUser): Lightseed =>
+    ({ uid: user.uid, email: user.email, displayName: user.displayName, photoURL: user.photoURL });
+export const onAuthChange = (callback: (user: Lightseed | null) => void): (() => void) =>
+    onAuthStateChanged(auth, user => callback(user ? lightseedOf(user) : null));
+
+// HOW THIS NODE SIGNS A HAND IN (ring 2026-11-01): the shell's sign-in door asks before it
+// draws. Here: email + password and Google; no separate issuer door.
+export const authCapabilities = (): { emailPassword: boolean; google: boolean; issuer: boolean } =>
+    ({ emailPassword: true, google: true, issuer: false });
+export const signInWithIssuer = async (): Promise<void> => { throw new Error('auth_issuer_unavailable'); };
+
+// When this account began — the provider's record of the login's creation, else unknown.
+export const accountCreatedAtMs = (): number | null => {
+    const created = auth.currentUser?.metadata?.creationTime;
+    const ms = created ? Date.parse(created) : NaN;
+    return Number.isFinite(ms) ? ms : null;
+};

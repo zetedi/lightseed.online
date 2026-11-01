@@ -1,0 +1,70 @@
+# THE EDGE (ring 2026-11-01): one TLS reverse proxy in front of the node — the application's
+# built shell at the application host, /v1/* to the API, and the identity issuer at its own
+# host. On a VPS the certificates come from ACME (SEED_TLS=acme, SEED_ACME_EMAIL set); for a
+# local walk SEED_TLS=internal makes Caddy its own CA (trust its root, or bypass per host).
+# Credentials never pass through here: the browser carries the issuer's bearer token to /v1.
+{
+	admin off
+}
+
+# ACME with the operator's contact address (empty = Caddy's default managed certificates).
+(tls-acme) {
+	tls {$SEED_ACME_EMAIL}
+}
+(tls-internal) {
+	tls internal
+}
+(hardening) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	encode zstd gzip
+}
+
+# The application and its API, one origin: the OIDC callback and the service worker both
+# depend on it, and the API needs no cross-origin policy.
+{$SEED_APP_HOST} {
+	import tls-{$SEED_TLS:acme}
+	import hardening
+	handle /v1/* {
+		reverse_proxy api:8081
+	}
+	handle /readyz {
+		reverse_proxy api:8081
+	}
+	handle {
+		root * /srv/app
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@shell path / /index.html /auth/callback
+		header @shell Cache-Control "no-store"
+		header /sw.js Cache-Control "no-cache"
+		# Every door the shell knows (/b/<lid>, /i/<id>, /events …) serves the shell; the
+		# application resolves the door. The constitution rides beside it under /root/.
+		try_files {path} /index.html
+		file_server
+	}
+	# Callback query strings carry authorization codes: never into the access log.
+	log {
+		output stdout
+		format filter {
+			request>uri query {
+				delete code
+				delete state
+				delete session_state
+				delete iss
+			}
+		}
+	}
+}
+
+# The identity issuer, at its own host, behind the same edge. Keycloak reads the forwarded
+# headers (KC_PROXY_HEADERS=xforwarded) and names itself by SEED_IDENTITY_ORIGIN.
+{$SEED_IDENTITY_HOST} {
+	import tls-{$SEED_TLS:acme}
+	import hardening
+	reverse_proxy identity:8080
+}

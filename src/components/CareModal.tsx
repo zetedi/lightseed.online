@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal, modalButton } from './ui/Modal';
 import { Icons } from './ui/Icons';
-import { markWateredOffChain } from './../services/firebase';
+import { markWateredOffChain } from '@backend';
 import type { Lifetree } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { tabTone } from '../utils/tabTheme';

@@ -3,7 +3,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Loading } from '../ui/Loading';
-import { getMyStays, getLifetreeById } from '../../services/firebase';
+import { getMyStays, getLifetreeById } from '@backend';
 import { type Stay } from '../../domain/stay';
 import type { Lifetree } from '../../types';
 

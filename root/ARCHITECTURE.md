@@ -289,7 +289,16 @@ import transaction/workflow, not guarantees provided by a merge report.
   host assignments; `seed:configure` writes an isolated private configuration,
   public envelope and host list. It neither deploys services nor changes the app's
   backend. The existing Firebase sync refuses version 2 to prevent accidental fallback.
-- The application's data, authentication, media and server actions still use Firebase.
+- THE SEAM (2026-11-01): the application imports its service layer as `@backend`; the build
+  resolves it to `src/services/firebase` or, in mode `independent`, to
+  `src/services/independent` (no SSO door, browser config from the installation's HTTPS
+  origins, any Firebase module in the bundle fails the build). `src/services/backendParity.ts`
+  proves at compile time that the independent backend offers every name the Firebase backend
+  offers; a hand not yet grown is `unported` and refuses by name. The shared types name no
+  vendor (Lightseed, Stamp, page cursors). The independent backend's first hands stand on the
+  OIDC session and the API below: profile, trees, pulses, visions, communities, the /b/ door,
+  media upload. The remaining hands are counted in seed/PARITY.md.
+- Before the seam, the application's data, authentication, media and server actions used Firebase directly.
   The existing `Store` interface covers relationships only. Its callers now use
   `services/store.ts`, which selects the graph adapter in one place; the backend-neutral
   `services/graph.ts` assembles open/private tree circles using the existing domain
@@ -492,6 +501,49 @@ It does not expose private accounts or silently repair conflicting identity. Sou
 indexes do not become an identity registry: immutable bindings, global collision
 audits, backfill, Light Houses, cross-node lookup and original `/b` navigation remain.
 PostgreSQL and HTTP tests cover privacy, collisions and pooled-account isolation.
+
+THE DOCUMENT DOOR (migrations 050–053, 2026-11-02). Instead of one SQL command per
+client hand, the independent node grew one generic, RLS-governed document API: `GET
+/v1/docs/<collection>` and `POST /v1/docs/command`. The law of `firestore.rules` is
+translated collection by collection into SQL rule functions (`seed.rule_<collection>` with
+the five Firestore actions), the row-level SELECT policies call the same `list` rule, and
+`seed.doc_write` locks the row and applies the Firestore-shaped patch (server time, delete,
+array union/remove, increment, dotted keys, set-merge, optimistic `expect`). Writes by an
+anonymous hand are allowed to reach the door; the rules decide. Records that never travel
+(push subscriptions, bed holds) live in the `seed` schema; the stays occupancy mirror is a
+trigger that refuses a double booking. With this one door some two hundred client hands
+were ported mechanically and the application's Firebase-free bundle runs against a local
+Compose node. `tests/seedDocs.test.ts` holds the registry to the SQL map and the travel
+plan; `tests/seed/documents.postgres-test.ts` proves the refusals through the API.
+
+THE ORGANS (migration 054, 2026-11-02). The server hands of `functions/src/index.ts`
+that moved light, took back a head, lent staff hands, ended an account or proved a domain
+are grown as context/apply pairs the API drives — facts read under locks, the pure law from
+the shared domain bundle (`domain/light` now carries the mint's judgment itself, mirrored by
+the functions and held equal in `tests/mint.test.ts`; `domain/spend`, `domain/unmint`,
+`domain/doors`, `domain/domainVerification`), one apply in the same transaction. The
+decision seal is re-verified on server ground signature by signature before the commons
+moves. DNS is observed outside every transaction and re-checked under the lock before the
+server-only mark is written; face doors are named by the installation (`SEED_FACE_DOORS`)
+and granted by the steward. The account's departure is one transaction: the last spend to
+the heir through the prism, every record, the login binding. The node's keeper is appointed
+by the installation (`seed:keeper`), never by a public first-visitor claim. Still refusing
+by name: the mail organ, the AI organ, the one-time Firestore backfills, cross-node SSO,
+the scheduled thirst, previews and feeds.
+
+THE CROSSING (migration 055, 2026-11-02). `seed:export` reads every travelling
+collection through the crossing's map (`domain/seedBundle`: one closed map from the travel
+plan's signatures to the soil's tables), builds the charter head and census, carries the
+beings index as a computed witness, and the custodian seals the manifest with an Ed25519
+key kept outside the node; the public anchor is written beside the bundle to travel by
+another road. `seed:import` verifies structure and seal, plans the additive merge with the
+shared planner inside one serializable transaction under the crossing's advisory lock, and
+with `--apply` lands every planned record in that transaction or nothing, remembering the
+crossing in `seed.crossings`. Local authority (`admins`, `config`) never merges. An identity
+is anchored on the far side by a person record carrying the same LID, or by a login the
+installation bound to that uid by reviewed configuration — the planner's `loginBound`, set
+by the executor from the node's own bindings, never by the operator's file. Not carried yet:
+media, identity enrollment at scale, overlapping concurrent imports.
 
 ## Layers: the dependency direction
 

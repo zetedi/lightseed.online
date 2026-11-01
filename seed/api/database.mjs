@@ -6,6 +6,7 @@ import {seedOfferingCommand,seedOfferingCreation} from '../../src/domain/seedOff
 import {prepareOfferingBirth,prepareOfferingAcceptance} from './offerings.mjs';
 import {prepareAlignmentAcceptance} from './alignments.mjs';
 import {prepareBlock} from './blocks.mjs';
+import * as organs from './organs.mjs';
 import {seedBlockCommand} from '../../src/domain/seedBlock.mjs';
 import {verifiesRotation,verifiesRecoveryCandidate,verifiesRecoveryWitness} from './signing.mjs';
 import { seedTransactionRetry } from '../../src/domain/seedTransaction.mjs';
@@ -93,6 +94,7 @@ export function createDatabase(config) {
       if(!(await c.query("SELECT has_table_privilege(current_user,'public.alignments','SELECT') AND has_function_privilege(current_user,'seed.alignment_command(jsonb,text,text)','EXECUTE') AND has_function_privilege(current_user,'seed.alignment_context(text)','EXECUTE') AND has_function_privilege(current_user,'seed.apply_alignment_acceptance(text,jsonb,jsonb,bigint,bigint)','EXECUTE') AS allowed")).rows[0].allowed)throw new Error('alignments_unavailable');
       if(!(await c.query("SELECT has_function_privilege(current_user,'seed.block_context(text,text,boolean)','EXECUTE') AND has_function_privilege(current_user,'seed.apply_block(text,text,jsonb,jsonb,bigint)','EXECUTE') AS allowed")).rows[0].allowed)throw new Error('block_mint_unavailable');
       if(!(await c.query("SELECT has_function_privilege(current_user,'seed.signing_anchor(jsonb)','EXECUTE') AND has_function_privilege(current_user,'seed.signing_identity(text)','EXECUTE') AND has_function_privilege(current_user,'seed.signing_freeze(jsonb)','EXECUTE') AND has_function_privilege(current_user,'seed.signing_history(text,text,text,integer)','EXECUTE') AND has_function_privilege(current_user,'seed.apply_key_rotation(jsonb)','EXECUTE') AND has_function_privilege(current_user,'seed.recovery_context()','EXECUTE') AND has_function_privilege(current_user,'seed.apply_recovery_proposal(jsonb)','EXECUTE') AND has_function_privilege(current_user,'seed.recovery_proposal(text,text)','EXECUTE') AND has_function_privilege(current_user,'seed.prepare_recovery_witness(jsonb)','EXECUTE') AND has_function_privilege(current_user,'seed.apply_recovery_witness(jsonb)','EXECUTE') AND has_function_privilege(current_user,'seed.prepare_recovery_activation(text)','EXECUTE') AND has_function_privilege(current_user,'seed.apply_recovery_activation(text,text[])','EXECUTE') AND has_function_privilege(current_user,'seed.recovery_witnesses(text,text,text,integer)','EXECUTE') AS allowed")).rows[0].allowed)throw new Error('signing_unavailable');
+      if(!(await c.query("SELECT has_function_privilege(current_user,'seed.doc_get(text,text,text)','EXECUTE') AND has_function_privilege(current_user,'seed.doc_list(text,text,jsonb,jsonb,jsonb,boolean,jsonb,integer)','EXECUTE') AND has_function_privilege(current_user,'seed.doc_write(jsonb,text)','EXECUTE') AND has_function_privilege(current_user,'seed.love_toggle(text,text)','EXECUTE') AND has_table_privilege(current_user,'public.stays','SELECT') AS allowed")).rows[0].allowed)throw new Error('document_door_unavailable');
       await c.query('SELECT id FROM public.links LIMIT 0');
       await c.query('SELECT id FROM public.communities LIMIT 0');
       await c.query('SELECT id FROM public.lifetrees LIMIT 0');
@@ -163,6 +165,25 @@ export function createDatabase(config) {
           next: result.rows.length > request.limit ? rows.at(-1).id : null,
         };
       });
+    },
+    // THE DOCUMENT DOOR (ring 2026-11-02): one document under the `get` law, or a page under the
+    // row-level policies — the asking role's own sight, never widened by a filter.
+    async docs(request,uid=null) {
+      return withSession(uid,async c=>{
+        if(request.id!==null) return {doc:(await c.query('SELECT seed.doc_get($1,$2,$3) AS doc',[request.collection,request.parent,request.id])).rows[0].doc};
+        const page=(await c.query('SELECT seed.doc_list($1,$2,$3::jsonb,$4::jsonb,$5::jsonb,$6,$7::jsonb,$8) AS page',
+          [request.collection,request.parent,JSON.stringify(request.equals),JSON.stringify(request.contains),JSON.stringify(request.within),
+            request.newest,request.after===null?null:JSON.stringify(request.after),request.limit])).rows[0].page;
+        return {items:page.items,next:page.next};
+      });
+    },
+    // A write as a claim: the law (seed.doc_write) locks, patches, judges and stores; love is its own gesture.
+    async docCommand(uid,command) {
+      if(command.action==='love') {
+        if(!uid)throw new Error('authentication_required');
+        return withSession(uid,async c=>(await c.query('SELECT seed.love_toggle($1,$2) AS result',[command.kind,command.id])).rows[0].result);
+      }
+      return withSession(uid,async c=>(await c.query('SELECT seed.doc_write($1::jsonb,$2) AS result',[JSON.stringify(command),randomBytes(10).toString('hex')])).rows[0].result);
     },
     async linkCommand(uid,command) {
       if(command.rel==='participant')return withSession(uid,async c=>(await c.query('SELECT seed.participation_command($1::jsonb,$2) AS result',[JSON.stringify(command),uuidv7()])).rows[0].result);
@@ -360,6 +381,8 @@ export function createDatabase(config) {
     },
     async blockCommand(uid,input,nodeDomain) {
       const command=seedBlockCommand(input);if(!command)throw Object.assign(new Error('Invalid block'),{code:'22023'});
+      // THE UNMINT (ring 2026-11-02): the head taken back under domain/unmint, its touch lifted.
+      if(command.action==='unmint')return organs.unmint(withSession,uid,command.pulseId);
       return withSession(uid,async c=>{
         const context=(await c.query('SELECT seed.block_context($1,$2,$3) AS context',[command.on,command.id,command.block.care==='watering'])).rows[0].context;
         const mintedAt=Date.now(),id=randomBytes(20).toString('hex'),lid=uuidv7(mintedAt,randomBytes(10));
@@ -500,6 +523,11 @@ export function createDatabase(config) {
         return { profile: result.rows[0].profile };
       });
     },
+    // THE ORGANS (ring 2026-11-02): light, staff, the account's departure, the domain proofs and doors.
+    lightCommand:(uid,command)=>organs.lightCommand(withSession,uid,command),
+    staffCommand:(uid,command)=>organs.staffCommand(withSession,uid,command),
+    accountCommand:(uid,command)=>organs.accountCommand(withSession,uid,command),
+    domainCommand:(uid,command,context)=>organs.domainCommand(withSession,uid,command,context),
     close: () => pool.end(),
   };
 }

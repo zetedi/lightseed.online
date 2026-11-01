@@ -4,7 +4,7 @@ import { beingUrl } from '../../domain/beingLink';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { notify } from '../ui/Toast';
 import { Icons } from '../ui/Icons';
-import { Timestamp } from 'firebase/firestore';
+import { stampNow } from '@backend/core';
 import { Community, CommunityInvite } from '../../types';
 import { doorOf, communityInviteUrl, inviteStatus, leaveRefusal, type CommunityDoor } from '../../domain/communityDoor';
 import { SectionTitle } from '../ui/SectionTitle';
@@ -16,7 +16,7 @@ import {
   mintCommunityInvite, listCommunityInvites, revokeCommunityInvite,
   inviteKeeper, fetchKeeperInvitesOf, acceptKeeperRequest, declineKeeperRequest, resignKeeper,
   type KeeperInvite,
-} from '../../services/firebase';
+} from '@backend';
 import { canResign } from '../../domain/keeperCircle';
 
 // Members tab — the community's people, read from 'member' links (the LIN), and the DOOR
@@ -203,7 +203,7 @@ export const CommunityMembers: React.FC<CommunityMembersProps> = ({ community, c
     if (!(await showConfirm('invite_revoke_confirm', { title: 'invite_revoke', confirmText: 'revoke', danger: true }))) return;
     try {
       await revokeCommunityInvite(invite.id);
-      setInvites(prev => prev.map(i => i.id === invite.id ? { ...i, revokedAt: Timestamp.now() } : i));
+      setInvites(prev => prev.map(i => i.id === invite.id ? { ...i, revokedAt: stampNow() } : i));
     } catch (e: any) { showAlert(e?.message || 'err_invite_revoke'); }
   };
 

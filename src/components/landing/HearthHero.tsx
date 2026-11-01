@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { visionOf } from '../../domain/papers';
 import type { Community, Lightseed, Pulse } from '../../types';
-import { fetchEventPulses } from '../../services/firebase';
+import { fetchEventPulses } from '@backend';
 import { eventFeedScope, eventsOnView } from '../../domain/pulseVisibility';
 import { sanitizeRichText } from '../../utils/sanitize';
 import { whenOf } from '../../utils/eventWhen';

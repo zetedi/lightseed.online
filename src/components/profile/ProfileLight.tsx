@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Icons } from '../ui/Icons';
-import { fetchMyRays, fetchTreePlaces, placesOfRays, type HeldRay, type TreePlace } from '../../services/firebase/light';
+import { fetchMyRays, fetchTreePlaces, placesOfRays, type HeldRay, type TreePlace } from '@backend/light';
 import { walletOf, type WalletRow } from '../../domain/wallet';
 import { formatLight } from '../../domain/light';
 import { charter } from '../../config/charter';

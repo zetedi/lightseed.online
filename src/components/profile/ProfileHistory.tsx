@@ -3,7 +3,7 @@ import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Alignment, Lifetree, VisionSynergy } from '../../types';
-import { getMyAlignmentsHistory, getLifetreeById } from '../../services/firebase';
+import { getMyAlignmentsHistory, getLifetreeById } from '@backend';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Loading } from '../ui/Loading';
 import { ResonanceCard, resonanceId } from '../ResonancePanel';

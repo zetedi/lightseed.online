@@ -39,3 +39,18 @@ describe('seed identity provider', () => {
     await expect(createAuthenticator({ ...config, tokenProfile: 'unknown' })).rejects.toThrow();
   });
 });
+
+describe('the claimed name (ring 2026-11-01)', () => {
+  it('rides in the ID token alone, as a default scope of the web client, and never in the API token', () => {
+    const realm = seedIdentityRealm('https://app.example');
+    const scope = realm.clientScopes.find(s => s.name === 'lightseed:name')!;
+    expect(realm.clients[0].defaultClientScopes).toContain('lightseed:name');
+    expect(scope.attributes['include.in.token.scope']).toBe('false');
+    for (const mapper of scope.protocolMappers) {
+      expect(mapper.config['id.token.claim']).toBe('true');
+      expect(mapper.config['access.token.claim']).toBe('false');
+    }
+    expect(scope.protocolMappers.map(m => m.protocolMapper)).toEqual(['oidc-full-name-mapper', 'oidc-usermodel-attribute-mapper']);
+    expect((scope.protocolMappers[1].config as Record<string, string>)['claim.name']).toBe('preferred_username');
+  });
+});

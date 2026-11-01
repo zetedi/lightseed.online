@@ -7,8 +7,8 @@ import type { Intelligence } from '../../domain/intelligence';
 import {
   getManageableIntelligences, createIntelligence, updateIntelligence,
   saveProviderCredential, disconnectProviderCredential, addIntelligenceMemory, promoteToDefaultVoice, type CredentialScope,
-} from '../../services/intelligence';
-import { testIntelligenceConnection } from '../../services/gemini';
+} from '@backend/intelligence';
+import { testIntelligenceConnection } from '@backend/gemini';
 import { AIAccessCard } from './AIAccessCard';
 import { SectionMenu } from '../ui/SectionMenu';
 import { INTELLIGENCE_DUTIES, DUTY_LABEL_KEY, dutiesOf, type DutyAssignment, type IntelligenceDuty } from '../../domain/intelligenceDuty';

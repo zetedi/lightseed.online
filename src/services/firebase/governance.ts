@@ -12,7 +12,7 @@ import {
   decisionEpochSignaturePayload, verifiedDecisionSigners, decisionDeletable,
 } from '../../domain/decision';
 import { signatureFromDoc } from '../../domain/covenant';
-import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
+import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSigningKey, sign as signWithKey, verify as verifyWithKey } from './keys';
 import { functions, auth, db, toMillis, mapDoc, pulsesCollection } from './core';
 import { normalizeDomain } from './trees';
 

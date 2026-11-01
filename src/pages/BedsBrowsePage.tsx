@@ -9,7 +9,7 @@ import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
 import { useListDensity, densityGridClass, type ListDensity } from '../hooks/useListDensity';
 import { useVisibleLightHouses } from '../hooks/useVisibleLightHouses';
 import { useRefreshSignal } from '../hooks/useRefreshSignal';
-import { getBedsForLightHouse, fetchPublicBeds, getLightHouseById } from '../services/firebase/trees';
+import { getBedsForLightHouse, fetchPublicBeds, getLightHouseById } from '@backend/trees';
 import { tabTone, type TabTheme } from '../utils/tabTheme';
 import type { LightHouse } from '../domain/lightHouse';
 import type { Lifetree } from '../types';

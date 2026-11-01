@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { visionOf } from '../domain/papers';
 import type { Community, Lightseed, Pulse } from '../types';
 import { EventsSection } from '../components/sections/EventsSection';
-import { createCommunityEvent, fetchEventPulses } from '../services/firebase';
+import { createCommunityEvent, fetchEventPulses } from '@backend';
 import { queryableLevels } from '../domain/pulseVisibility';
 import { dataDomainFor } from '../domain/communityDoor';
 import { sanitizeRichText } from '../utils/sanitize';

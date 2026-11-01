@@ -6,6 +6,99 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-02 · One door for every document, and the organs** — The independent node's
+remaining 265 refusing hands were almost all DOCUMENT hands — a read or a write the rules
+judge — so instead of one SQL command per hand the node grew ONE door: `GET /v1/docs/<collection>`
+and `POST /v1/docs/command` (migrations 050–053), the law of `firestore.rules` translated
+collection by collection into SQL rule functions (`seed.rule_<collection>`, the five actions),
+the row policies asking the same `list` rule, and `seed.doc_write` locking the row and applying
+the Firestore-shaped patch (server time, delete, array union/remove, increment, dotted keys,
+set-merge, `expect`). Decided: an anonymous hand may reach the door — the RULES decide, as they
+always did; a list rule's default is a security parameter and stays non-public; node-local
+records that never travel (push subscriptions, bed holds) live in the `seed` schema; the stays
+occupancy mirror is a trigger that refuses a double booking. With the door, some two hundred
+hands were ported mechanically and the remaining refusals became a short, honest list. The
+SERVER hands became THE ORGANS (054): context/apply pairs the API drives — facts read under
+locks, the PURE LAW from the shared domain bundle, one apply in the same transaction. For this
+the domain now speaks the mint's judgment itself (`judgeWitness`, `releaseRay`,
+`kindleDayKeyFromMs` in `domain/light`, the functions' copy held equal by tests/mint.test.ts),
+the decision seal is re-verified on server ground signature by signature before the commons
+moves, DNS is observed OUTSIDE every transaction and re-checked under the lock before the
+server-only mark is written, face doors are named by the installation (`SEED_FACE_DOORS`) and
+granted by the steward's hand, and the account's departure is one transaction (the last spend to
+the heir through the prism, every record, the login binding). Decided with it: THE NODE'S
+KEEPER IS APPOINTED BY THE INSTALLATION (`npm run seed:keeper`), never by a public first-visitor
+claim — `claimSuperAdmin` refuses by name on this soil. And THE CROSSING (055): `seed:export`
+reads every travelling collection through one closed map from the travel plan to the soil
+(`domain/seedBundle`), carries the beings index as a computed witness and lets the custodian
+seal the manifest with an Ed25519 key kept outside the node (the public anchor written beside
+the bundle, to travel by another road); `seed:import` verifies structure and seal, plans the
+additive merge with the shared planner INSIDE one serializable transaction under the crossing's
+advisory lock, lands every planned record there or nothing, and remembers the crossing in
+`seed.crossings`. One extension of the merge law: an identity is anchored on the far side by a
+person record carrying the same LID — OR by a login the installation bound to that uid by
+reviewed configuration (`loginBound`, set by the executor from the node's own explicit bindings,
+never by the operator's file), so a person may arrive before they have spoken there; a bound
+login never overrides a person already there under another LID. Rejected: dropping admins/config
+from an incoming bundle at import (it would break the sealed census — the exporter leaves them
+home with `--without-authority`, or the receiving node decides locally); DNS inside the
+transaction; a runtime grant on the crossing (it is the owner's ceremony, like a migration).
+Named, not hidden: the mail organ, the AI organ, cross-node SSO, the scheduled thirst and stay
+leaves, previews/feeds/sitemap, picture release, media in the bundle, identity enrollment at
+scale — the burn-down is 29 hands (seed/PARITY.md).
+
+
+**2026-11-01 · The application learns the second soil's name** — Zoltán handed Aspen the
+independent-node goal Lumo had carried ("finish the full-feature Firebase-free independent node
+… preserve existing functionality; do not commit without approval"). The contract (ARCHITECTURE
+→ Independent node) wants the ORIGINAL application running without Firebase, and seed/web was
+only a preview beside it; so the first move is a seam, not another port. Every caller now imports
+the service layer as `@backend` — a Vite/Vitest alias and a tsconfig path — and the BUILD chooses
+the soil: the default resolves to src/services/firebase, `vite build --mode independent`
+(`npm run build:independent`) to src/services/independent, builds no SSO door, carries the
+installation's HTTPS origins instead of a Firebase config, and refuses the bundle if any
+Firebase module reaches it. Decided with it: (1) the shared types name no vendor — `Lightseed`
+is four fields, entity moments are `Stamp`, components make stamps through `stampOfMs`/`stampNow`
+and carry page cursors as the backend's own `*PageCursor`; (2) the four services that still
+spoke Firebase directly (intelligence, keys, push, gemini) and the graph store's adapter choice
+moved under the Firebase backend; the last direct document reads and writes (host standing,
+guardian repair, the default tree's person mirror, a pulse's AI reading) became backend hands;
+(3) the PARITY LAW: src/services/backendParity.ts proves at compile time that the independent
+backend exports every name the Firebase backend exports with a compatible type (the core minus
+its SDK handles), so a missing hand is a tsc error, never a runtime crash; a hand not yet grown
+is `unported('module.name')` and refuses by name when asked (toast key backend_unported). (4) The
+independent backend's first hands stand on Lumo's session and API: the OIDC session as the
+sign-in (AuthModal draws one issuer door when `authCapabilities().issuer`), profile read/save,
+trees (reads, planting, prose edits), pulses (reads, minting through the block command, signed
+by the device key when one is published, unsigned when none), visions and communities (reads,
+birth, joining), the /b/ door through /v1/beings, media upload. Honest limits, by name: staff
+standing is not yet readable through the API, so every hand is an ordinary member there; Light
+Houses, node limits and config switches answer empty; the profile is polled every twenty seconds
+in place of a live channel; a first sign-in with no name yet has no portable name until the
+hand names itself. The burn-down this evening: 370 hands, 289 still refusing (seed/PARITY.md
+keeps the table). Rejected: extending the seed/web preview further (it cannot become the
+contract), and a runtime switch between soils (one bundle must never be able to fall back to
+the origin node's Firebase).
+  *The same evening, the first walk.* The node got its EDGE: one Caddy in seed/docker-compose.yml
+(profile `edge`, seed/Caddyfile) serving the built shell at every door, /v1 to the API on the
+same origin and the issuer at its own host, ACME on a VPS or an internal CA for a local walk; the
+issuer joins only the shared `lightseed_edge` network. A local installation (gitignored
+seed/local, a named database volume — the macOS bind mount breaks initdb) was walked with a
+headless Chrome driven over the DevTools protocol: the original application booted Firebase-free,
+signed in through the issuer's door, and a synthetic hand planted a tree — the node minted the
+tree, its Root Vision and the person in its own transactions. Three things the walk taught,
+decided: (1) an unported hand REJECTS, it never throws at the call — a synchronous throw inside
+an effect unmounted the whole shell on the first refused hand; listener-shaped hands return a
+silent unsubscribe, and the console names every refusal; (2) the pure halves of intelligence
+(the voice and the active choice), keys (the three refusals, verify, availability) and push (the
+device's half) are shared modules, not per-backend copies; (3) a first sign-in takes its NAME from
+the issuer's ID token — a new default client scope `lightseed:name` carries name and
+preferred_username in the ID token alone, never the API token — so the shell can write the first
+profile as it once took a provider's name; the API still binds the subject, never the name.
+Still open from the walk: a reload forgets the session (tokens live in memory; a silent
+re-authentication through the issuer's SSO session is the next step), and the rooms that still
+refuse are listed in seed/PARITY.md.
+
 **2026-11-01 · A closed door is heard** — Zoltán opened a shared tree link signed out and saw
 nothing at all. The /b/ door's refusal toast ("a being you cannot see from here") was spoken
 while the shell still held its neutral loader (the pending door of 2026-09-29), so no ToastHost

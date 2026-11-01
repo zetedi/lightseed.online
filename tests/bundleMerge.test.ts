@@ -173,3 +173,30 @@ describe('additive bundle merging', () => {
     expect(valid.inserts).toHaveLength(2);
   });
 });
+
+// THE INSTALLATION'S BINDING ANCHORS A PERSON WHO HAS NOT SPOKEN YET (ring 2026-11-02): on a node
+// where the person has no record, the executor marks an identity loginBound when the installation
+// bound that uid by reviewed configuration; the person then arrives with the import. Without the
+// mark, or with a mismatched LID, the law still refuses.
+describe('identities anchored by an installation-bound login', () => {
+  const uid = 'alice';
+  const alice = [record(`users/${uid}`, { lid, displayName: 'Alice' }), record(`persons/${uid}`, { uid, lid }), record('lifetrees/t1', { lid: otherLid, anchorUid: uid })];
+  it('a bound login lets the person arrive on an empty node', async () => {
+    const plan = await planBundleMerge(await bundle(alice), [], anchor, acceptSeal, [{ sourceUid: uid, targetUid: uid, personLid: lid, loginBound: true }]);
+    expect(plan.ready).toBe(true);
+    expect(plan.inserts.map(d => d.path)).toEqual([`lifetrees/t1`, `persons/${uid}`, `users/${uid}`]);
+  });
+  it('without the binding the person is not anchored; with a wrong LID the binding is a conflict', async () => {
+    const unbound = await planBundleMerge(await bundle(alice), [], anchor, acceptSeal, [{ sourceUid: uid, targetUid: uid, personLid: lid }]);
+    expect(unbound.ready).toBe(false);
+    expect(unbound.issues.map(i => i.code)).toEqual(['identity_conflict']);
+    const wrong = await planBundleMerge(await bundle(alice), [], anchor, acceptSeal, [{ sourceUid: uid, targetUid: uid, personLid: otherLid, loginBound: true }]);
+    expect(wrong.issues.map(i => i.code)).toEqual(['identity_conflict']);
+  });
+  it('a bound login never overrides a person already here under another LID', async () => {
+    const here = [record(`persons/${uid}`, { uid, lid: otherLid })];
+    const plan = await planBundleMerge(await bundle(alice), here, anchor, acceptSeal, [{ sourceUid: uid, targetUid: uid, personLid: lid, loginBound: true }]);
+    expect(plan.ready).toBe(false);
+    expect(plan.issues.map(i => i.code)).toContain('identity_conflict');
+  });
+});

@@ -6,7 +6,7 @@ import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { TermsModal } from '../TermsModal';
 import { getTerms } from '../../utils/terms';
-import { signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, getNetworkInvite, submitInviteRequest } from '../../services/firebase';
+import { signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, getNetworkInvite, submitInviteRequest, authCapabilities, signInWithIssuer } from '@backend';
 import { friendlyAuthError, isUserCancelledAuth } from '../../utils/authErrors';
 
 const field = "h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900";
@@ -93,6 +93,28 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
   };
 
   const title = mode === 'request' ? t('auth_request_invitation') : (mode === 'signup' ? t('auth_join') : t('sign_in'));
+
+  // THE ISSUER'S DOOR (ring 2026-11-01): a node that signs its hands in through its own OpenID
+  // Connect issuer has no password form and no provider pop-up — one door, a redirect, and the
+  // session returns bound to the local uid the node's API chose.
+  const capabilities = authCapabilities();
+  if (capabilities.issuer && !capabilities.emailPassword) {
+    const handleIssuer = async () => {
+      setBusy(true);
+      try { await signInWithIssuer(); } catch (e: any) { showAlert(friendlyAuthError(e, t('auth_signin_failed'))); setBusy(false); }
+    };
+    return (
+      <Modal title={t('sign_in')} onClose={onClose}>
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 dark:text-slate-300">{t('auth_issuer_intro')}</p>
+          <button type="button" onClick={handleIssuer} disabled={busy}
+            className={`${modalButton} w-full btn-theme text-white font-bold disabled:opacity-60`}>
+            {busy ? t('loading') : t('auth_issuer_continue')}
+          </button>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal title={title} onClose={onClose}>

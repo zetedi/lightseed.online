@@ -1,10 +1,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { onRefresh } from '../services/refreshBus';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../services/firebase/core';
-import { uuidv7 } from '../utils/id';
-import { onAuthChange, getMyLifetrees, getGuardedTrees, getTendedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile, ensurePersonEntity, type TendedTree } from '../services/firebase';
+import { graphStore } from '../services/store';
+import { setDefaultTreeOnProfile } from '@backend/accounts';
+import { onAuthChange, getMyLifetrees, getGuardedTrees, getTendedTrees, checkIsAdmin, checkIsSuperAdmin, getSuperAdminUid, claimSuperAdmin, listenToUserProfile, updateUserProfile, ensurePersonEntity, type TendedTree } from '@backend';
 import { getInitiateByUid, type Initiate } from '../domain/initiation';
 import { charter } from '../config/charter';
 import { publicNameOf } from '../domain/publicName';
@@ -24,8 +23,7 @@ const splitTreeLists = (uid: string, owned: Lifetree[], guarded: Lifetree[]): { 
     const { personal, nature: ownedNature, secret } = anchoredTreeLists(owned);
     const guardedIds = new Set(guarded.map(t => t.id));
     for (const t of ownedNature.filter(x => !guardedIds.has(x.id))) {
-        setDoc(doc(db, 'links', `${uid}__guardian__${t.id}`),
-            { lid: uuidv7(), type: 'link', rel: 'guardian', from: uid, to: t.id, createdAt: serverTimestamp() }).catch(() => {});
+        graphStore.link(uid, 'guardian', t.id).catch(() => {});
     }
     const guardedAll = [...guarded, ...ownedNature.filter(x => !guardedIds.has(x.id))];
     return { personal, guardedAll, secret };
@@ -196,9 +194,8 @@ export const useLifeseed = () => {
     const setDefaultTree = async (treeId: string) => {
         if (!lightseed?.uid) return;
         setDefaultTreeId(treeId); // optimistic
-        await updateUserProfile(lightseed.uid, { defaultTreeId: treeId }).catch(() => {});
-        // Mirrored onto the world-readable person so an anonymous being is named by the right tree.
-        await setDoc(doc(db, 'persons', lightseed.uid), { defaultTreeId: treeId }, { merge: true }).catch(() => {});
+        // The profile keeps it and the world-readable person mirrors it (the backend's one hand).
+        await setDefaultTreeOnProfile(lightseed.uid, treeId).catch(() => {});
     };
 
     // Persist the default vision the same way (starring it again clears the star).

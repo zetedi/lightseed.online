@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '../contexts/SessionContext';
 import { graphStore } from '../services/store';
-import { getAllLightHouses, getLightHousesByDomain } from '../services/firebase/trees';
+import { getAllLightHouses, getLightHousesByDomain } from '@backend/trees';
 import { canViewLightHouse, type LightHouse } from '../domain/lightHouse';
 import { useRefreshSignal } from './useRefreshSignal';
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { showAlert, showConfirm } from '../ui/Dialog';
 import { Icons } from '../ui/Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { witnessWatering, unmintLastPulse } from '../../services/firebase';
+import { witnessWatering, unmintLastPulse } from '@backend';
 import { unmintRefusal } from '../../domain/unmint';
 import { say } from '../../utils/translations';
 import type { Pulse } from '../../types';

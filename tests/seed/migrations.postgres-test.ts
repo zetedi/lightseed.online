@@ -414,6 +414,7 @@ const prepareAccess = async () => {
   sql(`GRANT USAGE ON SCHEMA public, seed TO seed_runtime_test;
     GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO seed_runtime_test;
     GRANT EXECUTE ON FUNCTION seed.can_read_tree(text,jsonb), seed.keeps_secret_tree(text) TO seed_runtime_test;
+    GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA seed TO seed_runtime_test;
     INSERT INTO users VALUES ('alice', '{"private":"profile"}');
     INSERT INTO lifetrees VALUES ('private-tree', '{"visibility":"private"}');
     INSERT INTO secret_links(from_id, rel, to_id, lid) VALUES
@@ -424,7 +425,9 @@ describe('non-owner database access', () => {
   it('has RLS on every collection and denies unported private reads and writes', async () => {
     await prepareAccess();
     expect(sql("SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r' AND NOT c.relrowsecurity;")).toBe('0');
-    expect(asRuntime('SELECT count(*) FROM users;', 'alice')).toBe('alice\n0');
+    // The document law (050–052): a private profile is read by its own hand alone; a stranger sees none.
+    expect(asRuntime('SELECT count(*) FROM users;', 'alice')).toBe('alice\n1');
+    expect(asRuntime('SELECT count(*) FROM users;', 'bob')).toBe('bob\n0');
     expect(asRuntime('SELECT count(*) FROM lifetrees;', 'alice')).toBe('alice\n0');
     expect(() => asRuntime("INSERT INTO users VALUES ('mallory', '{}');", 'alice')).toThrow(/row-level security/);
     expect(() => asRuntime('TRUNCATE users;', 'alice')).toThrow(/permission denied/);
@@ -496,7 +499,7 @@ describe('provisioned runtime account', () => {
     runtimeQuery(credentials, "BEGIN; SET LOCAL seed.uid='alice'; INSERT INTO links(from_id,rel,to_id,lid) VALUES ('alice','joined','vision','link'); COMMIT;");
     expect(runtimeQuery(credentials, 'SELECT id FROM links;')).toBe('alice__joined__vision');
     for (const forbidden of [
-      'SELECT * FROM users;', 'SELECT * FROM seed.schema_migrations;',
+      'SELECT * FROM seed.identity_bindings;', 'SELECT * FROM seed.schema_migrations;',
       'TRUNCATE links;', "UPDATE links SET lid='changed';",
       'CREATE TABLE public.forbidden(id text);', 'SET ROLE seedtest;',
       'CREATE ROLE forbidden;', 'ALTER TABLE links DISABLE ROW LEVEL SECURITY;',
@@ -691,7 +694,9 @@ describe('independent local profiles', () => {
       expect(updated.profile).not.toHaveProperty('publicKeyPem');
       expect(await db.profile('bob')).toEqual({ profile: null });
       expect(sql('SELECT count(*) FROM admins;')).toBe('0');
-      await expect(db.withSession('alice', (c: any) => c.query('SELECT * FROM public.users'))).rejects.toThrow(/permission denied/);
+      // The document law: a profile is read by its own hand (RLS), never written through the table.
+      expect((await db.withSession('alice', (c: any) => c.query('SELECT id FROM public.users'))).rows.map((r: any) => r.id)).toEqual(['alice']);
+      expect((await db.withSession('bob', (c: any) => c.query('SELECT id FROM public.users'))).rows).toHaveLength(0);
       await expect(db.withSession('alice', (c: any) => c.query("UPDATE public.persons SET doc='{}'"))).rejects.toThrow(/permission denied/);
       await expect(db.withSession(null, (c: any) => c.query("SELECT seed.save_profile('Bad', '01900000-0000-7000-8000-000000000001')"))).rejects.toThrow(/Authentication required/);
     } finally { await db.close(); }
@@ -776,7 +781,7 @@ describe('independent community browsing', () => {
       expect((await fetch(base + '/v1/communities?collection=users')).status).toBe(400);
       expect((await fetch(base + '/v1/communities', { method: 'POST' })).status).toBe(405);
       expect((await fetch(base + '/v1/communities', { headers: { authorization: 'Bearer forged' } })).status).toBe(401);
-      await expect(db.withSession(null, (c: any) => c.query('SELECT * FROM users'))).rejects.toThrow(/permission denied/);
+      expect((await db.withSession(null, (c: any) => c.query('SELECT * FROM users'))).rows).toHaveLength(0);
       await expect(db.withSession('alice', (c: any) => c.query("INSERT INTO communities VALUES ('forged','{}')"))).rejects.toThrow(/permission denied/);
       const role = await db.withSession(null, async (c: any) => (await c.query('SELECT current_user AS role')).rows[0].role);
       sql(`REVOKE SELECT ON communities FROM ${role};`);
@@ -1555,8 +1560,9 @@ it('searches public names with bounded pages without exposing private users or e
     expect((await db.people({...query,query:"' OR 1=1 --"})).people).toHaveLength(0);
     expect((await db.people({...query,query:'%'})).people).toHaveLength(0);
     expect(await db.people({id:'missing',query:null,after:null,limit:50})).toEqual({person:null});
-    await expect(db.withSession(null,(c:any)=>c.query('SELECT * FROM users'))).rejects.toThrow(/permission denied/);
-    await expect(db.withSession(null,(c:any)=>c.query('SELECT * FROM persons'))).rejects.toThrow(/permission denied/);
+    // Private accounts stay out of an anonymous hand's sight (RLS); persons are the public record by law.
+    expect((await db.withSession(null,(c:any)=>c.query('SELECT * FROM users'))).rows).toHaveLength(0);
+    await expect(db.withSession(null,(c:any)=>c.query('SELECT * FROM seed.identity_bindings'))).rejects.toThrow(/permission denied/);
     const server=createApi(db);await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
     const address=server.address();if(!address || typeof address==='string')throw new Error('missing_address');
     try {
@@ -2126,12 +2132,12 @@ it('runs device creation, rotation, witnessed recovery and lost-response reconci
     await alice.session.signingCommand({action:'freeze',epochId:current.epochId,fingerprint:current.fingerprint});
     const recovery=createSeedRecoveryCustody(alice.session,store);await recovery.prepare();alice.drop('begin_recovery');
     const {code}=await recovery.confirmBackup();expect(code).toContain('alice:');
-    await expect(recovery.activate(code)).rejects.toThrow('api_unavailable');
+    await expect(recovery.activate(code)).rejects.toThrow('recovery_quorum_required');
     for(const uid of ['bob','carol','dave']) {
       const witness=await client(uid),witnessKey=createSeedKeyCustody(witness.session,store);
       await witnessKey.prepare();await witnessKey.confirmBackup();
       const witnessRecovery=createSeedRecoveryCustody(witness.session,store),reviewed=await witnessRecovery.read(code);
-      await expect(witnessRecovery.witness(reviewed)).rejects.toThrow('api_unavailable');
+      await expect(witnessRecovery.witness(reviewed)).rejects.toThrow('forbidden');
       sql(`INSERT INTO initiates VALUES ('${uid}','{}');`);await witnessRecovery.witness(reviewed);
     }
     const event=code.slice(code.lastIndexOf(':')+1);
@@ -2154,7 +2160,7 @@ it('runs device creation, rotation, witnessed recovery and lost-response reconci
     const record=(await alice.session.read('/v1/pulses?id='+born.pulseId) as {pulse:Record<string,any>}).pulse;
     expect(record.authorSignature.pubkey).toBe(keys.filter(key=>key.uid==='alice').at(-1)!.publicKeyB64);
     expect(record.hash).toBe(await computeCanonicalHash('root',record.mintedAt,record));
-    await expect(competing.submit()).rejects.toThrow('api_unavailable');
+    await expect(competing.submit()).rejects.toThrow('block_head_moved');
     await expect(competing.submit()).rejects.toThrow('review_required');
     expect(sql("SELECT count(*) FROM pulses WHERE doc->>'lifetreeId'='mint-tree';")).toBe('1');
     await mint.prepare('vision','mint-vision',{type:'vision_growth',body:'Private contribution'});
@@ -2165,7 +2171,7 @@ it('runs device creation, rotation, witnessed recovery and lost-response reconci
     expect(sql("SELECT count(*) FROM pulses WHERE doc->>'visionId'='mint-vision';")).toBe('1');
     const bob=await client('bob'),outsider=createSeedBlockMint(bob.session,store);
     await outsider.prepare('tree','mint-tree',{type:'tree_growth',body:'Not my tree'});
-    await expect(outsider.submit()).rejects.toThrow('api_unavailable');
+    await expect(outsider.submit()).rejects.toThrow('forbidden');
     expect(sql("SELECT count(*) FROM pulses WHERE doc->>'lifetreeId'='mint-tree';")).toBe('1');
     await alice.session.logout();await expect(recovery.activate(code)).rejects.toThrow('authentication_required');
   }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await db.close();}
@@ -2918,7 +2924,8 @@ it('resolves portable names through current visibility without exposing private 
     expect((await read(lids[0])).being?.id).toBe('private-tree');
     sql("DELETE FROM lifetrees WHERE id='private-tree';");
     expect((await read(lids[0])).being).toBeNull();
-    await expect(db.withSession(null,(c:any)=>c.query('SELECT doc FROM persons'))).rejects.toMatchObject({code:'42501'});
+    await expect(db.withSession(null,(c:any)=>c.query('SELECT * FROM seed.identity_bindings'))).rejects.toMatchObject({code:'42501'});
+    expect((await db.withSession('hidden-account',(c:any)=>c.query('SELECT id FROM users'))).rows.map((r:any)=>r.id)).toEqual(['hidden-account']);
   }finally{await db.close();}
 });
 it('refuses visible portable-name collisions over HTTP without disclosing hidden duplicates',async()=>{

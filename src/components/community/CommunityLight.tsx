@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { SectionTitle } from '../ui/SectionTitle';
-import { getGlow } from '../../services/firebase/light';
+import { getGlow } from '@backend/light';
 import { RAY_UNITS } from '../../domain/light';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { say, speak, spokenLine } from '../../utils/translations';
 import { COIN_CODE_MAX, COIN_NAME_MAX, LIGHT_COLOR, coinOf, coinProblem, normalizeCoin } from '../../domain/coin';
-import { updateCommunity } from '../../services/firebase';
+import { updateCommunity } from '@backend';
 import { notify } from '../ui/Toast';
 import { Picture } from '../ui/Picture';
 import type { Community } from '../../types';

@@ -3,7 +3,7 @@ import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { Pulse } from '../../types';
-import { getMyPulses } from '../../services/firebase';
+import { getMyPulses } from '@backend';
 import { pulseKinds, matchesKind, pulseKindLabelKey } from '../../domain/pulseKinds';
 import type { PulseType } from '../../domain/pulse';
 import { SectionTitle } from '../ui/SectionTitle';

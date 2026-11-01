@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { graphStore } from '../services/store';
-import { getMyCommunities } from '../services/firebase';
+import { getMyCommunities } from '@backend';
 import { isSeedShellHost } from './useConfig';
 import type { GuardianEdge } from '../domain/sustainingSeven';
 import type { Lifetree, Lightseed } from '../types';

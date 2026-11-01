@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Timestamp } from 'firebase/firestore';
+import { stampOfMs } from '@backend/core';
 import { Pulse } from '../../types';
 import { ChainTree, ChainRoot, ChainStats } from '../sections/ChainTree';
 import { SectionTitle } from '../ui/SectionTitle';
@@ -32,7 +32,7 @@ const commitToPulse = (c: CommitEntry, previousSha: string): Pulse => ({
     body: c.author,
     authorId: c.author,
     authorName: c.author,
-    createdAt: Timestamp.fromMillis(c.at),
+    createdAt: stampOfMs(c.at),
     loveCount: 0,
     commentCount: 0,
     previousHash: previousSha,

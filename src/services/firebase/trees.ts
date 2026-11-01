@@ -393,7 +393,9 @@ export const deleteLifetree = (id: string) => deleteDoc(doc(db, 'lifetrees', id)
 export const validateLifetree = (targetId: string, validatorId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: true, validatorId });
 export const unvalidateLifetree = (targetId: string) => updateDoc(doc(db, 'lifetrees', targetId), { validated: false, validatorId: null });
 
-export const fetchLifetrees = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, anchorUid?: string, levels?: string[] | null) => {
+// The page's bookmark is this backend's own (a snapshot here, a string on the independent node).
+export type TreePageCursor = QueryDocumentSnapshot;
+export const fetchLifetrees = async (lastD?: TreePageCursor, domainFilter?: string, anchorUid?: string, levels?: string[] | null) => {
     const scopedDomain = domainFilter?.replace(/^www\./, '');
     const communityScoped = !!scopedDomain;
     // Only return trees this viewer may read (visibility levels), matching the rules — else the

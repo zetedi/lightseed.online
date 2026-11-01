@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Community, Pulse } from '../types';
 import { eventsOwnPlace } from '../domain/eventFace';
-import { getCommunityById, getCommunityByDomain } from '../services/firebase';
+import { getCommunityById, getCommunityByDomain } from '@backend';
 
 // THE FACE AN EVENT WEARS, resolved (ring 2026-09-16; law: domain/eventFace). The hint is the
 // community the caller already holds (the host, the place being viewed); it is the face only

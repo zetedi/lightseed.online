@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Community, Lifetree } from '../../types';
-import { fetchAllLifetrees, inviteTreeToCommunity } from '../../services/firebase';
+import { fetchAllLifetrees, inviteTreeToCommunity } from '@backend';
 import { tabTone } from '../../utils/tabTheme';
 import { TreesSection } from '../sections/TreesSection';
 import { useLanguage } from '../../contexts/LanguageContext';

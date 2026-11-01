@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Alignment, AlignmentNote, Lifetree } from '../../types';
-import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAlignmentById, getCovenantForAlignment } from '../../services/firebase';
-import { ensureAlignmentCovenant } from '../../services/firebase/covenants';
+import { getLifetreeById, getPulseById, getPersonName, postAlignmentNote, getAlignmentById, getCovenantForAlignment } from '@backend';
+import { ensureAlignmentCovenant } from '@backend/covenants';
 import { Icons } from '../ui/Icons';
 import { Loading } from '../ui/Loading';
 import { Picture } from '../ui/Picture';

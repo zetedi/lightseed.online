@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { loadSubgraphAround } from '../../services/firebase/subgraph';
+import { loadSubgraphAround } from '@backend/subgraph';
 import { subgraphOf } from '../../domain/subgraph';
 import { Pulse, Lifetree } from '../../types';
 import { Icons } from './Icons';
-import { translatePulse } from '../../services/gemini';
-import { getActiveIntelligenceId, getIntelligence, DEFAULT_INTELLIGENCE_ID } from '../../services/intelligence';
-import { spendAiTokens, db } from '../../services/firebase';
+import { translatePulse } from '@backend/gemini';
+import { getActiveIntelligenceId, getIntelligence, DEFAULT_INTELLIGENCE_ID } from '@backend/intelligence';
+import { spendAiTokens } from '@backend';
+import { savePulseInterpretation } from '@backend/pulses';
 import { isTokenisationEnabled } from '../../domain/tokenisation';
-import { doc, updateDoc } from 'firebase/firestore';
 import { speak, spokenLine } from '../../utils/translations';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Accordion } from './Accordion';
@@ -85,9 +85,7 @@ export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeT
                 readAt: Date.now(),
             }).filter(([, v]) => v !== undefined)) as unknown as NonNullable<Pulse['aiInterpretation']>;
 
-            await updateDoc(doc(db, 'pulses', pulse.id), {
-                aiInterpretation: interpretationData
-            });
+            await savePulseInterpretation(pulse.id, interpretationData);
 
             // eslint-disable-next-line react-hooks/immutability -- intentional optimistic mutation of the parent-owned pulse object so all views of it show the saved interpretation without a refetch
             pulse.aiInterpretation = interpretationData; // optimistic update

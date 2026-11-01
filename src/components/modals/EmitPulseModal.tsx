@@ -12,8 +12,8 @@ import { ImageStrip } from '../ui/ImageStrip';
 import { picturesToStore } from '../../domain/pictures';
 import { Picture } from '../ui/Picture';
 import { Pulse, Lightseed, Lifetree, Vision } from '../../types';
-import { getMyVisions } from '../../services/firebase';
-import { generateVisionImage } from '../../services/gemini';
+import { getMyVisions } from '@backend';
+import { generateVisionImage } from '@backend/gemini';
 
 interface EmitPulseModalProps {
   lightseed: Lightseed | null;

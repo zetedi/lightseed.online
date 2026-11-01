@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Community, Lightseed, Pulse } from '../types';
-import { fetchEventPulses, fetchMemberEvents } from '../services/firebase';
+import { fetchEventPulses, fetchMemberEvents } from '@backend';
 import { eventFeedScope, eventsOnView, mergeMemberEvents } from '../domain/pulseVisibility';
 import { useRefreshSignal } from './useRefreshSignal';
 

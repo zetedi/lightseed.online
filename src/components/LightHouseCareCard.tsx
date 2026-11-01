@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { LightHouse } from '../types';
-import { getLightHouseCareRecord, witnessLightHouseCare, mintLightHouseCare, getCommunityById } from '../services/firebase';
+import { getLightHouseCareRecord, witnessLightHouseCare, mintLightHouseCare, getCommunityById } from '@backend';
 import { graphStore } from '../services/store';
 import { consecrationObserved } from '../domain/lightHouse';
 import { useLanguage } from '../contexts/LanguageContext';

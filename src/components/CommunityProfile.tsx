@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { getMySecretTreesAt } from '../services/firebase/trees';
+import { getMySecretTreesAt } from '@backend/trees';
 import { showAlert, showConfirm } from "./ui/Dialog";
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
@@ -9,7 +9,7 @@ import { OutwardLink } from './ui/OutwardLink';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../types';
 import { doorOf, checkInvite } from '../domain/communityDoor';
-import { updateCommunity, uploadImage, releasePicture, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest, formCommunityFromCircle } from '../services/firebase';
+import { updateCommunity, uploadImage, releasePicture, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest, formCommunityFromCircle } from '@backend';
 import { formCircleRefusal, isTreeCircle } from '../domain/treeCircle';
 import { isDomainVerified } from '../domain/domainVerification';
 import { CommunityVision } from './community/CommunityVision';

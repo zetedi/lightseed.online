@@ -11,7 +11,7 @@ import {
   covenantEpochSignaturePayload, verifiedCovenantSigners, signatureFromDoc,
   type Covenant, type CovenantKind, type CovenantParty,
 } from '../../domain/covenant';
-import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSigningKey, sign as signWithKey, verify as verifyWithKey } from '../keys';
+import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSigningKey, sign as signWithKey, verify as verifyWithKey } from './keys';
 
 // THE COVENANT SERVICE — the two-sided cryptographic mint (phase 2). A covenant is a Being with its
 // OWN chain: PROPOSED with a frozen identity + a `party` link per party, each party SIGNS its own slot

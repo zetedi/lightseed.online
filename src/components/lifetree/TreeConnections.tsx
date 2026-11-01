@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Lifetree } from '../../types';
-import { loadSubgraphAround, type LoadedBeing } from '../../services/firebase/subgraph';
+import { loadSubgraphAround, type LoadedBeing } from '@backend/subgraph';
 import { subgraphOf, type SubgraphWalk } from '../../domain/subgraph';
 import { beingPath } from '../../domain/beingLink';
 import { useLanguage } from '../../contexts/LanguageContext';

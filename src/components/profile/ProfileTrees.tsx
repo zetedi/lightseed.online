@@ -6,7 +6,7 @@ import { Lifetree } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
 import { ValidationBadge } from '../ValidationBadge';
 import { graphStore } from '../../services/store';
-import type { TendedTree } from '../../services/firebase';
+import type { TendedTree } from '@backend';
 import { roleLabelKey } from '../../domain/treeCircle';
 import { isWateringOverdue } from '../../domain/watering';
 import { sustainingSeven, SUSTAINING_SEVEN, type GuardianEdge } from '../../domain/sustainingSeven';

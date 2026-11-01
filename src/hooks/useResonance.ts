@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Lifetree, ReachAudience, VisionSynergy } from '../types';
-import { fetchVisions, getLifetreeById } from '../services/firebase';
+import { fetchVisions, getLifetreeById } from '@backend';
 import { showAlert } from '../components/ui/Dialog';
 import { resonanceId } from '../components/ResonancePanel';
 import { spokenLine } from '../utils/translations';
@@ -89,7 +89,7 @@ export function useResonance(params: {
       const treeIdByName = new Map<string, string>();
       labeled.forEach((v: any) => { const tid = v.lifetreeId; if (tid && v.title) treeIdByName.set(v.title.trim().toLowerCase(), tid); });
       // The oracle's service is fetched on the first ask; App mounts this hook on every load.
-      const { findVisionSynergies } = await import('../services/gemini');
+      const { findVisionSynergies } = await import('@backend/gemini');
       const results = (await findVisionSynergies(labeled, preferredIntelligenceId)).map(r => ({
         ...r,
         tree1Id: treeIdByName.get((r.vision1Title || '').trim().toLowerCase()),

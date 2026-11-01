@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Alignment, Lifetree } from '../types';
-import { getLifetreeById, getPulseById, getPersonName } from '../services/firebase';
+import { getLifetreeById, getPulseById, getPersonName } from '@backend';
 
 // A pending alignment, hydrated for display: the two trees (theirs + yours), the two matched
 // pulses' text, and the human behind the initiating tree. The raw Alignment only stores ids, so

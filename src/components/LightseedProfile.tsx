@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRequestedProfileTab, clearProfileTab } from '../hooks/useProfileTab';
 import { showAlert } from "./ui/Dialog";
 import { type Lifetree, type Alignment, type Vision, type Pulse, type ReachAudience } from '../types';
-import { getLifetreeById, listenToUserProfile, updateUserProfile, careForTree, auth } from '../services/firebase';
+import { getLifetreeById, listenToUserProfile, updateUserProfile, careForTree, accountCreatedAtMs } from '@backend';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
 import { Icons } from './ui/Icons';
@@ -12,7 +12,7 @@ import { notify } from './ui/Toast';
 import { isExplicitlyValidatedTree, isValidationLive, isValidationFading } from '../utils/validation';
 import { normalizeTheme, type CommunityThemePreset } from '../utils/theme';
 import { IntelligencePanel } from './intelligence/IntelligencePanel';
-import { DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
+import { DEFAULT_INTELLIGENCE_ID } from '@backend/intelligence';
 import { assignDuty, type DutyAssignment } from '../domain/intelligenceDuty';
 import { BeingProfile, type BeingSection } from './BeingProfile';
 import { SuperDot } from './ui/SuperDot';
@@ -156,8 +156,7 @@ export const LightseedProfile = ({ onViewTree, onDeleteTree, defaultTreeId, onSe
     // creation and the birth of the oldest tree this being keeps. For the genesis keeper the
     // genesis tree itself sets it (zetedi joined when the tree began, not when the login did).
     const joinedMs = useMemo(() => {
-        const created = auth.currentUser?.metadata?.creationTime;
-        const authMs = created ? Date.parse(created) : null;
+        const authMs = accountCreatedAtMs();
         const treeMs = (myTrees as Lifetree[]).reduce<number | null>((min, tr) => {
             const ms = tr.createdAt?.toMillis ? tr.createdAt.toMillis() : null;
             return ms !== null && (min === null || ms < min) ? ms : min;

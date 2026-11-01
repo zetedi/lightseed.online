@@ -15,8 +15,8 @@ import {
   signAlignmentCovenant,
   getCovenantForAlignment,
   getAlignmentById,
-} from './services/firebase';
-import { SigningKeyNeedsRestoreError } from './services/keys';
+} from '@backend';
+import { SigningKeyNeedsRestoreError } from '@backend/keys';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type ReachAudience } from './types';
 import Logo from './components/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';

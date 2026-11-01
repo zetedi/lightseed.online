@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRefreshSignal } from '../../hooks/useRefreshSignal';
-import { getOfferingsTo } from '../../services/firebase';
+import { getOfferingsTo } from '@backend';
 import { offeringStatusOf } from '../../domain/offering';
 import { formatLight } from '../../domain/light';
 import { useCoin } from '../../hooks/useCoin';

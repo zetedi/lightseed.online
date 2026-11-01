@@ -7,14 +7,14 @@ import { ProfileHero } from './ui/ProfileHero';
 import { PulseInsightPanel } from './ui/PulseInsightPanel';
 import { useSession } from '../contexts/SessionContext';
 import { graphStore } from '../services/store';
-import { vetoGrowthPulse, unmintLastPulse } from '../services/firebase/pulses';
-import { getLifetreeById } from '../services/firebase';
+import { vetoGrowthPulse, unmintLastPulse } from '@backend/pulses';
+import { getLifetreeById } from '@backend';
 import { announce } from '../services/refreshBus';
 import { canVeto, isVetoed, vetoProgress, type VetoInput } from '../domain/guardianVeto';
 import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../domain/unmint';
 import { showAlert, showConfirm } from './ui/Dialog';
 import { BeingQr } from './ui/BeingQr';
-import { mintBeingQr } from '../services/firebase/beings';
+import { mintBeingQr } from '@backend/beings';
 import { useLanguage } from '../contexts/LanguageContext';
 
 import { Picture } from './ui/Picture';

@@ -65,20 +65,27 @@ describe('backend-independent graph service', () => {
 });
 
 describe('graph composition boundary', () => {
-  it('selects the Firestore graph adapter in one place, never in a view or aggregate', () => {
+  // Each backend selects its own graph adapter in exactly one place (ring 2026-11-01: the
+  // selection moved behind @backend, so the build decides which soil the store stands on);
+  // no view, hook or aggregate names an adapter, and neither backend names the other's.
+  const importers = (adapter: string): string[] => {
     const root = join(__dirname, '../src');
     const imports: string[] = [];
+    const pattern = new RegExp(`(?:from\\s*|import\\s*\\()\\s*['"][^'"]*adapters/${adapter}['"]`);
     const scan = (directory: string) => {
       for (const entry of readdirSync(directory, { withFileTypes: true })) {
         const file = join(directory, entry.name);
         if (entry.isDirectory()) scan(file);
-        else if (/\.tsx?$/.test(entry.name)
-          && /(?:from\s*|import\s*\()\s*['"][^'"]*adapters\/firestore['"]/.test(readFileSync(file, 'utf8'))) {
-          imports.push(relative(root, file));
-        }
+        else if (/\.tsx?$/.test(entry.name) && pattern.test(readFileSync(file, 'utf8'))) imports.push(relative(root, file));
       }
     };
     scan(root);
-    expect(imports).toEqual(['services/store.ts']);
+    return imports.sort();
+  };
+  it('the Firebase backend selects the Firestore graph adapter in one place, never a view or aggregate', () => {
+    expect(importers('firestore')).toEqual(['services/firebase/store.ts']);
+  });
+  it('the independent backend selects the HTTP graph adapter in one place', () => {
+    expect(importers('independent')).toEqual(['services/independent/store.ts']);
   });
 });

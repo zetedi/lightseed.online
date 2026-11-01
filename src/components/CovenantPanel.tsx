@@ -4,12 +4,12 @@ import { Icons } from './ui/Icons';
 import { Loading } from './ui/Loading';
 import { SectionTitle } from './ui/SectionTitle';
 import { SigningKeyModal } from './modals/SigningKeyModal';
-import { getPersonName } from '../services/firebase';
-import { hasSigningKey, readyToSign, SigningKeyNeedsRestoreError } from '../services/keys';
+import { getPersonName } from '@backend';
+import { hasSigningKey, readyToSign, SigningKeyNeedsRestoreError } from '@backend/keys';
 import {
   getCovenantBundle, signCovenant, verifyCovenant, breakCovenant,
   type CovenantSignature,
-} from '../services/firebase/covenants';
+} from '@backend/covenants';
 import type { Covenant, CovenantParty } from '../domain/covenant';
 import { speak } from '../utils/translations';
 

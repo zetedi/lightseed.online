@@ -11,7 +11,7 @@ SET LOCAL lock_timeout = '10s';
 SET LOCAL search_path = pg_catalog;
 DO $ready$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '049_being_lookup.sql') THEN
+  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '055_crossings.sql') THEN
     RAISE EXCEPTION 'Run seed:migrate before provisioning a runtime account.';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -86,6 +86,25 @@ GRANT EXECUTE ON FUNCTION seed.resolve_identity(text,text,text,boolean,text) TO 
 GRANT EXECUTE ON FUNCTION seed.community_invites(text,text,text,integer), seed.invite_command(jsonb,text,text,text,text) TO ${role};
 GRANT EXECUTE ON FUNCTION seed.community_command(jsonb,text,text) TO ${role};
 GRANT EXECUTE ON FUNCTION seed.my_profile(), seed.save_profile(text, text) TO ${role};
+-- THE DOCUMENT DOOR (ring 2026-11-02): the four entry points, the rules the row policies call, and
+-- SELECT on every table whose read law now stands (the law filters each row; DML stays closed).
+GRANT EXECUTE ON FUNCTION seed.doc_get(text,text,text), seed.doc_list(text,text,jsonb,jsonb,jsonb,boolean,jsonb,integer), seed.doc_write(jsonb,text), seed.love_toggle(text,text) TO ${role};
+GRANT EXECUTE ON FUNCTION seed.rule_users(text,text,text,jsonb,jsonb,text[],timestamptz), seed.rule_push_subscriptions(text,text,text,jsonb,jsonb,text[],timestamptz),
+  seed.rule_admins(text,text,text,jsonb,jsonb,text[],timestamptz), seed.rule_config(text,text,text,jsonb,jsonb,text[],timestamptz),
+  seed.rule_light_houses(text,text,text,jsonb,jsonb,text[],timestamptz), seed.rule_loves(text,text,text,jsonb,jsonb,text[],timestamptz),
+  seed.rule_bed_holds(text,text,text,jsonb,jsonb,text[],timestamptz), seed.rule_stays(text,text,text,jsonb,jsonb,text[],timestamptz),
+  seed.rule_rays(text,text,text,jsonb,jsonb,text[],timestamptz), seed.rule_gifts(text,text,text,jsonb,jsonb,text[],timestamptz),
+  seed.rule_network_invites(text,text,text,jsonb,jsonb,text[],timestamptz), seed.rule_intelligences(text,text,text,jsonb,jsonb,text[],timestamptz),
+  seed.rule_memories(text,text,text,jsonb,jsonb,text[],timestamptz), seed.rule_subscriptions(text,text,text,jsonb,jsonb,text[],timestamptz) TO ${role};
+GRANT SELECT ON public.users, public.persons, public.admins, public.config, public.initiates, public.light_houses, public.covenants, public.covenant_signatures,
+  public.pulse_signatures, public.pulse_witnesses, public.loves, public.lifetree_occupancy, public.stays, public.supports, public.rays, public.glow, public.gifts,
+  public.spends, public.network_invites, public.community_tree_invites, public.invite_requests, public.collabs, public.intelligences, public.personas,
+  public.memories, public.subscriptions, public.person_keys, public.person_key_events, seed.bed_holds, seed.push_subscriptions TO ${role};
+-- THE ORGANS (ring 2026-11-02): context/apply pairs the API drives; appoint_keeper stays the installation's (seed:keeper, never the API's).
+GRANT EXECUTE ON FUNCTION seed.witness_context(text), seed.apply_witness(text,jsonb), seed.appreciation_context(text), seed.apply_appreciation(text,jsonb,jsonb),
+  seed.spend_context(text), seed.apply_spend(text,jsonb), seed.reset_light(), seed.unmint_context(text), seed.apply_unmint(text,jsonb,text[]),
+  seed.staff_command(jsonb), seed.delete_account(text,text), seed.domain_challenge(text,text,numeric), seed.domain_verified(text,text,numeric),
+  seed.door_claim(text,text,text,text,numeric), seed.door_claims(text), seed.door_open(text,text,boolean,text,numeric), seed.door_withdraw(text,text) TO ${role};
 COMMIT;
 `;
 }

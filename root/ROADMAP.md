@@ -19,7 +19,12 @@ permission to ship a reduced-feature node.
    Versioned schema installation/upgrades now use `seed:migrate`, with a checksum
    ledger, serialized execution and transactional rollback, exercised against real
    PostgreSQL by `test:seed`. A version-2 independent charter can now be validated
-   and prepared with `seed:configure`; the self-hosted application build is still pending.
+   and prepared with `seed:configure`. THE SEAM NOW EXISTS (2026-11-01): the whole
+   service layer is imported as `@backend`, the build chooses Firebase or the independent
+   HTTP services, `npm run build:independent` builds the ORIGINAL application with no
+   Firebase module in the bundle, and `src/services/backendParity.ts` makes every missing
+   independent hand a compile error. The remaining work is porting the hands that still
+   answer `unported` (counted in `seed/PARITY.md`) and the server reads they need.
 2. Connect self-hosted identity and enforce access with non-owner database roles.
    The database now denies access to unported collections by default. Non-owner
    PostgreSQL tests cover initial link policies, secret-seat isolation, permanent
@@ -50,11 +55,18 @@ permission to ship a reduced-feature node.
    appends and failure rollback. This is an integration milestone, not the release.
 4. Port every remaining responsibility exported by `functions/src/index.ts`,
    plus client data access and subscriptions. Replace triggers and schedules with
-   durable, idempotent background work.
+   durable, idempotent background work. THE DOCUMENT DOOR (050–053) now carries every
+   document hand under the translated rules, and THE ORGANS (054) carry light (witness,
+   appreciation, spend, reset), the unmint, the staff roster, the account's departure and
+   the domain/door proofs (2026-11-02). Still refusing by name: the mail organ, the AI
+   organ, cross-node SSO, the scheduled thirst and stay leaves, previews/feeds/sitemap,
+   picture release, the one-time Firestore backfills.
 5. Implement complete signed exports, identity enrollment, media transport,
-   transactional import execution and conflict resolution. The additive merge
-   planner and offline signature-verified report exist; actual importing does not.
-6. Bootstrap authority and the first keeper without a public first-visitor claim.
+   transactional import execution and conflict resolution. `seed:export` and
+   `seed:import` (055) now export a sealed bundle and land it additively in one
+   transaction (2026-11-02); media transport and identity enrollment at scale remain.
+6. Bootstrap authority and the first keeper without a public first-visitor claim —
+   `seed:keeper` appoints the keeper from the installation (2026-11-02).
    Verify a clean Compose installation, persistence, complete backup/restore and
    overlapping imports. Walk all supported features with Firebase access blocked.
 

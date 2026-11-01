@@ -14,9 +14,17 @@ import { seedCommunityCommand } from '../../src/domain/seedCommunity.mjs';
 import { seedProfileInput } from '../../src/domain/seedProfile.mjs';
 import { createServer } from 'node:http';
 import { seedRequest } from '../../src/domain/seedRequest.mjs';
+import { seedDocCommand } from '../../src/domain/seedDocs.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand } from '../../src/domain/seedOrgans.mjs';
+import { resolveTxt } from 'node:dns/promises';
 
+// The organs' own refusals (seed/schema/054), by weight.
+const ORGAN_ERRORS={LS003:[404,'community_missing'],LS050:[409,'not_watering'],LS051:[409,'already_witnessed'],LS052:[409,'appreciate_already'],
+  LS053:[409,'ray_moved'],LS054:[409,'spend_already'],LS055:[409,'spend_glow_short'],LS056:[404,'unmint_not_mint'],LS057:[409,'unmint_not_last'],
+  LS058:[404,'person_missing'],LS059:[409,'keeper_stands'],LS060:[409,'no_domain'],LS061:[409,'door_taken'],LS062:[409,'door_is_domain'],
+  LS063:[409,'door_already'],LS064:[409,'no_challenge'],LS065:[409,'challenge_expired'],LS066:[409,'domain_changed']};
 /** @param {*} database @param {(authorization: string) => Promise<string | null>} [authenticate]
- * @param {{nodeDomain: string | null, media?: *}} [options] */
+ * @param {{nodeDomain: string | null, media?: *, faceDoors?: string[], resolveTxt?: (name: string) => Promise<string[][]>}} [options] */
 export function createApi(database, authenticate = async () => null, options = { nodeDomain: null }) {
   const server = createServer({ maxHeaderSize: 8192 }, async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -31,6 +39,30 @@ export function createApi(database, authenticate = async () => null, options = {
         if (request.status === 405) res.setHeader('Allow', req.url?.endsWith('/command') || req.url === '/v1/media/upload' ? 'POST' : req.url === '/v1/me/profile' ? 'GET, POST' : 'GET');
         send(request.status, { error: request.error });
       } else if (request.kind === 'me') send(200, { uid });
+      // THE DOCUMENT DOOR (ring 2026-11-02): a write as a claim, judged by the document law.
+      else if (request.kind === 'docCommand') {
+        if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??'')){send(415,{error:'json_required'});return;}
+        const body=await readJsonBody(req,262144);
+        if(body.error){res.setHeader('Connection','close');send(body.status,{error:body.error});return;}
+        const command=seedDocCommand(body.value);
+        if(!command){send(400,{error:'invalid_command'});return;}
+        send(200,await database.docCommand(uid,command));
+      }
+      // THE ORGANS (ring 2026-11-02): light, staff, the account's departure, domain proofs and doors.
+      else if(['lightCommand','staffCommand','accountCommand','domainCommand'].includes(request.kind)) {
+        if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??'')){send(415,{error:'json_required'});return;}
+        const body=await readJsonBody(req,4096);
+        if(body.error){res.setHeader('Connection','close');send(body.status,{error:body.error});return;}
+        const command=request.kind==='lightCommand'?seedLightCommand(body.value):request.kind==='staffCommand'?seedStaffCommand(body.value):request.kind==='accountCommand'?seedAccountCommand(body.value):seedDomainCommand(body.value);
+        if(!command){send(400,{error:'invalid_command'});return;}
+        send(200,request.kind==='lightCommand'?await database.lightCommand(uid,command):request.kind==='staffCommand'?await database.staffCommand(uid,command)
+          :request.kind==='accountCommand'?await database.accountCommand(uid,command)
+          :await database.domainCommand(uid,command,{nodeDomain:options.nodeDomain,faceDoors:options.faceDoors??[],resolveTxt:options.resolveTxt??resolveTxt}));
+      }
+      else if (request.kind === 'docs') {
+        const result=await database.docs(request,uid);
+        send(request.id!==null && result.doc===null?404:200,result);
+      }
       else if(['eventCommand','alignmentCommand','linkCommand','visionCommand','signingCommand','blockCommand','offeringCommand'].includes(request.kind)) {
         if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??'')){send(415,{error:'json_required'});return;}
         const body=await readJsonBody(req,['eventCommand','visionCommand','blockCommand','offeringCommand'].includes(request.kind)?262144:request.kind==='alignmentCommand'?16384:2048);
@@ -141,6 +173,15 @@ export function createApi(database, authenticate = async () => null, options = {
       if(error.code==='LS034'){send(404,{error:'offering_unavailable'});return;}
       if(error.code==='LS035'){send(409,{error:'offering_unavailable'});return;}
       if(error.code==='BLOCK_REJECTED' && blockRefusalStatus(error.refusal)){send(blockRefusalStatus(error.refusal),{error:error.refusal});return;}
+      if(error.code==='ORGAN_REFUSED'){send(error.status,{error:error.refusal});return;}
+      if(Object.hasOwn(ORGAN_ERRORS,error.code)){const [status,message]=ORGAN_ERRORS[error.code];send(status,{error:message});return;}
+      if(error.code==='LS040'){send(404,{error:'doc_missing'});return;}
+      if(error.code==='LS041'){send(409,{error:'doc_exists'});return;}
+      if(error.code==='LS042'){send(409,{error:'doc_changed'});return;}
+      if(error.code==='LS043'){send(404,{error:'love_target_missing'});return;}
+      if(error.code==='LS046'){send(409,{error:'stay_overlaps'});return;}
+      if(error.code==='LS002'){send(409,{error:'node_full'});return;}
+      if(error.code==='28000'){send(401,{error:'authentication_required'});return;}
       if(error.code==='LS032'){send(409,{error:'block_head_moved'});return;}
       if(error.code==='LS033'){send(404,{error:'block_no_bearer'});return;}
       if(error.code==='22023'){send(400,{error:'invalid_command'});return;}

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Icons } from './Icons';
 import { useSession } from '../../contexts/SessionContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { isBeingLoved, loveBeing, isPulseLoved, lovePulse } from '../../services/firebase';
+import { isBeingLoved, loveBeing, isPulseLoved, lovePulse } from '@backend';
 
 // The ONE heart. Every being wears the same like: a tree, a bed, a community, a vision, an event,
 // a reach, any pulse. A being's love is a plain loves/{uid} slot + loveCount (loveBeing); a

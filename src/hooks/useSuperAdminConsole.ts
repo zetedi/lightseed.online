@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { ensureIntelligenceCommons } from '../services/intelligence';
+import { ensureIntelligenceCommons } from '@backend/intelligence';
 import {
   backfillPulseVisibility, migratePulseTypeCasing, migrateTreeVisibility,
   migrateBackfillLids, migrateBackfillMatchIds, backfillVisionChains, migrateAlignmentsToCovenants,
   migrateDecisionsToSignatures,
-} from '../services/firebase';
+} from '@backend';
 import { setChainLocked, canonicalize, computeCanonicalHash, blockContent, verifyChain } from '../domain/chain';
 
 // Superadmin-only devtools, attached to `window` (run from the deployed site's console). No React

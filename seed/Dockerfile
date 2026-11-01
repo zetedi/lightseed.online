@@ -21,7 +21,7 @@ COPY src/domain/seedBlock.mjs /app/src/domain/
 COPY src/domain/seedLink.mjs /app/src/domain/
 COPY src/domain/seedSigning.mjs /app/src/domain/
 COPY src/domain/seedVision.mjs /app/src/domain/
-COPY src/domain/seedMedia.mjs src/domain/seedTransaction.mjs src/domain/seedTreeInvite.mjs src/domain/seedRequest.mjs src/domain/seedAuth.mjs src/domain/seedTree.mjs src/domain/seedInvite.mjs src/domain/seedCommunity.mjs src/domain/seedProfile.mjs src/domain/personName.mjs src/domain/uuidv7.mjs /app/src/domain/
+COPY src/domain/seedMedia.mjs src/domain/seedTransaction.mjs src/domain/seedTreeInvite.mjs src/domain/seedRequest.mjs src/domain/seedDocs.mjs src/domain/seedOrgans.mjs src/domain/seedAuth.mjs src/domain/seedTree.mjs src/domain/seedInvite.mjs src/domain/seedCommunity.mjs src/domain/seedProfile.mjs src/domain/personName.mjs src/domain/uuidv7.mjs /app/src/domain/
 RUN mkdir -p /app/media && chown node:node /app/media
 USER node
 EXPOSE 8081

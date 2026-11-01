@@ -12,8 +12,12 @@ import { seedTreeCommand } from '../../domain/seedTree.mjs';
 import { seedInviteCommand } from '../../domain/seedInvite.mjs';
 import { seedCommunityCommand } from '../../domain/seedCommunity.mjs';
 import { seedSessionIdentity } from '../../domain/seedBrowser';
+import { seedDocCommand } from '../../domain/seedDocs.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand } from '../../domain/seedOrgans.mjs';
 
-export type LoginToken = { access_token: string; expired?: boolean };
+// The issuer's own claims ride beside the token: a first sign-in may take its name from them
+// (the same courtesy Firebase gave a Google name), never its identity — the API chooses the uid.
+export type LoginToken = { access_token: string; expired?: boolean; profile?: { name?: string; preferred_username?: string } };
 export interface IdentityClient {
   current(): Promise<LoginToken | null>;
   callback(url: string): Promise<LoginToken>;
@@ -22,7 +26,7 @@ export interface IdentityClient {
   clear(): Promise<void>;
   changes(callback: (user: LoginToken | null) => void): () => void;
 }
-export type SeedSession = { status: 'loading' | 'anonymous' | 'error' } | { status: 'authenticated'; uid: string };
+export type SeedSession = { status: 'loading' | 'anonymous' | 'error' } | { status: 'authenticated'; uid: string; name?: string };
 
 // The API, not an ID-token claim or email match, chooses the local UID.
 export function createSeedSession(identity: IdentityClient, fetcher: typeof fetch = fetch) {
@@ -51,13 +55,14 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
       if (!uid) throw new Error('invalid_identity');
       if (mine !== generation) return;
       accessToken = user.access_token;
-      publish({ status: 'authenticated', uid });
+      const claimed = [user.profile?.name, user.profile?.preferred_username].find(v => typeof v === 'string' && v.trim());
+      publish({ status: 'authenticated', uid, ...(claimed ? { name: claimed.trim() } : {}) });
     } catch {
       if (mine === generation) publish({ status: 'error' });
     }
   };
   identity.changes(user => { if (acceptChanges) void bind(user); });
-  async function request(path: string, input?: object, image?: { path: string; bytes: Blob }) {
+  async function request(path: string, input?: object, image?: { path: string; bytes: Blob }, options?: { missing?: boolean }) {
     const token = accessToken, mine = generation;
     if (!token) throw new Error('authentication_required');
     const result = image ? await fetcher('/v1/media/upload', {
@@ -70,7 +75,13 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
       ++generation; accessToken = null; publish({ status: 'anonymous' });
       throw new Error('authentication_required');
     }
-    if (!result.ok) throw new Error('api_unavailable');
+    // A door that may honestly stand empty: the caller asked for null on 404 (a being by id).
+    if (options?.missing && result.status === 404) return null;
+    if (!result.ok) {
+      // The node's refusal names itself (forbidden, doc_changed, node_full …); the shell speaks that word.
+      const said = await result.json().catch(() => null) as { error?: unknown } | null;
+      throw new Error(typeof said?.error === 'string' && /^[a-z_]{1,64}$/.test(said.error) ? said.error : 'api_unavailable');
+    }
     const body: unknown = await result.json();
     if (mine !== generation) throw new Error('session_changed');
     return body;
@@ -103,7 +114,7 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
         }
       }
     },
-    read: (path: string) => request(path),
+    read: (path: string, options?: { missing?: boolean }) => request(path, undefined, undefined, options),
     eventCommand(value: unknown) {
       const command=seedEventCommand(value);
       if(!command)return Promise.reject(new Error('invalid_command'));
@@ -163,6 +174,33 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
       const command = seedCommunityCommand(value);
       if (!command) return Promise.reject(new Error('invalid_command'));
       return request('/v1/communities/command', command);
+    },
+    // THE DOCUMENT DOOR (ring 2026-11-02): a document write as a claim; shape-checked here, judged by the node.
+    docCommand(value: unknown) {
+      const command = seedDocCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/docs/command', command);
+    },
+    // THE ORGANS (ring 2026-11-02): light, staff, the account's own departure, the domain proofs and doors.
+    lightCommand(value: unknown) {
+      const command = seedLightCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/light/command', command);
+    },
+    staffCommand(value: unknown) {
+      const command = seedStaffCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/staff/command', command);
+    },
+    accountCommand(value: unknown) {
+      const command = seedAccountCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/account/command', command);
+    },
+    domainCommand(value: unknown) {
+      const command = seedDomainCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/domains/command', command);
     },
     saveProfile: (displayName: string) => request('/v1/me/profile', { displayName }),
     profilePicture(slot: 'siteLogoUrl' | 'siteHeroUrl', path: string | null) {

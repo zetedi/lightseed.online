@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMyPulseCount, getMyVisionCount, getMyAlignmentCount } from '../services/firebase';
+import { getMyPulseCount, getMyVisionCount, getMyAlignmentCount } from '@backend';
 import type { Lightseed } from '../types';
 
 // The dashboard's {pulses, visions, alignments} counts. Uses server-side COUNT aggregations (a

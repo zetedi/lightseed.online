@@ -15,6 +15,10 @@ export interface MergeIdentity {
   sourceUid: string;
   targetUid: string;
   personLid: string;
+  // The destination's installation bound a login to targetUid by reviewed configuration (an explicit
+  // issuer/subject binding, never an email match). Set by the executor from its own records, not by
+  // the operator's file: with it, the person may ARRIVE with the import before they have spoken there.
+  loginBound?: boolean;
 }
 
 export interface MergeIssue {
@@ -145,7 +149,10 @@ export async function planBundleMerge(
     }
     const sourcePersons = ['users', 'persons'].map(c => incomingByPath.get(`${c}/${uid}`)).filter(d => d !== undefined);
     const targetPersons = ['users', 'persons'].map(c => current.get(`${c}/${uid}`)).filter(d => d !== undefined);
-    if (!isLid(binding.personLid) || sourcePersons.length === 0 || targetPersons.length === 0
+    // Anchored on the far side by a person record carrying the same LID, or by a login the
+    // installation itself bound to this uid (the person then arrives with the import).
+    const anchoredByLogin = binding.loginBound === true && targetPersons.length === 0;
+    if (!isLid(binding.personLid) || sourcePersons.length === 0 || (targetPersons.length === 0 && !anchoredByLogin)
       || [...sourcePersons, ...targetPersons].some(d => d.data.lid !== binding.personLid)) {
       issues.push({ code: 'identity_conflict', detail: `Identity ${uid} is not anchored to the same person on both nodes.` });
     }

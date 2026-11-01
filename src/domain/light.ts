@@ -185,3 +185,53 @@ export const idleFade = (units: number, elapsedMs: number, dimPerWeek: number): 
 // least the source's floor ("set the veto dial to one ray" = a floor of RAY_UNITS).
 export const visibleToSource = (branchUnits: number, attentionFloorUnits: number): boolean =>
   branchUnits >= Math.max(0, attentionFloorUnits);
+
+// ── THE MINT'S JUDGMENT (lifted from functions/src/mint.ts on 2026-11-02, so the independent
+// node's API speaks the same law from this one source; tests/mint.test.ts holds the functions
+// mirror equal). Every decision witnessWatering makes, with no storage in reach.
+export const kindleDayKeyFromMs = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+export const NODE_GLOW_HOME = 'NODE'; // glow/NODE: the instance commons, the home of last resort
+
+export interface DepartingRay { units: number; communityId: string | null }
+export interface RayRelease { toHeir: number; glow: number; glowHome: string }
+// THE LAST SPEND: a departing ray's disposition — to a chosen heir through the prism, else dissolved.
+export const releaseRay = (ray: DepartingRay, hasHeir: boolean): RayRelease => {
+  const glowHome = ray.communityId || NODE_GLOW_HOME;
+  const units = Number.isInteger(ray.units) && ray.units > 0 ? ray.units : 0;
+  if (!hasHeir) return { toHeir: 0, glow: units, glowHome };
+  const { glow, spendable } = prismSplit(units, DEFAULT_GLOW_SHARE_DENOMINATOR);
+  return { toHeir: spendable, glow, glowHome };
+};
+
+export interface WitnessFacts {
+  witnessUid: string;
+  pulse: { exists: boolean; care?: unknown; wateringConfirmedBy?: unknown; carerUid: string; treeId: string; createdAtMs: number | null };
+  witnessSinceMs: number | null;
+  tree: { exists: boolean; treeType?: unknown; diedAtMs: number | null };
+  carerRayExists: boolean;
+  witnessRayExists: boolean;
+}
+export type WitnessJudgment =
+  | { outcome: 'reject'; code: 'not-found' | 'failed-precondition' | 'permission-denied'; message: string }
+  | { outcome: 'already' }
+  | { outcome: 'kindle'; dayKey: string; carerRay: { holderUid: string; role: 'carer'; units: number } | null; witnessRay: { holderUid: string; role: 'witness'; units: number } | null };
+
+export function judgeWitness(f: WitnessFacts): WitnessJudgment {
+  const reject = (code: 'not-found' | 'failed-precondition' | 'permission-denied', message: string): WitnessJudgment => ({ outcome: 'reject', code, message });
+  if (!f.pulse.exists) return reject('not-found', 'That watering no longer exists.');
+  if (f.pulse.care !== 'watering') return reject('failed-precondition', 'That is not a watering.');
+  if (f.pulse.wateringConfirmedBy === 'guardian') return { outcome: 'already' };
+  if (!f.pulse.carerUid || !f.pulse.treeId) return reject('failed-precondition', 'That watering is malformed.');
+  if (f.pulse.createdAtMs === null) return reject('failed-precondition', 'That watering carries no birth time.');
+  if (f.witnessUid === f.pulse.carerUid) return reject('failed-precondition', 'You cannot witness your own care.');
+  if (f.witnessSinceMs === null) return reject('permission-denied', "Only the tree's circle — its keeper, keepers, stewards and guardians — may witness it.");
+  if (f.witnessSinceMs > f.pulse.createdAtMs) return reject('failed-precondition', 'Your standing on this tree began after this watering.');
+  if (!f.tree.exists) return reject('not-found', 'That tree no longer exists.');
+  if (f.tree.treeType === 'BED') return reject('failed-precondition', 'A bed is not cared for for light.');
+  if (f.tree.diedAtMs !== null) return reject('failed-precondition', 'A tree that has died kindles memory, not light.');
+  const dayKey = kindleDayKeyFromMs(f.pulse.createdAtMs);
+  if (f.tree.treeType === 'SECRET') return { outcome: 'kindle', dayKey, carerRay: null, witnessRay: null };
+  const carerRay = f.carerRayExists ? null : { holderUid: f.pulse.carerUid, role: 'carer' as const, units: RAY_UNITS };
+  const witnessRay = (f.carerRayExists || f.witnessRayExists) ? null : { holderUid: f.witnessUid, role: 'witness' as const, units: witnessShareUnits() };
+  return { outcome: 'kindle', dayKey, carerRay, witnessRay };
+}

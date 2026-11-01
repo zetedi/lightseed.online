@@ -16,3 +16,19 @@ export {eventDuplicationPayload} from './eventDuplication';
 export {eventDraftContent} from './eventDraft';
 export {judgeEventCircle,eventCircleDraft,eventCircleMemberUids} from './eventCircle';
 export {rootsABeing} from './secretTree';
+// THE ORGANS (ring 2026-11-02): the light mint, the spend, the unmint, the decision seal and the
+// domain proofs, as the API's own law — the same source the browser and the functions mirror.
+export {judgeWitness,kindleDayKeyFromMs,releaseRay,NODE_GLOW_HOME,prismSplit,DEFAULT_GLOW_SHARE_DENOMINATOR,RAY_UNITS} from './light';
+export {judgeAppreciation,judgeSpend} from './spend';
+export {unmintRefusal,STAFF_OVERRIDABLE_REFUSALS,touchRestoreOf} from './unmint';
+export {decisionIdentity,decisionSignaturePayload,decisionEpochSignaturePayload,DECISION_DOMAIN,DECISION_EPOCH_DOMAIN} from './decision';
+export {keyStandingAt,keyStandingCounts} from './keyEpoch';
+export {signingPreimage} from './signing';
+export {normalizeDoor,isDoorName,doorClaimRefusal,doorChallengeId} from './doors';
+export {challengeRecordName,challengeRecordValue,txtProvesChallenge,challengeIsLive,DOMAIN_CHALLENGE_TTL_MS} from './domainVerification';
+export {normalizeAnchorDomain} from './interbeingMatrix';
+// THE CROSSING (ring 2026-11-02): the bundle law, the merge planner and the charter check, so the
+// installation's export/import (seed/api/bundle.mjs) speaks the one law the browser and tests hold.
+export {TRAVEL_PLAN,travelRuleFor,collectionSignature,buildCensus,manifestHashOf,verifyBundle,verifyBundleSeal,expectedBeingsIndex,localUidCensus,docContentHash,BUNDLE_SEAL_TAG,BUNDLE_FORMAT_VERSION} from './bundle';
+export {planBundleMerge,mergeSnapshotDigest} from './bundleMerge';
+export {independentCharterProblem} from './independentCharter';

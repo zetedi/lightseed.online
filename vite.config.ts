@@ -5,6 +5,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import charter from './src/config/charter.json';
+import { seedBrowserConfig } from './src/domain/seedBrowser';
 
 // THE NODE (ring 2026-09-06): the shell's name, colours and Open Graph card come from the
 // charter — index.html reads them as %VITE_NODE_*% at build time.
@@ -43,6 +44,24 @@ export default defineConfig(({ mode }) => {
     const envFileVars = loadEnv(mode, cwd, '');
     const combinedEnv = { ...process.env, ...envFileVars };
 
+    // THE SECOND SOIL (ring 2026-11-01): `vite build --mode independent` builds this same
+    // application for the independent node — @backend resolves to src/services/independent,
+    // the SSO door (a Firebase session's mirror) is not built, the browser carries the
+    // installation's HTTPS origins instead of a Firebase config, and the bundle is refused
+    // outright if any Firebase module reaches it.
+    const independent = mode === 'independent';
+    const browserConfig = independent
+        ? seedBrowserConfig({ appOrigin: combinedEnv.SEED_WEB_ORIGIN, issuer: combinedEnv.SEED_IDENTITY_ISSUER })
+        : null;
+    const noFirebase = (): Plugin => ({
+        name: 'lightseed:no-firebase',
+        generateBundle() {
+            for (const id of this.getModuleIds()) {
+                if (/node_modules\/(?:@firebase\/|firebase\/)/.test(id)) this.error('The independent node must not import Firebase: ' + id);
+            }
+        },
+    });
+
     // Selectively expose variables. NOTE: only Firebase's public config belongs here — anything
     // in clientEnv is inlined into the public JS bundle. Never add a real secret (e.g. a Gemini/
     // Anthropic API_KEY); those live only in Cloud Functions secrets and are used server-side.
@@ -70,7 +89,7 @@ export default defineConfig(({ mode }) => {
           // hidden iframe never pays for the whole forest.
           input: {
             main: path.resolve(cwd, 'index.html'),
-            sso: path.resolve(cwd, 'sso.html'),
+            ...(independent ? {} : { sso: path.resolve(cwd, 'sso.html') }),
           },
           output: {
             // THE VENDORS KEEP THEIR OWN NAMES (ring 2026-09-13). React and Firebase change
@@ -95,6 +114,7 @@ export default defineConfig(({ mode }) => {
       plugins: [
         react(),
         rootPapers(path.resolve(cwd, 'root')),
+        ...(independent ? [noFirebase()] : []),
         // PWA: installable app + offline shell. The service worker precaches the built shell
         // (fingerprinted js/css/html + small images). Live data stays live — Firestore/Storage
         // requests are not cached. 'prompt': a fresh deploy surfaces the UpdateToast ("a new
@@ -178,10 +198,16 @@ export default defineConfig(({ mode }) => {
         // This allows the polyfill (in utils/polyfill.ts) to merge these build-time vars
         // with the runtime vars (window.process.env) injected by the AI Studio UI.
         '__STATIC_ENV__': JSON.stringify(clientEnv),
+        // The independent node's browser configuration (domain/seedBrowser); null in a Firebase build.
+        'SEED_BROWSER_CONFIG': JSON.stringify(browserConfig),
       },
       resolve: {
         alias: {
           '@': path.resolve(cwd, 'src'),
+          // THE BACKEND SEAM (ring 2026-11-01): every caller imports the service layer as
+          // @backend; the build chooses which soil answers. Firebase today; the independent
+          // node's HTTP services when the mode says so (see the independent block below).
+          '@backend': path.resolve(cwd, independent ? 'src/services/independent' : 'src/services/firebase'),
         }
       }
     };

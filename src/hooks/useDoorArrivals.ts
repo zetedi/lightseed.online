@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import type { CommunityInvite, Lightseed } from '../types';
 import type { BeingOverlays } from './useBeingOverlays';
-import { getPendingTreeInvites, getCommunityInvite, getCommunityById, getPersonName } from '../services/firebase';
-import { getTreeInvite, claimTreeInvite, acceptTreeInvite } from '../services/firebase/trees';
-import { getLifetreeById } from '../services/firebase/pulses';
+import { getPendingTreeInvites, getCommunityInvite, getCommunityById, getPersonName } from '@backend';
+import { getTreeInvite, claimTreeInvite, acceptTreeInvite } from '@backend/trees';
+import { getLifetreeById } from '@backend/pulses';
 import { showConfirm } from '../components/ui/Dialog';
 import { treeInviteClaimRefusal } from '../domain/treeInvite';
 import { roleLabelKey } from '../domain/treeCircle';
 import type { TreeKeepingInvite } from '../domain/treeCircle';
-import { findBeingByLid } from '../services/firebase/beings';
+import { findBeingByLid } from '@backend/beings';
 import { lidFromPath, beingPath } from '../domain/beingLink';
 import { inviteIdFromPath } from '../domain/communityDoor';
 import { asksSignIn, withoutSignInAsk } from '../domain/ssoDoor';

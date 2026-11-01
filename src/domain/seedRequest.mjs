@@ -8,12 +8,21 @@ import { seedPeopleQuery } from './seedProfile.mjs';
 import { seedTreeInviteQuery } from './seedTreeInvite.mjs';
 import { seedKeeperInviteQuery } from './seedCommunity.mjs';
 import { seedTreeQuery } from './seedTree.mjs';
+import { seedDocsQuery } from './seedDocs.mjs';
 // Bounded graph contract. Authentication is established by the server, never a query field.
 export function seedRequest(method, target, authorization, authenticated = false) {
-  if(['/v1/events/command','/v1/alignments/command','/v1/links/command','/v1/visions/command','/v1/signing/command','/v1/blocks/command','/v1/offerings/command'].includes(target)) {
+  // THE ORGANS (ring 2026-11-02): light, staff, the account's own departure, domain proofs and doors — signed in only.
+  const organs={'/v1/light/command':'lightCommand','/v1/staff/command':'staffCommand','/v1/account/command':'accountCommand','/v1/domains/command':'domainCommand'};
+  if(['/v1/events/command','/v1/alignments/command','/v1/links/command','/v1/visions/command','/v1/signing/command','/v1/blocks/command','/v1/offerings/command'].includes(target) || Object.hasOwn(organs,target)) {
     if(method!=='POST')return {error:'method_not_allowed',status:405};
     if(!authenticated)return {error:authorization?'invalid_token':'authentication_required',status:401};
+    if(Object.hasOwn(organs,target))return {kind:organs[target]};
     return {kind:target==='/v1/events/command'?'eventCommand':target==='/v1/alignments/command'?'alignmentCommand':target==='/v1/offerings/command'?'offeringCommand':target==='/v1/blocks/command'?'blockCommand':target==='/v1/signing/command'?'signingCommand':target==='/v1/visions/command'?'visionCommand':'linkCommand'};
+  }
+  if (target === '/v1/docs/command') {
+    if (method !== 'POST') return { error: 'method_not_allowed', status: 405 };
+    if (authorization && !authenticated) return { error: 'invalid_token', status: 401 };
+    return { kind: 'docCommand' };
   }
   if (method !== 'GET' && !(method === 'POST' && ['/v1/me/profile', '/v1/communities/command', '/v1/community-invites/command', '/v1/trees/command', '/v1/tree-invites/command', '/v1/media/upload'].includes(target))) return { error: 'method_not_allowed', status: 405 };
   if (authorization && !authenticated) return { error: 'invalid_token', status: 401 };
@@ -36,6 +45,11 @@ export function seedRequest(method, target, authorization, authenticated = false
   if(url.pathname==='/v1/signing-recovery-witnesses') {
     if(!authenticated)return {error:'authentication_required',status:401};
     return seedRecoveryWitnessQuery(url.searchParams)??{error:'invalid_query',status:400};
+  }
+  if(url.pathname.startsWith('/v1/docs/')) {
+    const name=url.pathname.slice('/v1/docs/'.length);
+    if(!/^[a-z][a-z_]{0,63}$/.test(name))return {error:'not_found',status:404};
+    return seedDocsQuery(name,url.searchParams)??{error:'invalid_query',status:400};
   }
   if(url.pathname==='/v1/beings')return seedBeingQuery(url.searchParams)??{error:'invalid_query',status:400};
   if(url.pathname==='/v1/alignments')return seedAlignmentQuery(url.searchParams)??{error:'invalid_query',status:400};

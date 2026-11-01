@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Community } from '../../types';
-import { updateCommunity } from '../../services/firebase';
+import { updateCommunity } from '@backend';
 import { IntelligenceSection, type IntelligenceSelection } from '../sections/IntelligenceSection';
 import { assignDuty, type DutyAssignment } from '../../domain/intelligenceDuty';
 

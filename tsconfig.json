@@ -22,6 +22,12 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@backend": [
+        "./src/services/firebase/index.ts"
+      ],
+      "@backend/*": [
+        "./src/services/firebase/*"
       ]
     },
     "allowImportingTsExtensions": true,
@@ -40,5 +46,5 @@
   // Functions are their own compilation unit (functions/tsconfig.json, `npm run typecheck:functions`)
   // with their own node_modules — CI doesn't install those for the app gate, so the root sweep
   // must not reach into them.
-  "exclude": ["seed/web-dist", "functions", "dist", "dev-dist", "node_modules"]
+  "exclude": ["seed/web-dist", "functions", "dist", "dist-independent", "dev-dist", "node_modules"]
 }

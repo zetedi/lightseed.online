@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Community, Lifetree } from '../../types';
-import { fetchCommunities, standTreeInCommunity, withdrawTreeFromCommunity, communitiesTreeStandsIn } from '../../services/firebase';
+import { fetchCommunities, standTreeInCommunity, withdrawTreeFromCommunity, communitiesTreeStandsIn } from '@backend';
 import { doorOf, communitiesOnView } from '../../domain/communityDoor';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { showAlert } from '../ui/Dialog';

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { getMyPrivateTreesAt } from '../services/firebase/trees';
+import { getMyPrivateTreesAt } from '@backend/trees';
 import type { Alignment, Lightseed, Pulse } from '../types';
 import {
   fetchAllLifetrees, fetchLifetrees, fetchPulses, fetchEventPulses, fetchOfferingPulses, fetchReachPulses, fetchVisions,
   getPendingAlignments, treesStandingIn, fetchMemberEvents,
-} from '../services/firebase';
+} from '@backend';
 import { queryableLevels, eventFeedScope, ownMergeUid, mergeMemberEvents } from '../domain/pulseVisibility';
 import { dataDomainFor, reflectsInstancePublic } from '../domain/communityDoor';
 import { excludeBedTrees } from '../domain/bed';

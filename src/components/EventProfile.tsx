@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '../contexts/SessionContext';
 import { showAlert, showConfirm } from './ui/Dialog';
-import { deleteCommunityEvent, mendPulseDomain, formCircleFromEvent, getCommunityById, getEventLineage, type EventLineage } from '../services/firebase';
+import { deleteCommunityEvent, mendPulseDomain, formCircleFromEvent, getCommunityById, getEventLineage, type EventLineage } from '@backend';
 import { formEventCircleRefusal } from '../domain/eventCircle';
 import { notify } from './ui/Toast';
 import { PlaceOfRecord } from './ui/PlaceOfRecord';
@@ -10,7 +10,7 @@ import { announce } from '../services/refreshBus';
 import { BeingQr } from './ui/BeingQr';
 import { EditPill, DeletePill, DuplicatePill } from './ui/HeroPills';
 import { beingPath } from '../domain/beingLink';
-import { mintBeingQr } from '../services/firebase/beings';
+import { mintBeingQr } from '@backend/beings';
 import { Pulse, Lifetree, Community } from '../types';
 import { Icons } from './ui/Icons';
 import { WebLinksList } from './ui/WebLinksList';

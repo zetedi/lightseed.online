@@ -3,7 +3,7 @@
 // like the stored invite messages (english-guard exempts nothing here; templates are literals
 // inside strings, not speaking seats).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getNewsletterDraftData, sendNewsletter } from '../services/firebase';
+import { getNewsletterDraftData, sendNewsletter } from '@backend';
 import { Loading } from './ui/Loading';
 import { Icons } from './ui/Icons';
 import { Modal, modalButton } from './ui/Modal';

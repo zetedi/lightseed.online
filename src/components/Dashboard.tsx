@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSession } from '../contexts/SessionContext';
-import { getNetworkStats, getLightHousesByDomain, getAllLightHouses, getRootedTrees } from '../services/firebase';
+import { getNetworkStats, getLightHousesByDomain, getAllLightHouses, getRootedTrees } from '@backend';
 import { dataDomainFor } from '../domain/communityDoor';
 import { headerSurface } from '../domain/themeSurface';
 import { treeCoordinates } from '../domain/views/forest';
@@ -14,7 +14,7 @@ import { quotesFor } from '../content/quotes';
 import { useScrollEdges } from '../hooks/useScrollEdges';
 import { MiniForestMap, type MapPoint } from './ui/MiniForestMap';
 import { EventCard } from './EventCard';
-import { fetchMyRays } from '../services/firebase/light';
+import { fetchMyRays } from '@backend/light';
 import { formatLight } from '../domain/light';
 import { useCoin } from '../hooks/useCoin';
 import { Community, Pulse } from '../types';

@@ -15,7 +15,7 @@ import { Icons } from '../ui/Icons';
 import { Pulse } from '../../types';
 // updateEvent and deleteCommunityEvent are scope-agnostic despite the latter's name: both
 // operate on a pulse id in the one ledger (events are pulses of type 'event' everywhere).
-import { updateEvent, deleteCommunityEvent, uploadImage, duplicateEvent } from '../../services/firebase';
+import { updateEvent, deleteCommunityEvent, uploadImage, duplicateEvent } from '@backend';
 import { ImageStrip } from '../ui/ImageStrip';
 import { SectionTitle } from '../ui/SectionTitle';
 import { EventWeather } from '../ui/EventWeather';

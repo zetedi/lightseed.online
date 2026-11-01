@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lifetree, Lightseed, Pulse, ReachAudience } from '../../types';
-import { fetchMyReaches } from '../../services/firebase';
+import { fetchMyReaches } from '@backend';
 import { useRefreshSignal } from '../../hooks/useRefreshSignal';
 import { ReachInbox } from '../inspiration/ReachInbox';
 

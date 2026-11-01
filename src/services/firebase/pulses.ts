@@ -6,7 +6,7 @@ import {
     blockBirthOf, judgeBlockBirth, chainHeadOf, blockSignaturePayload, BLOCK_SIGNATURE_DOMAIN,
     type ChainBearerKind, type BlockSignatureClaim,
 } from '../../domain/chain';
-import { getPublishedSigningIdentity, sign as signWithKey, SigningKeyNeedsRestoreError, SigningKeyFrozenError } from '../keys';
+import { getPublishedSigningIdentity, sign as signWithKey, SigningKeyNeedsRestoreError, SigningKeyFrozenError } from './keys';
 import { normalizePulseType, type PulseVisibility } from '../../domain/pulse';
 import { mergeAuthored } from '../../domain/pulseVisibility';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
@@ -134,7 +134,9 @@ export const postGuardiansNotice = async (
 // holds the index file to the shapes queried here).
 const newestFirst = (a: Pulse, b: Pulse) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
 
-const fetchPulsesRaw = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number, typeFilter?: string) => {
+// The page's bookmark is this backend's own (a snapshot here, a string on the independent node).
+export type PulsePageCursor = QueryDocumentSnapshot;
+const fetchPulsesRaw = async (lastD?: PulsePageCursor, domainFilter?: string, levels?: PulseVisibility[], pageSize?: number, typeFilter?: string) => {
     // Visibility-scope the broad feed so a restricted pulse in this domain can't get the
     // whole query rejected. Broad feeds carry no scope context, so `levels` is public + node.
     const visFilter = levels && levels.length ? [where('visibility', 'in', levels)] : [];
@@ -180,7 +182,7 @@ export const getMyPulseCount = async (uid: string): Promise<number> => {
     return Math.max(0, total.data().count - excluded);
 };
 
-export const fetchPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[]) => {
+export const fetchPulses = async (lastD?: PulsePageCursor, domainFilter?: string, levels?: PulseVisibility[]) => {
     const res = await fetchPulsesRaw(lastD, domainFilter, levels);
     return {
         items: res.items.filter(pulse => !NON_FEED_PULSE_TYPES.has(String(pulse.type))),
@@ -200,7 +202,7 @@ export const getMyEvents = async (uid: string): Promise<Pulse[]> =>
         orderBy('createdAt', 'desc'),
     ))).docs.map(mapPulse);
 
-export const fetchEventPulses = async (lastD?: QueryDocumentSnapshot, domainFilter?: string, levels?: PulseVisibility[], anchorUid?: string) => {
+export const fetchEventPulses = async (lastD?: PulsePageCursor, domainFilter?: string, levels?: PulseVisibility[], anchorUid?: string) => {
     // Server-side type filter (the composite indexes exist since ring 2026-08-28): every
     // page is pure events, so pagination is real instead of a widened window's leftovers.
     const res = await fetchPulsesRaw(lastD, domainFilter, levels, 24, 'event');
@@ -722,3 +724,8 @@ export const careForTree = async (tree: Pick<Lifetree, 'id'>): Promise<void> => 
         ...(user ? { authorId: user.uid, authorPersonName: user.displayName || undefined } : {}),
     });
 };
+
+// A pulse's AI reading, saved beside it (ring 2026-11-01: lifted from PulseInsightPanel, which
+// wrote the document itself). The rules decide who may save one; this is the one hand that asks.
+export const savePulseInterpretation = (pulseId: string, aiInterpretation: NonNullable<Pulse['aiInterpretation']>) =>
+    updateDoc(doc(db, 'pulses', pulseId), { aiInterpretation });

@@ -12,12 +12,12 @@ import { useListDensity, type ListDensity } from '../hooks/useListDensity';
 import { useImageUpload } from '../hooks/useImageUpload';
 import { useSession } from '../contexts/SessionContext';
 import { showConfirm, showAlert } from '../components/ui/Dialog';
-import { getPublicIntelligences, DEFAULT_INTELLIGENCE_ID } from '../services/intelligence';
+import { getPublicIntelligences, DEFAULT_INTELLIGENCE_ID } from '@backend/intelligence';
 import { providerLabel } from '../domain/aiAccess';
 import {
   getOrgCollabs, addOrgCollab, removeOrgCollab, updateOrgCollab,
   createCommunity, getCommunityById, type OrgCollab,
-} from '../services/firebase';
+} from '@backend';
 import { isExplicitlyValidatedTree } from '../utils/validation';
 import { communityThemePresets } from '../utils/theme';
 import { tabTone, CTA_GLOW, type TabTheme } from '../utils/tabTheme';

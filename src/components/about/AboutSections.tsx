@@ -6,7 +6,7 @@ import Logo from '../Logo';
 import { Icons } from '../ui/Icons';
 import { OutwardLink } from '../ui/OutwardLink';
 import { Modal } from '../ui/Modal';
-import { subscribeToNewsletter, getGenesisHash } from '../../services/firebase';
+import { subscribeToNewsletter, getGenesisHash } from '@backend';
 import { useLanguage } from '../../contexts/LanguageContext';
 import type { TranslationKey } from '../../utils/translations';
 

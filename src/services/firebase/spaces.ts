@@ -23,8 +23,10 @@ export interface VisionFetchAccess {
 // membership becomes real); scoped staff may read the whole field. An author's own query
 // is merged on the first page so their private visions remain visible without exposing anyone
 // else's. The client canViewVision gate remains a belt, never the lock.
+// The page's bookmark is this backend's own (a snapshot here, a string on the independent node).
+export type VisionPageCursor = QueryDocumentSnapshot;
 export const fetchVisions = async (
-    lastD?: QueryDocumentSnapshot,
+    lastD?: VisionPageCursor,
     domainFilter?: string,
     access: VisionFetchAccess = {},
 ) => {

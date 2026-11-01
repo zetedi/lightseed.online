@@ -36,7 +36,13 @@ if(process.env.SEED_MEDIA_DIR) {
   try {media=await createMediaStore(process.env.SEED_MEDIA_DIR);}
   catch {console.error('Media directory is unavailable.');await database.close();process.exit(1);}
 }
-const server = createApi(database, authenticate, { nodeDomain,media });
+// The face doors of this node (SEED_FACE_DOORS, comma-separated hostnames): a keeper's claim on one
+// waits for the steward's grant instead of a DNS proof no keeper could give.
+const faceDoors = (process.env.SEED_FACE_DOORS ?? '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
+if (faceDoors.some(h => h.length > 253 || !/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/.test(h))) {
+  console.error('Invalid face door hostname.'); await database.close(); process.exit(1);
+}
+const server = createApi(database, authenticate, { nodeDomain, media, faceDoors });
 server.on('error', async () => {
   console.error('API listener failed.'); await database.close(); process.exitCode = 1;
 });

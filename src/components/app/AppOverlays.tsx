@@ -8,7 +8,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import {
   updateEvent, createEvent, plantLifetree, createVision, proposeAlignment, uploadBase64Image,
   setLightHouseVisibility, deleteLightHouse,
-} from '../../services/firebase';
+} from '@backend';
 import { announce } from '../../services/refreshBus';
 import { canEditEvent, placeOfRecordDomain, eventBirthScope, type HostStanding, eventEditScope, canAdoptEvent } from '../../domain/pulseVisibility';
 import { readPhotoProvenance } from '../../utils/exif';
