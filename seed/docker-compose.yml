@@ -19,3 +19,36 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+  api:
+    profiles: [api]
+    build:
+      context: ..
+      dockerfile: seed/Dockerfile
+    restart: unless-stopped
+    env_file: runtime.env
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: lightseed
+      SEED_API_HOST: 0.0.0.0
+      SEED_API_PORT: 8081
+      SEED_MEDIA_DIR: /app/media
+      SEED_NODE_ORIGIN: ${SEED_NODE_ORIGIN:-}
+    ports:
+      - '127.0.0.1:${SEED_API_PORT:-8081}:8081'
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - media_data:/app/media
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:8081/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 6s
+      retries: 5
+
+volumes:
+  media_data:

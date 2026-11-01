@@ -4,7 +4,7 @@ import { isSecretTree, mergeLinks } from '../domain/secretTree';
 
 // Backend-independent graph orchestration. The datastore still decides what the
 // asking hand may read. This module neither authenticates nor grants visibility.
-export const createGraphService = (store: Store) => ({
+export const createGraphService = <T extends Pick<Store, 'linksTo' | 'secretLinksTo'>>(store: T) => ({
   store,
   async linksToTree(tree: { id: string; treeType?: string | null }): Promise<Link[]> {
     const open = await store.linksTo(tree.id);

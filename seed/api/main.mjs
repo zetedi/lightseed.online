@@ -1,0 +1,51 @@
+import { createMediaStore } from './media.mjs';
+import { seedNodeDomain } from '../../src/domain/seedCommunity.mjs';
+import { readFile } from 'node:fs/promises';
+import { createAuthenticator } from './auth.mjs';
+import { createDatabase } from './database.mjs';
+import { createApi } from './server.mjs';
+
+const required = ['PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'];
+if (required.some(key => !process.env[key])) {
+  console.error('Set explicit database connection settings and restricted runtime credentials.');
+  process.exit(1);
+}
+const port = Number(process.env.SEED_API_PORT ?? 8081);
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  console.error('Invalid API port.'); process.exit(1);
+}
+const database = createDatabase();
+let authenticate;
+if (process.env.SEED_AUTH_CONFIG) {
+  try {
+    const source = await readFile(process.env.SEED_AUTH_CONFIG);
+    if (source.length > 2 * 1024 * 1024) throw new Error('auth_config_too_large');
+    authenticate = await createAuthenticator(JSON.parse(source.toString('utf8')), database.resolveIdentity);
+  } catch { console.error('Invalid authentication configuration.'); process.exit(1); }
+}
+const nodeDomain = seedNodeDomain(process.env.SEED_NODE_ORIGIN);
+if (process.env.SEED_NODE_ORIGIN && !nodeDomain) {
+  console.error('Invalid HTTPS node origin.'); process.exit(1);
+}
+try { await database.ready(); } catch {
+  console.error('Database is unavailable or the account is unsafe for serving requests.');
+  await database.close(); process.exit(1);
+}
+let media;
+if(process.env.SEED_MEDIA_DIR) {
+  try {media=await createMediaStore(process.env.SEED_MEDIA_DIR);}
+  catch {console.error('Media directory is unavailable.');await database.close();process.exit(1);}
+}
+const server = createApi(database, authenticate, { nodeDomain,media });
+server.on('error', async () => {
+  console.error('API listener failed.'); await database.close(); process.exitCode = 1;
+});
+server.listen(port, process.env.SEED_API_HOST ?? '127.0.0.1', () => console.log('Independent graph API listening.'));
+let stopping = false;
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
+  if (stopping) return;
+  stopping = true;
+  const timeout = setTimeout(() => process.exit(1), 20000);
+  timeout.unref();
+  server.close(async () => { await database.close(); clearTimeout(timeout); });
+});

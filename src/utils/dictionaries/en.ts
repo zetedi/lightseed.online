@@ -4,6 +4,13 @@
 // registry). English alone rides with the shell: it is the fallback every other tongue reads
 // through, key by key, and its keys are the contract (TranslationKey; domain/words DOMAIN_KEYS).
 const en = {
+  node_latitude: "Latitude (optional)", node_longitude: "Longitude (optional)",
+  node_invite_expiry: "Expires at (optional)",
+  node_session_title: "Your node",
+  node_session_preview: "Sign-in preview. The rest of this node is still being prepared.",
+  node_session_ready: "You are signed in to this node.",
+  node_session_failed: "Sign-in could not be completed. Please try again or contact your node keeper.",
+
   forest: "Forest", pulses: "Pulses", events: "Events", visions: "Visions", oracle: "Oracle", about: "About", explore: "Explore",
   sign_in: "Sign in", sign_out: "Sign out", emit_pulse: "Emit Pulse", plant_lifetree: "Plant Lifetree",
   create_vision: "New Vision", short_title: "Short Title", vision: "Vision", title: "Title", body: "Body", description: "Description",

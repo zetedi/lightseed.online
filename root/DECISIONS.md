@@ -6,6 +6,330 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-10-31 · A true name finds only what its reader may see** — Independent
+local LID lookup queries authoritative records with current visibility, returning
+only their kind and address. Public person identities use a narrow projection;
+private accounts stay closed. Multiple visible matches require review instead of
+choosing a winner. Hidden duplicates are not disclosed, so this is a finding aid,
+not a global identity audit or an immutable registry. Existing records become
+searchable through non-unique indexes without an identity-rewriting backfill.
+Light Houses, registry governance, federation and original QR navigation remain.
+
+**2026-10-31 · A lineage gathers into one circle** — Independent event circles
+now lock their lineage, current host authority and captured participating trees. One
+transaction forms the invite-only community, its LIN relationships and event memory;
+competing asks reuse it, and node capacity is shared with ordinary community founding.
+A missing or unrelated remembered circle refuses instead of silently replacing it.
+Membership remains the host's gift under the existing law, not consent; people may
+leave and a later explicit gather may add them again. PostgreSQL tests prove capacity,
+concurrency, authority and rollback. Browser controls remain unfinished.
+
+**2026-10-30 · A gathering can change its words without changing its birth** —
+Independent events now create with server attribution and protected birth proofs.
+Author, current community keeper or staff may edit content; the original author,
+identity, seal and lineage stay. Published pictures are explicit replacements, while
+omitted pictures preserve imported references. Adoption is forward only, by a keeper
+of the community at the event's existing domain; authorship cannot move the event.
+Chain-bearing records refuse this mutable path. Browser controls, deletion policy and
+forming a community from the gathering remain unfinished.
+
+**2026-10-29 · A gathering repeats through lineage** — Independent event duplication
+preserves the existing editable-occurrence model: a fresh event and one permanent
+`descends_from` link, not a tree-chain append. The current author, community keeper or
+staff may copy; new identity/author replace the parent's, while place and visibility
+remain. Participation and circle-formation memory do not follow. The event, private
+birth proof and lineage edge commit atomically; failure leaves none of them behind.
+Creation, editing, adoption and forming a community from the event remain unfinished.
+
+**2026-10-29 · An alignment needs two present hands** — Independent proposals derive
+the recipient from the matched pulse's author, not a caller-supplied identity or the
+tree's anchor. Acceptance rechecks both people's current tree authority and commits
+both sealed records, heads and answer atomically. Same-tree proposals refuse; rejection
+and acceptance cannot both win. Negotiation notes stay with participants (staff may
+read), tightening the original public proposal policy. Exact recorded parties retain
+paired records, while ordinary readers must see both trees. Tests cover authority loss,
+private counterparts, concurrent answers and full rollback. Preview and original-app
+alignment controls remain unfinished.
+
+**2026-10-29 · The listing may change; the agreement stands** — Independent offering
+edits preserve the birth hash and protected original proof. Kind, bed, source and
+recipient stay fixed; accepted words cannot be retold even by staff. Author-only
+pause/reopen is separate from final answers. Withdrawal and current-recipient decline
+serialize with acceptance so one final answer wins, and a paused offer can still be
+declined. Preview controls cover pause/reopen, confirmed withdrawal and decline;
+creation and edit forms remain unfinished.
+
+**2026-10-29 · An offering and its quiet knock are born together** — Independent
+creation writes the listing, protected legacy birth proof and private recipient
+reach atomically. Names and recipients come from locked records, source/bed authority
+is checked, and private referenced beings require a private listing. Current recipient
+carers can read the addressed offering without receiving the author's proof or private
+profile. The original preimage stays off the mutable public document so a later edit
+cannot reveal old private words. Stored notices now exist; external mail/push delivery,
+creation UI, edit/withdraw/decline and protected proof export remain unfinished.
+
+**2026-10-28 · Both names need a reading key** — An accepted-offering twin names
+two beings. Copying a public offering label must not expose a private counterpart.
+Independent pulse reads now require ordinary readers to see both bearers (private
+trees require circle standing), while the accepted offering's exact stored twin IDs
+preserve both records for its offerer and acceptor. Staff retain their existing
+access. Neither content nor seals change; this is a read-policy correction to the
+existing Firebase behavior. The acceptance endpoint is now wired; offering creation
+and its browser acceptance flow remain unfinished.
+
+**2026-10-28 · An offering answers on both chains or neither** — Independent
+acceptance locks the offering, both bearer heads and current authority links. Both
+canonical agreement records, both advanced heads and the final answer commit in one
+transaction. Competing acceptance creates one pair; failure at the answer rolls the
+whole operation back. These remain server seals, not participant signatures, and no
+light moves. The database operation is implemented; HTTP exposure waits for the
+private-bearer visibility review and the browser flow remains unfinished.
+
+**2026-10-28 · An uncertain reply does not repeat the hand** — Independent browser
+minting prepares copied content against the current identity and head, signs with the
+matching non-extractable device key, and consumes each review before submission.
+No network failure triggers a replay or automatic re-signing. Users inspect history
+before preparing another attempt. The node remains the authority: real API tests
+reject stale heads and unauthorized authors even with valid signatures. A separate
+browser fixture proves review, device signing and uncertain-response feedback;
+complete OIDC/browser/API integration and other block forms remain outstanding.
+
+**2026-10-28 · A history window carries no extra key** — Pulse list filters narrow
+records; they never authorize them. PostgreSQL applies current circle/community and
+addressed-message rules to each row, including publicly mislabeled private reaches.
+Precise timestamp/ID cursors paginate only authorized rows. The preview omits message
+types and labels its content-hash check narrowly: a matching hash does not prove an
+author's lineage or a complete chain, and an invisible predecessor is not evidence
+of corruption. Database and Docker tests enforce access; a synthetic browser fixture
+checks pagination and matching/altered feedback. Original-app integration remains.
+
+**2026-10-28 · A node holds the head while the hand signs** — Independent tree and
+vision minting reads standing, named staff hands, the signing identity and the chain
+head under transaction locks. Shared laws judge content and Ed25519 proofs before a
+canonical append; the pulse, head and care/watering effects commit together. Signed
+requests for a moved head refuse instead of being silently re-signed. The existing
+unsigned path remains only for accounts without a published key; malformed published
+identities cannot use it. Stored prior-field memory prepares compatibility with the
+unmint model without implementing or modifying unmint. Reads, UI integration and
+twin mints remain explicit outstanding work.
+
+**2026-10-28 · One chain law crosses the node boundary** — The independent Docker
+builder compiles the existing pure birth, signature, hash, watering and touch-memory
+functions into a standalone module. It does not create another hand-maintained mirror.
+The build rejects non-domain dependencies and missing runtime exports; compiled-byte
+parity and runtime-image checks guard the boundary. Compiler dependencies remain in
+the build stage. This makes the law available; it does not yet implement atomic
+independent minting, visibility-filtered chain reads or original-app integration.
+
+**2026-10-25 · A vision keeps its own privacy** — Independent vision reads retain
+the author boundary rather than inheriting the tree circle's keys. Public/node/own
+author/staff reads are filtered at PostgreSQL; joined links are not access grants.
+Newest-first cursors preserve microseconds and deterministic ties. Legacy direct
+reads remain possible without exposing unstamped visions through broad discovery.
+
+**2026-10-25 · A tree participates through its keeper** — Independent participant
+markers require the tree's keeper or named staff hand, not a steward's wish. The
+marker does not grant target access, change tree privacy, or reserve event capacity.
+Participant lists keep row-level visibility and exclude beds and secret trees.
+Full event lifecycle remains a separate responsibility, not an implied graph power.
+
+**2026-10-25 · A request is answered with an invitation** — Independent tree
+keepership requests confer no role. Answering offers a role and removes the request
+in the same transaction; failure preserves the request, and the recipient still
+accepts separately. Secret-tree requests stay in the private ledger so the public
+graph cannot reveal who asked about a secret tree.
+
+**2026-10-25 · A garden does not take the tree home** — Independent `grows_in`
+commands preserve ownership, home domain and privacy. Carers enter open gardens;
+door-keepers welcome through closed doors. Secret trees never enter this public
+relationship. The link grants no membership or reading key, and either authorized
+side may withdraw it without touching the tree or its chain.
+
+**2026-10-25 · Two communities speak in two directions** — Independent community
+attestations preserve the four existing relationship meanings. Each source keeper
+controls one direction; stewards do not inherit the outward voice. Removing one
+statement preserves the reverse. Reciprocity stays derived, and neither direction
+grants membership or keeper authority. Named staff minting controls remain effective.
+
+**2026-10-25 · Following does not cut a private key** — Independent graph care
+writes bind the source to the verified caller, except a keeper releasing a guardian.
+Private and secret trees reject self-following; keeper grants remain invitations.
+Repeated follows preserve their LID and timestamp so retrying cannot rewrite
+guardian tenure. Community stewardship stays behind its membership transaction.
+
+**2026-10-24 · The graph reads through another door** — Independent reads now
+implement all five Store query shapes, including whole-relation pagination and
+secret-circle authorization. The adapter preserves the existing timestamp and
+secret/public deduplication contracts, and discards a paginated result if identity
+changes. It is explicitly a read adapter; unfinished relationship writes cannot
+be hidden behind successful reads or a backend toggle.
+
+**2026-10-24 · Personal appearance stays with its account** — Independent profile
+pictures use the existing private account logo/banner fields. A consistent public
+person and private account must agree before a reference changes. The operation
+preserves identity and unrelated settings, requires published local media, and
+never rewrites identity-provider claims. Detaching keeps the bytes until the separate
+release lifecycle is implemented.
+
+**2026-10-24 · A tree arranges its pictures without rewriting growth** — Migration
+020 accepts ordered published image paths through the existing tree edit authority.
+The server keeps the cover equal to the first picture; detaching display pictures
+never alters signed growth fields or deletes image bytes. The preview supports local
+images; imported external references remain untouched pending migration support.
+
+**2026-10-24 · Pictures keep their bytes** — Independent image uploads now publish
+immutable manifests after local re-encoding and variant creation. Canonical person
+and keeper identity authorizes writes; public reads retain the current storage
+contract. Hash-checked files live on a persistent volume. This is storage transport,
+not completed attachment, release, backup or signed-export parity.
+
+**2026-10-24 · One person keeps one portable name** — Independent profile saves now
+mirror the canonical person UID/LID into the private account. A missing mirror can
+be filled, but a disagreement or an imported private identity without its person is
+refused for review. Renaming cannot silently adopt or replace a portable identity.
+This closes a prerequisite for personal media ownership and future import/index
+work without rewriting existing records wholesale.
+
+**2026-10-24 · The circle takes a public name once** — Independent circle formation
+now locks the root and circle, verifies a circle or root-tree keeper, and stamps its
+public formation once. Birthplace comes from the root's normalized garden; no address
+or new keeper seat is claimed. Identity and chain history remain. Missing roots and
+secret roots require review instead of publishing a broken or private circle. The
+root-tree anchor counts as a keeper even after succession, matching the domain law.
+Database-only operations retry bounded, explicitly aborted transactions; uncertain
+commit outcomes are never replayed.
+
+**2026-10-24 · An invitation can find a name** — The independent invitation forms
+now search public person names. The endpoint projects only UID, LID and display
+name, never private user records or arbitrary imported metadata; the local UID is
+bound to the row address. Search and pagination are bounded. This restores choosing
+a recipient without copying opaque identifiers, while full profiles and portable
+identity resolution remain unfinished.
+
+**2026-10-24 · A circle opens by invitation** — Independent tree invitations now
+separate issuing, claiming and accepting. An open capability reveals one waiting
+invitation, never the ledger; one signed-in recipient may claim it. Acceptance proves
+the role's standing and commits seats, circle membership and welcome provenance
+with the accepted mark. A guardian must anchor a living lifetree; the configured dial
+controls validation. A secret tree admits only keepers into its private ledger and
+never creates a public circle. Revocation and expiry close public lookup. The preview
+connects these doors; original-app integration and full-browser proof remain unfinished.
+
+**2026-10-24 · A private tree keeps its company** — Independent tree keepers may
+resign through a locked succession command. A secret tree's private and legacy
+public seats count one person once; the oldest remaining keeper receives the anchor,
+with UID breaking ties. The last keeper cannot leave, staff status grants no seat,
+and a private seat cannot grant power over a non-secret tree. Departing and promoted
+duplicates are removed without publishing private seats or changing chain history.
+Generic keeper-link deletion is closed so it cannot bypass the transaction. Malformed
+successor identities require review. Tree invitations and signed succession remain
+separate unfinished work.
+
+**2026-10-24 · Keeping waits for consent** — The independent node now admits
+community keepers through their own request answered by a sitting keeper, or through
+a sitting keeper's offer accepted by its named recipient. Beds and secret trees
+confer no outside standing; qualifying trees and co-keeper seats are checked while
+the transaction holds them. Membership, canonical keepership links, the compatibility
+ACL mirror and consent consumption commit together. Failed acceptance preserves the
+request or offer. Welcome provenance keeps its first mark. Offers remain signed-in
+readable under the existing collection law; direct mutation stays closed. This does
+not finish full community settings, tree circles or application parity.
+
+**2026-10-23 · Keeping remains, and a tree is born whole** — Independent community
+keepers can resign with deterministic succession; the last keeper cannot leave.
+Door delegation remains distinct from keepership and cannot outlive membership.
+Tree reads now enforce visibility in PostgreSQL, including imported malformed secret
+records. Atomic planting checks quotas before birth and commits a lifetree with its
+idea-twin together. A private tree's newborn Root Vision inherits privacy; a secret
+has no public twin or follow. Exact genesis preimages travel with the new records.
+The preview connects tree browsing, planting and basic editing. This does not yet
+port beds, media, tree invitations, signed appends or full application parity.
+
+**2026-10-23 · Arrival remembers, identity does not guess** — Community invitations
+now admit through a current door and write membership plus permanent arrival marks
+atomically. Lists belong to door keepers; held random tokens may be read publicly.
+Revocation never resurrects a key. Optional independent enrollment binds a verified
+issuer/subject to a fresh local UID, separately from the portable LID and without
+email matching or privilege grants. Closing registration preserves existing enrolled
+accounts; explicit subject revocation and conflicting-binding refusal are separate.
+This is installation policy for now; host-door synchronization and complete account
+management remain unfinished. The browser preview connects the invitation journey.
+
+**2026-10-23 · A community door moves as one transaction** — Independent community
+founding binds identity and birthplace at the server and serializes node capacity.
+Basic keeper edits and membership now share a community row lock, so a closed door
+cannot race admission. Leaving removes stewardship with membership and refuses
+sitting keepers; generic own-link withdrawal cannot bypass those protections.
+The preview connects these commands while the database remains the authority.
+Unexpected failures undo the whole operation, including request consumption.
+Invitations, keepership succession, complete settings and full feature parity remain
+unfinished; no reduced-feature release is declared.
+
+**2026-10-22 · Communities can be seen from the second node** — Public community
+list/detail reads now run through the independent API and PostgreSQL RLS. An
+invite-only or closed door does not conceal the community document: it governs
+joining, matching the existing Firestore contract. Pages are bounded live reads,
+not snapshots; SQL IDs win over JSON metadata. No membership, keeper authority or
+community write is granted. Migration 005 adds the read policy; replacement runtime
+provisioning grants SELECT and readiness verifies it. Database tests exercise both
+HTTP behavior and write denial even under accidental DML grants. Full community
+creation/editing/joining and browser integration remain unfinished.
+
+**2026-10-22 · A bound login receives a local name** — The independent API can now
+create and rename the local person/profile for an explicitly bound OpenID subject.
+It does not enroll unknown subjects or infer identity from email. First save mints
+a UUIDv7 LID; per-account serialization and a person-LID uniqueness index keep
+concurrent saves from splitting that identity. Renaming changes only display names,
+retaining LID, signing history and unrelated fields. Two narrow privileged SQL
+functions perform this work with fixed search paths and no public execution;
+runtime roles still cannot read/write the underlying identity tables directly.
+The React preview has a name form. Existing runtime roles must be reprovisioned for
+these grants. Imported identity inconsistencies require review, and account linking,
+open enrollment, signing keys and full profile feature parity remain unfinished.
+
+**2026-10-22 · The independent door gets a browser hand** — A separate React entry
+now signs in through the seed's OIDC provider and confirms the local UID at the
+independent API. The existing application still couples sessions to Firebase data
+and role checks, so swapping its login alone would mix authority across backends.
+The preview therefore has its own build, with Firebase imports forbidden, and
+states openly that the rest of the node is still being prepared. A standard OIDC
+browser client owns PKCE/state/nonce and refresh; tokens stay in memory, pending
+redirect state alone in session storage. A generation-bound session controller
+prevents delayed identity/private responses and late renewals from reviving a signed
+out or previous account. Tests cover those races and exercise the browser library's
+callback against the real issuer. Full-browser automation, local enrollment/profile
+records and full application feature/session wiring remain unfinished; no Firebase
+production session is switched by this change.
+
+**2026-10-22 · The seed can host its own OpenID door** — Zoltán asks whether an
+identity server/OpenID support belongs in the seed. The independent deployment now
+has an optional Keycloak issuer with a separate persistent database. We use the
+standard authorization-code flow with S256 PKCE rather than inventing a password
+protocol. The generated realm disables password/implicit grants, restricts callbacks
+to the declared HTTPS application origin, and issues short-lived API access tokens.
+Its API profile checks access-token purpose and authorized client; an ID token is
+not an API credential. Login remains an issuer/subject pair explicitly bound to a
+local UID: it grants no keeper/staff/membership authority and never replaces the
+portable LID or signing lineage. The realm explicitly maps the subject claim.
+The actual provider flow has a disposable integration test beside the verifier and
+PostgreSQL isolation tests. Browser session integration, open enrollment into local
+records, SMTP/TLS configuration, complete identity restore and federation trust remain
+unfinished. Self-registration is temporarily disabled until that enrollment path
+exists, not a reversal of the principle that identity is open. Each independent
+node may host identity; no shared central issuer is made mandatory.
+
+**2026-10-22 · A verified hand reaches its own quiet seats** — The independent API
+now reads public links and, with configured trust, verifies short-lived RS256 access
+tokens before binding a local identity to PostgreSQL. Trust is a pinned public-key
+set, exact issuer and audience, access-token purpose and explicit subject-to-UID
+mapping. Neither matching emails nor asserted UID/staff claims establish ownership.
+The first private feature reads only the authenticated holder's own keeper seats;
+RLS still denies other holders' rows and unported collections. Real database/HTTP
+and disposable Docker tests exercise signatures, expiry, mapping, isolation, restart
+and data restoration. This is not a sign-in release: no provider, enrollment,
+browser login/recovery or token revocation ships yet; mapping/key changes take effect
+on API restart. The Firebase application remains the active browser implementation.
+
 **2026-10-22 · The second node prepares its own soil** — The independent node is a
 section of Architecture, with a full-feature, Firebase-free Docker release contract.
 This round establishes preparation tools, not a finished independent application:
@@ -5164,6 +5488,106 @@ default with deliberate Circle→Public flips; H2H translation fidelity ethics
 (preserve intensity, label inference; humans hallucinate too — sometimes heads
 of state); 12+132=144; initiated = validated; the Light Path as each community's
 future ruleset. See BRIDGE.md and git history for the deeper rings.
+
+### 2026-10-25 — Independent visions can begin and change their words
+
+Standalone vision birth and author/staff prose edits now have a PostgreSQL command
+boundary. Clients cannot supply attribution, domain, identity or chain heads.
+Birth retains the existing standalone v0 preimage; edits preserve imported and
+advanced chain fields. Visibility changes remain an explicit author/staff choice.
+Database regressions cover forged fields, unauthorized edits, malformed authors,
+and verifiable genesis. Community grounding and the remaining lifecycle are still
+open work; preview support is not full frontend migration.
+
+### 2026-10-25 — Vision pictures keep the same media contract
+
+Vision authors and staff can attach ordered published local images without touching
+attribution or signed history. Missing/duplicate paths reject atomically; the first
+image remains the face, and an empty list clears references only. Media stays public
+as in the existing storage contract. Shared preview controls check the current
+identity before upload and save. External imported picture editing and byte release
+are still unfinished.
+
+### 2026-10-25 — A released vision leaves its signed story standing
+
+Independent release removes the vision and authorized incoming public links in one
+transaction. Link cleanup mirrors the existing withdrawal policy rather than giving
+vision authors authority over other people's joins, trees or communities. Signed
+contributions and signatures are never part of this deletion; outgoing edges,
+private ledgers and media bytes remain. The preview asks for confirmation. Tests
+cover outsider refusal, private-record concealment, staff release and preserved
+history. Contribution minting and original-app integration remain open work.
+
+### 2026-10-26 — Independent signing starts with a public anchor
+
+A first public Ed25519 key now receives a fingerprinted lineage record and an
+atomic server-timed anchor. The caller cannot choose another UID or backdate the
+event; private keys and phrases never enter this request. Republishing cannot
+replace the key or thaw a frozen identity, and legacy/import inconsistencies refuse
+rather than invent missing authority. Concurrent publication and immutability are
+checked against PostgreSQL. This is the key lifecycle foundation; browser custody,
+rotation, freeze and witnessed recovery still need implementation before signed
+contributions or portable verification can be called complete.
+
+### 2026-10-26 — Freezing stops a key without rewriting its past
+
+The independent node now supports account-authorized emergency freezing with an
+observed epoch and fingerprint. Concurrent retries converge; stale observations
+cannot freeze a replacement epoch. The optional compromise date is only a claim
+until witnessed recovery authorizes a disputed interval. Public history reads are
+bounded pages, never an implicit promise that the first page is complete. The
+preview confirms the one-way freeze and explains that recovery remains unfinished.
+
+### 2026-10-26 — Two keys consent to routine rotation
+
+The independent API verifies both Ed25519 hands over the same preimage as the existing
+app, including the authenticated UID, stable LID, event and key fingerprints. Its
+restricted SQL apply function then locks the identity, checks the active lineage and
+appends the new key/event without rewriting history. Concurrent rotations from one
+old epoch cannot both win. A frozen identity must use witnessed recovery; routine
+rotation cannot revive it or reuse an old key. Browser key custody and recovery are
+still required before independent signing is complete.
+
+### 2026-10-26 — Recovery begins with a proposal, not replacement authority
+
+A candidate key may now prove possession against the independent node's validated
+freeze boundary. The API holds identity locks while checking its UID-bound recovery
+signature, then appends an open proposal without changing active-key history. The
+compromise boundary comes from stored epoch/freeze events, never request fields.
+Proposals are visible to authenticated members; witness collection and activation
+remain unfinished. Three eligible, current witnesses are still required by the
+existing recovery law and must be implemented before this can restore signing.
+
+### 2026-10-27 — Recovery witnesses speak in their current epoch
+
+Independent witness collection checks current lineage, a UID-bound candidate claim
+and initiation or validated rooted-tree keepership under transaction locks. Self,
+stale, frozen, unrelated-signature and unrooted witnesses refuse. Witness receipts
+are append-only and never activate a key by themselves. The independent eligibility
+check excludes beds and secret trees for anchors as well as linked keepers, following
+rootsABeing; the older Firebase anchor query lacks this filter and is recorded as a
+parity discrepancy rather than silently copied. Quorum activation remains unfinished.
+
+### 2026-10-27 — Recovery activates only while the quorum still stands
+
+Three distinct current witness accounts must still be eligible, and their signatures
+and the candidate proof are checked again under database locks. Selected accounts,
+proposal, witness receipts and initiation/tree facts cannot change between checking
+and activation. A fresh key/recovery event and the current identity change atomically;
+prior keys and freeze history remain. Tests exercise insufficient quorum, revoked
+standing, invalid proofs, frozen witnesses and concurrent activation. This preserves
+the existing account-based quorum without claiming proof of distinct physical people.
+Browser custody and recovery UI are still required for an independent user journey.
+
+### 2026-10-27 — The independent device keeps its own key
+
+First-key creation now waits for recovery-phrase backup confirmation before publication.
+Only the public key reaches the node. Non-extractable device keys are separated by
+origin, UID and stable LID and saved before an uncertain network operation. An explicit
+matching phrase can restore or repair the same key, and can select among unpublished
+candidates without silently replacing a published identity. A browser reload test
+verifies real IndexedDB persistence, signing and export refusal. Rotation/recovery
+candidate custody and complete original-app integration remain unfinished.
 
 ### 2026-10-27 — A house's plans open to signed-in beings only
 

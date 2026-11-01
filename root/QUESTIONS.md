@@ -60,6 +60,11 @@ boundary really is.
   reflection mode, so identity minting is not a hub policy. The remaining
   question is whether portable identity is issued by any node or by a shared
   identity service.*
+  → *Implementation direction 2026-10-22: each independent node may operate its own
+  OIDC issuer (initially Keycloak). An issuer/subject authenticates a login, while
+  the portable LID and signed history remain separate. Cross-node acceptance and
+  identity linking still require explicit trust; no central identity service is
+  required by the independent deployment.*
 - When a person is a member of several nodes, what does `node` visibility mean as
   they move between domains: the node they are currently *in*, or every node they
   belong to? (The membership face of "can a lid stand in two constitutions at

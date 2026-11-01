@@ -3,6 +3,12 @@ import type { Dictionary } from './en';
 // Simplified Chinese — first complete pass.
 // What zh says differently from English; every key it does not name reads English.
 const zh = {
+  node_latitude: "纬度（可选）", node_longitude: "经度（可选）",
+  node_invite_expiry: "到期时间（可选）",
+  node_session_title: "你的节点",
+  node_session_preview: "登录预览。此节点的其他功能仍在准备中。",
+  node_session_ready: "你已登录此节点。",
+  node_session_failed: "无法完成登录。请重试或联系节点守护者。",
   forest: "森林", pulses: "脉动", events: "活动", visions: "愿景", oracle: "神谕", about: "关于", explore: "探索",
   sign_in: "登录", sign_out: "退出", emit_pulse: "发送脉动", plant_lifetree: "种植生命树",
   create_vision: "新愿景", short_title: "简短标题", vision: "愿景", title: "标题", body: "内容", description: "描述",

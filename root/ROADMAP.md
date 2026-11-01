@@ -24,12 +24,28 @@ permission to ship a reduced-feature node.
    The database now denies access to unported collections by default. Non-owner
    PostgreSQL tests cover initial link policies, secret-seat isolation, permanent
    links and transaction-local identity cleanup. `seed:provision` now creates a restricted
-   database login, tested using real SCRAM password authentication. End-user identity
-   and the API remain pending; guardian self-service stays closed until its visibility gate is ported.
+   database login, tested using real SCRAM password authentication. The API verifies
+   signed access tokens using pinned issuer/audience/public keys and explicit subject
+   bindings. Authenticated identity and own private-seat reads now work through RLS;
+   An optional Keycloak issuer and strict code+PKCE realm now exist. A separate
+   Firebase-free React sign-in preview and session controller have real
+   browser-library callback tests. Full application session wiring, local
+   recovery integration and host-door enrollment policy remain pending. Optional durable
+   issuer/subject enrollment and explicit subject revocation now exist. Public-link reads,
+   readiness and isolated pooled transactions work;
+   bound-account profile read/save now exists with stable LIDs and a React name form;
+   other private routes and writes stay closed. Its Docker profile passes fresh install,
+   token/private-seat isolation, HTTP permissions, restart persistence and database
+   data-restore checks via `test:seed:docker`. Guardian
+   self-service stays closed until its visibility gate is ported.
    Test private reads, ownership, roles, session isolation and secret keeper seats
    against PostgreSQL. Port record validation and transactional operations beside
    the policies.
 3. Port session/profile, communities, trees, media, LID lookup and chain append;
+   community reads, founding, basic keeper edits and membership commands are now
+   connected to the preview, including invitations, stewardship and keeper resignation;
+   rooted keeper requests and invitations now work; full settings remain. Tree visibility, atomic planting
+   and basic edits, keeper resignation and tree invitations now connect to the preview; beds, media and chain append remain;
    walk sign-in → community → tree → photo → signed block → QR. Verify concurrent
    appends and failure rollback. This is an integration milestone, not the release.
 4. Port every remaining responsibility exported by `functions/src/index.ts`,
@@ -42,8 +58,8 @@ permission to ship a reduced-feature node.
    Verify a clean Compose installation, persistence, complete backup/restore and
    overlapping imports. Walk all supported features with Firebase access blocked.
 
-Database configuration and backup hardening are implemented. Container runtime,
-PostgreSQL authorization and full browser verification remain outstanding.
+Database configuration, backup hardening and the initial API container are implemented
+and tested. Full PostgreSQL authorization and independent browser verification remain outstanding.
 
 ## Alive now (before Lion's Gate, 8/8/2026)
 

@@ -5,6 +5,12 @@ import type { Dictionary } from './en';
 // and every {n} / {q} placeholder is carried through untouched.
 // What ar says differently from English; every key it does not name reads English.
 const ar = {
+  node_latitude: "خط العرض (اختياري)", node_longitude: "خط الطول (اختياري)",
+  node_invite_expiry: "تنتهي في (اختياري)",
+  node_session_title: "عقدتك",
+  node_session_preview: "معاينة تسجيل الدخول. بقية هذه العقدة لا تزال قيد الإعداد.",
+  node_session_ready: "أنت مسجّل الدخول إلى هذه العقدة.",
+  node_session_failed: "تعذّر إكمال تسجيل الدخول. حاول مرة أخرى أو تواصل مع حافظ عقدتك.",
   forest: "الغابة", pulses: "النبضات", events: "الفعاليات", visions: "الرؤى", oracle: "العرّاف", about: "عن", explore: "استكشاف",
   sign_in: "تسجيل الدخول", sign_out: "تسجيل الخروج", emit_pulse: "أطلق نبضة", plant_lifetree: "ازرع شجرة حياة",
   create_vision: "رؤية جديدة", short_title: "عنوان قصير", vision: "رؤية", title: "العنوان", body: "النص", description: "الوصف",

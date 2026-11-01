@@ -1,0 +1,174 @@
+import {seedEventCommand} from '../../domain/seedEvent.mjs';
+import {seedAlignmentCommand} from '../../domain/seedAlignment.mjs';
+import {seedOfferingCommand} from '../../domain/seedOffering.mjs';
+import {seedBlockCommand} from '../../domain/seedBlock.mjs';
+import {seedSigningCommand} from '../../domain/seedSigning.mjs';
+import {seedVisionCommand} from '../../domain/seedVision.mjs';
+import { seedMediaUploadPath, SEED_MEDIA_MAX_BYTES } from '../../domain/seedMedia.mjs';
+import { seedProfileInput } from '../../domain/seedProfile.mjs';
+import { seedLinkCommand } from '../../domain/seedLink.mjs';
+import { seedTreeInviteCommand } from '../../domain/seedTreeInvite.mjs';
+import { seedTreeCommand } from '../../domain/seedTree.mjs';
+import { seedInviteCommand } from '../../domain/seedInvite.mjs';
+import { seedCommunityCommand } from '../../domain/seedCommunity.mjs';
+import { seedSessionIdentity } from '../../domain/seedBrowser';
+
+export type LoginToken = { access_token: string; expired?: boolean };
+export interface IdentityClient {
+  current(): Promise<LoginToken | null>;
+  callback(url: string): Promise<LoginToken>;
+  login(): Promise<void>;
+  logout(): Promise<void>;
+  clear(): Promise<void>;
+  changes(callback: (user: LoginToken | null) => void): () => void;
+}
+export type SeedSession = { status: 'loading' | 'anonymous' | 'error' } | { status: 'authenticated'; uid: string };
+
+// The API, not an ID-token claim or email match, chooses the local UID.
+export function createSeedSession(identity: IdentityClient, fetcher: typeof fetch = fetch) {
+  let snapshot: SeedSession = { status: 'loading' };
+  let accessToken: string | null = null;
+  let generation = 0;
+  let acceptChanges = true;
+  let starting: Promise<void> | undefined;
+  const listeners = new Set<() => void>();
+  const publish = (value: SeedSession) => { snapshot = value; for (const notify of listeners) notify(); };
+  const call = (path: string, token: string, input?: object) => {
+    if (!/^\/v1\/[a-z0-9/-]+(?:\?[^#]*)?$/.test(path) || path.includes('..')) throw new Error('invalid_api_path');
+    return fetcher(path, { method: input ? 'POST' : 'GET', body: input ? JSON.stringify(input) : undefined,
+      headers: { Authorization: 'Bearer ' + token, ...(input ? { 'Content-Type': 'application/json' } : {}) }, credentials: 'omit',
+      redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(15000) });
+  };
+  const bind = async (user: LoginToken | null) => {
+    const mine = ++generation;
+    accessToken = null;
+    if (!user || user.expired || !user.access_token) { publish({ status: 'anonymous' }); return; }
+    publish({ status: 'loading' });
+    try {
+      const result = await call('/v1/me', user.access_token);
+      if (!result.ok) throw new Error('identity_refused');
+      const uid = seedSessionIdentity(await result.json());
+      if (!uid) throw new Error('invalid_identity');
+      if (mine !== generation) return;
+      accessToken = user.access_token;
+      publish({ status: 'authenticated', uid });
+    } catch {
+      if (mine === generation) publish({ status: 'error' });
+    }
+  };
+  identity.changes(user => { if (acceptChanges) void bind(user); });
+  async function request(path: string, input?: object, image?: { path: string; bytes: Blob }) {
+    const token = accessToken, mine = generation;
+    if (!token) throw new Error('authentication_required');
+    const result = image ? await fetcher('/v1/media/upload', {
+      method: 'POST', body: image.bytes,
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': image.bytes.type, 'X-Lightseed-Media-Path': image.path },
+      credentials: 'omit', redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(60000),
+    }) : await call(path, token, input);
+    if (mine !== generation) throw new Error('session_changed');
+    if (result.status === 401) {
+      ++generation; accessToken = null; publish({ status: 'anonymous' });
+      throw new Error('authentication_required');
+    }
+    if (!result.ok) throw new Error('api_unavailable');
+    const body: unknown = await result.json();
+    if (mine !== generation) throw new Error('session_changed');
+    return body;
+  }
+  return {
+    subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    snapshot: () => snapshot,
+    start(callbackUrl?: string) {
+      // React StrictMode/remount must never redeem a single-use authorization code twice.
+      return starting ??= (async () => {
+        const mine = generation;
+        try {
+          const user = callbackUrl ? await identity.callback(callbackUrl) : await identity.current();
+          // A logout or a newer provider event takes precedence over slow initialization.
+          if (mine === generation) await bind(user);
+        } catch { if (mine === generation) publish({ status: 'error' }); }
+      })();
+    },
+    async login() {
+      const mine = ++generation; acceptChanges = false; accessToken = null; publish({ status: 'loading' });
+      try { await identity.login(); } catch { if (mine === generation) publish({ status: 'error' }); }
+    },
+    async logout() {
+      const mine = ++generation; acceptChanges = false; accessToken = null; publish({ status: 'anonymous' });
+      try { await identity.logout(); }
+      catch {
+        if (mine === generation) {
+          await identity.clear().catch(() => {});
+          if (mine === generation) publish({ status: 'error' });
+        }
+      }
+    },
+    read: (path: string) => request(path),
+    eventCommand(value: unknown) {
+      const command=seedEventCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/events/command',command);
+    },
+    alignmentCommand(value: unknown) {
+      const command=seedAlignmentCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/alignments/command',command);
+    },
+    offeringCommand(value: unknown) {
+      const command=seedOfferingCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/offerings/command',command);
+    },
+    blockCommand(value: unknown) {
+      const command=seedBlockCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/blocks/command',command);
+    },
+    signingCommand(value: unknown) {
+      const command=seedSigningCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/signing/command',command);
+    },
+    visionCommand(value: unknown) {
+      const command=seedVisionCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/visions/command',command);
+    },
+    linkCommand(value: unknown) {
+      const command=seedLinkCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/links/command',command);
+    },
+    uploadMedia(path: string, bytes: Blob) {
+      if (!seedMediaUploadPath(path) || !['image/jpeg', 'image/png', 'image/webp'].includes(bytes.type)
+        || bytes.size === 0 || bytes.size > SEED_MEDIA_MAX_BYTES) return Promise.reject(new Error('invalid_media'));
+      return request('/v1/media/upload', undefined, { path, bytes });
+    },
+    treeInviteCommand(value: unknown) {
+      const command=seedTreeInviteCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/tree-invites/command',command);
+    },
+    treeCommand(value: unknown) {
+      const command = seedTreeCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/trees/command', command);
+    },
+    inviteCommand(value: unknown) {
+      const command = seedInviteCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/community-invites/command', command);
+    },
+    communityCommand(value: unknown) {
+      const command = seedCommunityCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/communities/command', command);
+    },
+    saveProfile: (displayName: string) => request('/v1/me/profile', { displayName }),
+    profilePicture(slot: 'siteLogoUrl' | 'siteHeroUrl', path: string | null) {
+      const input = seedProfileInput({ action: 'set_picture', slot, path });
+      if (!input) return Promise.reject(new Error('invalid_profile'));
+      return request('/v1/me/profile', input);
+    },
+  };
+}
