@@ -11,7 +11,7 @@ SET LOCAL lock_timeout = '10s';
 SET LOCAL search_path = pg_catalog;
 DO $ready$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '056_mail.sql') THEN
+  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '057_ai.sql') THEN
     RAISE EXCEPTION 'Run seed:migrate before provisioning a runtime account.';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -111,6 +111,9 @@ GRANT EXECUTE ON FUNCTION seed.mail_quota(integer), seed.mail_place(text), seed.
   seed.reach_context(text), seed.knock_context(text), seed.welcome_context(text), seed.push_drop(text,text),
   seed.newsletter_context(text), seed.apply_newsletter(text,jsonb,jsonb,text,boolean), seed.unsubscribe(text,text[]), seed.request_invite(text,text,text),
   seed.record_login_email(text,text), seed.my_email() TO ${role};
+-- THE AI ORGAN (ring 2026-11-03): a key kept, removed or taken for one call (ciphertext only), the node-key gate's facts and the day's count.
+GRANT EXECUTE ON FUNCTION seed.credential_save(text,text,text,text,text,text,text), seed.credential_remove(text,text,text,text), seed.credential_take(text,text,text),
+  seed.ai_gate(), seed.ai_quota(text,integer) TO ${role};
 COMMIT;
 `;
 }

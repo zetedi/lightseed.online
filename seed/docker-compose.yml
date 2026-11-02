@@ -39,6 +39,8 @@ services:
       # courier and the push key live in runtime.env (SEED_SMTP_URL, SEED_VAPID_PRIVATE_KEY).
       SEED_CHARTER: /app/charter/node.json
       SEED_MAIL_POSTAL: ${SEED_MAIL_POSTAL:-}
+      # THE AI ORGAN (ring 2026-11-03): its three secrets live in runtime.env alone (SEED_ANTHROPIC_API_KEY,
+      # SEED_GEMINI_API_KEY, SEED_CREDENTIAL_KEY); nothing of them is named here.
     ports:
       - '127.0.0.1:${SEED_API_PORT:-8081}:8081'
     depends_on:

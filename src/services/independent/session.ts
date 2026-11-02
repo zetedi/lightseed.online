@@ -13,7 +13,7 @@ import { seedInviteCommand } from '../../domain/seedInvite.mjs';
 import { seedCommunityCommand } from '../../domain/seedCommunity.mjs';
 import { seedSessionIdentity } from '../../domain/seedBrowser';
 import { seedDocCommand } from '../../domain/seedDocs.mjs';
-import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand } from '../../domain/seedOrgans.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedAiCommand } from '../../domain/seedOrgans.mjs';
 
 // The issuer's own claims ride beside the token: a first sign-in may take its name from them
 // (the same courtesy Firebase gave a Google name), never its identity — the API chooses the uid.
@@ -37,11 +37,11 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
   let starting: Promise<void> | undefined;
   const listeners = new Set<() => void>();
   const publish = (value: SeedSession) => { snapshot = value; for (const notify of listeners) notify(); };
-  const call = (path: string, token: string, input?: object) => {
+  const call = (path: string, token: string, input?: object, timeoutMs = 15000) => {
     if (!/^\/v1\/[a-z0-9/-]+(?:\?[^#]*)?$/.test(path) || path.includes('..')) throw new Error('invalid_api_path');
     return fetcher(path, { method: input ? 'POST' : 'GET', body: input ? JSON.stringify(input) : undefined,
       headers: { Authorization: 'Bearer ' + token, ...(input ? { 'Content-Type': 'application/json' } : {}) }, credentials: 'omit',
-      redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(15000) });
+      redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(timeoutMs) });
   };
   const bind = async (user: LoginToken | null) => {
     const mine = ++generation;
@@ -62,14 +62,14 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
     }
   };
   identity.changes(user => { if (acceptChanges) void bind(user); });
-  async function request(path: string, input?: object, image?: { path: string; bytes: Blob }, options?: { missing?: boolean }) {
+  async function request(path: string, input?: object, image?: { path: string; bytes: Blob }, options?: { missing?: boolean; timeoutMs?: number }) {
     const token = accessToken, mine = generation;
     if (!token) throw new Error('authentication_required');
     const result = image ? await fetcher('/v1/media/upload', {
       method: 'POST', body: image.bytes,
       headers: { Authorization: 'Bearer ' + token, 'Content-Type': image.bytes.type, 'X-Lightseed-Media-Path': image.path },
       credentials: 'omit', redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(60000),
-    }) : await call(path, token, input);
+    }) : await call(path, token, input, options?.timeoutMs);
     if (mine !== generation) throw new Error('session_changed');
     if (result.status === 401) {
       ++generation; accessToken = null; publish({ status: 'anonymous' });
@@ -207,6 +207,12 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
       const command = seedMailCommand(value);
       if (!command) return Promise.reject(new Error('invalid_command'));
       return request('/v1/mail/command', command);
+    },
+    // THE AI ORGAN (ring 2026-11-03): a model asked on the hand's behalf, a provider key kept. A model takes its time.
+    aiCommand(value: unknown) {
+      const command = seedAiCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/ai/command', command, undefined, { timeoutMs: 120000 });
     },
     saveProfile: (displayName: string) => request('/v1/me/profile', { displayName }),
     profilePicture(slot: 'siteLogoUrl' | 'siteHeroUrl', path: string | null) {

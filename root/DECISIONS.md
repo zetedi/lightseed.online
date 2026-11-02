@@ -6,6 +6,42 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The second node reaches a model, and keeps a key** — The origin node proxies
+Gemini and Claude through two Cloud Functions and keeps BYO provider keys under Cloud KMS; the
+independent node had neither, so twelve hands refused (every model call, the keeping of a key).
+We grew ONE AI organ (migration 057, `seed/api/ai.mjs`, `POST /v1/ai/command`) with two halves.
+THE HAND (`generate`): the shell sends the transcript and the voice — the words are now the
+domain's (`domain/aiPrompts`), lifted from the Firebase module so both backends ask the same
+questions — and the node decides WHOSE KEY answers. First a credential kept for the hand or for
+a place it belongs to (`seed.credential_take`: one's own; a community's as member, anchor or
+staff — the origin's canUseCredential), opened in the API for the length of one call; else the
+node's own key, which is a MEMBER BENEFIT as the ring of 2026-08-25 decided (`seed.ai_gate` →
+`nodeAiRefusal`: staff always, everyone when the dial `config/limits.nodeAiValidatedOnly` is
+off, else an initiate or the anchor of a validated tree) and counted by the day in `seed.usage`
+(21 texts, 3 pictures; an image model or an image ask counts as a picture, so no client can
+draw a picture from the text allowance). The provider is asked OUTSIDE the transaction through
+its own SDK (`seed/api/aiRails.mjs`); its failure speaks by name — a rejected key, a rate limit
+(Gemini retried with the origin's patience), a plain failure — and the day is counted either
+way, as the origin counts before it calls. THE KEEPING (`save_credential`): a key is sealed in
+the API (AES-256-GCM under the installation's `SEED_CREDENTIAL_KEY`, bound to its row name so a
+ciphertext moved to another row will not open) before it touches the soil; the soil keeps
+ciphertext and a four-character hint, never the key; no route returns one. One deliberate
+tightening: the connection is mirrored onto an intelligence only when the hand may write it (its
+author, or staff) — the origin merges unconditionally, which let any hand flip any
+intelligence's `connected` flag. REJECTED: raw HTTP to the providers (the SDKs the origin runs
+are the parity); a per-provider encryption key (one installation key, rotated by re-entering);
+storing the node's own keys in the database (they stay environment, never soil); streaming
+replies (neither node offers them). Plain contract — guaranteed: a kept key is never readable
+through any route or any table dump without `SEED_CREDENTIAL_KEY`; the node's key is spent only
+by a hand the gate admits, at most 21 texts and 3 pictures a day; the quota is server-held
+(`seed.usage`), the client's mirror advisory; a hand naming a credential it may not spend gets
+the node's path in silence, as the origin does (`tests/seed/ai.postgres-test.ts`,
+`tests/aiRequest.test.ts`). Not guaranteed yet: a real provider has not been called from a
+running installation (the rails are the SDKs, the tests stand-ins; the first live call is the
+installation's); OpenAI, DeepSeek and local rails (they answer the origin's "not connected"
+line); the in-app dial for `nodeAiValidatedOnly` (the keeper sets the config document).
+Losing `SEED_CREDENTIAL_KEY` loses every kept key, and says so in the README.
+
 **2026-11-03 · Letters leave the second node** — The origin node sends mail by writing a
 document the Trigger Email extension carries, and answers document events with Cloud
 Functions; the independent node had neither, so nine hands and three effects refused. We grew

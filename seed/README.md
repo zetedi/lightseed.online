@@ -1655,3 +1655,45 @@ issuer's own mail (verification, password recovery) is the realm's: `npm run
 seed:identity:configure` reads `SEED_IDENTITY_SMTP_URL` and `SEED_IDENTITY_SMTP_FROM` into the
 realm's `smtpServer`. `tests/seed/mail.postgres-test.ts` walks every door with an SMTP and a push
 stand-in; the local walk catches real letters in Mailpit (`seed/compose.local.yml`).
+
+### The AI organ (migration 057)
+
+How a model is reached on a hand's behalf. The origin node proxies Gemini and Claude through
+two callables and keeps provider keys under Cloud KMS; here one organ does both
+(`seed/api/ai.mjs` over `seed/schema/057_ai.sql`, the rails in `seed/api/aiRails.mjs` on the
+same SDKs the functions use, the law in `domain/aiRequest`, the words in `domain/aiPrompts`):
+
+- **The hand** — `POST /v1/ai/command` `generate`: a transcript (text, pictures as base64), the
+  voice, a provider (`google` | `anthropic`), a model, `json` / `image` asks and, optionally, the
+  credential the chosen intelligence draws on. The node decides WHOSE KEY answers: a kept
+  credential the hand may spend (its own; a community's as member, anchor or staff — opened in
+  the API for the length of one call), else the node's own key, which is a member benefit
+  (staff always; everyone when `config/limits.nodeAiValidatedOnly` is `false`; else an initiate
+  or the anchor of a validated tree) counted by the day in `seed.usage` — 21 texts and 3
+  pictures, an image model or an image ask counting as a picture. The model is asked outside the
+  transaction; its failure speaks by name (`ai_key_rejected`, `ai_rate_limited`, `ai_failed`),
+  the day counted either way, as the origin counts before it calls.
+- **The keeping** — `save_credential`: a key is sealed in the API (AES-256-GCM under
+  `SEED_CREDENTIAL_KEY`, bound to its row name) before it touches the soil, kept in
+  `seed.provider_credentials`, hinted back (`…last4`) and mirrored onto an intelligence the hand
+  may write (its author, or staff). An empty key removes. No route ever returns a key; a dump of
+  the table yields ciphertext.
+- **The shell** — every model hand of the application (`gemini.ts`, `intelligence.ts`) speaks
+  through this door with the origin's routing: the listener's chosen intelligence first, the
+  node's Claude then the node's Gemini as last resort.
+
+Configuration (three secrets, all in `runtime.env`):
+
+```bash
+# seed/runtime.env — beside the database credentials
+SEED_ANTHROPIC_API_KEY=sk-ant-…                   # the node's own Claude (claude-sonnet-5 by default)
+SEED_GEMINI_API_KEY=AIza…                         # the node's own Gemini (gemini-3.5-flash; images gemini-2.5-flash-image)
+SEED_CREDENTIAL_KEY=$(openssl rand -base64 32)    # the key under which hands' and places' keys rest; keep it with the backups
+```
+
+Without any of the three the organ is not grown and every model call refuses by name
+(`ai_unavailable`); without `SEED_CREDENTIAL_KEY` keys cannot be kept (`credentials_unavailable`)
+while the node's own keys still answer; without a node key for a provider only kept keys answer
+on that rail (`ai_key_missing`). Losing `SEED_CREDENTIAL_KEY` loses every kept key: each must be
+entered again. `tests/seed/ai.postgres-test.ts` walks the gate, the counters, the keeping and
+every refusal with rail stand-ins; the real rails are the providers' SDKs.

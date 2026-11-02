@@ -529,6 +529,20 @@ and granted by the steward. The account's departure is one transaction: the last
 the heir through the prism, every record, the login binding. The node's keeper is appointed
 by the installation (`seed:keeper`), never by a public first-visitor claim.
 
+THE AI ORGAN (migration 057, 2026-11-03). A model is reached on a hand's behalf through one
+organ (`seed/api/ai.mjs`, `POST /v1/ai/command`): the shell sends the transcript and the
+voice (the words are the domain's, `domain/aiPrompts`, shared by both backends), the node
+decides WHOSE KEY answers — a credential kept for the hand or for a place it belongs to
+(`seed.credential_take`, opened in the API for one call), else the node's own key, which is
+a member benefit (`seed.ai_gate` → `domain/aiRequest` nodeAiRefusal: staff, the dial, a
+validated membership) counted by the day in `seed.usage` (21 texts, 3 pictures) — and asks
+the provider's own SDK outside the transaction (`seed/api/aiRails.mjs`). A kept key rests in
+`seed.provider_credentials` as AES-256-GCM ciphertext under the installation's
+`SEED_CREDENTIAL_KEY`, bound to its row name; a dump yields nothing, no route returns a key.
+Provider failures speak by name (`ai_key_rejected`, `ai_rate_limited`, `ai_failed`). Still
+refusing by name: the one-time Firestore backfills, cross-node SSO, the scheduled thirst and
+stay leaves, previews and feeds, the issuer's own sign-in hands.
+
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node
 composes from plain words in the voice of its place under a daily quota, the letter of a
@@ -541,9 +555,7 @@ the law's patience (`domain/mailLetter`). An accepted network invitation mints i
 inside the acceptance. The words of every letter are the domain's (`mailLetter`, `mailVoice`,
 `newsletter`, `push`); the sender is the charter's (`SEED_CHARTER`); the couriers are the
 installation's secrets. The address a login carries is remembered only when the issuer
-verified it, and never matched as identity. Still refusing by name: the AI organ, the
-one-time Firestore backfills, cross-node SSO, the scheduled thirst and stay leaves, previews
-and feeds, the issuer's own sign-in hands.
+verified it, and never matched as identity.
 
 THE CROSSING (migration 055, 2026-11-02). `seed:export` reads every travelling
 collection through the crossing's map (`domain/seedBundle`: one closed map from the travel

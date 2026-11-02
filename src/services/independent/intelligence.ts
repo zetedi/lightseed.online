@@ -1,29 +1,70 @@
 // THE INDEPENDENT NODE'S HAND for intelligence — the mirror of ../firebase/intelligence.ts (rings
-// 2026-11-01/02). The commons — intelligences, personas, memories — live in documents and go
+// 2026-11-01/03). The commons — intelligences, personas, memories — live in documents and go
 // through the door under the law (a public intelligence is everyone's to read, its author's to
 // care; a memory's visibility is its own). The voice's pure half is shared (services/
-// intelligenceVoice). Reaching a MODEL — and holding a provider key — is the AI organ's: the node
-// speaks to a provider through /v1/ai when it has grown that organ; until then those hands refuse.
+// intelligenceVoice). Reaching a MODEL — and keeping a provider key — is THE AI ORGAN's (POST
+// /v1/ai/command, ring 2026-11-03): the node decides whose key answers (a kept credential the hand
+// may spend, else its own, gated and counted) and speaks to the provider. A key passes through
+// this file once, on its way in; nothing here ever reads one back.
 import type * as F from '../firebase/intelligence';
-import { unported, BackendUnported } from './unported';
-import { currentUid } from './core';
+import { currentUid, session } from './core';
 import { docGet, docAll, docCommand, serverTime, arrayUnion } from './docs';
 import { uuidv7 } from '../../utils/id';
-import type { Intelligence, Persona, Memory, IntelligenceProvider, IntelligenceProviderId } from '../../domain/intelligence';
+import { speak } from '../../utils/translations';
+import config from '../../../lifeseed.config.json';
+import type { Intelligence, Persona, Memory, IntelligenceMessage, IntelligenceProvider, IntelligenceProviderId, IntelligenceRef } from '../../domain/intelligence';
 import { AI_DAILY_TEXT_LIMIT, providerLabel } from '../../domain/aiAccess';
-import { getActiveIntelligenceId, DEFAULT_INTELLIGENCE_ID } from '../intelligenceVoice';
+import { openingOnUser, type AiTurn, type AiRailProvider, type AiCredentialScope } from '../../domain/aiRequest';
+import { NODE_CLAUDE_MODEL } from '../../domain/aiPrompts';
+import { composeSystemPrompt, getActiveIntelligenceId, DEFAULT_INTELLIGENCE_ID } from '../intelligenceVoice';
 export { composeSystemPrompt, setActiveIntelligenceId, setActiveIntelligenceDuties, getActiveIntelligenceId, DEFAULT_INTELLIGENCE_ID } from '../intelligenceVoice';
 export type { CredentialScope } from '../firebase/intelligence';
 
+const DEFAULT_MODEL = config.model || 'gemini-3.5-flash';
 const byName = <T extends { name: string }>(items: T[]) => [...items].sort((a, b) => a.name.localeCompare(b.name));
-// A provider this node has not grown a rail to: it answers honestly rather than crashing the chat.
-const ungrownProvider = (id: IntelligenceProviderId): IntelligenceProvider => ({
-    id,
-    async sendMessage() { throw new BackendUnported('intelligence.sendMessage.' + id); },
+
+// ---------------------------------------------------------------------------
+// The rail: one ask of the organ. The transcript, the voice and the credential the intelligence
+// draws on travel; the node answers with the text (or a picture) and which key spoke.
+// ---------------------------------------------------------------------------
+export interface ModelAsk {
+  provider: AiRailProvider; model?: string; system?: string; messages: AiTurn[]; json?: boolean; image?: boolean;
+  credential?: { scope: AiCredentialScope; holderId: string };
+}
+export interface ModelAnswer { text: string; image?: string; source: 'node' | 'byo' }
+export const askModel = (ask: ModelAsk): Promise<ModelAnswer> => session.aiCommand({ action: 'generate', ...ask }) as Promise<ModelAnswer>;
+// The credential an intelligence draws on, as the organ names it (the node's own key is no credential).
+export const credentialOf = (ref: Pick<IntelligenceRef, 'credentialScope' | 'credentialHolderUid'>): ModelAsk['credential'] | undefined =>
+  ref.credentialScope && ref.credentialScope !== 'node' && ref.credentialHolderUid ? { scope: ref.credentialScope, holderId: ref.credentialHolderUid } : undefined;
+
+const turnsOf = (messages: IntelligenceMessage[]): AiTurn[] => openingOnUser(messages.map(m => ({ role: m.role, text: m.text })));
+const railProvider = (id: AiRailProvider, fallbackModel: string): IntelligenceProvider => ({
+  id,
+  async sendMessage(intelligence, messages, options) {
+    const turns = turnsOf(messages);
+    if (turns.length === 0) return '';
+    const answer = await askModel({ provider: id, model: intelligence.model || fallbackModel, system: composeSystemPrompt(options?.persona, options?.memory),
+      messages: turns, credential: credentialOf(intelligence) });
+    return answer.text || '';
+  },
 });
-export const saveProviderCredential: typeof F.saveProviderCredential = unported('intelligence.saveProviderCredential');
-export const disconnectProviderCredential: typeof F.disconnectProviderCredential = unported('intelligence.disconnectProviderCredential');
-export const getProvider: typeof F.getProvider = (id) => ungrownProvider(id);
+// A provider this node has no rail to: it answers honestly rather than crashing the chat (the origin's words, spoken).
+const unconfiguredProvider = (id: IntelligenceProviderId): IntelligenceProvider => ({ id, async sendMessage() { return speak('ai_provider_unconfigured', { id }); } });
+const providers: Record<IntelligenceProviderId, IntelligenceProvider> = {
+  google: railProvider('google', DEFAULT_MODEL),
+  anthropic: railProvider('anthropic', NODE_CLAUDE_MODEL),
+  openai: unconfiguredProvider('openai'),
+  deepseek: unconfiguredProvider('deepseek'),
+  local: unconfiguredProvider('local'),
+};
+
+// A key is kept by the organ: sealed before it touches the soil, hinted back, never read by a request.
+export const saveProviderCredential: typeof F.saveProviderCredential = (params) => session.aiCommand({
+  action: 'save_credential', scope: params.scope, holderId: params.holderId, provider: params.provider, key: params.key,
+  ...(params.intelligenceId ? { intelligenceId: params.intelligenceId } : {}),
+}) as Promise<{ connected: boolean; keyHint?: string }>;
+export const disconnectProviderCredential: typeof F.disconnectProviderCredential = (params) => saveProviderCredential({ ...params, key: '' });
+export const getProvider: typeof F.getProvider = (id) => providers[id] || providers.google;
 export const resolveAISource: typeof F.resolveAISource = async (opts) => {
     const id = opts?.intelligenceId ?? getActiveIntelligenceId() ?? DEFAULT_INTELLIGENCE_ID;
     const intel = id ? await getIntelligence(id).catch(() => null) : null;

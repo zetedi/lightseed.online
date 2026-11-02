@@ -530,6 +530,11 @@ export function createDatabase(config) {
       if(!organ)organs.refuse('mail_missing',404);
       return organ.mailCommand(withSession,uid,command);
     },
+    // THE AI ORGAN (ring 2026-11-03): a model asked on the hand's behalf, a provider key kept — refused by name when the installation grew no organ.
+    async aiCommand(uid,command,organ) {
+      if(!organ)organs.refuse('ai_unavailable',503);
+      return organ.aiCommand(withSession,uid,command);
+    },
     requestInvite:input=>withSession(null,async c=>(await c.query('SELECT seed.request_invite($1,$2,$3) AS result',[input.email,input.reason,uuidv7()])).rows[0].result),
     unsubscribe:(token,ownDomains)=>withSession(null,async c=>(await c.query('SELECT seed.unsubscribe($1,$2::text[]) AS result',[token,ownDomains])).rows[0].result===true),
     // The address a verified login carries, remembered on the account (never matched as identity).

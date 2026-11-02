@@ -73,3 +73,46 @@ export function seedInviteRequest(value) {
     || (value.reason !== undefined && (typeof value.reason !== 'string' || value.reason.length > 2000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value.reason)))) return null;
   return { email: value.email.trim().toLowerCase(), reason: (value.reason ?? '').trim() };
 }
+// /v1/ai/command — THE AI ORGAN (ring 2026-11-03): a model asked on the hand's behalf, and a provider
+// key kept for a hand or a place. The words and the pictures are claims bounded here; which key is
+// spent, whether the node's key is this hand's to spend and the day's count are the node's (seed/api/ai.mjs).
+const AI_KEYS = { generate: ['action', 'provider', 'model', 'system', 'messages', 'json', 'image', 'credential'], save_credential: ['action', 'scope', 'holderId', 'provider', 'key', 'intelligenceId'] };
+const AI_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+export function seedAiCommand(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !Object.hasOwn(AI_KEYS, value.action)
+    || Object.keys(value).some(k => !AI_KEYS[value.action].includes(k))) return null;
+  const words = (v, max) => v === undefined || v === null || (typeof v === 'string' && v.length <= max && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(v));
+  const flag = v => v === undefined || typeof v === 'boolean';
+  if (value.action === 'generate') {
+    if (!['google', 'anthropic'].includes(value.provider) || !words(value.system, 20000) || !flag(value.json) || !flag(value.image)
+      || (value.model !== undefined && value.model !== null && !(typeof value.model === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/.test(value.model)))
+      || !Array.isArray(value.messages) || value.messages.length === 0 || value.messages.length > 64) return null;
+    const messages = [];
+    for (const turn of value.messages) {
+      if (!turn || typeof turn !== 'object' || Array.isArray(turn) || !['user', 'model'].includes(turn.role)
+        || Object.keys(turn).some(k => !['role', 'text', 'image', 'images'].includes(k)) || !words(turn.text, 60000)) return null;
+      const pictures = Array.isArray(turn.images) ? turn.images : turn.image ? [turn.image] : [];
+      if (pictures.length > 4) return null;
+      const images = [];
+      for (const picture of pictures) {
+        if (!picture || typeof picture !== 'object' || Array.isArray(picture) || !AI_IMAGE_TYPES.includes(picture.mimeType)
+          || typeof picture.data !== 'string' || picture.data.length === 0 || picture.data.length > 4000000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(picture.data)) return null;
+        images.push({ mimeType: picture.mimeType, data: picture.data });
+      }
+      if (!turn.text && images.length === 0) return null;
+      messages.push({ role: turn.role, ...(turn.text ? { text: turn.text } : {}), ...(images.length ? { images } : {}) });
+    }
+    let credential = null;
+    if (value.credential !== undefined && value.credential !== null) {
+      const c = value.credential;
+      if (!c || typeof c !== 'object' || Array.isArray(c) || Object.keys(c).some(k => !['scope', 'holderId'].includes(k))
+        || !['user', 'community'].includes(c.scope) || !identifier(c.holderId, 128)) return null;
+      credential = { scope: c.scope, holderId: c.holderId };
+    }
+    return { action: 'generate', provider: value.provider, model: value.model || null, system: value.system || '', messages, json: value.json === true, image: value.image === true, credential };
+  }
+  if (!['user', 'community'].includes(value.scope) || !identifier(value.holderId, 128) || !['anthropic', 'openai', 'deepseek', 'google'].includes(value.provider)
+    || typeof value.key !== 'string' || value.key.length > 512 || /[\s\u0000-\u001f\u007f]/.test(value.key)
+    || (value.intelligenceId !== undefined && value.intelligenceId !== null && !identifier(value.intelligenceId, 128))) return null;
+  return { action: 'save_credential', scope: value.scope, holderId: value.holderId, provider: value.provider, key: value.key, intelligenceId: value.intelligenceId || null };
+}

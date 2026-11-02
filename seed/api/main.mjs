@@ -5,6 +5,8 @@ import { createAuthenticator } from './auth.mjs';
 import { createDatabase } from './database.mjs';
 import { createApi } from './server.mjs';
 import { createMailOrgan, smtpTransportOptions } from './mail.mjs';
+import { createAiOrgan, createCredentialCipher } from './ai.mjs';
+import { createAiRails } from './aiRails.mjs';
 import nodemailer from 'nodemailer';
 import webpush from 'web-push';
 
@@ -69,7 +71,21 @@ if (charterSource !== null) {
     courier = mail.createCourier(database.withSession);
   } catch (error) { console.error(error instanceof Error && error.code ? error.message : 'Invalid charter or mail configuration.'); await database.close(); process.exit(1); }
 }
-const server = createApi(database, authenticate, { nodeDomain, media, faceDoors, mail });
+// THE AI ORGAN (ring 2026-11-03): grown when the installation holds a node key (SEED_ANTHROPIC_API_KEY,
+// SEED_GEMINI_API_KEY) or can keep hands' keys (SEED_CREDENTIAL_KEY) — all three in runtime.env. Without
+// any, every model call refuses by name (ai_unavailable); a malformed credential key is a fault.
+let ai = null;
+{
+  const nodeKeys = { anthropic: process.env.SEED_ANTHROPIC_API_KEY || null, google: process.env.SEED_GEMINI_API_KEY || null };
+  let cipher = null;
+  if (process.env.SEED_CREDENTIAL_KEY) {
+    try { cipher = createCredentialCipher(process.env.SEED_CREDENTIAL_KEY); }
+    catch (error) { console.error(error instanceof Error ? error.message : 'Invalid credential key.'); await database.close(); process.exit(1); }
+  }
+  if (cipher || nodeKeys.anthropic || nodeKeys.google) ai = createAiOrgan({ rails: createAiRails(), cipher, nodeKeys });
+  else console.warn('No SEED_ANTHROPIC_API_KEY, SEED_GEMINI_API_KEY or SEED_CREDENTIAL_KEY: the AI organ is not grown; every model call refuses by name (ai_unavailable).');
+}
+const server = createApi(database, authenticate, { nodeDomain, media, faceDoors, mail, ai });
 courier?.start(Number(process.env.SEED_COURIER_INTERVAL_MS) || 15000);
 server.on('error', async () => {
   console.error('API listener failed.'); await database.close(); process.exitCode = 1;

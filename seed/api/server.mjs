@@ -15,17 +15,17 @@ import { seedProfileInput } from '../../src/domain/seedProfile.mjs';
 import { createServer } from 'node:http';
 import { seedRequest } from '../../src/domain/seedRequest.mjs';
 import { seedDocCommand } from '../../src/domain/seedDocs.mjs';
-import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedInviteRequest } from '../../src/domain/seedOrgans.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedInviteRequest, seedAiCommand } from '../../src/domain/seedOrgans.mjs';
 import { resolveTxt } from 'node:dns/promises';
 
 // The organs' own refusals (seed/schema/054), by weight.
 const ORGAN_ERRORS={LS003:[404,'community_missing'],LS050:[409,'not_watering'],LS051:[409,'already_witnessed'],LS052:[409,'appreciate_already'],
   LS053:[409,'ray_moved'],LS054:[409,'spend_already'],LS055:[409,'spend_glow_short'],LS056:[404,'unmint_not_mint'],LS057:[409,'unmint_not_last'],
   LS058:[404,'person_missing'],LS059:[409,'keeper_stands'],LS060:[409,'no_domain'],LS061:[409,'door_taken'],LS062:[409,'door_is_domain'],
-  LS063:[409,'door_already'],LS064:[409,'no_challenge'],LS065:[409,'challenge_expired'],LS066:[409,'domain_changed'],LS067:[429,'mail_quota']};
+  LS063:[409,'door_already'],LS064:[409,'no_challenge'],LS065:[409,'challenge_expired'],LS066:[409,'domain_changed'],LS067:[429,'mail_quota'],LS068:[429,'ai_quota']};
 const escapeHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /** @param {*} database @param {(authorization: string) => Promise<string | null>} [authenticate]
- * @param {{nodeDomain: string | null, media?: *, faceDoors?: string[], resolveTxt?: (name: string) => Promise<string[][]>, mail?: * | null}} [options] */
+ * @param {{nodeDomain: string | null, media?: *, faceDoors?: string[], resolveTxt?: (name: string) => Promise<string[][]>, mail?: * | null, ai?: * | null}} [options] */
 export function createApi(database, authenticate = async () => null, options = { nodeDomain: null }) {
   const server = createServer({ maxHeaderSize: 8192 }, async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -50,16 +50,17 @@ export function createApi(database, authenticate = async () => null, options = {
         send(200,await database.docCommand(uid,command));
       }
       // THE ORGANS (ring 2026-11-02): light, staff, the account's departure, domain proofs and doors.
-      else if(['lightCommand','staffCommand','accountCommand','domainCommand','mailCommand'].includes(request.kind)) {
+      else if(['lightCommand','staffCommand','accountCommand','domainCommand','mailCommand','aiCommand'].includes(request.kind)) {
         if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??'')){send(415,{error:'json_required'});return;}
-        const body=await readJsonBody(req,request.kind==='mailCommand'?524288:4096);
+        const body=await readJsonBody(req,request.kind==='aiCommand'?4194304:request.kind==='mailCommand'?524288:4096);
         if(body.error){res.setHeader('Connection','close');send(body.status,{error:body.error});return;}
         const command=request.kind==='lightCommand'?seedLightCommand(body.value):request.kind==='staffCommand'?seedStaffCommand(body.value):request.kind==='accountCommand'?seedAccountCommand(body.value)
-          :request.kind==='mailCommand'?seedMailCommand(body.value):seedDomainCommand(body.value);
+          :request.kind==='mailCommand'?seedMailCommand(body.value):request.kind==='aiCommand'?seedAiCommand(body.value):seedDomainCommand(body.value);
         if(!command){send(400,{error:'invalid_command'});return;}
         send(200,request.kind==='lightCommand'?await database.lightCommand(uid,command):request.kind==='staffCommand'?await database.staffCommand(uid,command)
           :request.kind==='accountCommand'?await database.accountCommand(uid,command)
           :request.kind==='mailCommand'?await database.mailCommand(uid,command,options.mail??null)
+          :request.kind==='aiCommand'?await database.aiCommand(uid,command,options.ai??null)
           :await database.domainCommand(uid,command,{nodeDomain:options.nodeDomain,faceDoors:options.faceDoors??[],resolveTxt:options.resolveTxt??resolveTxt}));
       }
       // THE MAIL ORGAN'S PUBLIC DOORS (ring 2026-11-03): a stranger's request for an invitation; a subscriber's one-click release by token.

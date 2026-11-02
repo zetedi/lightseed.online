@@ -40,3 +40,7 @@ export {systemMailOf,systemLetterOf,reachRecipientsOf,reachThrottleIdOf,reachMay
 export {audienceOf,newsletterSendRefusal,normalizePlaceDomain} from './newsletter';
 export {notificationOf} from './push';
 export {mailFromOf,charterOwnDomains,charterOrigin} from './charter';
+// THE AI ORGAN (ring 2026-11-03): the gate, the counters, the transcript shapes and the refusals, so the
+// organ (seed/api/ai.mjs) and its rails speak the one law the browser and tests hold.
+export {AI_RAIL_PROVIDERS,AI_DEFAULT_MODEL,AI_MAX_TOKENS,AI_RATE_LIMIT_RETRIES,AI_KIND_COUNTER,AI_KIND_LIMIT,aiRetryDelayMs,openingOnUser,nodeAiRefusal,aiKindOf,jsonSystemOf,
+  anthropicTurnsOf,geminiContentsOf,providerStatusOf,providerKeyRejected,aiRailRefusal,credentialIdOf,keyHintOf} from './aiRequest';
