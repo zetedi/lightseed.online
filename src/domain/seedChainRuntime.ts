@@ -32,3 +32,11 @@ export {normalizeAnchorDomain} from './interbeingMatrix';
 export {TRAVEL_PLAN,travelRuleFor,collectionSignature,buildCensus,manifestHashOf,verifyBundle,verifyBundleSeal,expectedBeingsIndex,localUidCensus,docContentHash,BUNDLE_SEAL_TAG,BUNDLE_FORMAT_VERSION} from './bundle';
 export {planBundleMerge,mergeSnapshotDigest} from './bundleMerge';
 export {independentCharterProblem} from './independentCharter';
+// THE MAIL ORGAN (ring 2026-11-03): the voice, the letters, the audience and the sender's name, so the
+// courier (seed/api/mail.mjs) writes the same letters the functions write for the origin node.
+export {mailVoiceOf,dressMailText} from './mailVoice';
+export {systemMailOf,systemLetterOf,reachRecipientsOf,reachThrottleIdOf,reachMayWrite,reachLetterOf,knockLetterOf,knockRecipientsOf,welcomeLetterOf,
+  newsletterFooterOf,unsubscribeUrlOf,newsletterHeadersOf,mailSettlementOf,outboxIsStale,MAIL_DAILY_LIMIT,MAIL_MAX_ATTEMPTS} from './mailLetter';
+export {audienceOf,newsletterSendRefusal,normalizePlaceDomain} from './newsletter';
+export {notificationOf} from './push';
+export {mailFromOf,charterOwnDomains,charterOrigin} from './charter';

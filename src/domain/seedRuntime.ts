@@ -11,7 +11,7 @@ SET LOCAL lock_timeout = '10s';
 SET LOCAL search_path = pg_catalog;
 DO $ready$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '055_crossings.sql') THEN
+  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '056_mail.sql') THEN
     RAISE EXCEPTION 'Run seed:migrate before provisioning a runtime account.';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -105,6 +105,12 @@ GRANT EXECUTE ON FUNCTION seed.witness_context(text), seed.apply_witness(text,js
   seed.spend_context(text), seed.apply_spend(text,jsonb), seed.reset_light(), seed.unmint_context(text), seed.apply_unmint(text,jsonb,text[]),
   seed.staff_command(jsonb), seed.delete_account(text,text), seed.domain_challenge(text,text,numeric), seed.domain_verified(text,text,numeric),
   seed.door_claim(text,text,text,text,numeric), seed.door_claims(text), seed.door_open(text,text,boolean,text,numeric), seed.door_withdraw(text,text) TO ${role};
+-- THE MAIL ORGAN (ring 2026-11-03): what a hand may ask, the courier's server-only doors, the public doors (unsubscribe by token, an invitation request), the login's address.
+GRANT EXECUTE ON FUNCTION seed.mail_quota(integer), seed.mail_place(text), seed.mail_enqueue(jsonb), seed.mail_status(text),
+  seed.mail_take(integer,integer), seed.mail_settle(text,text,text,numeric), seed.mail_sweep(), seed.outbox_take(integer,integer), seed.outbox_settle(bigint,text,numeric), seed.apply_courier(bigint,jsonb,text[]),
+  seed.reach_context(text), seed.knock_context(text), seed.welcome_context(text), seed.push_drop(text,text),
+  seed.newsletter_context(text), seed.apply_newsletter(text,jsonb,jsonb,text,boolean), seed.unsubscribe(text,text[]), seed.request_invite(text,text,text),
+  seed.record_login_email(text,text), seed.my_email() TO ${role};
 COMMIT;
 `;
 }

@@ -107,12 +107,15 @@ const describe = async (uid: string, claimed?: string): Promise<Lightseed> => {
     // The local profile names the hand; before one exists, the issuer's claimed name stands in so
     // the shell can write the first profile (ensurePersonEntity), as a provider name once did.
     let displayName: string | null = claimed ?? null;
+    let email: string | null = null;
     try {
-        const body = await session.read('/v1/me/profile') as { profile?: { displayName?: unknown; createdAt?: unknown } | null };
+        const body = await session.read('/v1/me/profile') as { profile?: { displayName?: unknown; createdAt?: unknown } | null; email?: unknown };
         if (typeof body.profile?.displayName === 'string') displayName = body.profile.displayName;
         profileCreatedAtMs = body.profile?.createdAt ? toMillis(body.profile.createdAt) || null : null;
+        // The address the issuer verified and the node remembered (migration 056): the shell's own eyes only.
+        if (typeof body.email === 'string') email = body.email;
     } catch { /* a profile not yet written names no one; the shell asks for a name */ }
-    return { uid, email: null, displayName, photoURL: null };
+    return { uid, email, displayName, photoURL: null };
 };
 
 export const onAuthChange = (callback: (user: Lightseed | null) => void): (() => void) => {

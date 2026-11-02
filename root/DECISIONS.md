@@ -6,6 +6,40 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · Letters leave the second node** — The origin node sends mail by writing a
+document the Trigger Email extension carries, and answers document events with Cloud
+Functions; the independent node had neither, so nine hands and three effects refused. We grew
+ONE mail organ (migration 056, `seed/api/mail.mjs`) with two halves. The hands: `POST
+/v1/mail/command` — `send_system` (the node composes the letter from plain words and an
+optional http(s) link, dressed in the voice of the place whose door the hand stood at, under
+the origin's quota of twenty a day for every hand but staff), `send_newsletter` (the keeper's
+or the node staff's fan-out, one letter per active subscriber at the place with its own opaque
+unsubscribe token and RFC 8058 headers, the place stamped in the same transaction), `status`
+(the sender's own letter's delivery, in the extension's shape so the shell's reader keeps its
+contract). The effects: the TRIGGERS of a request's own write leave rows in `seed.outbox` — a
+reach, a join request, a first profile — and the courier composes each from facts the context
+functions read (recipients, addresses, opt-outs, quiet, devices, the place's voice), lands the
+letters in one transaction with the throttle marks, then knocks on devices; an accepted
+network invitation mints `welcomed_by` and, only when the inviter belongs, `member` and
+`invited_by` INSIDE the acceptance (the soil mints the lids: `seed.lid()`). The courier carries
+due letters over SMTP (TLS, or a declared plaintext catcher on the Compose network alone) with
+the law's patience — five attempts, doubling waits, `ERROR` out loud — and sweeps words after
+thirty days. The words are the domain's (`domain/mailLetter`, a transcription of the functions
+originals, held by hand not test since functions/core cannot be imported); the sender and the
+node's name are the charter's (`SEED_CHARTER`); the couriers are the installation's secrets.
+The address a login carries is remembered on the account only when the issuer itself verified
+it (the realm's new `lightseed:email` scope), and is never identity — the subject binds, the
+address merely lets a letter arrive. **Plain contract.** Guaranteed: no letter is composed by a
+client; no hand reaches the queue or the outbox except through the organ's doors; an import or
+an owner's repair never re-sends a letter (no session, no effect); a reach writes to a
+recipient at most once per thread per ten minutes; membership is minted only where the inviter
+belongs. Not guaranteed: exactly-once delivery (a courier dying mid-send may deliver twice —
+at-least-once, bounded by five attempts); a digest instead of a skip inside the quiet window;
+the issuer's own verification and recovery mail (the realm's SMTP, configured separately);
+the scheduled thirst's reach (it leaves no effect until the scheduler is grown).
+
+---
+
 **2026-11-02 · One door for every document, and the organs** — The independent node's
 remaining 265 refusing hands were almost all DOCUMENT hands — a read or a write the rules
 judge — so instead of one SQL command per hand the node grew ONE door: `GET /v1/docs/<collection>`

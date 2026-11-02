@@ -527,9 +527,23 @@ moves. DNS is observed outside every transaction and re-checked under the lock b
 server-only mark is written; face doors are named by the installation (`SEED_FACE_DOORS`)
 and granted by the steward. The account's departure is one transaction: the last spend to
 the heir through the prism, every record, the login binding. The node's keeper is appointed
-by the installation (`seed:keeper`), never by a public first-visitor claim. Still refusing
-by name: the mail organ, the AI organ, the one-time Firestore backfills, cross-node SSO,
-the scheduled thirst, previews and feeds.
+by the installation (`seed:keeper`), never by a public first-visitor claim.
+
+THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
+organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node
+composes from plain words in the voice of its place under a daily quota, the letter of a
+place fanned out one per subscriber with its own unsubscribe door, the sender's own delivery),
+the public doors (`/v1/invite-requests`, `/u/<token>`), and the EFFECTS of a request's own
+write — a reach's notice and push knock, a join request's knock on the keepers, the first
+profile's welcome — which triggers leave in `seed.outbox` and the courier composes from facts
+the context functions read, lands as letters in one transaction, then carries over SMTP with
+the law's patience (`domain/mailLetter`). An accepted network invitation mints its links
+inside the acceptance. The words of every letter are the domain's (`mailLetter`, `mailVoice`,
+`newsletter`, `push`); the sender is the charter's (`SEED_CHARTER`); the couriers are the
+installation's secrets. The address a login carries is remembered only when the issuer
+verified it, and never matched as identity. Still refusing by name: the AI organ, the
+one-time Firestore backfills, cross-node SSO, the scheduled thirst and stay leaves, previews
+and feeds, the issuer's own sign-in hands.
 
 THE CROSSING (migration 055, 2026-11-02). `seed:export` reads every travelling
 collection through the crossing's map (`domain/seedBundle`: one closed map from the travel

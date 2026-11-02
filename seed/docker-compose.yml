@@ -35,6 +35,10 @@ services:
       SEED_MEDIA_DIR: /app/media
       SEED_NODE_ORIGIN: ${SEED_NODE_ORIGIN:-}
       SEED_FACE_DOORS: ${SEED_FACE_DOORS:-}
+      # THE MAIL ORGAN (ring 2026-11-03): the charter names the node and its sender; the SMTP
+      # courier and the push key live in runtime.env (SEED_SMTP_URL, SEED_VAPID_PRIVATE_KEY).
+      SEED_CHARTER: /app/charter/node.json
+      SEED_MAIL_POSTAL: ${SEED_MAIL_POSTAL:-}
     ports:
       - '127.0.0.1:${SEED_API_PORT:-8081}:8081'
     depends_on:
@@ -42,6 +46,8 @@ services:
         condition: service_healthy
     volumes:
       - media_data:/app/media
+      # The charter directory holds node.json (seed:configure's output); an empty one means no mail organ, said at startup.
+      - ${SEED_CHARTER_DIR:-./charter}:/app/charter:ro
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]

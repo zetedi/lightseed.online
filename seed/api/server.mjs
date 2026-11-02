@@ -15,16 +15,17 @@ import { seedProfileInput } from '../../src/domain/seedProfile.mjs';
 import { createServer } from 'node:http';
 import { seedRequest } from '../../src/domain/seedRequest.mjs';
 import { seedDocCommand } from '../../src/domain/seedDocs.mjs';
-import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand } from '../../src/domain/seedOrgans.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedInviteRequest } from '../../src/domain/seedOrgans.mjs';
 import { resolveTxt } from 'node:dns/promises';
 
 // The organs' own refusals (seed/schema/054), by weight.
 const ORGAN_ERRORS={LS003:[404,'community_missing'],LS050:[409,'not_watering'],LS051:[409,'already_witnessed'],LS052:[409,'appreciate_already'],
   LS053:[409,'ray_moved'],LS054:[409,'spend_already'],LS055:[409,'spend_glow_short'],LS056:[404,'unmint_not_mint'],LS057:[409,'unmint_not_last'],
   LS058:[404,'person_missing'],LS059:[409,'keeper_stands'],LS060:[409,'no_domain'],LS061:[409,'door_taken'],LS062:[409,'door_is_domain'],
-  LS063:[409,'door_already'],LS064:[409,'no_challenge'],LS065:[409,'challenge_expired'],LS066:[409,'domain_changed']};
+  LS063:[409,'door_already'],LS064:[409,'no_challenge'],LS065:[409,'challenge_expired'],LS066:[409,'domain_changed'],LS067:[429,'mail_quota']};
+const escapeHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /** @param {*} database @param {(authorization: string) => Promise<string | null>} [authenticate]
- * @param {{nodeDomain: string | null, media?: *, faceDoors?: string[], resolveTxt?: (name: string) => Promise<string[][]>}} [options] */
+ * @param {{nodeDomain: string | null, media?: *, faceDoors?: string[], resolveTxt?: (name: string) => Promise<string[][]>, mail?: * | null}} [options] */
 export function createApi(database, authenticate = async () => null, options = { nodeDomain: null }) {
   const server = createServer({ maxHeaderSize: 8192 }, async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -36,7 +37,7 @@ export function createApi(database, authenticate = async () => null, options = {
       const request = seedRequest(req.method, req.url, req.headers.authorization, uid !== null);
       if (request.error) {
         if (request.status === 401) res.setHeader('WWW-Authenticate', 'Bearer');
-        if (request.status === 405) res.setHeader('Allow', req.url?.endsWith('/command') || req.url === '/v1/media/upload' ? 'POST' : req.url === '/v1/me/profile' ? 'GET, POST' : 'GET');
+        if (request.status === 405) res.setHeader('Allow', req.url?.endsWith('/command') || req.url === '/v1/media/upload' || req.url === '/v1/invite-requests' ? 'POST' : req.url === '/v1/me/profile' || req.url?.startsWith('/u/') ? 'GET, POST' : 'GET');
         send(request.status, { error: request.error });
       } else if (request.kind === 'me') send(200, { uid });
       // THE DOCUMENT DOOR (ring 2026-11-02): a write as a claim, judged by the document law.
@@ -49,15 +50,37 @@ export function createApi(database, authenticate = async () => null, options = {
         send(200,await database.docCommand(uid,command));
       }
       // THE ORGANS (ring 2026-11-02): light, staff, the account's departure, domain proofs and doors.
-      else if(['lightCommand','staffCommand','accountCommand','domainCommand'].includes(request.kind)) {
+      else if(['lightCommand','staffCommand','accountCommand','domainCommand','mailCommand'].includes(request.kind)) {
         if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??'')){send(415,{error:'json_required'});return;}
-        const body=await readJsonBody(req,4096);
+        const body=await readJsonBody(req,request.kind==='mailCommand'?524288:4096);
         if(body.error){res.setHeader('Connection','close');send(body.status,{error:body.error});return;}
-        const command=request.kind==='lightCommand'?seedLightCommand(body.value):request.kind==='staffCommand'?seedStaffCommand(body.value):request.kind==='accountCommand'?seedAccountCommand(body.value):seedDomainCommand(body.value);
+        const command=request.kind==='lightCommand'?seedLightCommand(body.value):request.kind==='staffCommand'?seedStaffCommand(body.value):request.kind==='accountCommand'?seedAccountCommand(body.value)
+          :request.kind==='mailCommand'?seedMailCommand(body.value):seedDomainCommand(body.value);
         if(!command){send(400,{error:'invalid_command'});return;}
         send(200,request.kind==='lightCommand'?await database.lightCommand(uid,command):request.kind==='staffCommand'?await database.staffCommand(uid,command)
           :request.kind==='accountCommand'?await database.accountCommand(uid,command)
+          :request.kind==='mailCommand'?await database.mailCommand(uid,command,options.mail??null)
           :await database.domainCommand(uid,command,{nodeDomain:options.nodeDomain,faceDoors:options.faceDoors??[],resolveTxt:options.resolveTxt??resolveTxt}));
+      }
+      // THE MAIL ORGAN'S PUBLIC DOORS (ring 2026-11-03): a stranger's request for an invitation; a subscriber's one-click release by token.
+      else if(request.kind==='inviteRequest') {
+        if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??'')){send(415,{error:'json_required'});return;}
+        const body=await readJsonBody(req,4096);
+        if(body.error){res.setHeader('Connection','close');send(body.status,{error:body.error});return;}
+        const input=seedInviteRequest(body.value);
+        if(!input){send(400,{error:'invalid_command'});return;}
+        send(200,{status:await database.requestInvite(input)});
+      }
+      else if(request.kind==='unsubscribe') {
+        const released=await database.unsubscribe(request.token,options.mail?.ownDomains??(options.nodeDomain?[options.nodeDomain]:[]));
+        if(request.method==='POST'){res.writeHead(200);res.end();return;}
+        const name=options.mail?.name??'The seed';
+        res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Content-Security-Policy',"default-src 'none'; style-src 'unsafe-inline'");
+        res.writeHead(released?200:404);
+        res.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(name)}</title></head>`
+          +`<body style="font-family:sans-serif;text-align:center;padding:48px;color:#334155;"><h2 style="color:#059669;font-weight:300;letter-spacing:1px;">${escapeHtml(name)}</h2>`
+          +(released?`<p>You have been unsubscribed from this letter.</p><p style="color:#9ca3af;font-size:13px;">You can resubscribe anytime from your profile.</p>`
+            :`<p>This unsubscribe link is not known here.</p><p style="color:#9ca3af;font-size:13px;">It may have been used already, or belong to another node.</p>`)+`</body></html>`);
       }
       else if (request.kind === 'docs') {
         const result=await database.docs(request,uid);
@@ -196,7 +219,9 @@ export function createApi(database, authenticate = async () => null, options = {
       if(error.code==='INVALID_IMAGE'){send(400,{error:'invalid_image'});return;}
       if(error.code==='MEDIA_BUSY'){send(503,{error:'media_busy'});return;}
       if (error.code === '42501') { send(403, { error: 'forbidden' }); return; }
-      // Never serialize SQL, connection details, credentials or private record values.
+      // Never serialize SQL, connection details, credentials or private record values — to the client. The
+      // operator's log names the code and message alone (no parameters), so an unexpected failure is diagnosable.
+      console.error('request failed:', error?.code ?? '', error instanceof Error ? error.message : String(error));
       send(503, { error: 'database_unavailable' });
     }
   });

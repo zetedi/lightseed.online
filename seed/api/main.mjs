@@ -4,6 +4,9 @@ import { readFile } from 'node:fs/promises';
 import { createAuthenticator } from './auth.mjs';
 import { createDatabase } from './database.mjs';
 import { createApi } from './server.mjs';
+import { createMailOrgan, smtpTransportOptions } from './mail.mjs';
+import nodemailer from 'nodemailer';
+import webpush from 'web-push';
 
 const required = ['PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'];
 if (required.some(key => !process.env[key])) {
@@ -20,7 +23,7 @@ if (process.env.SEED_AUTH_CONFIG) {
   try {
     const source = await readFile(process.env.SEED_AUTH_CONFIG);
     if (source.length > 2 * 1024 * 1024) throw new Error('auth_config_too_large');
-    authenticate = await createAuthenticator(JSON.parse(source.toString('utf8')), database.resolveIdentity);
+    authenticate = await createAuthenticator(JSON.parse(source.toString('utf8')), database.resolveIdentity, database.recordEmail);
   } catch { console.error('Invalid authentication configuration.'); process.exit(1); }
 }
 const nodeDomain = seedNodeDomain(process.env.SEED_NODE_ORIGIN);
@@ -42,7 +45,32 @@ const faceDoors = (process.env.SEED_FACE_DOORS ?? '').split(',').map(h => h.trim
 if (faceDoors.some(h => h.length > 253 || !/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/.test(h))) {
   console.error('Invalid face door hostname.'); await database.close(); process.exit(1);
 }
-const server = createApi(database, authenticate, { nodeDomain, media, faceDoors });
+// THE MAIL ORGAN (ring 2026-11-03): grown when the installation names its charter (SEED_CHARTER); the
+// SMTP courier (SEED_SMTP_URL, in runtime.env) and the push courier (SEED_VAPID_PRIVATE_KEY beside the
+// charter's public key) each join when configured. Without the charter every letter refuses by name.
+let mail = null, courier = null;
+let charterSource = null;
+if (process.env.SEED_CHARTER) {
+  try { charterSource = (await readFile(process.env.SEED_CHARTER)).toString('utf8'); }
+  catch (error) {
+    // An absent charter grows no mail organ (the Compose default mounts an empty directory); anything else is a fault.
+    if (error?.code !== 'ENOENT' && error?.code !== 'EISDIR') { console.error('The charter could not be read.'); await database.close(); process.exit(1); }
+    console.warn('No charter at SEED_CHARTER: the mail organ is not grown; every letter refuses by name (mail_unavailable).');
+  }
+}
+if (charterSource !== null) {
+  try {
+    const charter = JSON.parse(charterSource);
+    const transport = process.env.SEED_SMTP_URL ? nodemailer.createTransport(smtpTransportOptions(process.env.SEED_SMTP_URL)) : null;
+    const privateKey = process.env.SEED_VAPID_PRIVATE_KEY ?? '';
+    const push = privateKey && charter.push?.publicKey ? { send: (subscription, notice) => webpush.sendNotification(subscription, JSON.stringify(notice),
+      { TTL: 3600, vapidDetails: { subject: charter.push.subject, publicKey: charter.push.publicKey, privateKey } }) } : null;
+    mail = createMailOrgan({ charter, nodeOrigin: process.env.SEED_NODE_ORIGIN || null, postal: process.env.SEED_MAIL_POSTAL || null, transport, push });
+    courier = mail.createCourier(database.withSession);
+  } catch (error) { console.error(error instanceof Error && error.code ? error.message : 'Invalid charter or mail configuration.'); await database.close(); process.exit(1); }
+}
+const server = createApi(database, authenticate, { nodeDomain, media, faceDoors, mail });
+courier?.start(Number(process.env.SEED_COURIER_INTERVAL_MS) || 15000);
 server.on('error', async () => {
   console.error('API listener failed.'); await database.close(); process.exitCode = 1;
 });
@@ -53,5 +81,6 @@ for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
   stopping = true;
   const timeout = setTimeout(() => process.exit(1), 20000);
   timeout.unref();
+  courier?.stop();
   server.close(async () => { await database.close(); clearTimeout(timeout); });
 });

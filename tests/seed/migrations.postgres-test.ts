@@ -678,7 +678,7 @@ describe('independent local profiles', () => {
   it('creates once under concurrency, preserves identity/signing fields, and keeps private tables closed', async () => {
     const db = await apiDatabase(3);
     try {
-      expect(await db.profile('alice')).toEqual({ profile: null });
+      expect(await db.profile('alice')).toEqual({ profile: null, email: null });
       const results = await Promise.all(['Alice', 'Willow', 'Alice Willow'].map(displayName => db.profile('alice', { displayName })));
       const lids = new Set(results.map(r => r.profile.lid));
       expect(lids.size).toBe(1);
@@ -692,7 +692,7 @@ describe('independent local profiles', () => {
       expect(sql("SELECT doc->>'publicKeyPem' || ':' || (doc->>'signingEpochId') || ':' || (doc->>'history') FROM persons WHERE id='alice';")).toBe('preserved-key:epoch:keep');
       expect(sql("SELECT doc->>'private' || ':' || (doc->>'invitesRemaining') FROM users WHERE id='alice';")).toBe('keep:0');
       expect(updated.profile).not.toHaveProperty('publicKeyPem');
-      expect(await db.profile('bob')).toEqual({ profile: null });
+      expect(await db.profile('bob')).toEqual({ profile: null, email: null });
       expect(sql('SELECT count(*) FROM admins;')).toBe('0');
       // The document law: a profile is read by its own hand (RLS), never written through the table.
       expect((await db.withSession('alice', (c: any) => c.query('SELECT id FROM public.users'))).rows.map((r: any) => r.id)).toEqual(['alice']);
@@ -745,11 +745,11 @@ describe('independent local profiles', () => {
       expect((await save('{}', 'text/plain')).status).toBe(415);
       expect((await save(' '.repeat(2049))).status).toBe(413);
       const saved = await save('{"displayName":"  Alice   Willow  "}'); expect(saved.status).toBe(200);
-      const body = await saved.json(); expect(body.profile).toMatchObject({ uid: 'alice', displayName: 'Alice Willow' });
+      const body = await saved.json(); expect(body.profile).toMatchObject({ uid: 'alice', displayName: 'Alice Willow' }); expect(body.email).toBeNull(); // no verified address rode the token
       const own = await fetch(base + '/v1/me/profile', { headers: { authorization: 'Bearer ' + token } });
       expect(await own.json()).toEqual(body);
       const other = await fetch(base + '/v1/me/profile', { headers: { authorization: 'Bearer ' + fixture.token({ sub: 'issuer-bob' }) } });
-      expect(await other.json()).toEqual({ profile: null });
+      expect(await other.json()).toEqual({ profile: null, email: null });
     } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await db.close(); }
   });
 });

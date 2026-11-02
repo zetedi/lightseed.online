@@ -518,11 +518,22 @@ export function createDatabase(config) {
       if (!uid) throw new Error('authentication_required');
       return withSession(uid, async c => {
         const result = input
-          ? await c.query('SELECT seed.save_profile($1, $2) AS profile', [input.displayName, uuidv7()])
-          : await c.query('SELECT seed.my_profile() AS profile');
-        return { profile: result.rows[0].profile };
+          ? await c.query('SELECT seed.save_profile($1, $2) AS profile, seed.my_email() AS email', [input.displayName, uuidv7()])
+          : await c.query('SELECT seed.my_profile() AS profile, seed.my_email() AS email');
+        // The address the login carried (migration 056 record_login_email) rides beside the profile for the shell's own eyes.
+        return { profile: result.rows[0].profile, email: result.rows[0].email ?? null };
       });
     },
+    // THE MAIL ORGAN (ring 2026-11-03): the organ is the installation's (seed/api/mail.mjs, configured in main); without one, every letter refuses by name.
+    async mailCommand(uid,command,organ) {
+      if(!organ && command.action!=='status')organs.refuse('mail_unavailable',503);
+      if(!organ)organs.refuse('mail_missing',404);
+      return organ.mailCommand(withSession,uid,command);
+    },
+    requestInvite:input=>withSession(null,async c=>(await c.query('SELECT seed.request_invite($1,$2,$3) AS result',[input.email,input.reason,uuidv7()])).rows[0].result),
+    unsubscribe:(token,ownDomains)=>withSession(null,async c=>(await c.query('SELECT seed.unsubscribe($1,$2::text[]) AS result',[token,ownDomains])).rows[0].result===true),
+    // The address a verified login carries, remembered on the account (never matched as identity).
+    recordEmail:(uid,email)=>withSession(null,async c=>{await c.query('SELECT seed.record_login_email($1,$2)',[uid,email]);}),
     // THE ORGANS (ring 2026-11-02): light, staff, the account's departure, the domain proofs and doors.
     lightCommand:(uid,command)=>organs.lightCommand(withSession,uid,command),
     staffCommand:(uid,command)=>organs.staffCommand(withSession,uid,command),

@@ -12,7 +12,18 @@ import { seedDocsQuery } from './seedDocs.mjs';
 // Bounded graph contract. Authentication is established by the server, never a query field.
 export function seedRequest(method, target, authorization, authenticated = false) {
   // THE ORGANS (ring 2026-11-02): light, staff, the account's own departure, domain proofs and doors — signed in only.
-  const organs={'/v1/light/command':'lightCommand','/v1/staff/command':'staffCommand','/v1/account/command':'accountCommand','/v1/domains/command':'domainCommand'};
+  const organs={'/v1/light/command':'lightCommand','/v1/staff/command':'staffCommand','/v1/account/command':'accountCommand','/v1/domains/command':'domainCommand','/v1/mail/command':'mailCommand'};
+  // THE MAIL ORGAN'S PUBLIC DOORS (ring 2026-11-03): a stranger asks for an invitation; a subscriber leaves by token (GET shows a page, POST is RFC 8058 one-click).
+  if(target==='/v1/invite-requests') {
+    if(method!=='POST')return {error:'method_not_allowed',status:405};
+    if(authorization && !authenticated)return {error:'invalid_token',status:401};
+    return {kind:'inviteRequest'};
+  }
+  if(typeof target==='string' && target.startsWith('/u/')) {
+    if(method!=='GET' && method!=='POST')return {error:'method_not_allowed',status:405};
+    const token=target.slice(3);
+    return /^[A-Za-z0-9_-]{16,128}$/.test(token)?{kind:'unsubscribe',token,method}:{error:'not_found',status:404};
+  }
   if(['/v1/events/command','/v1/alignments/command','/v1/links/command','/v1/visions/command','/v1/signing/command','/v1/blocks/command','/v1/offerings/command'].includes(target) || Object.hasOwn(organs,target)) {
     if(method!=='POST')return {error:'method_not_allowed',status:405};
     if(!authenticated)return {error:authorization?'invalid_token':'authentication_required',status:401};

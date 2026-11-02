@@ -44,3 +44,32 @@ export function seedDomainCommand(value) {
   if (!withDoor || Object.keys(value).some(k => !['action', 'communityId', 'door'].includes(k)) || !identifier(value.door, 253)) return null;
   return { action: value.action, communityId: value.communityId, door: value.door };
 }
+// /v1/mail/command — THE MAIL ORGAN (ring 2026-11-03): a system letter (the node composes it), the
+// letter of a place, and a look at one's own letter's delivery. Addresses and words are claims the
+// organ cleans and bounds (domain/mailLetter systemMailOf); the sender, the voice and the quota are the node's.
+const MAIL_KEYS = { send_system: ['action', 'to', 'subject', 'text', 'ctaUrl', 'ctaLabel', 'domain'], send_newsletter: ['action', 'communityId', 'subject', 'html'], status: ['action', 'id'] };
+export function seedMailCommand(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !Object.hasOwn(MAIL_KEYS, value.action)
+    || Object.keys(value).some(k => !MAIL_KEYS[value.action].includes(k))) return null;
+  const optional = (v, max) => v === undefined || v === null || (typeof v === 'string' && v.length <= max && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(v));
+  if (value.action === 'send_system') {
+    const to = Array.isArray(value.to) ? value.to : [value.to];
+    if (to.length === 0 || to.length > 5 || !to.every(t => identifier(t, 254)) || !optional(value.subject, 200) || !optional(value.text, 4000)
+      || !optional(value.ctaUrl, 500) || !optional(value.ctaLabel, 80) || !optional(value.domain, 253)) return null;
+    return { action: 'send_system', to, ...(value.subject ? { subject: value.subject } : {}), ...(value.text ? { text: value.text } : {}),
+      ...(value.ctaUrl ? { ctaUrl: value.ctaUrl } : {}), ...(value.ctaLabel ? { ctaLabel: value.ctaLabel } : {}), ...(value.domain ? { domain: value.domain } : {}) };
+  }
+  if (value.action === 'send_newsletter') {
+    if (!identifier(value.communityId, 128) || typeof value.subject !== 'string' || !value.subject.trim() || value.subject.length > 200
+      || typeof value.html !== 'string' || !value.html.trim() || value.html.length > 400000) return null;
+    return { action: 'send_newsletter', communityId: value.communityId, subject: value.subject.trim(), html: value.html.trim() };
+  }
+  return identifier(value.id, 128) ? { action: 'status', id: value.id } : null;
+}
+// POST /v1/invite-requests — a stranger asks for an invitation (functions requestInvite): an address and a reason.
+export function seedInviteRequest(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(k => !['email', 'reason'].includes(k))
+    || typeof value.email !== 'string' || value.email.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value.email.trim().toLowerCase())
+    || (value.reason !== undefined && (typeof value.reason !== 'string' || value.reason.length > 2000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value.reason)))) return null;
+  return { email: value.email.trim().toLowerCase(), reason: (value.reason ?? '').trim() };
+}

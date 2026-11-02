@@ -1605,3 +1605,53 @@ login the installation bound to that uid by reviewed configuration (an explicit 
 auth trust file) — then the person arrives with the import. Not carried: media files, queues,
 quotas, credentials, challenges (the travel plan's exclusions, said out loud in the plan).
 `tests/seed/crossing.postgres-test.ts` exports from one database and lands it in another.
+
+### The mail organ (migration 056)
+
+How letters leave this node. The origin node writes a `mail` document the Trigger Email
+extension sends and lets Cloud Functions answer document events; here one organ does both
+halves (`seed/api/mail.mjs` over `seed/schema/056_mail.sql`, the words from `domain/mailLetter`):
+
+- **The hands** — `POST /v1/mail/command`: `send_system` (the node composes the letter from
+  plain words and an optional http(s) link, in the voice of the place whose door the hand stood
+  at — `domain` names it; twenty a day for every hand but staff, counted in `seed.usage`),
+  `send_newsletter` (the community's keeper, or staff for the node's own place: one letter per
+  active subscriber at the place with its own unsubscribe token and `List-Unsubscribe` headers,
+  the place stamped in the same transaction), `status` (the sender's own letter's delivery:
+  `PENDING` → `PROCESSING` → `SUCCESS` | `ERROR`, the extension's shape).
+- **The public doors** — `POST /v1/invite-requests` (a stranger asks for an invitation; a pending
+  invitation or request for the address answers first) and `GET|POST /u/<token>` (one-click
+  release by token alone; the edge proxies `/u/*`).
+- **The effects** — triggers of a request's own write (never the crossing's import or the owner's
+  repairs) leave rows in `seed.outbox`: a reach (the recipients' letters, once per thread per
+  recipient inside ten minutes, opt-out honoured, and the push knock on their devices), a join
+  request (the keepers' knock: anchor and stewards, six at most), the first profile (the welcome).
+  An accepted network invitation mints `welcomed_by`, and — only when the inviter belongs to the
+  node community — `member` and `invited_by`, inside the acceptance itself (`seed.lid()` mints the
+  true names).
+- **The courier** — every few seconds (`SEED_COURIER_INTERVAL_MS`, 15 s) the API process composes
+  due effects from facts the context functions read, lands their letters in one transaction, then
+  carries due letters over SMTP, settling each: success rests, a failure waits (1, 2, 4, 8 minutes,
+  an hour at most) and gives up after five attempts, out loud. Letters' words leave the queue after
+  thirty days; an effect older than a day is retired, never delivered late.
+- **The address a login carries** — a token whose issuer verified the address (`email` +
+  `email_verified`) has it remembered on the account (`seed.record_login_email`), never matched as
+  identity; the realm law adds the `lightseed:email` scope to the access token for this.
+
+Configuration (the charter is the node's name and sender; the couriers are secrets):
+
+```bash
+# seed/.env — the charter directory seed:configure wrote (node.json inside), and the footer's postal line
+SEED_CHARTER_DIR=/private/lightseed/charter
+SEED_MAIL_POSTAL="Your registered postal address"
+# seed/runtime.env — beside the database credentials
+SEED_SMTP_URL=smtps://user:password@smtp.example:465      # or smtp://host:587 (STARTTLS required)
+SEED_VAPID_PRIVATE_KEY=…                                     # the pair's public half is the charter's push.publicKey
+```
+
+Without a charter the organ is not grown and every letter refuses by name (`mail_unavailable`);
+without `SEED_SMTP_URL` the hands refuse the same way while the push knock still goes. The
+issuer's own mail (verification, password recovery) is the realm's: `npm run
+seed:identity:configure` reads `SEED_IDENTITY_SMTP_URL` and `SEED_IDENTITY_SMTP_FROM` into the
+realm's `smtpServer`. `tests/seed/mail.postgres-test.ts` walks every door with an SMTP and a push
+stand-in; the local walk catches real letters in Mailpit (`seed/compose.local.yml`).

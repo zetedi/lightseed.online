@@ -620,6 +620,12 @@ const en = {
   being_link_unseen: "This link names a being you cannot see from here.",
   being_link_not_public: "This link names a being that is not public. Sign in — it may open for you.",
   backend_unported: "This node has not grown that yet.",
+  // THE MAIL ORGAN (ring 2026-11-03): the node's refusals when a letter cannot leave.
+  mail_unavailable: "This node has no courier for letters yet.",
+  mail_quota: "You have sent today's letters. The courier rests until midnight UTC.",
+  mail_no_recipient: "A letter needs someone to go to.", mail_too_many: "A letter goes to five at most.",
+  mail_bad_recipient: "That address cannot be written to.", mail_bad_link: "Only an http(s) link may ride in a letter.",
+  mail_missing: "That letter is not yours to see, or does not exist.",
   auth_issuer_intro: "This node signs you in through its own door. You will be taken there and brought back.",
   auth_issuer_continue: "Continue to sign in",
   invite_not_found: "This invitation could not be found.",

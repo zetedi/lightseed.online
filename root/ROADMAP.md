@@ -58,9 +58,11 @@ permission to ship a reduced-feature node.
    durable, idempotent background work. THE DOCUMENT DOOR (050–053) now carries every
    document hand under the translated rules, and THE ORGANS (054) carry light (witness,
    appreciation, spend, reset), the unmint, the staff roster, the account's departure and
-   the domain/door proofs (2026-11-02). Still refusing by name: the mail organ, the AI
-   organ, cross-node SSO, the scheduled thirst and stay leaves, previews/feeds/sitemap,
-   picture release, the one-time Firestore backfills.
+   the domain/door proofs (2026-11-02). THE MAIL ORGAN (056) carries system letters, the
+   letter of a place, the reach's notice and push knock, the keepers' knock, the welcome and
+   the accepted invitation's links, through a durable queue and outbox with retries
+   (2026-11-03). Still refusing by name: the AI organ, cross-node SSO, the scheduled thirst
+   and stay leaves, previews/feeds/sitemap, picture release, the one-time Firestore backfills.
 5. Implement complete signed exports, identity enrollment, media transport,
    transactional import execution and conflict resolution. `seed:export` and
    `seed:import` (055) now export a sealed bundle and land it additively in one

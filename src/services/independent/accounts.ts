@@ -1,13 +1,15 @@
 // THE INDEPENDENT NODE'S HAND for accounts — the mirror of ../firebase/accounts.ts (rings
-// 2026-11-01/02). Signing in is the issuer's (core.ts signInWithIssuer); the node's own profile
+// 2026-11-01/03). Signing in is the issuer's (core.ts signInWithIssuer); the node's own profile
 // (/v1/me/profile) names the hand; everything else a Firebase account did through documents
-// goes through the document door (./docs) under the same law firestore.rules kept. What still
-// needs an organ this node has not grown — mail, the account's own deletion, the staff roster's
-// cascade — refuses by name (unported) and never reaches for the origin node.
+// goes through the document door (./docs) under the same law firestore.rules kept; the letters
+// go through the mail organ (/v1/mail/command, migration 056). The provider sign-in hands do not
+// exist on this soil (the issuer's door stands instead) and refuse by name, never reaching for
+// the origin node.
 import type * as F from '../firebase/accounts';
-import { unported, unportedListener } from './unported';
+import { unported } from './unported';
 import { session, currentUid, requireUid, toMillis } from './core';
 import { docGet, docList, docAll, docCommand, serverTime } from './docs';
+import { seedPublicWrite } from './public';
 import { publicNameOf } from '../../domain/publicName';
 import { excludeBedTrees } from '../../domain/bed';
 import { subscriptionIdOf, isSubscriberEmail, normalizeSubscriberEmail, normalizePlaceDomain } from '../../domain/newsletter';
@@ -132,8 +134,13 @@ export const getInviteRequests: typeof F.getInviteRequests = async (lastDoc) => 
     const page = await docList<F.InviteRow>('invite_requests', { newest: true, limit: INVITE_PAGE, after: (lastDoc ?? null) as unknown as [string, string] | null });
     return { items: page.items, lastDoc: asCursor(page.next), hasMore: !!page.next };
 };
-// The request is laid down; the mail that answers it and the staff-side duplicate check wait for the mail organ.
-export const submitInviteRequest: typeof F.submitInviteRequest = async (email, reason) => { await createInviteRequest(email, reason); return 'created'; };
+// A stranger's request, judged by the node (functions requestInvite): a pending invitation or request for the address answers first.
+export const submitInviteRequest: typeof F.submitInviteRequest = async (email, reason) => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) throw new Error('err_email_invalid');
+    const answer = await seedPublicWrite('/v1/invite-requests', { email: cleanEmail, reason: reason.trim() }) as { status?: string };
+    return answer.status === 'pending_invite_exists' || answer.status === 'already_requested' ? answer.status : 'created';
+};
 export const approveInviteRequest: typeof F.approveInviteRequest = async (requestId, adminUid) => {
     const request = await docGet<{ email?: string }>('invite_requests', requestId);
     if (!request) throw new Error('err_request_not_found');
@@ -211,10 +218,42 @@ export const checkAndIncrementAiUsage: typeof F.checkAndIncrementAiUsage = async
         expect: { dailyAiText: user.dailyAiText ?? null, dailyAiImage: user.dailyAiImage ?? null } });
     return true;
 };
-// Mail is an organ this node has not grown: no letter leaves here yet.
-export const triggerSystemEmail: typeof F.triggerSystemEmail = unported('accounts.triggerSystemEmail');
-export const sendInvite: typeof F.sendInvite = unported('accounts.sendInvite');
-export const monitorMailStatus: typeof F.monitorMailStatus = unportedListener('accounts.monitorMailStatus');
+// THE MAIL ORGAN (ring 2026-11-03): the node composes the letter from plain words and an optional link
+// (domain/mailLetter), in the voice of the place whose door this hand stands at; a daily quota holds
+// for every hand but staff; the courier carries it (seed/api/mail.mjs). The answer carries the letter's id.
+export const triggerSystemEmail: typeof F.triggerSystemEmail = async (to, subject, text, userId, opts) => {
+    if (!(userId || currentUid())) throw new Error('err_email_uid');
+    const result = await session.mailCommand({ action: 'send_system', to: [to], subject, text,
+        ...(opts?.ctaUrl ? { ctaUrl: opts.ctaUrl } : {}), ...(opts?.ctaLabel ? { ctaLabel: opts.ctaLabel } : {}), domain: window.location.hostname });
+    return { data: result } as Awaited<ReturnType<typeof F.triggerSystemEmail>>;
+};
+export const sendInvite: typeof F.sendInvite = async (targetEmail, customMessage, userId, inviteLink) => {
+    const me = await docGet<{ invitesRemaining?: number }>('users', userId);
+    if (!me) throw new Error('err_profile_not_found');
+    const remaining = typeof me.invitesRemaining === 'number' ? me.invitesRemaining : 0;
+    if (remaining <= 0) throw new Error('err_no_invites');
+    await docCommand({ action: 'update', collection: 'users', id: userId, patch: { invitesRemaining: remaining - 1 }, expect: { invitesRemaining: me.invitesRemaining ?? null } });
+    await triggerSystemEmail(targetEmail, 'You have been invited to lightseed', `${customMessage ? `"${customMessage}"\n\n` : ''}You have been invited to join the lightseed network. Join here: ${inviteLink}`, userId);
+};
+// A letter's delivery, followed: the node has no live channel, so the hand asks every few seconds until the letter rests or fails.
+export const monitorMailStatus: typeof F.monitorMailStatus = (docId, onChange) => {
+    let alive = true;
+    let timer: number | null = null;
+    const ask = async () => {
+        try {
+            const answer = await session.mailCommand({ action: 'status', id: docId }) as { delivery?: { state?: string } };
+            if (!alive) return;
+            onChange(answer.delivery);
+            if (answer.delivery?.state === 'SUCCESS' || answer.delivery?.state === 'ERROR') { alive = false; return; }
+        } catch (e) {
+            if (!alive) return;
+            if (e instanceof Error && e.message === 'forbidden') { onChange({ state: 'ERROR', error: 'Permission denied' }); alive = false; return; }
+        }
+        if (alive) timer = window.setTimeout(() => { void ask(); }, 4000);
+    };
+    void ask();
+    return () => { alive = false; if (timer !== null) window.clearTimeout(timer); };
+};
 // THE LETTER OF A PLACE: one row per (place, address); the footer writes it signed out, the profile signed in.
 export const subscribeToNewsletter: typeof F.subscribeToNewsletter = async (email, place) => {
     if (!isSubscriberEmail(email)) throw new Error('err_email_invalid');
@@ -251,7 +290,11 @@ export const getNewsletterDraftData: typeof F.getNewsletterDraftData = async (pl
     ]);
     return { lastSentAt: lastSentAt as Awaited<ReturnType<typeof F.getNewsletterDraftData>>['lastSentAt'], trees, visions, pulses };
 };
-export const sendNewsletter: typeof F.sendNewsletter = unported('accounts.sendNewsletter');
+// THE LETTER OF A PLACE: the node fans one letter out per subscriber (its own unsubscribe token in each footer) and stamps the place.
+export const sendNewsletter: typeof F.sendNewsletter = async ({ subject, html, communityId }) => {
+    const answer = await session.mailCommand({ action: 'send_newsletter', subject, html, communityId }) as { sent?: number };
+    return typeof answer.sent === 'number' ? answer.sent : 0;
+};
 export const deleteUserAsAdmin: typeof F.deleteUserAsAdmin = async (uid) =>
     await session.accountCommand({ action: 'delete_as_staff', uid }) as { deleted: boolean };
 // The roster behind the staff tools: every account the staff hand may read, with the superadmin marked.

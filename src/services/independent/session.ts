@@ -13,7 +13,7 @@ import { seedInviteCommand } from '../../domain/seedInvite.mjs';
 import { seedCommunityCommand } from '../../domain/seedCommunity.mjs';
 import { seedSessionIdentity } from '../../domain/seedBrowser';
 import { seedDocCommand } from '../../domain/seedDocs.mjs';
-import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand } from '../../domain/seedOrgans.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand } from '../../domain/seedOrgans.mjs';
 
 // The issuer's own claims ride beside the token: a first sign-in may take its name from them
 // (the same courtesy Firebase gave a Google name), never its identity — the API chooses the uid.
@@ -201,6 +201,12 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
       const command = seedDomainCommand(value);
       if (!command) return Promise.reject(new Error('invalid_command'));
       return request('/v1/domains/command', command);
+    },
+    // THE MAIL ORGAN (ring 2026-11-03): a letter the node composes, the letter of a place, one's own letter's delivery.
+    mailCommand(value: unknown) {
+      const command = seedMailCommand(value);
+      if (!command) return Promise.reject(new Error('invalid_command'));
+      return request('/v1/mail/command', command);
     },
     saveProfile: (displayName: string) => request('/v1/me/profile', { displayName }),
     profilePicture(slot: 'siteLogoUrl' | 'siteHeroUrl', path: string | null) {

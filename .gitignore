@@ -164,3 +164,5 @@ seed/web-dist/
 seed/generated/
 dist-independent/
 seed/local/
+# The installation's charter directory (node.json), mounted into the API — private, never committed.
+seed/charter/
