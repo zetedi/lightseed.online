@@ -7,6 +7,8 @@ import { createApi } from './server.mjs';
 import { createMailOrgan, smtpTransportOptions } from './mail.mjs';
 import { createAiOrgan, createCredentialCipher } from './ai.mjs';
 import { createAiRails } from './aiRails.mjs';
+import { createClock } from './clock.mjs';
+import { CLOCK_DEFAULT_TIME_ZONE, isTimeZone } from '../generated/chain.mjs';
 import nodemailer from 'nodemailer';
 import webpush from 'web-push';
 
@@ -85,8 +87,15 @@ let ai = null;
   if (cipher || nodeKeys.anthropic || nodeKeys.google) ai = createAiOrgan({ rails: createAiRails(), cipher, nodeKeys });
   else console.warn('No SEED_ANTHROPIC_API_KEY, SEED_GEMINI_API_KEY or SEED_CREDENTIAL_KEY: the AI organ is not grown; every model call refuses by name (ai_unavailable).');
 }
+// THE CLOCK (ring 2026-11-03): always grown — the morning thirst check and the nightly stay leaves, in
+// the installation's zone (SEED_CLOCK_TIMEZONE, the origin's Europe/Brussels by default); the thirst's
+// ask reaches the courier only where the mail organ is grown.
+const timeZone = process.env.SEED_CLOCK_TIMEZONE || CLOCK_DEFAULT_TIME_ZONE;
+if (!isTimeZone(timeZone)) { console.error('Invalid SEED_CLOCK_TIMEZONE (an IANA zone such as Europe/Brussels).'); await database.close(); process.exit(1); }
+const clock = createClock({ withSession: database.withSession, timeZone, notify: mail !== null });
 const server = createApi(database, authenticate, { nodeDomain, media, faceDoors, mail, ai });
 courier?.start(Number(process.env.SEED_COURIER_INTERVAL_MS) || 15000);
+clock.start(Number(process.env.SEED_CLOCK_INTERVAL_MS) || 60000);
 server.on('error', async () => {
   console.error('API listener failed.'); await database.close(); process.exitCode = 1;
 });
@@ -98,5 +107,6 @@ for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
   const timeout = setTimeout(() => process.exit(1), 20000);
   timeout.unref();
   courier?.stop();
+  clock.stop();
   server.close(async () => { await database.close(); clearTimeout(timeout); });
 });

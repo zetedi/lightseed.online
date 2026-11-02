@@ -6,6 +6,36 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The second node keeps time** — The origin node's two scheduled hands run on
+Cloud Scheduler (the thirst check every morning at 08:00 Brussels, the stay leaves every night
+at 03:00) and its planting caps are a trigger that uproots an over-cap newborn after the fact;
+the independent node had no scheduler, so a thirsty tree never asked and a completed stay never
+became a leaf. We grew THE CLOCK (migration 058, `seed/api/clock.mjs`): a ledger (`seed.clock`)
+of jobs with a due moment and a lease, taken every minute by the API process, each run settled
+at the next due hour the pure law (`domain/clock`) computes in the installation's zone
+(`SEED_CLOCK_TIMEZONE`, the origin's by default). THE THIRST is the origin's law restated on the
+shared `domain/watering` law (`domain/thirst`): overdue marked, quenched cleared, one ask a day
+when someone besides the anchor would hear — the standing ask rewritten, else a new reach in the
+guardians' thread, through the principal with the tree's face — and the outbox row for the
+courier inserted by the clock itself, since the trigger of 056 speaks only for a session's own
+write. THE LEAVES is the origin's record field for field (`domain/stayLeaf`), the guest's tree
+face only, sealed with the canonical hash in the API and applied under the bed's lock with the
+head re-checked (LS032 refuses a moved head). The planting caps moved to a BEFORE INSERT trigger
+(`seed.tree_caps_on_insert`): an over-cap tree is never born, through any door. REJECTED: a
+cron container beside the API (a second process for two jobs, and a second place to deploy and
+watch); running the jobs on every API boot alone (a node that stays up never runs them);
+`setInterval` without a ledger (two API processes, or a restart mid-run, would double a run or
+lose one); reverting a bed's over-cap home-move after the fact as the origin does (the document
+rule already refuses it at the write, 051 — recorded in PARITY only now). Plain contract —
+guaranteed: a job runs once per due moment across processes and restarts (the lease and the
+settle, `tests/seed/clock.postgres-test.ts`); the next due moment crosses daylight-saving changes
+without a lost or doubled run (`tests/clock.test.ts`); the thirst asks exactly when the origin
+would and in its words (`tests/thirst.test.ts`); a leaf hashes as the origin's would
+(`tests/stayLeaf.test.ts`, the Postgres test recomputes it); no HTTP request reaches the clock's
+doors. Not guaranteed: that a run happens at the hour (a sleeping node runs it when it wakes);
+delivery of the thirst's ask where the mail organ is not grown (the reach stands in the thread
+alone); the origin's own scheduled runs are untouched by any of this.
+
 **2026-11-03 · The second node reaches a model, and keeps a key** — The origin node proxies
 Gemini and Claude through two Cloud Functions and keeps BYO provider keys under Cloud KMS; the
 independent node had neither, so twelve hands refused (every model call, the keeping of a key).

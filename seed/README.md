@@ -1697,3 +1697,42 @@ while the node's own keys still answer; without a node key for a provider only k
 on that rail (`ai_key_missing`). Losing `SEED_CREDENTIAL_KEY` loses every kept key: each must be
 entered again. `tests/seed/ai.postgres-test.ts` walks the gate, the counters, the keeping and
 every refusal with rail stand-ins; the real rails are the providers' SDKs.
+
+### The clock (migration 058)
+
+The node's own rhythm. The origin node runs two hands on Cloud Scheduler — the morning thirst
+check and the nightly stay leaves; here the API process keeps a ledger and runs them itself
+(`seed/api/clock.mjs` over `seed/schema/058_clock.sql`, the law in `domain/clock`,
+`domain/thirst`, `domain/stayLeaf`):
+
+- **The ledger** — `seed.clock` holds one row per job (`thirst`, `leaves`) with its due moment, a
+  lease, and the last run's outcome and report. Every minute (`SEED_CLOCK_INTERVAL_MS`) the clock
+  takes what is due and unleased, runs it, and settles the next due moment: 08:00 for the thirst,
+  03:00 for the leaves, in the installation's zone (`SEED_CLOCK_TIMEZONE`, the origin's
+  `Europe/Brussels` by default; daylight-saving changes cross without a lost or doubled run). Two
+  API processes never run the same job at once (the lease, ten minutes); a job the node slept
+  through runs at the next tick, once. A fresh node runs both at its first tick.
+- **The thirst** — every tree on a watering schedule past its due moment is marked `overdue`, the
+  quenched cleared; once a day, when someone besides its anchor would hear, the tree asks its
+  circle (keepers and guardians, both ledgers) through its principal with its own face — the
+  standing ask rewritten so a week of thirst is one line that keeps count, else a new reach in the
+  guardians' thread, in the origin's words. Where the mail organ is grown the ask rides the outbox
+  to the courier (letters and knocks); where it is not, the ask stands in the thread alone.
+- **The leaves** — every accepted stay departed before today becomes a permanent leaf on its bed's
+  chain: the origin's record field for field, wearing the guest's chosen tree face only ("A guest"
+  when none), sealed with the canonical hash in the API and applied under the bed's lock — head
+  re-checked, the bed's height advanced, the stay marked `leafed`, all in one transaction. A head
+  that moved in between refuses (LS032) and the next tick seals anew.
+- **The planting caps' backstop** — the soil itself refuses a tree over its keeper's ceiling at the
+  insert (193 lifetrees, 132 guarded, 12 secret, `config/limits` respected), through any door; the
+  origin uproots the newborn afterwards. Staff plant freely; the crossing's import is not a planting.
+
+```bash
+# seed/.env — optional; the origin's zone and a minute's tick are the defaults
+SEED_CLOCK_TIMEZONE=Europe/Brussels
+SEED_CLOCK_INTERVAL_MS=60000
+```
+
+`tests/seed/clock.postgres-test.ts` moves the clock's moment by hand across days and asserts the
+ledger, every thirst outcome, the leaf's hash against the shared chain law, and the caps. To see a
+run on a live node: `UPDATE seed.clock SET due_at=now()` as the owner and read the row a minute later.

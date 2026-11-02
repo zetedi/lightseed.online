@@ -41,6 +41,9 @@ services:
       SEED_MAIL_POSTAL: ${SEED_MAIL_POSTAL:-}
       # THE AI ORGAN (ring 2026-11-03): its three secrets live in runtime.env alone (SEED_ANTHROPIC_API_KEY,
       # SEED_GEMINI_API_KEY, SEED_CREDENTIAL_KEY); nothing of them is named here.
+      # THE CLOCK (ring 2026-11-03): the installation's zone for the scheduled hands, and the tick.
+      SEED_CLOCK_TIMEZONE: ${SEED_CLOCK_TIMEZONE:-Europe/Brussels}
+      SEED_CLOCK_INTERVAL_MS: ${SEED_CLOCK_INTERVAL_MS:-60000}
     ports:
       - '127.0.0.1:${SEED_API_PORT:-8081}:8081'
     depends_on:

@@ -64,8 +64,12 @@ permission to ship a reduced-feature node.
    (2026-11-03). THE AI ORGAN (057) carries every model call and the keeping of provider keys:
    the node decides whose key answers (a kept credential the hand may spend, else its own, a
    member benefit gated and counted), keys rest as ciphertext under the installation's key
-   (2026-11-03). Still refusing by name: cross-node SSO, the scheduled thirst and stay leaves,
-   previews/feeds/sitemap, picture release, the one-time Firestore backfills.
+   (2026-11-03). THE CLOCK (058) is the durable, idempotent background work this item asked
+   for: a leased ledger of jobs the API process runs in the installation's zone — the morning
+   thirst (one standing ask per tree, the courier notified) and the nightly stay leaves (sealed
+   with the canonical hash under the bed's lock) — plus the planting caps enforced at the insert
+   (2026-11-03). Still refusing by name: cross-node SSO, previews/feeds/sitemap, picture
+   release, the one-time Firestore backfills.
 5. Implement complete signed exports, identity enrollment, media transport,
    transactional import execution and conflict resolution. `seed:export` and
    `seed:import` (055) now export a sealed bundle and land it additively in one

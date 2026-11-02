@@ -539,9 +539,23 @@ validated membership) counted by the day in `seed.usage` (21 texts, 3 pictures) 
 the provider's own SDK outside the transaction (`seed/api/aiRails.mjs`). A kept key rests in
 `seed.provider_credentials` as AES-256-GCM ciphertext under the installation's
 `SEED_CREDENTIAL_KEY`, bound to its row name; a dump yields nothing, no route returns a key.
-Provider failures speak by name (`ai_key_rejected`, `ai_rate_limited`, `ai_failed`). Still
-refusing by name: the one-time Firestore backfills, cross-node SSO, the scheduled thirst and
-stay leaves, previews and feeds, the issuer's own sign-in hands.
+Provider failures speak by name (`ai_key_rejected`, `ai_rate_limited`, `ai_failed`).
+
+THE CLOCK (migration 058, 2026-11-03). The independent node keeps its own rhythm: a ledger of
+jobs (`seed.clock` — due moment, lease, last outcome) the API process takes every minute
+(`seed/api/clock.mjs`), each run settled at the next due hour the law computes in the
+installation's zone (`domain/clock`; the origin's hours, Europe/Brussels by default; one run
+alone holds a job; a job slept through runs at the next tick, once). THE THIRST
+(`domain/thirst`, on the shared `domain/watering` law): every scheduled tree past its due
+moment is marked overdue and, once a day, asks its circle through its principal with its own
+face — the standing ask rewritten while it stands, else a new reach in the guardians' thread
+— the outbox carrying it to the courier where the mail organ is grown. THE LEAVES
+(`domain/stayLeaf`): every completed stay becomes a leaf on its bed's chain, the origin's
+record field for field, sealed with the canonical hash and applied under the bed's lock
+(`seed.stay_leaf_apply`, a moved head refused). The planting caps are enforced at the insert
+by the soil itself (`seed.tree_caps_on_insert`), through any door. Still refusing by name:
+the one-time Firestore backfills, cross-node SSO, previews and feeds, picture release, the
+issuer's own sign-in hands.
 
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node

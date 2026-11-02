@@ -11,7 +11,7 @@ SET LOCAL lock_timeout = '10s';
 SET LOCAL search_path = pg_catalog;
 DO $ready$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '057_ai.sql') THEN
+  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '058_clock.sql') THEN
     RAISE EXCEPTION 'Run seed:migrate before provisioning a runtime account.';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -114,6 +114,9 @@ GRANT EXECUTE ON FUNCTION seed.mail_quota(integer), seed.mail_place(text), seed.
 -- THE AI ORGAN (ring 2026-11-03): a key kept, removed or taken for one call (ciphertext only), the node-key gate's facts and the day's count.
 GRANT EXECUTE ON FUNCTION seed.credential_save(text,text,text,text,text,text,text), seed.credential_remove(text,text,text,text), seed.credential_take(text,text,text),
   seed.ai_gate(), seed.ai_quota(text,integer) TO ${role};
+-- THE CLOCK (ring 2026-11-03): the ledger's take and settle, the thirst's facts and touch, the leaves' due list and seal — server-only doors the clock alone drives.
+GRANT EXECUTE ON FUNCTION seed.clock_take(timestamptz,integer), seed.clock_settle(text,timestamptz,text,jsonb), seed.thirst_trees(), seed.thirst_apply(text,jsonb,text,jsonb,boolean),
+  seed.stay_leaves_due(text), seed.stay_leaf_apply(text,jsonb) TO ${role};
 COMMIT;
 `;
 }
