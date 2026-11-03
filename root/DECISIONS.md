@@ -6,6 +6,32 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · A community leaves, and the fossils go** — Zoltán asked for a whole community to be
+exportable "with the tree etc. of its members", and for every fossil to be removed. The world of a
+community (`domain/communityCrossing`) is three belongings said out loud: the circle (anchor, keeper
+mirror, member/keeper/steward links) travels whole; everything a member anchors travels with them;
+every being placed at the community by its place of record travels whatever its anchor — places
+resolved through the charter's faces (a door and its domains are one place) and the hand's own
+aliases, because the soil's `domain` field mixes doors, old `web.app` doors, foreign websites and
+nothing at all. Then what belongs by field, every edge whose both ends travel, and the public person
+record of everyone named. Measured on the real soil, the chosen policy makes every community carry
+the keeper's whole garden, since one person anchors most trees and sits in every circle; Zoltán
+chose it knowing that. REJECTED: "placed beings only" (too thin — a member's trees would stay
+home); "each member's own life trees only" (the four `defaultTreeId` fields cannot tell a person's
+tree, and the keeper's nature trees would never travel); carrying a guest tree with the forest it
+grows in (the garden law keeps its domain and ownership); carrying an edge with one end outside
+(a dangling bond — named as left instead). The fossils: `scripts/sweep-fossils.mjs` is a dry run
+unless told; at the keeper's word it removed the 2025 `organisations` collection, 23 stale index
+entries, 5 blocks of deleted trees with what hung under them and 14 records under deleted parents,
+named 13 accounts with their person's lid, and gave 5 persons one name — the lid `persons` carries,
+which every login serves — re-pointing the index as the governed act it is. REJECTED: marking the
+debris blocks instead of removing them (their trees are gone; a mark on debris is a mark on nothing);
+keeping the backfill's `users` lid (nothing but the index knew it); re-minting the two `shelters`
+links' version-4 lids without a word (reported, left). Plain contract — guaranteed: a community
+bundle verifies and lands by the one law; everything that touches the community and stays is named;
+the sweep never removes what it has not listed. Not guaranteed: a member's beings travelling with
+ONE community only (there is no home for a person yet), departed uids crossing, the two old-lid links.
+
 **2026-11-03 · The origin leaves** — Asked whether the second node could now fire up and import
 the data exported from lightseed.online, we found there was no road: `seed:export` reads a
 PostgreSQL node, the browser's export is a ZIP of another shape gathered with one hand's sight,

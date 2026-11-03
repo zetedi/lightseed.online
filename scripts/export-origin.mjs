@@ -16,16 +16,16 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildBundle, custodianOf, sealBundle, writeSealedBundle, exportCommitOf, charterHashesOf } from '../seed/api/bundle.mjs';
-import { originSnapshot, originIdentities, pruneBrokenChains, expectedBeingsIndex, verifyBundle } from '../seed/generated/chain.mjs';
+import { originSnapshot, originIdentities, pruneBrokenChains, communityCrossing, placeResolverOf, expectedBeingsIndex, verifyBundle } from '../seed/generated/chain.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
-const named = ['--charter', '--key', '--project', '--leave'];
+const named = ['--charter', '--key', '--project', '--leave', '--community', '--place'];
 const flags = ['--without-authority', '--survey', '--leave-unlandable', '--leave-broken'];
 const option = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
 const every = name => args.flatMap((a, i) => (a === name && args[i + 1] !== undefined ? [args[i + 1]] : []));
 const positional = args.filter((a, i) => !a.startsWith('--') && !named.includes(args[i - 1]));
-const usage = 'Usage: npm run seed:export:origin -- --key custodian.pem [--charter src/config/charter.json] [--project <id>] [--without-authority] [--survey] [--leave <collection>]... [--leave-unlandable] [--leave-broken] bundle.json';
+const usage = 'Usage: npm run seed:export:origin -- --key custodian.pem [--charter src/config/charter.json] [--project <id>] [--community <id> [--place <alias>=<communityId>]...] [--without-authority] [--survey] [--leave <collection>]... [--leave-unlandable] [--leave-broken] bundle.json';
 if (!option('--key') || positional.length !== 1 || args.some(a => a.startsWith('--') && !named.includes(a) && !flags.includes(a))) {
   console.error(usage);
   process.exit(1);
@@ -104,8 +104,22 @@ try {
     console.error('Mend the chains at the origin, or leave these blocks behind knowingly with --leave-broken (they are named in <bundle>.left.json).');
     process.exit(2);
   }
+  // One community's world (domain/communityCrossing), when the hand names one: the circle, their
+  // beings with whole chains, what belongs by field, the edges whose both ends travel, the public
+  // record of everyone named — and what touches the community but stays, named.
+  const communityId = option('--community');
+  let travelling = pruned.docs;
+  let outside = [];
+  if (communityId !== undefined) {
+    // Places of record resolve through the charter's faces; the hand may add an old door by name.
+    const aliases = every('--place').map(pair => { const [alias, id] = pair.split('='); if (!alias || !id) throw new Error(`--place wants <alias>=<communityId>, got ${pair}.`); return { alias, communityId: id }; });
+    const world = communityCrossing(pruned.docs, communityId, { placeOf: placeResolverOf(pruned.docs, Array.isArray(charter.faces) ? charter.faces : [], aliases) });
+    if (typeof world === 'string') throw new Error(`No such community in the soil: ${communityId} (${world}).`);
+    travelling = world.docs; outside = world.left;
+    console.log(`The world of ${communityId}: ${plural(world.members.length, 'member')} in the circle, ${plural(world.named.length, 'person')} named by their records, ${plural(world.docs.length, 'record')}; ${plural(world.left.length, 'record')} touching it stay (named in <bundle>.left.json).`);
+  }
   const bundle = sealBundle(await buildBundle({
-    snapshot: pruned.docs, charter, exportCommit: exportCommitOf(root), charterHashes: await charterHashesOf(root),
+    snapshot: travelling, charter, exportCommit: exportCommitOf(root), charterHashes: await charterHashesOf(root),
     exportedAtMs: readTime.toMillis(), withoutAuthority: args.includes('--without-authority'),
   }), custodian);
   // The hand verifies what it sealed before anyone else must: a bundle the far side would refuse is no export.
@@ -126,7 +140,7 @@ try {
 
   await writeSealedBundle(out, bundle, custodian);
   await writeOwnerOnly(`${out}.identities.json`, identities);
-  await writeOwnerOnly(`${out}.left.json`, { left: snapshot.left, rebuilt: snapshot.rebuilt, unlandable: snapshot.unlandable, broken: pruned.broken, ghosts, beings });
+  await writeOwnerOnly(`${out}.left.json`, { left: snapshot.left, rebuilt: snapshot.rebuilt, unlandable: snapshot.unlandable, broken: pruned.broken, outside, ghosts, beings });
 
   console.log(`Bundle sealed at ${readTime.toDate().toISOString()}: ${bundle.docs.length} records in ${bundle.head.census.length} collections, manifest ${bundle.manifestHash.slice(0, 16)}…, custodian ${custodian.fingerprint.slice(0, 16)}….`);
   console.log(`  ${bundle.head.census.map(c => `${c.path} ${c.count}`).join(', ')}`);

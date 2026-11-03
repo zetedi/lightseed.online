@@ -84,9 +84,15 @@ permission to ship a reduced-feature node.
    transactional import execution and conflict resolution. `seed:export` and
    `seed:import` (055) now export a sealed bundle and land it additively in one
    transaction (2026-11-02); `seed:export:origin` exports the origin's Firestore soil as the
-   same sealed bundle, naming what cannot travel (2026-11-03). Media transport, the binding
+   same sealed bundle, naming what cannot travel, and both exporters let ONE community leave
+   with its circle, everything its members anchor and everything placed at it (`--community`,
+   2026-11-03); the origin's fossils were swept the same day. Media transport, the binding
    ceremony (explicit login rows written by the installation before the import; departed uids
-   whose traces travel as names) and identity enrollment at scale remain.
+   whose traces travel as names) and identity enrollment at scale remain. Decided 2026-11-03:
+   the last thirteen refusing hands are to be ported (the issuer's doors driven through the
+   realm, the one-time backfills as the node's own audits and repairs, the first-keeper claim
+   answered by the installation's appointment), and the API gains a service layer with every
+   SQL statement in repositories — the pictures organ first, as the pattern.
 6. Bootstrap authority and the first keeper without a public first-visitor claim —
    `seed:keeper` appoints the keeper from the installation (2026-11-02).
    Verify a clean Compose installation, persistence, complete backup/restore and

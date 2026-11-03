@@ -1597,8 +1597,9 @@ by additive merge (`src/domain/bundleMerge.ts`). Both run as the migration owner
 
 ```bash
 # On the source node: the custodian's Ed25519 key (PKCS#8 PEM) stays outside the node.
-npm run seed:export -- --charter node.json --key custodian.pem [--without-authority] bundle.json
+npm run seed:export -- --charter node.json --key custodian.pem [--community <id>] [--without-authority] bundle.json
 # → bundle.json (owner-only) and bundle.json.anchor.json (the PUBLIC anchor: hand it over by another road)
+#   with --community: ONE community's world leaves (see "The world of a community" below)
 
 # On the receiving node: plan first, then apply.
 npm run seed:import -- bundle.json --anchor bundle.json.anchor.json --identities identities.json --report plan.json
@@ -1662,6 +1663,39 @@ rows from the reviewed file before anyone logs in is the next ring; then `seed:i
 lands. `tests/originBundle.test.ts` holds the value law, the gathering, the refusals, the pruning
 and the census; `tests/seed/origin-crossing.postgres-test.ts` lands a Firestore-shaped soil,
 sealed under the origin's own charter, on a real PostgreSQL node.
+
+### The world of a community (`--community`)
+
+Both exporters take `--community <id>`: ONE community leaves, by the same bundle law, as the
+adoption ladder's last rung (ring 2026-11-03, `domain/communityCrossing`). What travels, said out
+loud: the CIRCLE — the anchor, the keeper mirror, every `member`, `keeper` and `steward` link —
+whole (account and person records, keys); EVERYTHING A MEMBER ANCHORS (Zoltán's word: a keeper of
+many places carries their whole garden wherever they are a member) — their trees of every kind with
+their whole chains, loves and occupancy, their visions, offerings, light houses and intelligences;
+every being PLACED in the community, whatever its anchor — its place of record (`domain`) names the
+community, resolved through the charter's faces (a face's door and domains are one place) and the
+hand's own aliases (`--place <alias>=<communityId>` on the origin exporter, for an old door the
+charter no longer names); what belongs by field (events and decisions by id or place, invitations,
+glow, the rays of its trees, the subscribers of its domain); every EDGE whose both ends travel; and
+the PUBLIC person record of everyone the travelling records name, so the far side can bind them
+(`identities.json` lists the circle and the named alike). A guest tree that merely grows in this
+forest stays home — the garden law keeps its domain and ownership — and every edge, alignment or
+stay that reaches outside the circle is named in `<bundle>.left.json` under `outside` with its
+reason. The world is a bundle that verifies and lands like any other. `tests/communityCrossing.test.ts`.
+
+### The fossil sweep (`scripts/sweep-fossils.mjs`)
+
+The origin census found the soil's own debts; `node scripts/sweep-fossils.mjs` names them and is a
+DRY RUN unless told otherwise: `--apply` removes the fossils (the 2025 `organisations` collection,
+beings-index entries whose being is gone, blocks whose chain does not meet — the debris of deleted
+beings, with what hung under them — and subcollection records under a deleted parent, which
+Firestore keeps alive and the soil does not); `--mend-user-lids` copies the person's lid onto an
+account record that carries none and writes its missing index entry, create-only; and
+`--resolve-two-lids` gives a person wearing two lids one name — the lid `persons` carries, which
+`ensurePersonEntity` serves on every login — writing it onto `users` and re-pointing the index. All
+three ran on lightseed.online on 2026-11-03 at the keeper's word (44 removed, 13 mended, 5 resolved).
+Reported, never touched: links wearing a lid that is not a version-7 true name (the two `shelters`
+links of the July seeding), and departed uids still named by their traces.
 
 ### The mail organ (migration 056)
 

@@ -627,6 +627,17 @@ the census had mistaken for a person (`credentialHolderUid` is dual-typed and le
 census). The binding ceremony — explicit login rows written by the installation before the
 import, and departed uids whose traces travel as names — is the next ring.
 
+THE WORLD OF A COMMUNITY (2026-11-03). One community leaves a node by the same bundle law
+(`domain/communityCrossing`, `--community` on both exporters): its circle whole, everything a member
+anchors with whole chains, every being placed at it by its place of record (resolved through the
+charter's faces and the hand's own aliases), what belongs by field, every edge whose both ends
+travel, and the public person record of everyone named — a guest tree stays home, and what reaches
+outside the circle is named as left. The same day the origin's fossils were swept at the keeper's
+word (`scripts/sweep-fossils.mjs`, a dry run unless told otherwise): the 2025 `organisations`
+collection, the stale index entries, the debris of deleted beings and the records under deleted
+parents removed; thirteen accounts named with their person's lid; five persons given one name, the
+one `persons` carries, the index re-pointed.
+
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node
 composes from plain words in the voice of its place under a daily quota, the letter of a

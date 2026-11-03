@@ -36,6 +36,8 @@ export {independentCharterProblem} from './independentCharter';
 // becomes the same bundle (scripts/export-origin.mjs reads the origin by this law).
 export {crossingCharterProblem} from './crossingCharter';
 export {portableValue,originSnapshot,originIdentities,pruneBrokenChains,ORIGIN_GROUPS} from './originBundle';
+// THE WORLD OF A COMMUNITY (ring 2026-11-03): one community leaves a node by the same bundle law.
+export {communityCrossing,placeResolverOf,CIRCLE_RELS} from './communityCrossing';
 // THE MAIL ORGAN (ring 2026-11-03): the voice, the letters, the audience and the sender's name, so the
 // courier (seed/api/mail.mjs) writes the same letters the functions write for the origin node.
 export {mailVoiceOf,dressMailText} from './mailVoice';
