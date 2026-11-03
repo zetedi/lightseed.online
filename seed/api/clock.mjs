@@ -12,6 +12,7 @@ import {uuidv7} from '../../src/domain/uuidv7.mjs';
 import {CLOCK_JOBS,CLOCK_LEASE_MS,nextClockDueMs,localDateOf,judgeThirst,stayLeafIsDue,bedHeadOf,stayLeafRecordOf,
   computeCanonicalHash,BLOCK_HASH_VERSION} from '../generated/chain.mjs';
 import {sweepOrphans} from './pictures.mjs';
+import {picturesRepository} from './db/pictures.mjs';
 
 const run=(c,sql,params)=>c.query(sql,params).then(r=>r.rows[0].result);
 const docId=()=>randomBytes(10).toString('hex');
@@ -61,7 +62,7 @@ export function createClock({withSession,timeZone,notify=false,media=null,log=co
 
   // THE SWEEP (migration 060): the orphaned picture files freed — what a release's own sweep, a disk's
   // refusal or a crash left behind; a hash a manifest names again is simply unmarked.
-  const sweep=()=>sweepOrphans({withSession,media,log});
+  const sweep=()=>sweepOrphans({repository:picturesRepository(withSession),media,log});
 
   const jobs={thirst,leaves,sweep};
   let busy=false,timer=null;

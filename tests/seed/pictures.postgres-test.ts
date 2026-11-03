@@ -14,6 +14,7 @@ import { createAuthenticator } from '../../seed/api/auth.mjs';
 import { createMediaStore } from '../../seed/api/media.mjs';
 import { createClock } from '../../seed/api/clock.mjs';
 import { sweepOrphans } from '../../seed/api/pictures.mjs';
+import { picturesRepository } from '../../seed/api/db/pictures.mjs';
 import { authFixture } from './auth-fixture.mjs';
 
 let cluster: Cluster;
@@ -170,12 +171,12 @@ describe('the release of a picture', () => {
       const named = t.manifest('communities/c1/pages/1.png')!;
       // A mark a crash left behind for bytes a manifest still names: lifted, the file untouched.
       t.sql(`INSERT INTO seed.media_orphans(hash) VALUES ('${named.primary.hash}')`);
-      expect(await sweepOrphans({ withSession: t.db.withSession, media: t.media, log })).toEqual({ orphans: 1, freed: 0, kept: 1, failed: 0 });
+      expect(await sweepOrphans({ repository: picturesRepository(t.db.withSession), media: t.media, log })).toEqual({ orphans: 1, freed: 0, kept: 1, failed: 0 });
       expect(t.orphans()).toBe('');
       expect(t.files()).toHaveLength(3);
       // A mark whose file is gone already: settled without complaint.
       t.sql(`INSERT INTO seed.media_orphans(hash) VALUES ('${'f'.repeat(64)}')`);
-      expect(await sweepOrphans({ withSession: t.db.withSession, media: t.media, log })).toEqual({ orphans: 1, freed: 1, kept: 0, failed: 0 });
+      expect(await sweepOrphans({ repository: picturesRepository(t.db.withSession), media: t.media, log })).toEqual({ orphans: 1, freed: 1, kept: 0, failed: 0 });
       expect(t.orphans()).toBe('');
       // The clock's nightly sweep: the same hand, reported.
       t.sql(`INSERT INTO seed.media_orphans(hash) VALUES ('${'e'.repeat(64)}')`);

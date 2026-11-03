@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The API finds its layers** — Zoltán asked for a clear separation of the backend and
+the database, the database-specific code told apart, a logic/service layer. We named the layers from
+the door inward — HTTP, services, repositories, the pure domain — and refactored the pictures organ
+first as the pattern: `seed/api/db/pictures.mjs` owns every statement, the session and the
+transaction (the release's facts and apply in one session as the hand; the orphan sweep in one
+transaction under the hash's lock with the file taken inside it by the caller); `seed/api/pictures.mjs`
+keeps the law and the refusals and knows no statement. REJECTED: a repository per table (the organ
+pattern of 044 is per operation — context, law, apply — and a table-shaped repository would scatter
+one operation's transaction across several); an ORM or query builder (the soil's functions ARE the
+contract, every statement is one `SELECT seed.<x>(…)`); moving the transaction boundary into the
+service (it is PostgreSQL's own, and a service that knew `BEGIN` would know the soil); refactoring
+all 131 statements of `database.mjs` and the five other organs in the same batch (the pattern earns
+its review first). Plain contract — guaranteed: the pictures organ runs the same tests through the
+layers, and no new organ is written with SQL in a service. Not guaranteed yet: the other organs and
+`database.mjs` (their own rings), a second soil (the repositories are PostgreSQL's by design, not
+an abstraction over databases).
+
 **2026-11-03 · A community leaves, and the fossils go** — Zoltán asked for a whole community to be
 exportable "with the tree etc. of its members", and for every fossil to be removed. The world of a
 community (`domain/communityCrossing`) is three belongings said out loud: the circle (anchor, keeper

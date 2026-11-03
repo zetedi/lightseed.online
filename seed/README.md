@@ -1697,6 +1697,24 @@ three ran on lightseed.online on 2026-11-03 at the keeper's word (44 removed, 13
 Reported, never touched: links wearing a lid that is not a version-7 true name (the two `shelters`
 links of the July seeding), and departed uids still named by their traces.
 
+### The layers of the API (ring 2026-11-03)
+
+Zoltán asked for a clear separation of the backend and the database, with the database-specific
+code told apart: a logic/service layer. The API's layers, from the door inward: HTTP
+(`seed/api/server.mjs`: routes, bodies, status codes, nothing of the soil) → SERVICES (the organs —
+`pictures.mjs`, `mail.mjs`, `ai.mjs`, `clock.mjs`, `face.mjs`, `organs.mjs`: orchestration and
+refusals by name, the pure law asked between the facts and the apply, NO SQL) → REPOSITORIES
+(`seed/api/db/*.mjs`: every SQL statement, the session and the transaction, PostgreSQL's own; a
+service asks a repository for facts and hands it what the law allowed to apply, inside one session
+the repository opens as the hand) → the pure DOMAIN (`src/domain`, compiled into
+`seed/generated/chain.mjs`). The pictures organ is the pattern, refactored first:
+`seed/api/db/pictures.mjs` holds the release's facts and apply (one session as the hand), the orphan
+sweep (one transaction under the hash's lock, the file taken inside it by the caller) and the due
+list; `seed/api/pictures.mjs` keeps the law and the refusals and no longer knows a statement.
+`database.mjs` (131 statements) and the other organs follow in their own rings; until then the
+repository is the shape every new organ is written in. `tests/seed/pictures.postgres-test.ts` and
+`tests/seed/clock.postgres-test.ts` run unchanged through the layers.
+
 ### The mail organ (migration 056)
 
 How letters leave this node. The origin node writes a `mail` document the Trigger Email

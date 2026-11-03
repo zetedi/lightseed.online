@@ -8,6 +8,7 @@ import {prepareAlignmentAcceptance} from './alignments.mjs';
 import {prepareBlock} from './blocks.mjs';
 import * as organs from './organs.mjs';
 import * as pictures from './pictures.mjs';
+import {picturesRepository} from './db/pictures.mjs';
 import {seedBlockCommand} from '../../src/domain/seedBlock.mjs';
 import {verifiesRotation,verifiesRecoveryCandidate,verifiesRecoveryWitness} from './signing.mjs';
 import { seedTransactionRetry } from '../../src/domain/seedTransaction.mjs';
@@ -220,7 +221,7 @@ export function createDatabase(config) {
         return (await c.query('SELECT seed.media_publish($1,$2::jsonb) AS media',[path,JSON.stringify(manifest)])).rows[0].media;
       });
     },
-    mediaRelease:(uid,url,media)=>pictures.releasePicture({withSession,media,uid,url}),
+    mediaRelease:(uid,url,media)=>pictures.releasePicture({repository:picturesRepository(withSession),media,uid,url}),
     async people(request) {
       return withSession(null,async c=>(await c.query('SELECT seed.people($1,$2,$3,$4) AS result',[request.id,request.query,request.after,request.limit])).rows[0].result);
     },

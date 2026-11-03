@@ -638,6 +638,15 @@ collection, the stale index entries, the debris of deleted beings and the record
 parents removed; thirteen accounts named with their person's lid; five persons given one name, the
 one `persons` carries, the index re-pointed.
 
+THE LAYERS OF THE API (2026-11-03). From the door inward: HTTP (`seed/api/server.mjs`) → services
+(the organs: orchestration and refusals by name, the pure law asked between the facts and the apply,
+no SQL) → repositories (`seed/api/db/*.mjs`: every SQL statement, the session and the transaction,
+PostgreSQL's own) → the pure domain. A service asks a repository for facts and hands it what the law
+allowed to apply, inside one session the repository opens as the hand, so the organ pattern of
+migration 044 stays whole across the seam. The pictures organ is the pattern (`seed/api/db/pictures.mjs`
+beneath `seed/api/pictures.mjs`); `database.mjs` and the other organs follow in their own rings, and
+every new organ is written in this shape.
+
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node
 composes from plain words in the voice of its place under a daily quota, the letter of a
