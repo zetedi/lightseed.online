@@ -4,7 +4,7 @@ import {seedOfferingCommand} from '../../domain/seedOffering.mjs';
 import {seedBlockCommand} from '../../domain/seedBlock.mjs';
 import {seedSigningCommand} from '../../domain/seedSigning.mjs';
 import {seedVisionCommand} from '../../domain/seedVision.mjs';
-import { seedMediaUploadPath, SEED_MEDIA_MAX_BYTES } from '../../domain/seedMedia.mjs';
+import { seedMediaUploadPath, seedMediaReleaseInput, SEED_MEDIA_MAX_BYTES } from '../../domain/seedMedia.mjs';
 import { seedProfileInput } from '../../domain/seedProfile.mjs';
 import { seedLinkCommand } from '../../domain/seedLink.mjs';
 import { seedTreeInviteCommand } from '../../domain/seedTreeInvite.mjs';
@@ -154,6 +154,12 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
       if (!seedMediaUploadPath(path) || !['image/jpeg', 'image/png', 'image/webp'].includes(bytes.type)
         || bytes.size === 0 || bytes.size > SEED_MEDIA_MAX_BYTES) return Promise.reject(new Error('invalid_media'));
       return request('/v1/media/upload', undefined, { path, bytes });
+    },
+    // THE RELEASE OF A PICTURE (ring 2026-11-03): asked by the picture's door on this node.
+    releaseMedia(url: string) {
+      const input = seedMediaReleaseInput({ url });
+      if (!input) return Promise.reject(new Error('invalid_media'));
+      return request('/v1/media/release', input);
     },
     treeInviteCommand(value: unknown) {
       const command=seedTreeInviteCommand(value);

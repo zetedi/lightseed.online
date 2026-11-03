@@ -5,7 +5,7 @@ import {seedBlockCommand} from '../../src/domain/seedBlock.mjs';
 import {blockRefusalStatus} from './blocks.mjs';
 import {seedSigningCommand} from '../../src/domain/seedSigning.mjs';
 import {seedVisionCommand} from '../../src/domain/seedVision.mjs';
-import { seedMediaUploadPath, SEED_MEDIA_MAX_BYTES } from '../../src/domain/seedMedia.mjs';
+import { seedMediaUploadPath, seedMediaReleaseInput, SEED_MEDIA_MAX_BYTES } from '../../src/domain/seedMedia.mjs';
 import { seedLinkCommand } from '../../src/domain/seedLink.mjs';
 import { seedTreeInviteCommand } from '../../src/domain/seedTreeInvite.mjs';
 import { seedTreeCommand } from '../../src/domain/seedTree.mjs';
@@ -37,7 +37,7 @@ export function createApi(database, authenticate = async () => null, options = {
       const request = seedRequest(req.method, req.url, req.headers.authorization, uid !== null);
       if (request.error) {
         if (request.status === 401) res.setHeader('WWW-Authenticate', 'Bearer');
-        if (request.status === 405) res.setHeader('Allow', req.url?.endsWith('/command') || req.url === '/v1/media/upload' || req.url === '/v1/invite-requests' ? 'POST' : req.url === '/v1/me/profile' || req.url?.startsWith('/u/') ? 'GET, POST' : 'GET');
+        if (request.status === 405) res.setHeader('Allow', req.url?.endsWith('/command') || req.url === '/v1/media/upload' || req.url === '/v1/media/release' || req.url === '/v1/invite-requests' ? 'POST' : req.url === '/v1/me/profile' || req.url?.startsWith('/u/') ? 'GET, POST' : 'GET');
         send(request.status, { error: request.error });
       } else if (request.kind === 'me') send(200, { uid });
       // THE DOCUMENT DOOR (ring 2026-11-02): a write as a claim, judged by the document law.
@@ -133,10 +133,25 @@ export function createApi(database, authenticate = async () => null, options = {
         if(await database.mediaGet(path)){send(409,{error:'media_exists'});return;}
         const body=await readBody(req,SEED_MEDIA_MAX_BYTES,false);
         if(body.error){send(body.status,{error:body.error});return;}
-        const manifest=await options.media.encode(body.value,type);
-        await database.mediaPublish(uid,path,manifest);
+        let manifest=await options.media.encode(body.value,type);
+        // Under the hashes' locks the files must still stand (ring 2026-11-03): a sweep that took the
+        // same bytes first costs one more encode, which stores them again.
+        for(let attempt=0;;attempt++) {
+          try {await database.mediaPublish(uid,path,manifest,options.media.present);break;}
+          catch(error) {if(error?.code!=='MEDIA_SWEPT' || attempt>=2)throw error;manifest=await options.media.encode(body.value,type);}
+        }
         const url='/v1/media?path='+encodeURIComponent(path);
         send(201,{path,url,variants:{small:url+'&variant=small',large:url+'&variant=large'}});
+      }
+      // THE RELEASE OF A PICTURE (ring 2026-11-03): a hand asks by the picture's door; the organ answers by name.
+      else if(request.kind === 'mediaRelease') {
+        if(!options.media){send(503,{error:'media_unavailable'});return;}
+        if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??'')){send(415,{error:'json_required'});return;}
+        const body=await readJsonBody(req,4096);
+        if(body.error){res.setHeader('Connection','close');send(body.status,{error:body.error});return;}
+        const input=seedMediaReleaseInput(body.value);
+        if(!input){send(400,{error:'invalid_command'});return;}
+        send(200,await database.mediaRelease(uid,input.url,options.media));
       }
       else if(request.kind === 'people') {
         const result=await database.people(request);send(request.id!==null && result.person===null ? 404 : 200,result);
@@ -224,7 +239,8 @@ export function createApi(database, authenticate = async () => null, options = {
       if(error.code==='LS025'){send(404,{error:'vision_missing'});return;}
       if(error.code==='LS024'){send(409,{error:'media_exists'});return;}
       if(error.code==='INVALID_IMAGE'){send(400,{error:'invalid_image'});return;}
-      if(error.code==='MEDIA_BUSY'){send(503,{error:'media_busy'});return;}
+      if(error.code==='MEDIA_BUSY' || error.code==='MEDIA_SWEPT'){send(503,{error:'media_busy'});return;}
+      if(error.code==='LS060'){send(404,{error:'picture_missing'});return;}
       if (error.code === '42501') { send(403, { error: 'forbidden' }); return; }
       // Never serialize SQL, connection details, credentials or private record values — to the client. The
       // operator's log names the code and message alone (no parameters), so an unexpected failure is diagnosable.

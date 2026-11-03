@@ -94,7 +94,7 @@ let ai = null;
 // ask reaches the courier only where the mail organ is grown.
 const timeZone = process.env.SEED_CLOCK_TIMEZONE || CLOCK_DEFAULT_TIME_ZONE;
 if (!isTimeZone(timeZone)) { console.error('Invalid SEED_CLOCK_TIMEZONE (an IANA zone such as Europe/Brussels).'); await database.close(); process.exit(1); }
-const clock = createClock({ withSession: database.withSession, timeZone, notify: mail !== null });
+const clock = createClock({ withSession: database.withSession, timeZone, notify: mail !== null, media: media ?? null });
 // THE FACE OF THE NODE (ring 2026-11-03): grown when the node knows its origin (SEED_NODE_ORIGIN) — the being
 // card needs the built shell mounted beside the API (SEED_SHELL_DIR, Compose mounts the application's dist),
 // the face picture a media directory to keep its previews in; the sitemap and the face feed need neither.

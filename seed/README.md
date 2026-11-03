@@ -1782,3 +1782,44 @@ The face is grown when the node knows its origin (`SEED_NODE_ORIGIN`); the host 
 URLs is only one the node serves (its origin, `SEED_FACE_DOORS`, the charter's domains), any other
 collapses to the node's own. `tests/seed/face.postgres-test.ts` walks every door against real
 PostgreSQL through the API with no bearer anywhere.
+
+
+### The release of a picture (migration 060)
+
+The origin's `releasePicture` on this soil (`seed/api/pictures.mjs` over
+`seed/schema/060_picture_release.sql`; the law in `domain/pictureRelease`, the one source the
+origin's functions mirror). A signed-in hand asks `POST /v1/media/release` with
+`{"url": "/v1/media?path=…"}` — the picture's door on this node, in either form the node writes
+it (URL-encoded by the upload's answer, raw by the soil's own writes):
+
+- **Only the appearance seats** — a community's `logo_*`, `hero_*`, gallery (`<digits>`) and
+  `pages/*` pictures, a person's `site-theme/*` logo and hero. Everything a chain binds (a pulse's,
+  an event's, a tree's, a vision's, a watering's picture) answers `picture_not_releasable`; a door
+  that is not this node's, or a malformed ask, `invalid_command`.
+- **Only by a hand that holds the seat** — the community's anchor or a keeper (`keeper` link), the
+  person themself, or staff; the soil re-proves the standing under the holder's lock and holds
+  the holder the law named to the path's own (`picture_not_yours`).
+- **Only once nothing shows it** — the holder's document is read under its lock and the shared
+  `docReferencesPicture` must find the path in neither form at any depth (`picture_in_use`). A
+  manifest already gone answers `picture_missing`.
+- **The files are shared, so a release never unlinks.** Every stored file is one SHA-256 under
+  `SEED_MEDIA_DIR`, named by every manifest with the same bytes. The release takes the manifest
+  and marks each of its hashes an orphan (`seed.media_orphans`); the SWEEP then frees a file only
+  when no manifest names its hash any more — judged under the hash's advisory lock, the file
+  removed in that same transaction, the mark lifted after — right away for the released hashes
+  (the answer: `{"released": <files freed>, "kept": <files another picture still names>}`) and
+  nightly as the clock's third job `sweep` (04:00 in the installation's zone) for what a disk's
+  refusal or a crash left behind. A mark for bytes a manifest names again is simply lifted.
+- **A publish takes the same lock.** `seed.media_publish` locks the hashes it names before the
+  insert, and the API checks under that lock that a manifest's three files still stand
+  (`seed.media_lock`, then the store's `present`); when a sweep took the same bytes first the
+  upload encodes them once more and lands them — a publish and a sweep never cross, and no
+  manifest ever names a file that is gone.
+
+The independent browser hand (`services/independent/media.ts`) now passes the shared darkroom
+before the upload and names the stored picture by its bytes (`a/b/logo_1.webp`, `.jpg`), as the
+origin's hand does; before this migration the extension-less paths the appearance seats ask for
+were refused by the store. `releasePicture` is fire-and-forget as on the origin: a refusal is
+logged, never surfaced, the document being already right. `tests/seed/pictures.postgres-test.ts`
+walks every refusal, the shared-bytes case, the sweep (by hand and on the clock) and the publish
+under the lock against real PostgreSQL.

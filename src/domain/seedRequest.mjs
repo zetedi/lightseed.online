@@ -51,7 +51,7 @@ export function seedRequest(method, target, authorization, authenticated = false
     if (authorization && !authenticated) return { error: 'invalid_token', status: 401 };
     return { kind: 'docCommand' };
   }
-  if (method !== 'GET' && !(method === 'POST' && ['/v1/me/profile', '/v1/communities/command', '/v1/community-invites/command', '/v1/trees/command', '/v1/tree-invites/command', '/v1/media/upload'].includes(target))) return { error: 'method_not_allowed', status: 405 };
+  if (method !== 'GET' && !(method === 'POST' && ['/v1/me/profile', '/v1/communities/command', '/v1/community-invites/command', '/v1/trees/command', '/v1/tree-invites/command', '/v1/media/upload', '/v1/media/release'].includes(target))) return { error: 'method_not_allowed', status: 405 };
   if (authorization && !authenticated) return { error: 'invalid_token', status: 401 };
   if (typeof target !== 'string' || target.length > 4096 || !target.startsWith('/')) {
     return { error: 'invalid_request', status: 400 };
@@ -99,6 +99,12 @@ export function seedRequest(method, target, authorization, authenticated = false
     if(method!=='POST')return {error:'method_not_allowed',status:405};
     if(!authenticated)return {error:'authentication_required',status:401};
     return {kind:'mediaUpload'};
+  }
+  // THE RELEASE OF A PICTURE (ring 2026-11-03): a signed-in hand asks by the picture's door on this node.
+  if(url.pathname==='/v1/media/release') {
+    if(method!=='POST')return {error:'method_not_allowed',status:405};
+    if(!authenticated)return {error:'authentication_required',status:401};
+    return {kind:'mediaRelease'};
   }
   if(url.pathname==='/v1/media') {
     const p=url.searchParams;

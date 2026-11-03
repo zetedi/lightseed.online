@@ -35,6 +35,29 @@ it('rejects MIME spoofing and non-images, and detects changed files or symlinks 
   await expect(store.read({...manifest.primary,hash:'../secret'})).rejects.toThrow('invalid_media_manifest');
 });
 
+it('removes a file by its hash alone — gone already is gone — and says whether a manifest\'s files all stand (ring 2026-11-03)',async()=>{
+  const {dir,store}=await fixture();
+  const bytes=await sharp({create:{width:600,height:300,channels:3,background:'#335577'}}).png().toBuffer();
+  const manifest=await store.encode(bytes,'image/png');
+  expect(await store.present(manifest)).toBe(true);
+  await store.remove(manifest.small.hash);
+  expect(await store.present(manifest)).toBe(false);
+  await store.remove(manifest.small.hash); // a second removal is no error
+  for(const bad of ['../secret','',manifest.primary.hash.slice(0,63),'/'+manifest.primary.hash,null])await expect(store.remove(bad as never)).rejects.toThrow('invalid_media_manifest');
+  await expect(store.present({...manifest,small:{...manifest.small,hash:'../secret'}})).rejects.toThrow('invalid_media_manifest');
+  // The same bytes encoded again restore what was removed.
+  expect(await store.encode(bytes,'image/png')).toEqual(manifest);
+  expect(await store.present(manifest)).toBe(true);
+  // A file whose bytes no longer match its hash is not "present": the store never vouches for it, and
+  // only its removal (never an encode over it) lets the true bytes land again.
+  await writeFile(join(dir,manifest.primary.hash),Buffer.alloc(manifest.primary.size));
+  await expect(store.present(manifest)).rejects.toThrow('media_integrity_failure');
+  await expect(store.encode(bytes,'image/png')).rejects.toThrow('media_integrity_failure');
+  await store.remove(manifest.primary.hash);
+  expect(await store.encode(bytes,'image/png')).toEqual(manifest);
+  expect(await store.present(manifest)).toBe(true);
+});
+
 it('disables SVG decoding before inspecting a mislabeled raster upload',async()=>{
   const svg=Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>');
   await expect(sharp(svg).metadata()).rejects.toThrow();

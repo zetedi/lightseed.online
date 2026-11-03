@@ -7,6 +7,7 @@ import {prepareOfferingBirth,prepareOfferingAcceptance} from './offerings.mjs';
 import {prepareAlignmentAcceptance} from './alignments.mjs';
 import {prepareBlock} from './blocks.mjs';
 import * as organs from './organs.mjs';
+import * as pictures from './pictures.mjs';
 import {seedBlockCommand} from '../../src/domain/seedBlock.mjs';
 import {verifiesRotation,verifiesRecoveryCandidate,verifiesRecoveryWitness} from './signing.mjs';
 import { seedTransactionRetry } from '../../src/domain/seedTransaction.mjs';
@@ -207,9 +208,19 @@ export function createDatabase(config) {
     async mediaGet(path) {
       return withSession(null,async c=>(await c.query('SELECT seed.media_get($1) AS media',[path])).rows[0].media);
     },
-    async mediaPublish(uid,path,manifest) {
-      return withSession(uid,async c=>(await c.query('SELECT seed.media_publish($1,$2::jsonb) AS media',[path,JSON.stringify(manifest)])).rows[0].media);
+    // THE RELEASE OF A PICTURE (ring 2026-11-03): the hashes are locked before the insert and the files
+    // checked under the lock, so a sweep of the same bytes never crosses a publish (media_swept: encode again).
+    /** @param {string} uid @param {string} path @param {*} manifest @param {((manifest: *) => Promise<boolean>) | null} [present] */
+    async mediaPublish(uid,path,manifest,present=null) {
+      return withSession(uid,async c=>{
+        // Only well-formed hashes are locked here; a malformed manifest meets media_publish's own refusal.
+        const hashes=['primary','small','large'].map(k=>manifest?.[k]?.hash).filter(h=>typeof h==='string' && /^[a-f0-9]{64}$/.test(h));
+        await c.query('SELECT seed.media_lock($1::text[])',[hashes]);
+        if(present && !(await present(manifest)))throw Object.assign(new Error('media_swept'),{code:'MEDIA_SWEPT'});
+        return (await c.query('SELECT seed.media_publish($1,$2::jsonb) AS media',[path,JSON.stringify(manifest)])).rows[0].media;
+      });
     },
+    mediaRelease:(uid,url,media)=>pictures.releasePicture({withSession,media,uid,url}),
     async people(request) {
       return withSession(null,async c=>(await c.query('SELECT seed.people($1,$2,$3,$4) AS result',[request.id,request.query,request.after,request.limit])).rows[0].result);
     },

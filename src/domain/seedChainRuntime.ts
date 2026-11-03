@@ -53,3 +53,5 @@ export {stayLeafIsDue,bedHeadOf,stayLeafRecordOf} from './stayLeaf';
 export {lidOfDoor,isPublicBeing,publicCardOf,canonicalHostOf,cardDescriptionOf,faceSourceOf,isPublicAddress,shareCardOf,shellCardOf,sitemapXmlOf,SITEMAP_MAX_BEINGS} from './facePage';
 export {facePreviewAttempts,facePreviewKeyOf,FACE_PREVIEW_MAX_BYTES} from './facePreview';
 export {faceFeedOf,feedDomainOf} from './faceEvents';
+// THE RELEASE OF A PICTURE (ring 2026-11-03): the seats that may be released and whether a holder still shows one.
+export {pictureReleaseOf,docReferencesPicture} from './pictureRelease';

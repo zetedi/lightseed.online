@@ -11,10 +11,11 @@
 // tests/clock.test.ts and, end to end, tests/seed/clock.postgres-test.ts. Not guaranteed: that
 // the process is awake at that instant — a job the node slept through runs at the next tick, once.
 
-export type ClockJob = 'thirst' | 'leaves';
-// The jobs and their hours (the origin's): the thirst check in the morning, the stay leaves at night.
-export const CLOCK_JOBS: Record<ClockJob, { hour: number }> = { thirst: { hour: 8 }, leaves: { hour: 3 } };
-export const CLOCK_JOB_NAMES: readonly ClockJob[] = ['thirst', 'leaves'];
+export type ClockJob = 'thirst' | 'leaves' | 'sweep';
+// The jobs and their hours (the origin's): the thirst check in the morning, the stay leaves at night,
+// and the node's own sweep of orphaned picture files after the leaves (ring 2026-11-03, migration 060).
+export const CLOCK_JOBS: Record<ClockJob, { hour: number }> = { thirst: { hour: 8 }, leaves: { hour: 3 }, sweep: { hour: 4 } };
+export const CLOCK_JOB_NAMES: readonly ClockJob[] = ['thirst', 'leaves', 'sweep'];
 export const CLOCK_DEFAULT_TIME_ZONE = 'Europe/Brussels';
 // How long one run may hold a job before another process may take it over.
 export const CLOCK_LEASE_MS = 10 * 60 * 1000;

@@ -15,6 +15,11 @@ export function seedMediaReferencePath(value) {
   if(params.size!==1 || !params.has('path'))return null;
   return seedMediaUploadPath(params.get('path'));
 }
+// A release asks by the picture's door on this node, and nothing else travels (ring 2026-11-03).
+export function seedMediaReleaseInput(value) {
+  if(!value || typeof value!=='object' || Array.isArray(value) || Object.keys(value).some(k=>k!=='url'))return null;
+  return seedMediaReferencePath(value.url)?{url:value.url}:null;
+}
 export function seedMediaDescriptor(value) {
   return !!value && typeof value==='object' && !Array.isArray(value)
     && Object.keys(value).every(k=>['hash','type','size'].includes(k))

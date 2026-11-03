@@ -11,13 +11,14 @@ import {randomBytes,randomUUID} from 'node:crypto';
 import {uuidv7} from '../../src/domain/uuidv7.mjs';
 import {CLOCK_JOBS,CLOCK_LEASE_MS,nextClockDueMs,localDateOf,judgeThirst,stayLeafIsDue,bedHeadOf,stayLeafRecordOf,
   computeCanonicalHash,BLOCK_HASH_VERSION} from '../generated/chain.mjs';
+import {sweepOrphans} from './pictures.mjs';
 
 const run=(c,sql,params)=>c.query(sql,params).then(r=>r.rows[0].result);
 const docId=()=>randomBytes(10).toString('hex');
 
 /** @param {{withSession: (uid: string | null, work: (c: *) => Promise<*>) => Promise<*>, timeZone: string, notify?: boolean,
- *   log?: {warn: (...args: *[]) => void}, now?: () => number, leaseMs?: number}} options */
-export function createClock({withSession,timeZone,notify=false,log=console,now=Date.now,leaseMs=CLOCK_LEASE_MS}) {
+ *   media?: {remove: (hash: string) => Promise<void>} | null, log?: {warn: (...args: *[]) => void}, now?: () => number, leaseMs?: number}} options */
+export function createClock({withSession,timeZone,notify=false,media=null,log=console,now=Date.now,leaseMs=CLOCK_LEASE_MS}) {
   // THE THIRST: the morning sweep over every scheduled tree.
   async function thirst(moment) {
     const trees=await withSession(null,c=>run(c,'SELECT seed.thirst_trees() AS result',[]));
@@ -58,7 +59,11 @@ export function createClock({withSession,timeZone,notify=false,log=console,now=D
     return report;
   }
 
-  const jobs={thirst,leaves};
+  // THE SWEEP (migration 060): the orphaned picture files freed — what a release's own sweep, a disk's
+  // refusal or a crash left behind; a hash a manifest names again is simply unmarked.
+  const sweep=()=>sweepOrphans({withSession,media,log});
+
+  const jobs={thirst,leaves,sweep};
   let busy=false,timer=null;
   // One tick: the due jobs, each run and settled; what ran is returned (null while a tick is still under way).
   async function tick() {

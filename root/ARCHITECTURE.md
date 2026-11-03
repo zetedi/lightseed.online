@@ -587,6 +587,25 @@ bundle carries no trace of the origin: the checkout's `charter.json` is loaded e
 the Firebase client environment is not defined there, the Firebase preconnects are stripped.
 Not grown: a face host's front door (`/` at a face's own domain) still wears the node's card.
 
+THE RELEASE OF A PICTURE (migration 060, 2026-11-03). The origin's `releasePicture` on this
+soil (`seed/api/pictures.mjs`, `POST /v1/media/release`), in the one organ pattern: the API reads
+the facts under locks (`seed.picture_context` — the manifest, the holder's document, the actor's
+standing: a community's anchor or a keeper, the person themself, staff — the holder the law
+named held to the path's own by the soil), asks the shared law (`domain/pictureRelease`: only
+the appearance seats, never what a chain binds; `docReferencesPicture` in both forms the node
+writes a door, raw and URL-encoded) and takes the manifest (`seed.picture_release`). The files
+are content-addressed and shared by every manifest naming the same bytes, so a release never
+unlinks: each hash becomes an ORPHAN mark (`seed.media_orphans`), and the SWEEP frees a file
+only when no manifest names it any more, under the hash's advisory lock in the transaction that
+lifts the mark — right after the release for its own hashes, and nightly as the clock's third
+job `sweep` for what a disk's refusal or a crash left behind. A publish takes the same lock
+(`seed.media_publish`, `seed.media_lock`) and the API checks a manifest's files still stand under
+it before the insert, encoding the bytes once more when a sweep took them first: a publish and a
+sweep of the same bytes never cross. The independent `uploadImage` now passes the shared
+darkroom (`utils/photoEncode`) and names the stored picture by its bytes, as the origin's hand
+does — before this ring the extension-less paths the appearance seats ask for were refused by
+the store, so no logo, hero, gallery or page picture could be dressed on this soil.
+
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node
 composes from plain words in the voice of its place under a daily quota, the letter of a

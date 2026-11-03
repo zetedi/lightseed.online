@@ -6,6 +6,38 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · A picture leaves the second node** — The independent node could take a picture
+but never let one go: `releasePicture` warned and returned, every replaced logo or hero and
+every dropped gallery image stayed in the store for good — and, found on the way, no
+appearance seat could be dressed on this soil at all, because the independent `uploadImage`
+sent the extension-less paths the components ask for (`communities/<id>/logo_<ts>`) straight
+to a store that refuses a name without the bytes' own extension. We grew the release as the
+origin's law in the organ pattern (migration 060, `seed/api/pictures.mjs`): the soil reads the
+facts under locks (the manifest, the holder's document, the actor's standing — re-proved, and
+the holder the law named held to the path's own), the shared `domain/pictureRelease` decides
+the seat and whether the holder still shows the path in either form the node writes a door,
+and the manifest is taken. Because the files are content-addressed and shared by every manifest
+naming the same bytes, the release never unlinks: each hash becomes an orphan mark, and the
+sweep frees a file only when no manifest names it, under the hash's advisory lock in the
+transaction that lifts the mark — right after the release, and nightly as the clock's third
+job for what a disk's refusal or a crash left behind. A publish takes the same lock and the
+API checks the files still stand under it before the insert, encoding once more when a sweep
+got there first. The independent upload hand now passes the shared darkroom and names the
+picture by its bytes, as the origin's does. REJECTED: unlinking inside the release transaction
+(a commit failing after the unlink leaves a manifest naming a file that is gone — the mark is
+the only order that cannot corrupt); a reference count on the file (a second truth beside the
+manifests, drifting with every crash); a grace period instead of the lock (a window is a
+window); leaving garbage to the operator (a node must keep its own ground); a bespoke SQL
+seat law (the law is one source, mirrored to the functions and bundled to the soil). Plain
+contract — guaranteed: only appearance seats release, only by the anchor, a keeper, the
+person or staff, only once nothing shows the path; a shared file survives every release but
+the last; no manifest ever names a file that is gone; the independent upload lands at the
+name its bytes earn (`tests/seed/pictures.postgres-test.ts`, `tests/seedMediaStore.test.ts`,
+`tests/seedMedia.test.ts`, `tests/pictureRelease.test.ts`, the local walk). Not guaranteed:
+that a file whose sweep failed is freed before the next night; that the face's cached previews
+(`previews/<lid>/`) are swept — they are keyed by picture digest and bounded by the face, not
+by this release; the browser's network badge during an independent upload.
+
 **2026-11-03 · The second node wears its own name** — The independent build read the origin's
 charter (`src/config/charter.json`, synced from the root `node.json`): its shell was titled
 Lightseed, its card and canonical pointed at lightseed.online, `robots.txt` named the origin's

@@ -24,7 +24,10 @@ const serve = async (options: { notify?: boolean } = {}) => {
   const warnings: string[] = [];
   const clock = createClock({ withSession: db.withSession, timeZone: 'Europe/Brussels', notify: options.notify ?? true, log: { warn: (...a: unknown[]) => { warnings.push(a.map(String).join(' ')); } }, now: () => moment });
   const rows = (q: string): Json[] => JSON.parse(cluster.sql(`SELECT coalesce(json_agg(r),'[]') FROM (${q}) r;`)) as Json[];
-  const due = () => cluster.sql(`UPDATE seed.clock SET due_at=now()-interval '1 second', lease_until=NULL;`);
+  // Every due moment is set from the test's own moment, never the database's now(): the ledger's birth
+  // rows are due at the real now, which this fixed morning may already be past.
+  const due = () => cluster.sql(`UPDATE seed.clock SET due_at='${iso(moment - 1000)}', lease_until=NULL;`);
+  due();
   return { db, clock, rows, sql: cluster.sql, warnings, due, at: (ms: number) => { moment = ms; }, now: () => moment, close: () => db.close() };
 };
 
@@ -38,11 +41,14 @@ describe('the ledger', () => {
     const t = await serve();
     try {
       expect(t.rows(`SELECT job, due_at<=now() AS due, lease_until, ran_at FROM seed.clock ORDER BY job`)).toEqual([
-        { job: 'leaves', due: true, lease_until: null, ran_at: null }, { job: 'thirst', due: true, lease_until: null, ran_at: null }]);
+        { job: 'leaves', due: true, lease_until: null, ran_at: null }, { job: 'sweep', due: true, lease_until: null, ran_at: null }, { job: 'thirst', due: true, lease_until: null, ran_at: null }]);
       const ran = await t.clock.tick();
-      expect(ran?.map(r => [r.job, r.outcome]).sort()).toEqual([['leaves', 'done'], ['thirst', 'done']]);
+      expect(ran?.map(r => [r.job, r.outcome]).sort()).toEqual([['leaves', 'done'], ['sweep', 'done'], ['thirst', 'done']]);
+      // The sweep without a media store frees nothing and says so (migration 060).
+      expect(ran?.find(r => r.job === 'sweep')?.report).toEqual({ media: false, orphans: 0, freed: 0, kept: 0, failed: 0 });
       expect(t.rows(`SELECT job, to_char(due_at at time zone 'Europe/Brussels','YYYY-MM-DD HH24:MI') AS next, lease_until, ran_at IS NOT NULL AS ran, outcome FROM seed.clock ORDER BY job`)).toEqual([
         { job: 'leaves', next: '2026-11-04 03:00', lease_until: null, ran: true, outcome: 'done' },
+        { job: 'sweep', next: '2026-11-04 04:00', lease_until: null, ran: true, outcome: 'done' },
         { job: 'thirst', next: '2026-11-04 08:00', lease_until: null, ran: true, outcome: 'done' }]);
       expect(await t.clock.tick()).toEqual([]);
       // A job another process holds is left alone until its lease lapses.

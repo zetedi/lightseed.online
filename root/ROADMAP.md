@@ -74,8 +74,12 @@ permission to ship a reduced-feature node.
    for mother sites, the edge standing in with the plain shell when the API is silent
    (2026-11-03). The independent shell wears its own charter at build time (`SEED_CHARTER`:
    title, card, structured data, manifest, robots, envelope and the run-time charter; the
-   bundle carries nothing of the origin; 2026-11-03). Still refusing by name: cross-node SSO,
-   picture release, the one-time Firestore backfills.
+   bundle carries nothing of the origin; 2026-11-03). THE RELEASE OF A PICTURE (060) is the
+   origin's `releasePicture` on this soil — appearance seats only, by a hand that holds the seat,
+   once nothing shows the picture — with the node's own garbage collection: content-addressed
+   files freed by a sweep under the hash's lock when no manifest names them, right after the
+   release and nightly on the clock (2026-11-03). Still refusing by name: cross-node SSO, the
+   one-time Firestore backfills.
 5. Implement complete signed exports, identity enrollment, media transport,
    transactional import execution and conflict resolution. `seed:export` and
    `seed:import` (055) now export a sealed bundle and land it additively in one

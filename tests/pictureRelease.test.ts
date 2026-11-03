@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { pictureReleaseOf, pictureReleaseOfUrl, docReferencesPicture } from '../src/domain/pictureRelease';
 import { pictureReleaseOf as sPictureReleaseOf, docReferencesPicture as sDocReferencesPicture } from '../functions/src/pictureRelease';
+import { seedMediaReferencePath } from '../src/domain/seedMedia.mjs';
 
 // The release of a picture (ring 2026-09-08): only the appearance seats, never what a chain binds.
 describe('pictureReleaseOf — the seats that may be released, and what goes with them', () => {
@@ -35,6 +36,23 @@ describe('docReferencesPicture — the holder still shows it, at any depth, raw 
     expect(docReferencesPicture({ landingPages: [{ html: `<img src="${url}">` }] }, path)).toBe(true);
     expect(docReferencesPicture({ heroImageUrl: '', imageUrls: [] }, path)).toBe(false);
     expect(docReferencesPicture(null, path)).toBe(false);
+  });
+});
+
+describe("the independent node's door (ring 2026-11-03): the same law behind /v1/media?path=", () => {
+  it('reads the door in both forms the node writes — encoded by the upload, raw by the soil — and holds the holder to the seat law', () => {
+    for (const url of ['/v1/media?path=communities%2Fc1%2Flogo_1.webp', '/v1/media?path=communities/c1/logo_1.webp']) {
+      expect(pictureReleaseOf(seedMediaReferencePath(url)!)?.holder).toEqual({ kind: 'community', id: 'c1' });
+    }
+    expect(pictureReleaseOf(seedMediaReferencePath('/v1/media?path=users%2Fu1%2Fsite-theme%2Fhero_2.jpg')!)?.holder).toEqual({ kind: 'user', uid: 'u1' });
+    expect(pictureReleaseOf(seedMediaReferencePath('/v1/media?path=users%2Fu1%2Fpulses%2Fai%2F1.webp')!)).toBeNull();
+    expect(seedMediaReferencePath('https://firebasestorage.googleapis.com/v0/b/b.app/o/communities%2Fc1%2Flogo_1.webp?alt=media')).toBeNull();
+  });
+  it('sees the holder showing the door in either form', () => {
+    const path = 'communities/c1/logo_1.webp';
+    expect(docReferencesPicture({ logoUrl: '/v1/media?path=communities%2Fc1%2Flogo_1.webp' }, path)).toBe(true);
+    expect(docReferencesPicture({ logoUrl: '/v1/media?path=communities/c1/logo_1.webp' }, path)).toBe(true);
+    expect(docReferencesPicture({ logoUrl: '/v1/media?path=communities%2Fc1%2Flogo_2.webp' }, path)).toBe(false);
   });
 });
 

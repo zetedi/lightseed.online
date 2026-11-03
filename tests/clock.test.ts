@@ -6,7 +6,7 @@ const iso = (ms: number) => new Date(ms).toISOString();
 
 describe('the clock', () => {
   it('keeps the origin\'s hours and zone', () => {
-    expect(CLOCK_JOBS).toEqual({ thirst: { hour: 8 }, leaves: { hour: 3 } });
+    expect(CLOCK_JOBS).toEqual({ thirst: { hour: 8 }, leaves: { hour: 3 }, sweep: { hour: 4 } });
     expect(CLOCK_DEFAULT_TIME_ZONE).toBe(BRUSSELS);
     expect(isTimeZone('Europe/Brussels')).toBe(true);
     expect(isTimeZone('UTC')).toBe(true);

@@ -33,8 +33,22 @@ export async function createMediaStore(directory) {
     } finally {await unlink(temp);}
     return descriptor;
   }
+  // THE RELEASE (ring 2026-11-03): a file by its hash — gone already is gone — and whether a manifest's
+  // files all stand (asked under the hashes' lock before a publish, so a sweep never crosses it).
+  async function remove(hash) {
+    if(typeof hash!=='string' || !/^[a-f0-9]{64}$/.test(hash))throw new Error('invalid_media_manifest');
+    try {await unlink(join(root,hash));} catch(error){if(error.code!=='ENOENT')throw error;}
+  }
+  async function present(manifest) {
+    for(const key of ['primary','small','large']) {
+      try {await read(manifest?.[key]);} catch(error){if(error?.code==='ENOENT')return false;throw error;}
+    }
+    return true;
+  }
   return {
     read,
+    remove,
+    present,
     async encode(bytes,type) {
       if(!formats[type] || !Buffer.isBuffer(bytes) || !bytes.length || bytes.length>SEED_MEDIA_MAX_BYTES)throw Object.assign(new Error('invalid_image'),{code:'INVALID_IMAGE'});
       if(active>=2)throw Object.assign(new Error('image_processor_busy'),{code:'MEDIA_BUSY'});
