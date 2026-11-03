@@ -9,8 +9,11 @@
 // installation ceremony like a migration, never a request-serving role's hand.
 import pg from 'pg';
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { buildCensus, manifestHashOf, verifyBundle, verifyBundleSeal, expectedBeingsIndex, localUidCensus, planBundleMerge,
-  BUNDLE_SEAL_TAG, BUNDLE_FORMAT_VERSION, signingPreimage, independentCharterProblem } from '../generated/chain.mjs';
+  BUNDLE_SEAL_TAG, BUNDLE_FORMAT_VERSION, signingPreimage, crossingCharterProblem } from '../generated/chain.mjs';
 import { SEED_BUNDLE_TABLES, bundleReadSql, bundleDocOf, bundleInsertOf } from '../../src/domain/seedBundle.mjs';
 
 // The owner's connection: PG* environment by default (as seed:migrate --local reads it), or explicit.
@@ -33,12 +36,21 @@ export async function readSnapshot(client) {
 
 export const sha256Hex = text => createHash('sha256').update(text, 'utf8').digest('hex');
 
+// What the head binds beside the soil: the commit whose root/ the charter hashes name, and the hashes.
+export const exportCommitOf = root => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+export const charterHashesOf = async root => ({
+  genesisMd: sha256Hex(await readFile(resolve(root, 'root/GENESIS.md'), 'utf8')),
+  linMd: sha256Hex(await readFile(resolve(root, 'root/LIN.md'), 'utf8')),
+});
+
 // The bundle from a snapshot: the charter head binds the node's identity and the root's words; the
 // beings index travels as a witness computed from the body; admins/config may stay home on request
 // (they are local authority the far node never inherits — the planner would refuse them anyway).
+// Any node's charter may sign the head — the independent version 2, or the origin's version 1
+// (domain/crossingCharter): a node leaves by its travel plan whatever soil it grew in.
 export async function buildBundle({ snapshot, charter, exportCommit, charterHashes, exportedAtMs = Date.now(), withoutAuthority = false }) {
-  const problem = independentCharterProblem(charter);
-  if (problem) throw Object.assign(new Error(`The charter is not a sound independent charter: ${problem}.`), { code: 'charter_unsound' });
+  const problem = crossingCharterProblem(charter);
+  if (problem) throw Object.assign(new Error(`The charter is not a sound charter for a crossing: ${problem}.`), { code: 'charter_unsound' });
   if (typeof exportCommit !== 'string' || !/^[0-9a-f]{7,64}$/.test(exportCommit)) throw Object.assign(new Error('exportCommit must be a git commit hash.'), { code: 'commit_unsound' });
   for (const name of ['genesisMd', 'linMd']) {
     if (typeof charterHashes?.[name] !== 'string' || !/^[0-9a-f]{64}$/.test(charterHashes[name])) throw Object.assign(new Error('charterHashes must carry sha256 hex of GENESIS.md and LIN.md.'), { code: 'charter_hashes_unsound' });
@@ -66,6 +78,12 @@ export function custodianOf(privateKeyPem) {
 export function sealBundle(bundle, custodian) {
   const signature = sign(null, Buffer.from(signingPreimage(BUNDLE_SEAL_TAG, bundle.manifestHash), 'utf8'), custodian.privateKey).toString('base64');
   return { ...bundle, seal: { fingerprint: custodian.fingerprint, signature } };
+}
+// The sealed bundle lands owner-only and never overwrites; beside it the custodian's PUBLIC anchor
+// (<bundle>.anchor.json), to be handed to the receiving node by another road than the bundle.
+export async function writeSealedBundle(out, bundle, custodian) {
+  await writeFile(out, JSON.stringify(bundle) + '\n', { flag: 'wx', mode: 0o600 });
+  await writeFile(out + '.anchor.json', JSON.stringify({ fingerprint: custodian.fingerprint, publicKeyB64: custodian.publicKeyB64 }, null, 2) + '\n', { flag: 'wx', mode: 0o644 });
 }
 // The verifier the planner is handed: one Ed25519 check over the same preimage the browser builds.
 export const sealVerifier = async (publicKeyB64, signatureB64, payload, tag) => {

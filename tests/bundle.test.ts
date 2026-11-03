@@ -49,7 +49,7 @@ describe('the travel plan mirrors the rules — no collection silently forgotten
   };
 
   // Collections that exist in code but have NO rules block (server-only, default-deny).
-  const NO_RULES_BLOCK = new Set(['mailThrottle']);
+  const NO_RULES_BLOCK = new Set(['mailThrottle', 'organisations']); // organisations: the 2025 fossil the plan leaves behind — nothing reads it, no rules block
   // Literal doc-level plan entries fold into their collection's rules block.
   const planSignatures = new Set(
     TRAVEL_PLAN.map(r => r.path.split('/').length % 2 === 0 ? r.path.split('/').slice(0, -1).join('/') : r.path),

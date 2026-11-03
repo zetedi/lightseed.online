@@ -46,6 +46,7 @@
     "seed:provision": "node scripts/provision-seed.mjs",
     "seed:keeper": "node scripts/appoint-seed-keeper.mjs",
     "seed:export": "node seed/api/export.mjs",
+    "seed:export:origin": "node scripts/export-origin.mjs",
     "seed:import": "node seed/api/import.mjs",
     "test:seed:docker": "node scripts/test-seed-docker.mjs",
     "seed:identity:configure": "node scripts/configure-seed-identity.mjs",

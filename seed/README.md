@@ -1618,6 +1618,51 @@ auth trust file) — then the person arrives with the import. Not carried: media
 quotas, credentials, challenges (the travel plan's exclusions, said out loud in the plan).
 `tests/seed/crossing.postgres-test.ts` exports from one database and lands it in another.
 
+### The crossing from the origin (`seed:export:origin`)
+
+The first node's Firestore soil leaves by the same travel plan, as the same sealed bundle, that
+`seed:export` writes from a PostgreSQL node — so the crossing into an independent node is one law
+whichever soil a node grew in (ring 2026-11-03: `domain/originBundle`, `domain/crossingCharter`,
+`scripts/export-origin.mjs`). It reads with the Admin SDK (`GOOGLE_APPLICATION_CREDENTIALS`,
+`gcloud auth application-default login`, or a `serviceAccount.json` beside the repository) inside
+ONE read-only transaction at one moment, so the census is a snapshot, not a smear; the custodian's
+Ed25519 key stays outside both nodes, as before.
+
+```bash
+# At the origin; the checkout's src/config/charter.json is the version-1 charter that signs the head.
+npm run seed:export:origin -- --key custodian.pem --survey --without-authority bundle.json
+# → bundle.json (owner-only), bundle.json.anchor.json (PUBLIC — hand it over by another road),
+#   bundle.json.identities.json (the census of uids), bundle.json.left.json (what stayed, and why)
+```
+
+What the law guarantees: every collection the crossing map knows is gathered — the root collections
+and the subcollection groups (keys, keyEvents, keyRecoveries, witnesses, occupancy, signatures,
+loves); every value lands in the shape the soil stores (moments as UTC strings with six fractional
+digits, exactly as `seed.stamp` writes them; maps and arrays as they are; nothing that only means
+something inside Firestore); a collection the plan has never named STOPS the export, and
+`--leave <collection>` leaves it behind knowingly; `--survey` asks every gathered document for its
+subcollections, so an unnamed one is seen rather than silently missed; a record that could never
+land on the far side (`bundleInsertOf` — a link without a version-7 lid) is named and refused unless
+`--leave-unlandable`; a block whose chain does not meet (its predecessor no longer carried: the
+debris of a deleted being) is named and refused unless `--leave-broken`, which prunes by the far
+side's own closure law to a fixpoint; and the hand verifies the sealed bundle (`verifyBundle`)
+before anyone else must. Beside the bundle: `identities.json`, every uid the bundle names bound to
+itself with the person LID it must be anchored to (signed history is never renamed — it is the
+receiving node's `--identities` once every login is bound), and `left.json`: the excluded
+collections with the plan's reasons, the unlandable, the broken, the GHOSTS (a uid whose person
+record is missing, carries no lid, or whose `users` and `persons` records disagree — the far side
+refuses these until the origin mends them), and the origin's beings index compared with the
+witness rebuilt from the body.
+
+What it does not do: carry media (pictures stay URLs into the origin's storage), create logins or
+bindings on the far side, or mend the origin. The ceremony in order: export; create each person's
+login at the new node's issuer; bind each subject to its uid in the auth trust file; the durable
+explicit binding is written by that person's first token (`seed.resolve_identity`) — writing those
+rows from the reviewed file before anyone logs in is the next ring; then `seed:import` plans and
+lands. `tests/originBundle.test.ts` holds the value law, the gathering, the refusals, the pruning
+and the census; `tests/seed/origin-crossing.postgres-test.ts` lands a Firestore-shaped soil,
+sealed under the origin's own charter, on a real PostgreSQL node.
+
 ### The mail organ (migration 056)
 
 How letters leave this node. The origin node writes a `mail` document the Trigger Email

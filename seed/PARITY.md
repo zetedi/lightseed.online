@@ -111,7 +111,12 @@ replacement for document queries, live subscriptions, upload/download or server 
 - Complete database, identity, media, configuration and key backup/restore. Existing Docker
   proof covers fresh application DB install, API restrictions, restart and DB data restore only.
 - Signed exports and transactional additive import now exist (`seed:export`, `seed:import`, migration 055;
-  PostgreSQL tests cover the seal, tampering, identity anchoring, local authority, idempotence and conflicts).
-  Still required: media in the bundle, identity enrollment ceremonies at scale, overlapping concurrent imports.
+  PostgreSQL tests cover the seal, tampering, identity anchoring, local authority, idempotence and conflicts),
+  and the origin's Firestore soil leaves as the same bundle (`seed:export:origin`, 2026-11-03: one read-only
+  snapshot, the landing law applied before sealing, the debris and the ghosts named in `left.json`). The first
+  real census stopped at the soil's own debts (two version-4 link lids, five blocks whose chain does not meet,
+  twenty uids the far side cannot bind yet). Still required: media in the bundle, the binding ceremony
+  (explicit rows written before the import; departed uids), identity enrollment at scale, overlapping
+  concurrent imports.
 - Existing backend regression checks and a four-layer review: correctness, architecture,
   security/data integrity and meaning. Commit remains subject to explicit human approval.

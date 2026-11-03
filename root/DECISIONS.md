@@ -6,6 +6,30 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The origin leaves** — Asked whether the second node could now fire up and import
+the data exported from lightseed.online, we found there was no road: `seed:export` reads a
+PostgreSQL node, the browser's export is a ZIP of another shape gathered with one hand's sight,
+and nothing read the origin's Firestore as the travel plan. We grew `seed:export:origin` as the
+same law on the other soil: one read-only transaction at one moment, the crossing map's
+collections and groups, values in the shape the soil stores, the head signed by the origin's own
+version-1 charter — `domain/crossingCharter` lets each charter answer for its own soundness,
+since the head carries only the nodeLid and the domain. The hand refuses rather than drops: an
+unnamed collection stops it (`--leave` by name), a record the landing law would refuse and a
+block whose chain does not meet are named and left behind only on the hand's word, and the
+sealed bundle is verified before it is written. The first real census found the soil's own debts
+and named them in `left.json`: five blocks of deleted beings, two shelter links with version-4
+lids from the July seeding, five persons wearing two true names, thirteen accounts without a
+name while their person has one, two departed accounts still named by their traces, a
+two-record `organisations` fossil (now excluded by the plan) and a node-held credential the
+census mistook for a person (`credentialHolderUid` is dual-typed like `validatorId` and left the
+automatic census). REJECTED: converting the browser's ZIP; a snapshot without a read-time (a
+smear is not a census); widening the landing law to admit version-4 link lids or persons without
+a lid (a second truth about names — the origin mends, the law stays one); pruning broken chains
+silently; dropping an unknown collection by default. Plain contract — guaranteed: a bundle
+`seed:export:origin` writes verifies and lands by the same law as a node's own, and everything
+not carried is named in `left.json`. Not guaranteed: logins or bindings on the far side (the
+binding ceremony is the next ring), media, a mended origin, overlapping imports.
+
 **2026-11-03 · A picture leaves the second node** — The independent node could take a picture
 but never let one go: `releasePicture` warned and returned, every replaced logo or hero and
 every dropped gallery image stayed in the store for good — and, found on the way, no

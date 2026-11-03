@@ -83,7 +83,10 @@ permission to ship a reduced-feature node.
 5. Implement complete signed exports, identity enrollment, media transport,
    transactional import execution and conflict resolution. `seed:export` and
    `seed:import` (055) now export a sealed bundle and land it additively in one
-   transaction (2026-11-02); media transport and identity enrollment at scale remain.
+   transaction (2026-11-02); `seed:export:origin` exports the origin's Firestore soil as the
+   same sealed bundle, naming what cannot travel (2026-11-03). Media transport, the binding
+   ceremony (explicit login rows written by the installation before the import; departed uids
+   whose traces travel as names) and identity enrollment at scale remain.
 6. Bootstrap authority and the first keeper without a public first-visitor claim —
    `seed:keeper` appoints the keeper from the installation (2026-11-02).
    Verify a clean Compose installation, persistence, complete backup/restore and

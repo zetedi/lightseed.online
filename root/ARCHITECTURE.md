@@ -606,6 +606,27 @@ darkroom (`utils/photoEncode`) and names the stored picture by its bytes, as the
 does — before this ring the extension-less paths the appearance seats ask for were refused by
 the store, so no logo, hero, gallery or page picture could be dressed on this soil.
 
+THE ORIGIN LEAVES (2026-11-03). The first node's Firestore soil leaves by the same travel plan,
+as the same sealed bundle, that `seed:export` writes from a PostgreSQL node
+(`scripts/export-origin.mjs` by `domain/originBundle`): one read-only transaction at one moment,
+every collection the crossing map knows and the subcollection groups it names, values in the shape
+the soil stores (moments as UTC strings with six fractional digits), and the head signed by the
+origin's own version-1 charter (`domain/crossingCharter`: each charter answers for its own
+soundness, since the head carries only the nodeLid and the domain). What cannot travel is named,
+never dropped in silence: a collection the plan never named stops the export until the hand leaves
+it knowingly; a record the landing law would refuse (a link without a version-7 lid) and a block
+whose chain does not meet (the debris of a deleted being, pruned by the far side's own closure law
+to a fixpoint) are refused unless left behind by name; and the hand verifies the sealed bundle
+itself. Beside the bundle travel the census of identities (each uid bound to itself with its
+person LID — signed history is never renamed) and what stayed, including the ghosts the far side
+will refuse until the origin mends them. The first real census (815 records in 28 collections)
+found the soil's own debts: five blocks whose chain does not meet, two shelter links wearing
+version-4 lids, five persons wearing two true names, thirteen whose account carries no name while
+their person does, two departed accounts still named by their traces, and a node-held credential
+the census had mistaken for a person (`credentialHolderUid` is dual-typed and left the automatic
+census). The binding ceremony — explicit login rows written by the installation before the
+import, and departed uids whose traces travel as names — is the next ring.
+
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node
 composes from plain words in the voice of its place under a daily quota, the letter of a

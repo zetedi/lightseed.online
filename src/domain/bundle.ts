@@ -120,7 +120,10 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
 
   // Node fabric
   { path: 'collabs', mode: 'verbatim', localUidFields: ['createdBy'] },
-  { path: 'intelligences', mode: 'verbatim', localUidFields: ['anchorUid', 'credentialHolderUid'] },
+  // credentialHolderUid is DUAL-TYPED (a person holds their own key; the NODE's community holds the
+  // node-paid one — the origin census found 'lightseed.online' there, 2026-11-03), so like validatorId
+  // it stays OUT of the automatic uid census: re-anchoring inspects it by hand.
+  { path: 'intelligences', mode: 'verbatim', localUidFields: ['anchorUid'] },
   { path: 'personas', mode: 'verbatim' }, // createPersona writes no owner field (verified 2026-08-15)
   { path: 'memories', mode: 'verbatim' }, // createMemory writes no owner field (verified 2026-08-15)
   { path: 'subscriptions', mode: 'verbatim', deterministicIds: 'encodeURIComponent(email) — prototype-unsafe keys; never load into plain objects keyed by id' },
@@ -131,6 +134,7 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   { path: 'mailThrottle', mode: 'excluded', reason: 'transient send-rate ledger (no rules block — server-only); meaningless off its node' },
   { path: 'usage', mode: 'excluded', reason: 'daily AI/mail counters — quota history is not identity' },
   { path: 'domainChallenges', mode: 'excluded', reason: 'single-use DNS control tokens — a challenge proves nothing beyond its week, and a new node mints its own; the observed mark travels ON the community doc' },
+  { path: 'organisations', mode: 'excluded', reason: 'the organisation-per-domain of 2025, before communities became the circle — two fossil records nothing has read since (found by the origin census, 2026-11-03); a fossil is not a being' },
 ];
 
 // The rels whose link.from is NOT a person uid: tree, Light House, and community edges.
