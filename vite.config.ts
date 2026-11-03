@@ -4,16 +4,10 @@ import { createReadStream, existsSync, readdirSync, readFileSync } from 'fs';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import charter from './src/config/charter.json';
+import checkoutCharter from './src/config/charter.json';
 import { seedBrowserConfig } from './src/domain/seedBrowser';
-
-// THE NODE (ring 2026-09-06): the shell's name, colours and Open Graph card come from the
-// charter — index.html reads them as %VITE_NODE_*% at build time.
-process.env.VITE_NODE_NAME = charter.name;
-process.env.VITE_NODE_SHORT = charter.shortName;
-process.env.VITE_NODE_TAGLINE = charter.tagline;
-process.env.VITE_NODE_DESCRIPTION = charter.description;
-process.env.VITE_NODE_ORIGIN = `https://${charter.domain}`;
+import { charterOrigin, charterPublicOf, robotsTxtOf, shellOriginProblem, shellStructuredDataOf, shellVarsOf, webManifestOf, type NodeCharter } from './src/domain/charter';
+import { independentCharterProblem } from './src/domain/independentCharter';
 
 // THE ROOT AS FILES (ring 2026-09-13). Every root/*.md is served at /root/<NAME>.md — by this
 // middleware in dev, emitted beside the shell in the build — so the deployed node carries the
@@ -53,6 +47,62 @@ export default defineConfig(({ mode }) => {
     const browserConfig = independent
         ? seedBrowserConfig({ appOrigin: combinedEnv.SEED_WEB_ORIGIN, issuer: combinedEnv.SEED_IDENTITY_ISSUER })
         : null;
+
+    // THE NODE (ring 2026-09-06) / THE SHELL WEARS THE CHARTER (ring 2026-11-03): the shell's
+    // name, colours, card, structured data, manifest, robots.txt and public envelope come from
+    // the charter the build builds AS — the checkout's (src/config/charter.json, synced from
+    // node.json) under the Firebase soil; the installation's own version-2 charter, named by
+    // SEED_CHARTER, for the independent node, whose application origin must be a host that
+    // charter answers at. index.html reads the words as %VITE_NODE_*% (domain/charter shellVarsOf).
+    const independentCharterOf = (file: string | undefined): NodeCharter => {
+        if (!file) throw new Error("The independent build needs SEED_CHARTER: the node's charter (node.json in the directory seed:configure wrote).");
+        let parsed: unknown;
+        try { parsed = JSON.parse(readFileSync(path.resolve(cwd, file), 'utf8')); } catch (e) { throw new Error(`SEED_CHARTER could not be read: ${(e as Error).message}`); }
+        const problem = independentCharterProblem(parsed);
+        if (problem) throw new Error(`SEED_CHARTER is not a sound independent charter (${problem}).`);
+        return parsed as NodeCharter;
+    };
+    const charter: NodeCharter = independent ? independentCharterOf(combinedEnv.SEED_CHARTER) : (checkoutCharter as NodeCharter);
+    const origin: string = independent ? (combinedEnv.SEED_WEB_ORIGIN ?? '') : charterOrigin(charter);
+    if (independent) {
+        const problem = shellOriginProblem(charter, origin);
+        if (problem) throw new Error(`SEED_WEB_ORIGIN cannot serve this charter's shell: ${problem}.`);
+    }
+    Object.assign(process.env, shellVarsOf(charter, origin));
+    const nodeShell = (): Plugin => {
+        const charterJson = path.resolve(cwd, 'src/config/charter.json');
+        const files: Record<string, string> = {
+            'robots.txt': robotsTxtOf(origin),
+            '.well-known/lightseed.json': JSON.stringify(charterPublicOf(charter), null, 2) + '\n',
+        };
+        return {
+            name: 'lightseed:node-shell',
+            enforce: 'pre',
+            // An independent bundle carries no trace of the origin's identity: the checkout's
+            // charter.json is empty there (config/charter reads SEED_NODE_CHARTER instead).
+            load(id) { return independent && id === charterJson ? 'null' : null; },
+            transformIndexHtml(html) {
+                // The Firebase data hosts are no one's on the independent soil.
+                const stripped = independent ? html.replace(/^[ \t]*<link rel="preconnect" href="https:\/\/(?:firestore|firebasestorage)\.googleapis\.com"[^\n]*\n/gm, '') : html;
+                const tags = shellStructuredDataOf(charter, origin).map((data) => ({
+                    tag: 'script', attrs: { type: 'application/ld+json' }, children: JSON.stringify(data).replace(/</g, '\\u003c'), injectTo: 'head' as const,
+                }));
+                return { html: stripped, tags };
+            },
+            configureServer(server) {
+                server.middlewares.use((req, res, next) => {
+                    const file = (req.url || '').split('?')[0].replace(/^\//, '');
+                    const body = files[file];
+                    if (body === undefined) return next();
+                    res.setHeader('Content-Type', file.endsWith('.json') ? 'application/json; charset=utf-8' : 'text/plain; charset=utf-8');
+                    res.end(body);
+                });
+            },
+            generateBundle() {
+                for (const [fileName, source] of Object.entries(files)) this.emitFile({ type: 'asset', fileName, source });
+            },
+        };
+    };
     const noFirebase = (): Plugin => ({
         name: 'lightseed:no-firebase',
         generateBundle() {
@@ -65,7 +115,8 @@ export default defineConfig(({ mode }) => {
     // Selectively expose variables. NOTE: only Firebase's public config belongs here — anything
     // in clientEnv is inlined into the public JS bundle. Never add a real secret (e.g. a Gemini/
     // Anthropic API_KEY); those live only in Cloud Functions secrets and are used server-side.
-    const clientEnv = {
+    // The independent node has no Firebase project: its bundle carries none of these (ring 2026-11-03).
+    const clientEnv = independent ? { MODE: mode } : {
         MODE: mode,
         VITE_FIREBASE_API_KEY: combinedEnv.VITE_FIREBASE_API_KEY,
         VITE_FIREBASE_AUTH_DOMAIN: combinedEnv.VITE_FIREBASE_AUTH_DOMAIN,
@@ -113,6 +164,7 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [
         react(),
+        nodeShell(),
         rootPapers(path.resolve(cwd, 'root')),
         ...(independent ? [noFirebase()] : []),
         // PWA: installable app + offline shell. The service worker precaches the built shell
@@ -122,20 +174,7 @@ export default defineConfig(({ mode }) => {
         VitePWA({
           registerType: 'prompt',
           includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
-          manifest: {
-            name: `${charter.name} — ${charter.tagline}`,
-            short_name: charter.shortName,
-            description: charter.description,
-            start_url: '/',
-            display: 'standalone',
-            background_color: charter.theme.background,
-            theme_color: charter.theme.color,
-            icons: [
-              { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-              { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-              { src: '/maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-            ],
-          },
+          manifest: webManifestOf(charter),
           workbox: {
             // The push half of the worker (public/push-sw.js) rides inside the generated one.
             importScripts: ['push-sw.js'],
@@ -143,8 +182,10 @@ export default defineConfig(({ mode }) => {
             // Leave the media library (webp/mp4) to the network — precaching it would bloat installs.
             maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
             // Never serve the SPA shell for Firebase's reserved paths: /__/* (auth helpers),
-            // /u/* (the unsubscribe Cloud Function rewrite), or the SSO door (its own page).
-            navigateFallbackDenylist: [/^\/__\//, /^\/u\//, /^\/sso\.html/],
+            // /u/* (the unsubscribe Cloud Function rewrite), or the SSO door (its own page) —
+            // nor for what the node answers itself: the API, the face picture, the face feed,
+            // the sitemap, robots.txt and the public envelope (ring 2026-11-03).
+            navigateFallbackDenylist: [/^\/__\//, /^\/u\//, /^\/sso\.html/, /^\/v1\//, /^\/face\//, /^\/faceEvents/, /^\/sitemap\.xml$/, /^\/robots\.txt$/, /^\/\.well-known\//],
             runtimeCaching: [
               {
                 // The constitution (/root/*.md): read from the copy, refreshed behind it, so the
@@ -200,6 +241,8 @@ export default defineConfig(({ mode }) => {
         '__STATIC_ENV__': JSON.stringify(clientEnv),
         // The independent node's browser configuration (domain/seedBrowser); null in a Firebase build.
         'SEED_BROWSER_CONFIG': JSON.stringify(browserConfig),
+        // The independent node's own charter (config/charter); null in a Firebase build.
+        'SEED_NODE_CHARTER': JSON.stringify(independent ? charter : null),
       },
       resolve: {
         alias: {

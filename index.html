@@ -6,28 +6,18 @@
     <title>%VITE_NODE_SHORT% — %VITE_NODE_NAME%, %VITE_NODE_TAGLINE%</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#065f46" />
-    <meta name="description" content="A living commons where trees, people and intelligences meet. Plant a lifetree, find your resonance, and help grow a New Earth." />
+    <meta name="theme-color" content="%VITE_NODE_THEME_COLOR%" />
+    <meta name="description" content="%VITE_NODE_DESCRIPTION%" />
     <link rel="canonical" href="%VITE_NODE_ORIGIN%/" />
     <meta name="robots" content="index, follow" />
     <meta name="keywords" content="regen, regeneration, ai, artificial intelligence, blockchain, vision, lifetree, trees, community, nature, consciousness, New Earth, living network, light house, care economy, web of trust" />
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Lightseed",
-      "alternateName": ".seed",
-      "url": "https://lightseed.online",
-      "description": "A living commons where trees, people and intelligences meet. Regen, AI and blockchain native — plant a lifetree, find your resonance, and help grow a New Earth.",
-      "keywords": "regen, ai, blockchain, vision, lifetree, community, nature, consciousness"
-    }
-    </script>
+    <!-- The structured data (WebSite, Organization) is injected at build time from the charter (vite.config.ts). -->
 
     <!-- Open Graph / link previews -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="%VITE_NODE_NAME%" />
     <meta property="og:title" content="%VITE_NODE_NAME% — %VITE_NODE_TAGLINE%" />
-    <meta property="og:description" content="A living commons where trees, people and intelligences meet. Plant a lifetree, find your resonance, and help grow a New Earth." />
+    <meta property="og:description" content="%VITE_NODE_DESCRIPTION%" />
     <meta property="og:url" content="%VITE_NODE_ORIGIN%" />
     <meta property="og:image" content="%VITE_NODE_ORIGIN%/og.png" />
     <meta property="og:image:type" content="image/png" />
@@ -37,9 +27,9 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Lightseed — life recognising life" />
-    <meta name="twitter:description" content="A living commons where trees, people and intelligences meet." />
-    <meta name="twitter:image" content="https://lightseed.online/og.png" />
+    <meta name="twitter:title" content="%VITE_NODE_NAME% — %VITE_NODE_TAGLINE%" />
+    <meta name="twitter:description" content="%VITE_NODE_DESCRIPTION%" />
+    <meta name="twitter:image" content="%VITE_NODE_ORIGIN%/og.png" />
     <script>
       // Immediate shim to prevent "Cannot read properties of undefined (reading 'env')"
       // This runs before any module code to ensure window.process exists.
@@ -66,32 +56,6 @@
         font-family: 'Montserrat', sans-serif;
       }
     </style>
-    <!-- Structured data: who we are, for search engines. -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Lightseed",
-      "alternateName": ".seed",
-      "url": "https://lightseed.online/",
-      "description": "A living commons where trees, people and intelligences meet. Plant a lifetree, find your resonance, and help grow a New Earth.",
-      "publisher": {
-        "@type": "Organization",
-        "name": "Lightseed",
-        "url": "https://lightseed.online/",
-        "logo": "https://lightseed.online/pwa-512x512.png"
-      }
-    }
-    </script>
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Lightseed",
-      "url": "https://lightseed.online/",
-      "logo": "https://lightseed.online/logo.svg"
-    }
-    </script>
 <link rel="stylesheet" href="/src/index.css">
 </head>
   <body class="bg-[#B2713A] text-white">

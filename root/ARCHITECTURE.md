@@ -23,7 +23,7 @@ region / web config, and its faces (hosting target, site, the door each wears, c
 domains). The law is `src/domain/charter.ts` (validation and every derivation: the hosts a
 face answers at, the origin, the public envelope, the hosting targets); `functions/src/
 charter.ts` mirrors it and reads `functions/src/charter.json`; `scripts/charter-sync.mjs`
-writes that copy, `public/.well-known/lightseed.json`, `.firebaserc` and the hosting entries
+writes that copy, `.firebaserc` and the hosting entries
 of `firebase.json`; `tests/charter.test.ts` holds mirror and copies true, and `npm run check`
 refuses a tree out of step. Nothing in `src/` or `functions/` names the node by heart any
 more. `scripts/create-node.mjs <charter> [--apply]` walks a charter to a living node — project,
@@ -32,7 +32,11 @@ only a console can take. Other nodes the same code runs as keep their charters u
 `NODE_CHARTER=nodes/<id>/node.json` makes the sync, the build and create-node act AS that node,
 and `FIREBASE_ACCOUNT=<email>` makes the CLI act as the node's own account (after
 `firebase login:add`). The shell reads the generated `src/config/charter.json`, never the root
-file directly, so a checkout can be built for any charter it knows.
+file directly, so a checkout can be built for any charter it knows. The build itself derives
+what the shell wears — its `%VITE_NODE_*%` words, structured data, web manifest, `robots.txt`
+and the public envelope at `/.well-known/lightseed.json` — from the charter it builds as
+(`domain/charter`, the shell section; ring 2026-11-03): the checkout's here, the independent
+node's own under the independent build (`SEED_CHARTER`, below).
 Leaflet is bundled from npm, lazy-loaded on first map render (`services/leaflet.ts`).
 
 ## Independent node
@@ -570,6 +574,18 @@ explicitly public. The face feed speaks a cradle's public and node gatherings to
 site through the shared feed law as the last gate. Should the API fall silent, the edge
 serves the plain shell itself. Still refusing by name: the one-time Firestore backfills,
 cross-node SSO, picture release, the issuer's own sign-in hands.
+
+THE SHELL WEARS THE CHARTER (2026-11-03). The independent build (`npm run build:independent`)
+takes the installation's own charter — `SEED_CHARTER`, the `node.json` seed:configure wrote,
+the same file Compose mounts for the API — and builds the shell AS that node: title, card,
+structured data, web manifest, `robots.txt` (naming the node's own sitemap) and the public
+envelope at `/.well-known/lightseed.json` are derived from it in `domain/charter`; the
+application origin (`SEED_WEB_ORIGIN`) must be a host the charter answers at; and the client's
+`config/charter` reads the charter at run time (`SEED_NODE_CHARTER`), so share links, the
+newsletter's home domain, the keeper's seat and the push public key are the node's own. The
+bundle carries no trace of the origin: the checkout's `charter.json` is loaded empty into it,
+the Firebase client environment is not defined there, the Firebase preconnects are stripped.
+Not grown: a face host's front door (`/` at a face's own domain) still wears the node's card.
 
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node

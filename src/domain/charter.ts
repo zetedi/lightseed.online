@@ -7,8 +7,9 @@ import { isLid } from './dataAuthority';
 // and its own origin were written by hand in a dozen places. node.json at the repo root is
 // the charter; everything derived — the hosts a face may answer at, the origin the node
 // speaks from, the hosting sites, the public envelope at /.well-known/lightseed.json — is
-// derived HERE, once, and mirrored to the server (functions/src/charter.ts) and to the
-// generated files (scripts/charter-sync.mjs), all held true by tests/charter.test.ts.
+// derived HERE, once, and mirrored to the server (functions/src/charter.ts), to the
+// generated files (scripts/charter-sync.mjs) and to the built shell (vite.config.ts, the
+// shell section below), all held true by tests/charter.test.ts.
 //
 // The bundle law already names the charter as a bundle's HEAD (the nodeLid, the hashed root
 // promise, the genesis constants); this file is where that head is authored. Secrets never
@@ -132,9 +133,10 @@ export const charterOwnDomains = (c: Pick<CharterIdentity, 'domain' | 'aliases'>
 // own domains always may; a face's host may only once its keeper has wired it in the OAuth
 // client (JS origin + /__/auth/handler redirect) and in Firebase Auth's authorized domains —
 // so the charter DECLARES the wired ones, and the shell never names a host that would fail.
-// Every declared host must be one the node answers at (charterHosts).
-export const charterAuthHosts = (c: Charter): string[] =>
-  [...new Set([...charterOwnDomains(c), ...(c.authHosts ?? [])].map((h) => h.toLowerCase()))].sort();
+// Every declared host must be one the node answers at (charterHosts). An independent node has
+// one issuer at its own host: only its own domains may.
+export const charterAuthHosts = (c: NodeCharter): string[] =>
+  [...new Set([...charterOwnDomains(c), ...(c.version === 1 ? c.authHosts ?? [] : [])].map((h) => h.toLowerCase()))].sort();
 
 // THE SENDER A MAIL WEARS (ring 2026-09-07). The charter's `mail.from` is the node's own:
 // `The Living Web - Lightseed <admin@…>` — one web, and the seat of the place that speaks. A
@@ -201,3 +203,77 @@ export const hostingOf = <T extends Record<string, unknown>>(c: Charter, templat
       ? { target: f.target, ...(predeploy !== undefined ? { predeploy } : {}), public: base, ...rest }
       : { target: f.target, predeploy: `node scripts/face-og.mjs ${f.target}`, public: `${base}-faces/${f.target}`, ...rest };
   });
+
+// THE SHELL WEARS THE CHARTER (ring 2026-11-03). The built shell — its title and card
+// (index.html's %VITE_NODE_*%), its structured data, its web manifest, robots.txt and the
+// public envelope at /.well-known/lightseed.json — is derived here from whichever charter the
+// build builds AS: the checkout's node.json for the Firebase soil, the installation's own
+// version-2 charter (SEED_CHARTER) for the independent one. Until this ring the independent
+// build wore the origin's name, domain and push key, because it read the origin's charter.
+//
+// Plain contract — guaranteed: every value that enters index.html is escaped once for an
+// attribute or text (the charter's words never break the markup); the structured data is
+// serialised, never templated; shellOriginProblem refuses an application origin that is not
+// https, carries a path, or names a host the charter does not answer at — so a shell is only
+// ever built for a host its node claims. Not guaranteed: that the charter's words make a good
+// card (that is the keeper's); that a crawler reads any of it.
+
+const escapeHtml = (s: string): string =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// The %VITE_NODE_*% index.html reads at build time, from the charter and the origin the shell is served from.
+export const shellVarsOf = (c: CharterIdentity, origin: string): Record<string, string> => ({
+  VITE_NODE_NAME: escapeHtml(c.name),
+  VITE_NODE_SHORT: escapeHtml(c.shortName),
+  VITE_NODE_TAGLINE: escapeHtml(c.tagline),
+  VITE_NODE_DESCRIPTION: escapeHtml(c.description),
+  VITE_NODE_ORIGIN: origin,
+  VITE_NODE_THEME_COLOR: c.theme.color,
+});
+
+// The two structured-data blocks the shell carries: who this site is, and who publishes it.
+export const shellStructuredDataOf = (c: CharterIdentity, origin: string): Array<Record<string, unknown>> => [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: c.name,
+    alternateName: c.shortName,
+    url: `${origin}/`,
+    description: c.description,
+    keywords: 'regen, ai, blockchain, vision, lifetree, community, nature, consciousness',
+    publisher: { '@type': 'Organization', name: c.name, url: `${origin}/`, logo: `${origin}/pwa-512x512.png` },
+  },
+  { '@context': 'https://schema.org', '@type': 'Organization', name: c.name, url: `${origin}/`, logo: `${origin}/logo.svg` },
+];
+
+// The installable application's manifest.
+export const webManifestOf = (c: CharterIdentity) => ({
+  name: `${c.name} — ${c.tagline}`,
+  short_name: c.shortName,
+  description: c.description,
+  start_url: '/',
+  display: 'standalone' as const,
+  background_color: c.theme.background,
+  theme_color: c.theme.color,
+  icons: [
+    { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+    { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+    { src: '/maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+  ],
+});
+
+// What a crawler may walk: everything but the unsubscribe door; the living sitemap at the origin.
+export const robotsTxtOf = (origin: string): string =>
+  `User-agent: *\nAllow: /\nDisallow: /u/\n\nSitemap: ${origin}/sitemap.xml\n`;
+
+// Why the shell may not be built for this application origin, or null when it may: an https
+// origin with nothing after the host, at a host the charter answers at (a port is allowed — a
+// local walk serves the node at one).
+export const shellOriginProblem = (c: NodeCharter, origin: unknown): string | null => {
+  if (typeof origin !== 'string' || !origin) return 'no application origin';
+  let url: URL;
+  try { url = new URL(origin); } catch { return 'not a URL'; }
+  if (url.protocol !== 'https:' || url.origin !== origin) return 'not an https origin';
+  if (!charterHosts(c).includes(url.hostname.toLowerCase())) return `the charter does not answer at ${url.hostname}`;
+  return null;
+};

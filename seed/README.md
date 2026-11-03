@@ -136,9 +136,9 @@ mail credentials and signing keys belong in installation secrets, never this fil
 An empty push public key describes a node whose push service is not configured yet.
 
 This prepares configuration only. It does not provision DNS, mail, identity, storage
-or the application. Do not set `NODE_CHARTER` to a version-2 charter for the current
-Firebase build: that path deliberately refuses it. The independent app build and
-full service implementation remain pending.
+or the application. Do not set `NODE_CHARTER` to a version-2 charter: the Firebase
+sync deliberately refuses it. The independent application build reads the version-2
+charter as `SEED_CHARTER` instead (see "Build the application itself for the independent node").
 
 ## What stands now
 
@@ -615,6 +615,7 @@ remain to be completed.
 Since 2026-11-01 the ORIGINAL application (not only the preview above) builds for this soil:
 
 ```sh
+SEED_CHARTER=/private/lightseed/charter/node.json \
 SEED_WEB_ORIGIN=https://app.your-node.example \
 SEED_IDENTITY_ISSUER=https://identity.your-node.example/realms/lightseed \
 npm run build:independent
@@ -626,6 +627,17 @@ bundle. Serve it exactly as the preview: the HTML at the application origin, `/a
 to `index.html`, `/v1/*` proxied to the API. What the node has not grown yet refuses by name
 when asked ("This node has not grown that yet"); `seed/PARITY.md` counts those hands.
 
+`SEED_CHARTER` is the node's own charter — the `node.json` that `seed:configure` wrote, the same
+file Compose mounts for the API (`SEED_CHARTER_DIR`). The build builds AS it (ring 2026-11-03):
+the shell's title and card, the structured data, the web manifest, `robots.txt` (naming this
+node's sitemap) and the public envelope at `/.well-known/lightseed.json` are derived from it,
+and the application reads it at run time — share links, the home domain, the keeper's seat and
+the push public key are the node's own. `SEED_WEB_ORIGIN` must be an https origin at a host the
+charter answers at (a port is allowed, for a local walk); the build refuses any other, and
+refuses a charter that is not a sound version-2 charter. The bundle carries nothing of the
+origin node: no Firebase project, key or auth domain, and the checkout's `src/config/charter.json`
+is loaded empty into it.
+
 ## Serve the node behind TLS (the edge)
 
 `seed/Caddyfile` and the `edge` profile put one TLS reverse proxy in front of the node: the
@@ -636,7 +648,7 @@ network, never the application database's.
 
 ```sh
 # seed/.env: SEED_APP_HOST, SEED_IDENTITY_HOST, SEED_TLS=acme, SEED_ACME_EMAIL, SEED_NODE_ORIGIN, SEED_FACE_DOORS (optional)
-SEED_WEB_ORIGIN=https://$SEED_APP_HOST SEED_IDENTITY_ISSUER=https://$SEED_IDENTITY_HOST/realms/lightseed npm run build:independent
+SEED_CHARTER=seed/charter/node.json SEED_WEB_ORIGIN=https://$SEED_APP_HOST SEED_IDENTITY_ISSUER=https://$SEED_IDENTITY_HOST/realms/lightseed npm run build:independent   # the charter at SEED_CHARTER_DIR, seen from the repo root
 cd seed && docker compose --profile api --profile edge up -d --build --wait
 docker compose --env-file identity/.env -f identity/compose.yml up -d   # after the edge created the network
 ```
@@ -1759,8 +1771,7 @@ functions (being card, face picture, sitemap, face feed) on this soil (`seed/api
   the media directory (`previews/<lid>/<digest>.jpg`; a new picture is a new digest and a new URL).
   Every miss, and every render beyond two at once, answers a redirect to the node's `og.png`.
 - **The sitemap** — `/sitemap.xml` lists home and every explicitly public tree, Light House and
-  vision as `/b/<lid>`, newest first, 500 at most. (`robots.txt` in the independent build still
-  names the origin's sitemap: a build-time item, see PARITY.)
+  vision as `/b/<lid>`, newest first, 500 at most; the built shell's `robots.txt` names it.
 - **The face feed** — `/faceEvents?domain=<face>` answers a mother site (CORS open) with the cradle's
   public AND node gatherings — a visitor at the face is at the node — shaped to the origin's seven
   fields by the shared law, soonest first; `seed.face_events` is the server-only door behind it.

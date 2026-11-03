@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
   charterProblem, charterHosts, charterOrigin, charterOwnDomains, charterAuthHosts, charterFaceDoor, charterPublicOf, firebasercOf, hostingOf, mailFromOf,
-  type Charter,
+  shellVarsOf, shellStructuredDataOf, webManifestOf, robotsTxtOf, shellOriginProblem,
+  type Charter, type IndependentCharter,
 } from '../src/domain/charter';
+import { independentCharterProblem } from '../src/domain/independentCharter';
 import {
   charterProblem as sCharterProblem, charterHosts as sCharterHosts, charterOrigin as sCharterOrigin,
   charterOwnDomains as sCharterOwnDomains, charterAuthHosts as sCharterAuthHosts, charterFaceDoor as sCharterFaceDoor, charterPublicOf as sCharterPublicOf,
@@ -101,9 +103,8 @@ describe('the files that must agree with node.json (scripts/charter-sync.mjs)', 
     expect(read('src/config/charter.json')).toEqual(node);
     expect(read('functions/src/charter.json')).toEqual(node);
   });
-  it('the public envelope is what the law says a stranger may know', () => {
-    expect(read('public/.well-known/lightseed.json')).toEqual(charterPublicOf(node));
-  });
+  // The public envelope (/.well-known/lightseed.json) and robots.txt are no longer written here:
+  // the build emits them from the charter it builds as (ring 2026-11-03, the shell section below).
   it('.firebaserc and firebase.json hosting follow the faces', () => {
     expect(read('.firebaserc')).toEqual(firebasercOf(node));
     const hosting = read('firebase.json').hosting as Array<Record<string, unknown>>;
@@ -158,5 +159,90 @@ describe('the functions mirror stays true', () => {
     for (const place of [undefined, null, { name: 'The O House', domain: 'theohouse.org' }, { domain: node.domain }, { name: '' }]) {
       expect(sMailFromOf(node, place)).toBe(mailFromOf(node, place));
     }
+  });
+});
+
+// THE SHELL WEARS THE CHARTER (ring 2026-11-03). The built shell's words, structured data,
+// manifest, robots.txt and public envelope come from whichever charter the build builds as —
+// so an independent node's shell wears its own name, and nothing in index.html names a node.
+describe('the shell wears the charter (ring 2026-11-03)', () => {
+  const independent: IndependentCharter = {
+    version: 2, nodeLid: '01a199a3-dd7d-75a9-869c-6fad6f757e5b',
+    name: 'Trees & "People"', shortName: 'T&P', tagline: 'life <recognising> life', description: 'A node of its own.',
+    domain: 'node.example', aliases: ['alias.example'], repo: 'https://github.com/example/node',
+    keeper: { email: 'keeper@node.example' }, mail: { from: 'Node <hello@node.example>' },
+    push: { subject: 'mailto:keeper@node.example', publicKey: '' }, theme: { color: '#123456', background: '#ffffff' },
+    backend: { kind: 'postgres' },
+    faces: [{ id: 'home', door: 'node.example', domains: [] }, { id: 'other', door: 'seed.other.example', domains: ['other.example'] }],
+  };
+
+  it('the fixture is a sound independent charter', () => {
+    expect(independentCharterProblem(independent)).toBeNull();
+  });
+
+  it('the words enter index.html escaped once; the origin as given', () => {
+    expect(shellVarsOf(independent, 'https://node.example')).toEqual({
+      VITE_NODE_NAME: 'Trees &amp; &quot;People&quot;', VITE_NODE_SHORT: 'T&amp;P', VITE_NODE_TAGLINE: 'life &lt;recognising&gt; life',
+      VITE_NODE_DESCRIPTION: 'A node of its own.', VITE_NODE_ORIGIN: 'https://node.example', VITE_NODE_THEME_COLOR: '#123456',
+    });
+    expect(shellVarsOf(node, charterOrigin(node))).toMatchObject({ VITE_NODE_NAME: node.name, VITE_NODE_SHORT: node.shortName, VITE_NODE_ORIGIN: charterOrigin(node), VITE_NODE_THEME_COLOR: node.theme.color });
+  });
+
+  it('the structured data is serialised from the charter, never templated', () => {
+    const [site, org] = shellStructuredDataOf(independent, 'https://node.example:8443');
+    expect(site).toMatchObject({
+      '@context': 'https://schema.org', '@type': 'WebSite', name: 'Trees & "People"', alternateName: 'T&P', url: 'https://node.example:8443/',
+      description: 'A node of its own.', publisher: { '@type': 'Organization', name: 'Trees & "People"', logo: 'https://node.example:8443/pwa-512x512.png' },
+    });
+    expect(org).toEqual({ '@context': 'https://schema.org', '@type': 'Organization', name: 'Trees & "People"', url: 'https://node.example:8443/', logo: 'https://node.example:8443/logo.svg' });
+  });
+
+  it('the manifest and robots.txt are the charter\'s', () => {
+    expect(webManifestOf(independent)).toMatchObject({ name: 'Trees & "People" — life <recognising> life', short_name: 'T&P', description: 'A node of its own.', theme_color: '#123456', background_color: '#ffffff', start_url: '/', display: 'standalone' });
+    expect(webManifestOf(independent).icons.map(i => i.src)).toEqual(['/pwa-192x192.png', '/pwa-512x512.png', '/maskable-512x512.png']);
+    expect(robotsTxtOf('https://node.example')).toBe('User-agent: *\nAllow: /\nDisallow: /u/\n\nSitemap: https://node.example/sitemap.xml\n');
+  });
+
+  it('a shell is only built for an https origin at a host its charter answers at (a port allowed)', () => {
+    expect(shellOriginProblem(independent, 'https://node.example')).toBeNull();
+    expect(shellOriginProblem(independent, 'https://node.example:8443')).toBeNull();
+    expect(shellOriginProblem(independent, 'https://alias.example')).toBeNull();
+    expect(shellOriginProblem(independent, 'https://other.example')).toBeNull();
+    expect(shellOriginProblem(independent, 'https://Seed.Other.Example')).toMatch(/https origin/); // a canonical origin is lower-case, as the URL's own
+    expect(shellOriginProblem(independent, 'https://stranger.example')).toMatch(/stranger\.example/);
+    expect(shellOriginProblem(independent, 'http://node.example')).toMatch(/https/);
+    expect(shellOriginProblem(independent, 'https://node.example/app')).toMatch(/https origin/);
+    expect(shellOriginProblem(independent, 'https://node.example/')).toMatch(/https origin/);
+    expect(shellOriginProblem(independent, 'nope')).toMatch(/URL/);
+    expect(shellOriginProblem(independent, undefined)).toMatch(/no application origin/);
+    expect(shellOriginProblem(node, 'https://seed.theohouse.org')).toBeNull();
+  });
+
+  it('an independent charter answers at its own domains and doors, may be its own auth host alone, and tells a stranger no more', () => {
+    expect(charterHosts(independent)).toEqual(['alias.example', 'node.example', 'other.example', 'seed.other.example']);
+    expect(charterOwnDomains(independent)).toEqual(['node.example', 'alias.example']);
+    expect(charterAuthHosts(independent)).toEqual(['alias.example', 'node.example']);
+    expect(charterOrigin(independent)).toBe('https://node.example');
+    const pub = charterPublicOf(independent);
+    expect(pub).toEqual({
+      version: 2, nodeLid: independent.nodeLid, name: independent.name, shortName: 'T&P', tagline: independent.tagline,
+      domain: 'node.example', aliases: ['alias.example'], repo: independent.repo,
+      faces: [{ door: 'node.example', domains: [] }, { door: 'seed.other.example', domains: ['other.example'] }],
+      push: { publicKey: '' },
+    });
+    expect(JSON.stringify(pub)).not.toContain('keeper@');
+    expect('backend' in pub).toBe(false);
+  });
+
+  it('index.html names no node by heart: every word of the node is a placeholder the law fills', () => {
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    const placeholders = [...new Set([...html.matchAll(/%VITE_NODE_([A-Z_]+)%/g)].map(m => m[1]))].sort();
+    expect(placeholders).toEqual(['DESCRIPTION', 'NAME', 'ORIGIN', 'SHORT', 'TAGLINE', 'THEME_COLOR']);
+    const vars = shellVarsOf(independent, 'https://node.example');
+    for (const p of placeholders) expect(vars).toHaveProperty(`VITE_NODE_${p}`);
+    const stripped = html.replace(/%VITE_NODE_[A-Z_]+%/g, '');
+    expect(stripped).not.toMatch(/lightseed|lifeseed|\.seed\b|#065f46/i);
+    // The structured data is injected at build time (vite.config.ts), never written by heart.
+    expect(stripped).not.toContain('application/ld+json');
   });
 });

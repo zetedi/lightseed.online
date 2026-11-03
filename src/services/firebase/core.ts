@@ -2,7 +2,7 @@
 // helpers shared across every aggregate module. Everything under services/firebase/ imports from
 // here; services/firebase.ts re-exports the aggregates as one barrel so call sites stay unchanged.
 import '../../utils/polyfill';
-import { charter, nodeAuthHosts } from '../../config/charter';
+import { charter, firebaseCharter, nodeAuthHosts } from '../../config/charter';
 import { initializeApp } from 'firebase/app';
 import type { DocumentData } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, onAuthStateChanged, GoogleAuthProvider, type User as FirebaseUser } from 'firebase/auth';
@@ -59,12 +59,13 @@ const currentHost = window.location.hostname.replace(/^www\./, '');
 
 // The charter is the node (config/charter → node.json); an env var still overrides it, so a
 // local run may point at an emulator or a preview project without touching the charter.
-const web = charter.firebase.web;
+const { firebase: project } = firebaseCharter();
+const web = project.web;
 const firebaseConfig = {
   apiKey: getEnv('VITE_FIREBASE_API_KEY') || web.apiKey,
   authDomain: HOSTED_AUTH_DOMAINS.includes(currentHost) ? currentHost : (getEnv('VITE_FIREBASE_AUTH_DOMAIN') || web.authDomain),
-  projectId: getEnv('VITE_FIREBASE_PROJECT_ID') || charter.firebase.projectId,
-  storageBucket: getEnv('VITE_FIREBASE_STORAGE_BUCKET') || charter.firebase.bucket,
+  projectId: getEnv('VITE_FIREBASE_PROJECT_ID') || project.projectId,
+  storageBucket: getEnv('VITE_FIREBASE_STORAGE_BUCKET') || project.bucket,
   messagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID') || web.messagingSenderId,
   appId: getEnv('VITE_FIREBASE_APP_ID') || web.appId,
   measurementId: getEnv('VITE_FIREBASE_MEASUREMENT_ID') || web.measurementId,

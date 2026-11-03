@@ -4,11 +4,12 @@
  * must agree with it and writes them only when they differ —
  *   src/config/charter.json             the shell's copy (the checkout builds AS this charter)
  *   functions/src/charter.json          the server's copy (functions cannot import the repo)
- *   public/.well-known/lightseed.json   the node's public envelope (what a stranger may know)
  *   .firebaserc                         the project and the hosting targets
  *   firebase.json (hosting)             one entry per face, the first entry's shape as template
- * Mirrors the derivations of src/domain/charter.ts (charterPublicOf, firebasercOf, hostingOf);
- * tests/charter.test.ts holds the mirror and the written files true.
+ * Mirrors the derivations of src/domain/charter.ts (firebasercOf, hostingOf);
+ * tests/charter.test.ts holds the mirror and the written files true. The public envelope
+ * (/.well-known/lightseed.json) and robots.txt are emitted by the build itself from the charter
+ * it builds as (vite.config.ts, ring 2026-11-03), so an independent node's shell wears its own.
  *
  *   node scripts/charter-sync.mjs            # write what differs
  *   node scripts/charter-sync.mjs --check    # exit 1 if anything would change
@@ -35,12 +36,6 @@ if (!DOMAIN.test(charter.domain || '')) fail('domain is not a domain');
 if (!Array.isArray(charter.faces) || charter.faces.length === 0) fail('no faces');
 if (!charter.firebase?.projectId) fail('no firebase.projectId');
 
-const publicOf = (c) => ({
-  version: c.version, nodeLid: c.nodeLid, name: c.name, shortName: c.shortName, tagline: c.tagline,
-  domain: c.domain, aliases: [...c.aliases], repo: c.repo,
-  faces: c.faces.map((f) => ({ door: f.door, domains: [...f.domains] })),
-  push: { publicKey: c.push.publicKey },
-});
 const firebasercOf = (c) => ({
   projects: { default: c.firebase.projectId },
   targets: { [c.firebase.projectId]: { hosting: Object.fromEntries(c.faces.map((f) => [f.target, [f.site]])) } },
@@ -63,7 +58,6 @@ const put = (rel, content) => {
 console.log(`charter: ${charter.name} · ${charter.domain} · ${charter.faces.length} faces · ${charter.firebase.projectId}`);
 put('src/config/charter.json', pretty(charter));
 put('functions/src/charter.json', pretty(charter));
-put('public/.well-known/lightseed.json', pretty(publicOf(charter)));
 put('.firebaserc', pretty(firebasercOf(charter)).trimEnd());
 
 const fbPath = resolve(ROOT, 'firebase.json');

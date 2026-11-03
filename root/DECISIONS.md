@@ -6,6 +6,40 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The second node wears its own name** — The independent build read the origin's
+charter (`src/config/charter.json`, synced from the root `node.json`): its shell was titled
+Lightseed, its card and canonical pointed at lightseed.online, `robots.txt` named the origin's
+sitemap, the public envelope was the origin's, the push public key was the origin's (no push
+subscription made on another node could ever have been served), share links and the
+newsletter's home domain were the origin's, and the bundle carried the origin's Firebase
+project, API key and auth domain through the client environment. We made the build take the
+charter it builds AS — the checkout's under the Firebase soil, the installation's own
+version-2 charter (`SEED_CHARTER`, the `node.json` seed:configure wrote) under the independent
+one — and derived in one place (`domain/charter`, the shell section) everything the shell
+wears: the `%VITE_NODE_*%` words escaped once at the boundary, the structured data serialised
+from the charter (never templated by hand — `index.html` names no node any more, and a test
+holds it so), the web manifest, `robots.txt` and `/.well-known/lightseed.json`, both now
+emitted by the build for either soil (the sync no longer writes the envelope). The client's
+`config/charter` reads the independent charter at run time (`SEED_NODE_CHARTER`); the
+checkout's `charter.json` is loaded empty into that bundle, the Firebase client environment is
+not defined there, the Firebase preconnects are stripped — the walk's bundle holds no project
+id, key or auth domain of the origin. The application origin must be an https origin at a host
+the charter answers at (a port allowed), or the build refuses. REJECTED: dressing the
+independent shell after the build as the origin dresses its faces (`face-og.mjs` — a second
+mechanism for one truth, and the run-time charter would still have been the origin's);
+refusing `&`, `<`, `>` and `"` in a node's words so they could be templated raw (escape once
+instead, and serialise the structured data); keeping the two public files in `public/` beside
+the build's own (two sources of one truth); templating the structured data with placeholders
+(a quote in a name would have broken the JSON). Plain contract — guaranteed: the independent
+shell's title, card, canonical, structured data, manifest, robots, envelope, run-time origin,
+domains, keeper seat and push key are its charter's (`tests/charter.test.ts`; the local walk
+through the edge); the origin's shell is the same in substance (its twitter description and
+structured-data description are now the charter's one description); a shell is only built
+for a host its charter claims. Not guaranteed: that the words make a good card; the keywords
+meta stays the product's words, not the node's; a face host's front door on an independent
+node (`/` at a face's own domain) still wears the node's card, where the origin dresses each
+face at deploy — the being card covers `/b/`, not a face's home.
+
 **2026-11-03 · The second node shows its face** — The origin node speaks to strangers and
 crawlers through four Cloud Functions behind hosting rewrites: the being card at `/b/<door>`
 (the deployed shell with its head meta swapped to a public being), the small face picture

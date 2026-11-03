@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /u/
-
-Sitemap: https://lightseed.online/sitemap.xml
