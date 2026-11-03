@@ -647,6 +647,19 @@ migration 044 stays whole across the seam. The pictures organ is the pattern (`s
 beneath `seed/api/pictures.mjs`); `database.mjs` and the other organs follow in their own rings, and
 every new organ is written in this shape.
 
+THE LAST HANDS (migration 061, 2026-11-03). The thirteen hands that still refused by name are
+grown, and the parity count is zero. The origin's five provider hands are the realm's own doors
+reached by a redirect (`domain/issuerDoors`: an identity-provider hint, a login hint, the
+registration endpoint beside the authorization one, a required action for a verification mail, the
+realm's forgotten-password page) — the shell never carries a password, never sends a mail, never
+decides an identity. The seven one-time Firestore sweeps are the keeper's own audits and repairs
+(`POST /v1/repairs/command`, a service over a repository in the layers above) with the origin's
+names and report shapes: visibility and type casing mended, chainless visions given their genesis
+by the shared chain law, nameless records named from their birth, legacy sync blocks stamped with
+the alignment the one law names, the index audited for the nameless and for one true name on two
+beings; every statement judges the keeper, every run is idempotent, a sealed block is never touched.
+`claimSuperAdmin` answers no by the node's law: the keeper is appointed by the installation.
+
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node
 composes from plain words in the voice of its place under a daily quota, the letter of a

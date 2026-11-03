@@ -88,11 +88,12 @@ permission to ship a reduced-feature node.
    with its circle, everything its members anchor and everything placed at it (`--community`,
    2026-11-03); the origin's fossils were swept the same day. Media transport, the binding
    ceremony (explicit login rows written by the installation before the import; departed uids
-   whose traces travel as names) and identity enrollment at scale remain. Decided 2026-11-03:
-   the last thirteen refusing hands are to be ported (the issuer's doors driven through the
-   realm, the one-time backfills as the node's own audits and repairs, the first-keeper claim
-   answered by the installation's appointment), and the API gains a service layer with every
-   SQL statement in repositories — the pictures organ first, as the pattern.
+   whose traces travel as names) and identity enrollment at scale remain. The last thirteen
+   refusing hands are grown (2026-11-03, migration 061: the issuer's doors driven through the
+   realm, the one-time backfills as the keeper's own audits and repairs, the first-keeper claim
+   answered by the installation's appointment) — the parity count is zero. The API has its
+   layers (HTTP → services → repositories → domain), the pictures and repairs organs in that
+   shape; `database.mjs` and the other organs follow, ring by ring.
 6. Bootstrap authority and the first keeper without a public first-visitor claim —
    `seed:keeper` appoints the keeper from the installation (2026-11-02).
    Verify a clean Compose installation, persistence, complete backup/restore and

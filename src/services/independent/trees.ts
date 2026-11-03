@@ -5,7 +5,6 @@
 // the document door (./docs), where seed.doc_write judges each write by the law firestore.rules
 // kept — a carer edits, the head never moves from a client, a secret stays secret.
 import type * as F from '../firebase/trees';
-import { unported } from './unported';
 import { session, readDoc, readAll, currentUid, requireUid, toMillis } from './core';
 import { docGet, docList, docAll, docCommand, serverTime } from './docs';
 import { graphStore } from './store';
@@ -234,9 +233,10 @@ export const getSuperAdminUid: typeof F.getSuperAdminUid = async () => (await do
 export const checkIsSuperAdmin: typeof F.checkIsSuperAdmin = async (uid) => (await getSuperAdminUid()) === uid;
 export const SUPERADMIN_INVITE_ALLOTMENT: typeof F.SUPERADMIN_INVITE_ALLOTMENT = 144;
 // The first keeper is appointed by the installation (npm run seed:keeper — the hand that holds the
-// database), never by a public first-visitor claim: this refuses by name. The staff roster is the
+// database), never by a public first-visitor claim: this answers no. The staff roster is the
 // keeper's hand through /v1/staff/command (migration 054): the node judges who asks.
-export const claimSuperAdmin: typeof F.claimSuperAdmin = unported('trees.claimSuperAdmin');
+// THE LAST HANDS (ring 2026-11-03): the answer is the node's, not a refusal — nobody claims here, so the claim is never granted.
+export const claimSuperAdmin: typeof F.claimSuperAdmin = async () => { console.info('[lightseed] the keeper of this node is appointed by the installation (seed:keeper); nothing to claim'); return false; };
 export const grantAdmin: typeof F.grantAdmin = async (uid) => { await session.staffCommand({ action: 'grant_admin', uid }); };
 export const revokeAdmin: typeof F.revokeAdmin = async (uid) => { await session.staffCommand({ action: 'revoke_admin', uid }); };
 export const getAdmins: typeof F.getAdmins = async () => (await docAll<{ id: string }>('admins')).map(a => ({ uid: a.id }));

@@ -9,6 +9,8 @@ import {prepareBlock} from './blocks.mjs';
 import * as organs from './organs.mjs';
 import * as pictures from './pictures.mjs';
 import {picturesRepository} from './db/pictures.mjs';
+import * as repairs from './repairs.mjs';
+import {repairsRepository} from './db/repairs.mjs';
 import {seedBlockCommand} from '../../src/domain/seedBlock.mjs';
 import {verifiesRotation,verifiesRecoveryCandidate,verifiesRecoveryWitness} from './signing.mjs';
 import { seedTransactionRetry } from '../../src/domain/seedTransaction.mjs';
@@ -554,6 +556,7 @@ export function createDatabase(config) {
     // THE ORGANS (ring 2026-11-02): light, staff, the account's departure, the domain proofs and doors.
     lightCommand:(uid,command)=>organs.lightCommand(withSession,uid,command),
     staffCommand:(uid,command)=>organs.staffCommand(withSession,uid,command),
+    repairCommand:(uid,command)=>repairs.repairCommand({repository:repairsRepository(withSession),uid,command}),
     accountCommand:(uid,command)=>organs.accountCommand(withSession,uid,command),
     domainCommand:(uid,command,context)=>organs.domainCommand(withSession,uid,command,context),
     close: () => pool.end(),

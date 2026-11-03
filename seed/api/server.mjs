@@ -15,7 +15,7 @@ import { seedProfileInput } from '../../src/domain/seedProfile.mjs';
 import { createServer } from 'node:http';
 import { seedRequest } from '../../src/domain/seedRequest.mjs';
 import { seedDocCommand } from '../../src/domain/seedDocs.mjs';
-import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedInviteRequest, seedAiCommand } from '../../src/domain/seedOrgans.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedInviteRequest, seedAiCommand, seedRepairCommand } from '../../src/domain/seedOrgans.mjs';
 import { resolveTxt } from 'node:dns/promises';
 
 // The organs' own refusals (seed/schema/054), by weight.
@@ -50,14 +50,14 @@ export function createApi(database, authenticate = async () => null, options = {
         send(200,await database.docCommand(uid,command));
       }
       // THE ORGANS (ring 2026-11-02): light, staff, the account's departure, domain proofs and doors.
-      else if(['lightCommand','staffCommand','accountCommand','domainCommand','mailCommand','aiCommand'].includes(request.kind)) {
+      else if(['lightCommand','staffCommand','accountCommand','domainCommand','mailCommand','aiCommand','repairCommand'].includes(request.kind)) {
         if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??'')){send(415,{error:'json_required'});return;}
         const body=await readJsonBody(req,request.kind==='aiCommand'?4194304:request.kind==='mailCommand'?524288:4096);
         if(body.error){res.setHeader('Connection','close');send(body.status,{error:body.error});return;}
-        const command=request.kind==='lightCommand'?seedLightCommand(body.value):request.kind==='staffCommand'?seedStaffCommand(body.value):request.kind==='accountCommand'?seedAccountCommand(body.value)
+        const command=request.kind==='lightCommand'?seedLightCommand(body.value):request.kind==='staffCommand'?seedStaffCommand(body.value):request.kind==='accountCommand'?seedAccountCommand(body.value):request.kind==='repairCommand'?seedRepairCommand(body.value)
           :request.kind==='mailCommand'?seedMailCommand(body.value):request.kind==='aiCommand'?seedAiCommand(body.value):seedDomainCommand(body.value);
         if(!command){send(400,{error:'invalid_command'});return;}
-        send(200,request.kind==='lightCommand'?await database.lightCommand(uid,command):request.kind==='staffCommand'?await database.staffCommand(uid,command)
+        send(200,request.kind==='lightCommand'?await database.lightCommand(uid,command):request.kind==='staffCommand'?await database.staffCommand(uid,command):request.kind==='repairCommand'?await database.repairCommand(uid,command)
           :request.kind==='accountCommand'?await database.accountCommand(uid,command)
           :request.kind==='mailCommand'?await database.mailCommand(uid,command,options.mail??null)
           :request.kind==='aiCommand'?await database.aiCommand(uid,command,options.ai??null)

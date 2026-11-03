@@ -11,7 +11,7 @@ SET LOCAL lock_timeout = '10s';
 SET LOCAL search_path = pg_catalog;
 DO $ready$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '060_picture_release.sql') THEN
+  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '061_repairs.sql') THEN
     RAISE EXCEPTION 'Run seed:migrate before provisioning a runtime account.';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -123,6 +123,10 @@ GRANT EXECUTE ON FUNCTION seed.face_events(text) TO ${role};
 -- takes before checking its files, and the sweep's server-only doors; the holder's standing and the naming check stay the soil's.
 GRANT EXECUTE ON FUNCTION seed.media_lock(text[]), seed.picture_context(text,text,text), seed.picture_release(text,text,text),
   seed.media_orphans_due(integer), seed.media_orphan_take(text), seed.media_orphan_settle(text) TO ${role};
+-- THE LAST HANDS (ring 2026-11-03): the keeper's audits and repairs; every statement judges the keeper itself (seed.repair_gate).
+GRANT EXECUTE ON FUNCTION seed.repair_pulse_visibility(), seed.repair_pulse_type_casing(), seed.repair_tree_visibility(),
+  seed.repair_vision_chains_due(), seed.repair_vision_chain(text,text), seed.repair_lids_due(), seed.repair_lid(text,text,text),
+  seed.repair_match_ids_due(), seed.repair_alignments_of_tree(text), seed.repair_match_id(text,text), seed.repair_lid_index() TO ${role};
 COMMIT;
 `;
 }

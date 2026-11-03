@@ -21,6 +21,14 @@ export function seedStaffCommand(value) {
     || Object.keys(value).some(k => !['action', 'uid'].includes(k)) || !identifier(value.uid, 128)) return null;
   return { action: value.action, uid: value.uid };
 }
+// /v1/repairs/command (ring 2026-11-03) — THE LAST HANDS: the keeper asks the node for one of its own
+// audits and repairs, by the origin's names; `apply` rides only on the index audit, as the origin's did.
+export const SEED_REPAIR_KINDS = ['pulse_visibility', 'pulse_type_casing', 'tree_visibility', 'vision_chains', 'lids', 'match_ids', 'lid_index'];
+export function seedRepairCommand(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !SEED_REPAIR_KINDS.includes(value.kind)
+    || Object.keys(value).some(k => !['kind', 'apply'].includes(k)) || (value.apply !== undefined && typeof value.apply !== 'boolean')) return null;
+  return { kind: value.kind, ...(value.apply !== undefined ? { apply: value.apply } : {}) };
+}
 // /v1/account/command — a being erases itself (naming an heir for its light), or staff erase one.
 export function seedAccountCommand(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;

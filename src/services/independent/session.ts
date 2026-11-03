@@ -13,15 +13,20 @@ import { seedInviteCommand } from '../../domain/seedInvite.mjs';
 import { seedCommunityCommand } from '../../domain/seedCommunity.mjs';
 import { seedSessionIdentity } from '../../domain/seedBrowser';
 import { seedDocCommand } from '../../domain/seedDocs.mjs';
-import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedAiCommand } from '../../domain/seedOrgans.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedAiCommand, seedRepairCommand } from '../../domain/seedOrgans.mjs';
+import type { IssuerDoor } from '../../domain/issuerDoors';
 
 // The issuer's own claims ride beside the token: a first sign-in may take its name from them
 // (the same courtesy Firebase gave a Google name), never its identity — the API chooses the uid.
 export type LoginToken = { access_token: string; expired?: boolean; profile?: { name?: string; preferred_username?: string } };
+// THE ISSUER'S DOORS (ring 2026-11-03): sign-in may carry a door (domain/issuerDoors: a hint, a provider,
+// a required action); registration is the realm's own door beside it; the forgotten password is the realm's too.
 export interface IdentityClient {
   current(): Promise<LoginToken | null>;
   callback(url: string): Promise<LoginToken>;
-  login(): Promise<void>;
+  login(door?: IssuerDoor): Promise<void>;
+  register(door?: IssuerDoor): Promise<void>;
+  reset(): Promise<void>;
   logout(): Promise<void>;
   clear(): Promise<void>;
   changes(callback: (user: LoginToken | null) => void): () => void;
@@ -100,9 +105,9 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
         } catch { if (mine === generation) publish({ status: 'error' }); }
       })();
     },
-    async login() {
+    async login(door?: IssuerDoor) {
       const mine = ++generation; acceptChanges = false; accessToken = null; publish({ status: 'loading' });
-      try { await identity.login(); } catch { if (mine === generation) publish({ status: 'error' }); }
+      try { await identity.login(door); } catch { if (mine === generation) publish({ status: 'error' }); }
     },
     async logout() {
       const mine = ++generation; acceptChanges = false; accessToken = null; publish({ status: 'anonymous' });
@@ -160,6 +165,18 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
       const input = seedMediaReleaseInput({ url });
       if (!input) return Promise.reject(new Error('invalid_media'));
       return request('/v1/media/release', input);
+    },
+    // THE ISSUER'S DOORS (ring 2026-11-03): the realm's registration and forgotten-password doors, by redirect.
+    async register(door?: IssuerDoor) {
+      const mine = ++generation; acceptChanges = false; accessToken = null; publish({ status: 'loading' });
+      try { await identity.register(door); } catch { if (mine === generation) publish({ status: 'error' }); }
+    },
+    reset: () => identity.reset(),
+    // THE LAST HANDS (ring 2026-11-03): the keeper's audits and repairs, by the origin's names.
+    repairCommand(value: unknown) {
+      const command=seedRepairCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/repairs/command',command);
     },
     treeInviteCommand(value: unknown) {
       const command=seedTreeInviteCommand(value);

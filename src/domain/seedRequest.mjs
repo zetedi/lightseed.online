@@ -12,7 +12,8 @@ import { seedDocsQuery } from './seedDocs.mjs';
 // Bounded graph contract. Authentication is established by the server, never a query field.
 export function seedRequest(method, target, authorization, authenticated = false) {
   // THE ORGANS (ring 2026-11-02): light, staff, the account's own departure, domain proofs and doors — signed in only.
-  const organs={'/v1/light/command':'lightCommand','/v1/staff/command':'staffCommand','/v1/account/command':'accountCommand','/v1/domains/command':'domainCommand','/v1/mail/command':'mailCommand','/v1/ai/command':'aiCommand'};
+  const organs={'/v1/light/command':'lightCommand','/v1/staff/command':'staffCommand','/v1/account/command':'accountCommand','/v1/domains/command':'domainCommand','/v1/mail/command':'mailCommand','/v1/ai/command':'aiCommand',
+    '/v1/repairs/command':'repairCommand'}; // THE LAST HANDS (ring 2026-11-03): the keeper's audits and repairs
   // THE MAIL ORGAN'S PUBLIC DOORS (ring 2026-11-03): a stranger asks for an invitation; a subscriber leaves by token (GET shows a page, POST is RFC 8058 one-click).
   if(target==='/v1/invite-requests') {
     if(method!=='POST')return {error:'method_not_allowed',status:405};

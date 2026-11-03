@@ -6,6 +6,31 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The last hands** — Asked what "remove all legacy code and migrate the existing ones
+to the new db" meant, Zoltán chose: port the thirteen hands that still refused by name, and keep
+Firebase as the origin until the crossing day. The five provider hands became the REALM's own doors
+(`domain/issuerDoors`): a redirect with an identity-provider hint, a login hint, the registration
+endpoint beside the authorization one (a second OIDC client with that endpoint, sharing the state
+store, because the discovered metadata overrides a seeded endpoint), a required action for a
+verification mail, the realm's forgotten-password page — the shell never carries a password (the one
+it was handed is dropped), never sends a mail, never decides an identity, and a door's promise never
+settles, since the page is leaving. The seven one-time Firestore sweeps became the keeper's own
+audits and repairs on the node (migration 061, `POST /v1/repairs/command`, written in the layers:
+a service over a repository), with the origin's names and report shapes, because what they mend is
+what ARRIVES otherwise — the crossing's legacy records, a soil older than its rules. `claimSuperAdmin`
+answers no by the node's law. REJECTED: handling a password in the shell and posting it to the realm
+(the issuer alone sees a password); making the five hands succeed with a fake user (a promise that
+never settles is honest, a user that does not exist is not); mending a sealed block's type, visibility,
+lid or matchId (canonical content — the origin's hands skipped or predated the seals; here they are
+counted and left); a lid minted from now rather than the record's birth (the time inside a name is the
+being's own); a second copy of the alignment-match law (lifted to `domain/alignmentMatch`, the
+independent hand and the repair share it); an index to write (on this soil the index is the records).
+Plain contract — guaranteed: no hand of the independent backend refuses by name; every repair is the
+keeper's, idempotent, and leaves sealed blocks untouched; the doors never carry a password. Not
+guaranteed: a Google door at a realm without that identity provider (the realm's own error), a sign-up
+honouring an origin network invite (the node's door is the community's), the Firebase backend's own
+copy of the match law (left as it was).
+
 **2026-11-03 · The API finds its layers** — Zoltán asked for a clear separation of the backend and
 the database, the database-specific code told apart, a logic/service layer. We named the layers from
 the door inward — HTTP, services, repositories, the pure domain — and refactored the pictures organ

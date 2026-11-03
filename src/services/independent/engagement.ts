@@ -3,8 +3,8 @@
 // the matched pulse, the notes stay with the parties, acceptance mints the paired blocks); love is the
 // door's one atomic gesture; a tree's token balance moves through the door under the carer's law.
 import type * as F from '../firebase/engagement';
-import { unported } from './unported';
 import { session, readDoc, readAll, toMillis } from './core';
+import { alignmentForSyncBlock } from '../../domain/alignmentMatch';
 import { docAll, docCommand, isLoved, loveToggle } from './docs';
 import { docGet } from './docs';
 import type { Alignment } from '../../types';
@@ -30,20 +30,17 @@ export const postAlignmentNote: typeof F.postAlignmentNote = async (id, _uid, te
 };
 export const getPendingAlignments: typeof F.getPendingAlignments = async () => readAll<Alignment>(ALIGNMENTS, 'alignments', { target: 'me', status: 'PENDING' });
 export const getAlignmentById: typeof F.getAlignmentById = (id) => readDoc<Alignment>(ALIGNMENTS + '?id=' + encodeURIComponent(id), 'alignment');
+// The alignment a sync block names is one law (domain/alignmentMatch), the same the keeper's match-id repair runs.
 export const findAlignmentForSyncBlock: typeof F.findAlignmentForSyncBlock = async (treeId, blockAtMillis) => {
     const [asInitiator, asTarget] = await Promise.all([
         docAll<Alignment>('alignments', { where: { initiatorTreeId: treeId } }).catch(() => []),
         docAll<Alignment>('alignments', { where: { targetTreeId: treeId } }).catch(() => []),
     ]);
-    const byId = new Map<string, Alignment>();
-    for (const a of [...asInitiator, ...asTarget]) byId.set(a.id, a);
-    const accepted = [...byId.values()].filter(a => a.status === 'ACCEPTED');
-    if (!accepted.length) return null;
-    const at = blockAtMillis ?? Number.POSITIVE_INFINITY;
-    const before = accepted.filter(a => toMillis(a.createdAt) <= at);
-    return (before.length ? before : accepted).sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))[0] ?? null;
+    const match = alignmentForSyncBlock([...asInitiator, ...asTarget].map(a => ({ alignment: a, id: a.id, status: a.status, createdAtMs: toMillis(a.createdAt) })), blockAtMillis);
+    return match?.alignment ?? null;
 };
-export const migrateBackfillMatchIds: typeof F.migrateBackfillMatchIds = unported('engagement.migrateBackfillMatchIds');
+// THE LAST HANDS (ring 2026-11-03): the one-time match-id stamping is the keeper's repair on this node.
+export const migrateBackfillMatchIds: typeof F.migrateBackfillMatchIds = () => session.repairCommand({ kind: 'match_ids' }) as Promise<{ stamped: number; unresolved: number; skippedSealed: number }>;
 export const getMyAlignmentCount: typeof F.getMyAlignmentCount = async () =>
     (await readAll<{ id: string }>(ALIGNMENTS, 'alignments', { participant: 'me', status: 'ACCEPTED' })).length;
 export const getMyAlignmentsHistory: typeof F.getMyAlignmentsHistory = async () =>

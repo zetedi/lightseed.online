@@ -6,7 +6,6 @@
 // documents — founding with its words, editing, the collabs, a tree's invitation — goes through
 // the document door under the law. The DNS proofs and door grants wait for the domain organ.
 import type * as F from '../firebase/spaces';
-import { unported } from './unported';
 import { session, readDoc, readAll, toMillis } from './core';
 import { docGet, docList, docAll, docCommand, serverTime, deleteField } from './docs';
 import { graphStore } from './store';
@@ -106,12 +105,14 @@ export const joinCommunityWithInvite: typeof F.joinCommunityWithInvite = async (
 };
 export const getCommunityEvents: typeof F.getCommunityEvents = async (communityId) =>
     newestFirst(await readAll<Pulse>('/v1/pulses', 'pulses', { community: communityId, type: 'event' }));
-// The staff sweeps are the installation's scripts, not a browser's hands, on this node.
-export const backfillPulseVisibility: typeof F.backfillPulseVisibility = unported('spaces.backfillPulseVisibility');
-export const migratePulseTypeCasing: typeof F.migratePulseTypeCasing = unported('spaces.migratePulseTypeCasing');
-export const migrateTreeVisibility: typeof F.migrateTreeVisibility = unported('spaces.migrateTreeVisibility');
-export const backfillVisionChains: typeof F.backfillVisionChains = unported('spaces.backfillVisionChains');
-export const migrateBackfillLids: typeof F.migrateBackfillLids = unported('spaces.migrateBackfillLids');
+// THE LAST HANDS (ring 2026-11-03): the origin's one-time sweeps are the keeper's own audits and repairs
+// on this node (/v1/repairs/command, migration 061) — the same names, the same report shapes; sealed
+// blocks are never touched and are counted as skipped.
+export const backfillPulseVisibility: typeof F.backfillPulseVisibility = async () => (await session.repairCommand({ kind: 'pulse_visibility' }) as { updated: number }).updated;
+export const migratePulseTypeCasing: typeof F.migratePulseTypeCasing = async () => (await session.repairCommand({ kind: 'pulse_type_casing' }) as { updated: number }).updated;
+export const migrateTreeVisibility: typeof F.migrateTreeVisibility = async () => { const report = await session.repairCommand({ kind: 'tree_visibility' }) as { updated: number }; return { updated: report.updated }; };
+export const backfillVisionChains: typeof F.backfillVisionChains = () => session.repairCommand({ kind: 'vision_chains' }) as Promise<{ updated: number; skipped: number }>;
+export const migrateBackfillLids: typeof F.migrateBackfillLids = () => session.repairCommand({ kind: 'lids' }) as Promise<Record<string, number>>;
 // Organisation collabs — world-readable, cared for by their creator or staff.
 export const getOrgCollabs: typeof F.getOrgCollabs = async () => (await docAll<F.OrgCollab>('collabs')).sort((a, b) => (createdMs(a) || 0) - (createdMs(b) || 0));
 export const addOrgCollab: typeof F.addOrgCollab = async (data) => {

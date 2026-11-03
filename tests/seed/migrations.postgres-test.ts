@@ -2115,7 +2115,7 @@ it('runs device creation, rotation, witnessed recovery and lost-response reconci
   }};
   const client=async(uid:string)=>{
     let drop='';const user={access_token:fixture.token({sub:'issuer-'+uid})};
-    const session=createSeedSession({current:async()=>user,callback:async()=>user,login:async()=>{},logout:async()=>{},clear:async()=>{},changes:()=>()=>{}},async(path,options)=>{
+    const session=createSeedSession({current:async()=>user,callback:async()=>user,login:async()=>{},register:async()=>{},reset:async()=>{},logout:async()=>{},clear:async()=>{},changes:()=>()=>{}},async(path,options)=>{
       const response=await fetch(base+String(path),options);
       if(drop && options?.body && JSON.parse(String(options.body)).action===drop && response.ok){drop='';await response.arrayBuffer();throw new Error('response_lost');}
       return response;

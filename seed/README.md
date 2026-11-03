@@ -1715,6 +1715,29 @@ list; `seed/api/pictures.mjs` keeps the law and the refusals and no longer knows
 repository is the shape every new organ is written in. `tests/seed/pictures.postgres-test.ts` and
 `tests/seed/clock.postgres-test.ts` run unchanged through the layers.
 
+### The last hands (migration 061)
+
+The thirteen hands that still refused by name are grown (ring 2026-11-03), and the parity count is
+zero. THE ISSUER'S DOORS (`domain/issuerDoors`, `services/independent/oidc.ts`): the origin's five
+provider hands are the realm's own doors reached by a redirect — `kc_idp_hint` for a Google sign-in
+(the realm must have the identity provider), `login_hint` for an email, the realm's registration
+endpoint for a sign-up (a second OIDC client with that endpoint, sharing the state store, so the one
+callback completes it), `kc_action=VERIFY_EMAIL` for a verification mail, and the realm's
+`login-actions/reset-credentials` page for a forgotten password. The shell never carries a password,
+never sends a mail, never decides an identity; a door's promise never settles, since the page is
+leaving. THE REPAIRS (`seed/schema/061_repairs.sql`, `POST /v1/repairs/command`, the service
+`seed/api/repairs.mjs` over the repository `seed/api/db/repairs.mjs`, in the layers above): the seven
+one-time Firestore sweeps become the keeper's own audits and repairs with the origin's names and
+report shapes — `pulse_visibility`, `pulse_type_casing`, `tree_visibility`, `vision_chains` (the
+genesis sealed from the vision's own birth by the shared chain law), `lids` (minted from the record's
+birth moment), `match_ids` (the alignment the one law names, `domain/alignmentMatch`) and `lid_index`
+(the nameless, and one true name on two beings; nothing is written, the index being the records).
+Every statement judges the keeper (`seed.repair_gate`), every run is idempotent, and a sealed block
+is never touched — its type, visibility, lid and matchId are canonical content — and is counted as
+skipped. What these hands mend is what arrived otherwise: the crossing's legacy records, a soil older
+than its rules. `claimSuperAdmin` answers no by the node's law: the keeper is appointed by the
+installation (`seed:keeper`). `tests/repairs.test.ts`, `tests/seed/repairs.postgres-test.ts`.
+
 ### The mail organ (migration 056)
 
 How letters leave this node. The origin node writes a `mail` document the Trigger Email

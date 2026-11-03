@@ -6,7 +6,6 @@
 // exist on this soil (the issuer's door stands instead) and refuse by name, never reaching for
 // the origin node.
 import type * as F from '../firebase/accounts';
-import { unported } from './unported';
 import { session, currentUid, requireUid, toMillis } from './core';
 import { docGet, docList, docAll, docCommand, serverTime } from './docs';
 import { seedPublicWrite } from './public';
@@ -74,12 +73,16 @@ export const setAnonymous: typeof F.setAnonymous = async (uid, value) => {
     await docCommand({ action: 'set', collection: 'users', id: uid, merge: true, data: { anonymous: value, updatedAt: serverTime() } });
     await docCommand({ action: 'set', collection: 'persons', id: uid, merge: true, data: { anonymous: value } });
 };
-// Sign-in is the issuer's door on this node (core.authCapabilities): these provider hands do not exist here.
-export const signInWithGoogle: typeof F.signInWithGoogle = unported('accounts.signInWithGoogle');
-export const signUpWithEmail: typeof F.signUpWithEmail = unported('accounts.signUpWithEmail');
-export const signInWithEmail: typeof F.signInWithEmail = unported('accounts.signInWithEmail');
-export const sendVerificationEmail: typeof F.sendVerificationEmail = unported('accounts.sendVerificationEmail');
-export const resetPassword: typeof F.resetPassword = unported('accounts.resetPassword');
+// THE ISSUER'S DOORS (ring 2026-11-03): the origin's five provider hands are the REALM's doors on this
+// node, each a redirect (domain/issuerDoors): the shell never carries a password — the one it was
+// handed is dropped here, the realm asks for its own — never sends a mail, never decides an identity.
+// A door's promise never settles: the page is leaving, and no caller may proceed with a hand it has not got.
+const leaving = <T>(): Promise<T> => new Promise<T>(() => undefined);
+export const signInWithGoogle: typeof F.signInWithGoogle = async () => { await session.login({ provider: 'google' }); return leaving(); };
+export const signInWithEmail: typeof F.signInWithEmail = async (email) => { await session.login({ hint: email }); return leaving(); };
+export const signUpWithEmail: typeof F.signUpWithEmail = async (email) => { await session.register({ hint: email }); return leaving(); };
+export const sendVerificationEmail: typeof F.sendVerificationEmail = async () => { await session.login({ action: 'VERIFY_EMAIL' }); return leaving(); };
+export const resetPassword: typeof F.resetPassword = async () => { await session.reset(); return leaving(); };
 
 // --- Network onboarding invites ---------------------------------------------------------
 export const createNetworkInvite: typeof F.createNetworkInvite = async (email, invitedByUserId, message = '', opts) => {

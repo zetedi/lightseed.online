@@ -8,7 +8,8 @@ function setup(fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({
   let change: (user: LoginToken | null) => void = () => {};
   const identity: IdentityClient = {
     current: vi.fn().mockResolvedValue(user), callback: vi.fn().mockResolvedValue(user),
-    login: vi.fn().mockResolvedValue(undefined), logout: vi.fn().mockResolvedValue(undefined), clear: vi.fn().mockResolvedValue(undefined),
+    login: vi.fn().mockResolvedValue(undefined), register: vi.fn().mockResolvedValue(undefined), reset: vi.fn().mockResolvedValue(undefined),
+    logout: vi.fn().mockResolvedValue(undefined), clear: vi.fn().mockResolvedValue(undefined),
     changes: cb => { change = cb; return () => {}; },
   };
   const session = createSeedSession(identity, fetcher);

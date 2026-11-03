@@ -38,6 +38,8 @@ export {crossingCharterProblem} from './crossingCharter';
 export {portableValue,originSnapshot,originIdentities,pruneBrokenChains,ORIGIN_GROUPS} from './originBundle';
 // THE WORLD OF A COMMUNITY (ring 2026-11-03): one community leaves a node by the same bundle law.
 export {communityCrossing,placeResolverOf,CIRCLE_RELS} from './communityCrossing';
+// THE LAST HANDS (ring 2026-11-03): the alignment a legacy sync block names, for the keeper's match-id repair.
+export {alignmentForSyncBlock} from './alignmentMatch';
 // THE MAIL ORGAN (ring 2026-11-03): the voice, the letters, the audience and the sender's name, so the
 // courier (seed/api/mail.mjs) writes the same letters the functions write for the origin node.
 export {mailVoiceOf,dressMailText} from './mailVoice';
