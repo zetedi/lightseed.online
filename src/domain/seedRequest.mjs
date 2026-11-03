@@ -24,6 +24,22 @@ export function seedRequest(method, target, authorization, authenticated = false
     const token=target.slice(3);
     return /^[A-Za-z0-9_-]{16,128}$/.test(token)?{kind:'unsubscribe',token,method}:{error:'not_found',status:404};
   }
+  // THE FACE OF THE NODE (ring 2026-11-03): the public doors a stranger or a crawler opens — the being card
+  // (/b/<door>), its small picture (/face/<door>.jpg), the living sitemap and the face feed. GET alone; a
+  // bearer is neither required nor read (the same doors the origin serves from hosting rewrites).
+  if(typeof target==='string' && /^\/(?:b\/|face\/|sitemap\.xml(?:$|\?)|faceEvents(?:$|\?))/.test(target)) {
+    if(method!=='GET' && method!=='HEAD')return {error:'method_not_allowed',status:405};
+    if(target.length>4096)return {error:'invalid_request',status:400};
+    let url;
+    try { url=new URL(target,'http://node.invalid'); } catch { return {error:'invalid_request',status:400}; }
+    if(url.pathname==='/sitemap.xml')return {kind:'sitemap'};
+    if(url.pathname==='/faceEvents')return {kind:'faceEvents',domain:url.searchParams.get('domain')};
+    const card=(url.pathname.match(/^\/b\/([0-9a-zA-Z-]{8,})\/?$/)||[])[1];
+    if(card)return {kind:'beingCard',door:card};
+    const picture=(url.pathname.match(/^\/face\/([0-9a-zA-Z-]{8,})(?:\.jpe?g)?\/?$/)||[])[1];
+    if(picture)return {kind:'facePicture',door:picture};
+    return {error:'not_found',status:404};
+  }
   if(['/v1/events/command','/v1/alignments/command','/v1/links/command','/v1/visions/command','/v1/signing/command','/v1/blocks/command','/v1/offerings/command'].includes(target) || Object.hasOwn(organs,target)) {
     if(method!=='POST')return {error:'method_not_allowed',status:405};
     if(!authenticated)return {error:authorization?'invalid_token':'authentication_required',status:401};

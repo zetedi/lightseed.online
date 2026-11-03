@@ -1736,3 +1736,38 @@ SEED_CLOCK_INTERVAL_MS=60000
 `tests/seed/clock.postgres-test.ts` moves the clock's moment by hand across days and asserts the
 ledger, every thirst outcome, the leaf's hash against the shared chain law, and the caps. To see a
 run on a live node: `UPDATE seed.clock SET due_at=now()` as the owner and read the row a minute later.
+
+### The face of the node (migration 059)
+
+What the node says to whoever stands at it without signing in — the origin's four hosting-rewrite
+functions (being card, face picture, sitemap, face feed) on this soil (`seed/api/face.mjs` over
+`seed/schema/059_face.sql`; the law in `domain/facePage`, `domain/facePreview`, `domain/faceEvents`;
+`seed/Caddyfile` proxies `/b/*`, `/face/*`, `/sitemap.xml` and `/faceEvents` to the API):
+
+- **The being card** — `/b/<door>` hands everyone the same built shell with its head meta (title,
+  description, canonical, Open Graph, Twitter) swapped to a PUBLIC being's own name, words and
+  picture, so a shared link unfurls as the being and a search engine indexes it; a human's shell
+  boots and opens the door as before. The being is read as a stranger reads (the runtime role under
+  the row policies, no session) and the origin's card gate is applied on top; anything not public, or
+  unknown, is the unmodified shell. The shell comes from disk: Compose mounts the built application
+  (`SEED_APP_DIST`) read-only into the API at `SEED_SHELL_DIR=/srv/app`. A public Light House carries
+  a JSON-LD Place with its coordinates. The card names its place (the community at the being's domain).
+- **The face picture** — `/face/<door>.jpg?v=<digest>` is the small JPEG behind the card (≤250 KB,
+  ≤1200 px, the origin's ladder), made once from the node's own media by path or from a foreign
+  `https` picture — whose address is looked up first and refused at any loopback, private,
+  link-local or reserved range, no redirect followed, bounded in size and time — and kept under
+  the media directory (`previews/<lid>/<digest>.jpg`; a new picture is a new digest and a new URL).
+  Every miss, and every render beyond two at once, answers a redirect to the node's `og.png`.
+- **The sitemap** — `/sitemap.xml` lists home and every explicitly public tree, Light House and
+  vision as `/b/<lid>`, newest first, 500 at most. (`robots.txt` in the independent build still
+  names the origin's sitemap: a build-time item, see PARITY.)
+- **The face feed** — `/faceEvents?domain=<face>` answers a mother site (CORS open) with the cradle's
+  public AND node gatherings — a visitor at the face is at the node — shaped to the origin's seven
+  fields by the shared law, soonest first; `seed.face_events` is the server-only door behind it.
+- **The edge stands in** — should the API answer 5xx or nothing at all, Caddy serves the plain shell
+  at `/b/*` and `og.png` at `/face/*` itself: never a broken page, never a leaked name.
+
+The face is grown when the node knows its origin (`SEED_NODE_ORIGIN`); the host that enters a card's
+URLs is only one the node serves (its origin, `SEED_FACE_DOORS`, the charter's domains), any other
+collapses to the node's own. `tests/seed/face.postgres-test.ts` walks every door against real
+PostgreSQL through the API with no bearer anywhere.

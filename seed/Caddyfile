@@ -39,6 +39,54 @@
 	handle /u/* {
 		reverse_proxy api:8081
 	}
+	# THE FACE OF THE NODE (migration 059): the being card (/b/<door>, the shell with its head meta
+	# swapped to a public being), its small picture, the living sitemap and the face feed are the
+	# API's. Should the API fall silent — a 5xx answer, or no answer at all — the plain shell (or
+	# og.png) stands in: never a broken page, never a leaked name.
+	handle /b/* {
+		reverse_proxy api:8081 {
+			@silent status 500 502 503 504
+			handle_response @silent {
+				root * /srv/app
+				rewrite * /index.html
+				file_server
+			}
+		}
+	}
+	handle /face/* {
+		reverse_proxy api:8081 {
+			@silent status 500 502 503 504
+			handle_response @silent {
+				root * /srv/app
+				rewrite * /og.png
+				file_server
+			}
+		}
+	}
+	handle /sitemap.xml {
+		reverse_proxy api:8081
+	}
+	handle /faceEvents {
+		reverse_proxy api:8081
+	}
+	handle_errors {
+		@card path /b/*
+		handle @card {
+			root * /srv/app
+			rewrite * /index.html
+			file_server {
+				status 200
+			}
+		}
+		@picture path /face/*
+		handle @picture {
+			root * /srv/app
+			rewrite * /og.png
+			file_server {
+				status 200
+			}
+		}
+	}
 	handle {
 		root * /srv/app
 		@assets path /assets/*

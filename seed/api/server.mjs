@@ -25,7 +25,7 @@ const ORGAN_ERRORS={LS003:[404,'community_missing'],LS050:[409,'not_watering'],L
   LS063:[409,'door_already'],LS064:[409,'no_challenge'],LS065:[409,'challenge_expired'],LS066:[409,'domain_changed'],LS067:[429,'mail_quota'],LS068:[429,'ai_quota']};
 const escapeHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /** @param {*} database @param {(authorization: string) => Promise<string | null>} [authenticate]
- * @param {{nodeDomain: string | null, media?: *, faceDoors?: string[], resolveTxt?: (name: string) => Promise<string[][]>, mail?: * | null, ai?: * | null}} [options] */
+ * @param {{nodeDomain: string | null, media?: *, faceDoors?: string[], resolveTxt?: (name: string) => Promise<string[][]>, mail?: * | null, ai?: * | null, face?: * | null}} [options] */
 export function createApi(database, authenticate = async () => null, options = { nodeDomain: null }) {
   const server = createServer({ maxHeaderSize: 8192 }, async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -82,6 +82,12 @@ export function createApi(database, authenticate = async () => null, options = {
           +`<body style="font-family:sans-serif;text-align:center;padding:48px;color:#334155;"><h2 style="color:#059669;font-weight:300;letter-spacing:1px;">${escapeHtml(name)}</h2>`
           +(released?`<p>You have been unsubscribed from this letter.</p><p style="color:#9ca3af;font-size:13px;">You can resubscribe anytime from your profile.</p>`
             :`<p>This unsubscribe link is not known here.</p><p style="color:#9ca3af;font-size:13px;">It may have been used already, or belong to another node.</p>`)+`</body></html>`);
+      }
+      // THE FACE OF THE NODE (ring 2026-11-03): the being card, its small picture, the living sitemap and the face feed — grown
+      // when the node knows its origin; the edge serves the shell itself (or og.png) whenever these answer 5xx.
+      else if(['beingCard','facePicture','sitemap','faceEvents'].includes(request.kind)) {
+        if(!options.face){send(503,{error:'face_unavailable'});return;}
+        await options.face.answer(request,req,res);
       }
       else if (request.kind === 'docs') {
         const result=await database.docs(request,uid);

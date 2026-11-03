@@ -6,6 +6,38 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The second node shows its face** — The origin node speaks to strangers and
+crawlers through four Cloud Functions behind hosting rewrites: the being card at `/b/<door>`
+(the deployed shell with its head meta swapped to a public being), the small face picture
+behind it, the living sitemap and the face feed for mother sites; the independent node served
+the plain shell at every door, so a shared link showed the generic card and no search engine
+could find a public tree. We grew THE FACE OF THE NODE (migration 059, `seed/api/face.mjs`,
+the law in `domain/facePage` beside the shared `domain/facePreview` and `domain/faceEvents`).
+The card reads the being as a STRANGER reads — the runtime role under the row policies with no
+session — and applies the origin's card gate on top (a bed's absent visibility is not public,
+a Light House needs an explicit public, an addressed reach never), so a private name cannot
+leak through either door alone. The shell is mounted read-only beside the API and read from
+disk — the origin's mirror-guard lesson (a function fetching its own shell through its own
+address looped twenty-two million times) made a network fetch unthinkable. A foreign picture
+is fetched only by https, only after its address is looked up and found public (no loopback,
+private, link-local, carrier or reserved range), never following a redirect, bounded in size
+and time: the node's picture-maker must not become a door into the node's own network.
+Should the API answer 5xx or nothing, the edge serves the plain shell (or og.png) itself —
+never a broken page. REJECTED: letting the card lean on the row policies alone (a bed with an
+absent visibility is readable by a stranger under 051 — recorded here as a known looseness of
+the policies, not of the card); rendering the card in the browser (a crawler runs no script);
+fetching the shell from the edge (the loop); a face picture from any http URL as the origin
+allows (plaintext from the server, and the private-address hole); an OPTIONS preflight on the
+feed (a plain cross-origin GET needs none, as the origin's embed proves). Plain contract —
+guaranteed: a being not public to a stranger never names itself on a card, a picture or the
+sitemap (`tests/seed/face.postgres-test.ts`, `tests/facePage.test.ts`); every value entering
+the shell is escaped once and never expanded as a replacement pattern; a forged Host never
+enters a URL; a foreign fetch never reaches a private address as resolved at the time; the
+feed carries exactly the seven fields the origin's does. Not guaranteed: a DNS answer that
+changes between the lookup and the fetch; that a crawler honours any of it; the independent
+build's generic card and robots.txt still wear the origin charter (the build reads
+`src/config/charter.json`, not the node's charter) — a build-time item, named in PARITY.
+
 **2026-11-03 · The second node keeps time** — The origin node's two scheduled hands run on
 Cloud Scheduler (the thirst check every morning at 08:00 Brussels, the stay leaves every night
 at 03:00) and its planting caps are a trigger that uproots an over-cap newborn after the fact;

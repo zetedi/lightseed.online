@@ -75,3 +75,21 @@ it('exposes held tree-invitation lookup but requires identity for lists and comm
   expect(seedRequest('POST','/v1/tree-invites/command',undefined)).toMatchObject({status:401});
   expect(seedRequest('POST','/v1/tree-invites/command','Bearer verified',true)).toMatchObject({kind:'treeInviteCommand'});
 });
+
+describe('the face of the node', () => {
+  it('opens the four public doors by GET alone, reading no bearer', () => {
+    expect(seedRequest('GET', '/b/033oN66moGj2LLRqK2R76R', undefined)).toEqual({ kind: 'beingCard', door: '033oN66moGj2LLRqK2R76R' });
+    expect(seedRequest('GET', '/b/019f57e8-878a-75ff-be0e-7d3913b4b2f3/', 'Bearer forged', false)).toEqual({ kind: 'beingCard', door: '019f57e8-878a-75ff-be0e-7d3913b4b2f3' });
+    expect(seedRequest('HEAD', '/b/033oN66moGj2LLRqK2R76R', undefined)).toMatchObject({ kind: 'beingCard' });
+    expect(seedRequest('GET', '/face/033oN66moGj2LLRqK2R76R.jpg?v=abc', undefined)).toEqual({ kind: 'facePicture', door: '033oN66moGj2LLRqK2R76R' });
+    expect(seedRequest('GET', '/face/033oN66moGj2LLRqK2R76R', undefined)).toMatchObject({ kind: 'facePicture' });
+    expect(seedRequest('GET', '/sitemap.xml', undefined)).toEqual({ kind: 'sitemap' });
+    expect(seedRequest('GET', '/faceEvents?domain=theohouse.org', undefined)).toEqual({ kind: 'faceEvents', domain: 'theohouse.org' });
+    expect(seedRequest('GET', '/faceEvents', undefined)).toEqual({ kind: 'faceEvents', domain: null });
+    for (const target of ['/b/', '/b/short', '/b/..%2F..%2Fetc', '/face/x.png', '/face/', '/faceEventsX', '/sitemap.xml.bak']) {
+      expect(seedRequest('GET', target, undefined), target).toMatchObject({ status: 404 });
+    }
+    expect(seedRequest('POST', '/b/033oN66moGj2LLRqK2R76R', undefined)).toMatchObject({ status: 405 });
+    expect(seedRequest('POST', '/faceEvents', undefined)).toMatchObject({ status: 405 });
+  });
+});

@@ -11,7 +11,7 @@ SET LOCAL lock_timeout = '10s';
 SET LOCAL search_path = pg_catalog;
 DO $ready$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '058_clock.sql') THEN
+  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '059_face.sql') THEN
     RAISE EXCEPTION 'Run seed:migrate before provisioning a runtime account.';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -117,6 +117,8 @@ GRANT EXECUTE ON FUNCTION seed.credential_save(text,text,text,text,text,text,tex
 -- THE CLOCK (ring 2026-11-03): the ledger's take and settle, the thirst's facts and touch, the leaves' due list and seal — server-only doors the clock alone drives.
 GRANT EXECUTE ON FUNCTION seed.clock_take(timestamptz,integer), seed.clock_settle(text,timestamptz,text,jsonb), seed.thirst_trees(), seed.thirst_apply(text,jsonb,text,jsonb,boolean),
   seed.stay_leaves_due(text), seed.stay_leaf_apply(text,jsonb) TO ${role};
+-- THE FACE OF THE NODE (ring 2026-11-03): the face feed's door; the card and the sitemap read as a stranger under the row policies.
+GRANT EXECUTE ON FUNCTION seed.face_events(text) TO ${role};
 COMMIT;
 `;
 }

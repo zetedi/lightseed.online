@@ -8,7 +8,9 @@ import { createMailOrgan, smtpTransportOptions } from './mail.mjs';
 import { createAiOrgan, createCredentialCipher } from './ai.mjs';
 import { createAiRails } from './aiRails.mjs';
 import { createClock } from './clock.mjs';
+import { createFace } from './face.mjs';
 import { CLOCK_DEFAULT_TIME_ZONE, isTimeZone } from '../generated/chain.mjs';
+import { join } from 'node:path';
 import nodemailer from 'nodemailer';
 import webpush from 'web-push';
 
@@ -93,7 +95,17 @@ let ai = null;
 const timeZone = process.env.SEED_CLOCK_TIMEZONE || CLOCK_DEFAULT_TIME_ZONE;
 if (!isTimeZone(timeZone)) { console.error('Invalid SEED_CLOCK_TIMEZONE (an IANA zone such as Europe/Brussels).'); await database.close(); process.exit(1); }
 const clock = createClock({ withSession: database.withSession, timeZone, notify: mail !== null });
-const server = createApi(database, authenticate, { nodeDomain, media, faceDoors, mail, ai });
+// THE FACE OF THE NODE (ring 2026-11-03): grown when the node knows its origin (SEED_NODE_ORIGIN) — the being
+// card needs the built shell mounted beside the API (SEED_SHELL_DIR, Compose mounts the application's dist),
+// the face picture a media directory to keep its previews in; the sitemap and the face feed need neither.
+let face = null;
+if (nodeDomain) {
+  face = createFace({ withSession: database.withSession, mediaGet: database.mediaGet, media: media ?? null, shellDir: process.env.SEED_SHELL_DIR || null,
+    cacheDir: process.env.SEED_MEDIA_DIR ? join(process.env.SEED_MEDIA_DIR, 'previews') : null,
+    hosts: [...faceDoors, ...(mail?.ownDomains ?? [])], nodeDomain, nodeName: mail?.name ?? nodeDomain });
+  if (!process.env.SEED_SHELL_DIR) console.warn('No SEED_SHELL_DIR: the being card answers shell_unavailable and the edge serves the plain shell instead.');
+} else console.warn('No SEED_NODE_ORIGIN: the face is not grown; /b/, /face/, /sitemap.xml and /faceEvents refuse by name (face_unavailable).');
+const server = createApi(database, authenticate, { nodeDomain, media, faceDoors, mail, ai, face });
 courier?.start(Number(process.env.SEED_COURIER_INTERVAL_MS) || 15000);
 clock.start(Number(process.env.SEED_CLOCK_INTERVAL_MS) || 60000);
 server.on('error', async () => {

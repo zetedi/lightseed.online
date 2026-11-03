@@ -44,6 +44,8 @@ services:
       # THE CLOCK (ring 2026-11-03): the installation's zone for the scheduled hands, and the tick.
       SEED_CLOCK_TIMEZONE: ${SEED_CLOCK_TIMEZONE:-Europe/Brussels}
       SEED_CLOCK_INTERVAL_MS: ${SEED_CLOCK_INTERVAL_MS:-60000}
+      # THE FACE (ring 2026-11-03): the built shell, mounted read-only, is what the being card dresses — never fetched over the network.
+      SEED_SHELL_DIR: /srv/app
     ports:
       - '127.0.0.1:${SEED_API_PORT:-8081}:8081'
     depends_on:
@@ -53,6 +55,7 @@ services:
       - media_data:/app/media
       # The charter directory holds node.json (seed:configure's output); an empty one means no mail organ, said at startup.
       - ${SEED_CHARTER_DIR:-./charter}:/app/charter:ro
+      - ${SEED_APP_DIST:-../dist-independent}:/srv/app:ro
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]

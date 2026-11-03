@@ -68,8 +68,12 @@ permission to ship a reduced-feature node.
    for: a leased ledger of jobs the API process runs in the installation's zone — the morning
    thirst (one standing ask per tree, the courier notified) and the nightly stay leaves (sealed
    with the canonical hash under the bed's lock) — plus the planting caps enforced at the insert
-   (2026-11-03). Still refusing by name: cross-node SSO, previews/feeds/sitemap, picture
-   release, the one-time Firestore backfills.
+   (2026-11-03). THE FACE OF THE NODE (059) is what the node says to strangers and crawlers:
+   the being card on the built shell for public beings alone, the small face picture behind
+   it (made once, address-guarded for foreign sources), the living sitemap and the face feed
+   for mother sites, the edge standing in with the plain shell when the API is silent
+   (2026-11-03). Still refusing by name: cross-node SSO, picture release, the one-time
+   Firestore backfills.
 5. Implement complete signed exports, identity enrollment, media transport,
    transactional import execution and conflict resolution. `seed:export` and
    `seed:import` (055) now export a sealed bundle and land it additively in one

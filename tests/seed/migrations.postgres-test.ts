@@ -2958,7 +2958,8 @@ it('upgrades portable-name indexes without rewriting malformed imported identiti
   await migrate();
   expect(sql("SELECT length(doc->>'lid') FROM lifetrees WHERE id='oversized';")).toBe('32000');
   expect(sql(`SELECT count(*) FROM lifetrees WHERE doc->>'lid'='${lid}';`)).toBe('2');
-  expect(sql("SELECT count(*) FROM pg_indexes WHERE indexname LIKE '%_lid_lookup';")).toBe('4');
+  // 049's four finding aids and the Light House's (059), every one bounded to a well-formed name.
+  expect(sql("SELECT count(*) FROM pg_indexes WHERE indexname LIKE '%_lid_lookup';")).toBe('5');
   sql(`INSERT INTO lifetrees VALUES ('another-oversized',jsonb_build_object('lid',(SELECT string_agg(md5(i::text),'') FROM generate_series(1,1000) i)));`);
   await migrate();
 });

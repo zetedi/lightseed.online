@@ -553,9 +553,23 @@ face — the standing ask rewritten while it stands, else a new reach in the gua
 (`domain/stayLeaf`): every completed stay becomes a leaf on its bed's chain, the origin's
 record field for field, sealed with the canonical hash and applied under the bed's lock
 (`seed.stay_leaf_apply`, a moved head refused). The planting caps are enforced at the insert
-by the soil itself (`seed.tree_caps_on_insert`), through any door. Still refusing by name:
-the one-time Firestore backfills, cross-node SSO, previews and feeds, picture release, the
-issuer's own sign-in hands.
+by the soil itself (`seed.tree_caps_on_insert`), through any door.
+
+THE FACE OF THE NODE (migration 059, 2026-11-03). What the independent node says to whoever
+stands at it without signing in — the origin's four hosting-rewrite functions on this soil
+(`seed/api/face.mjs`, the law in `domain/facePage` with the shared `domain/facePreview` and
+`domain/faceEvents`; the edge proxies `/b/*`, `/face/*`, `/sitemap.xml` and `/faceEvents` to
+the API). The being card hands everyone the built shell — mounted read-only beside the API,
+never fetched over the network — with its head meta swapped to a PUBLIC being's own name,
+words and picture: the being read as a stranger reads (the runtime role under the row
+policies, no session) and the origin's card gate on top; anything else is the unmodified
+shell, never a leaked name. The face picture is a small JPEG the node makes once from its own
+media or from a foreign https picture behind an address guard (no loopback, private or
+reserved address, no redirect followed) and keeps beside the media. The sitemap lists the
+explicitly public. The face feed speaks a cradle's public and node gatherings to its mother
+site through the shared feed law as the last gate. Should the API fall silent, the edge
+serves the plain shell itself. Still refusing by name: the one-time Firestore backfills,
+cross-node SSO, picture release, the issuer's own sign-in hands.
 
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node

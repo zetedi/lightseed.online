@@ -49,3 +49,7 @@ export {AI_RAIL_PROVIDERS,AI_DEFAULT_MODEL,AI_MAX_TOKENS,AI_RATE_LIMIT_RETRIES,A
 export {CLOCK_JOBS,CLOCK_JOB_NAMES,CLOCK_DEFAULT_TIME_ZONE,CLOCK_LEASE_MS,isTimeZone,localDateOf,nextClockDueMs} from './clock';
 export {judgeThirst,waterMeText,guardiansThreadIdOf,momentMsOf} from './thirst';
 export {stayLeafIsDue,bedHeadOf,stayLeafRecordOf} from './stayLeaf';
+// THE FACE OF THE NODE (ring 2026-11-03): the card gate and shape, the host, the picture source, the shell swap, the sitemap, the feed.
+export {lidOfDoor,isPublicBeing,publicCardOf,canonicalHostOf,cardDescriptionOf,faceSourceOf,isPublicAddress,shareCardOf,shellCardOf,sitemapXmlOf,SITEMAP_MAX_BEINGS} from './facePage';
+export {facePreviewAttempts,facePreviewKeyOf,FACE_PREVIEW_MAX_BYTES} from './facePreview';
+export {faceFeedOf,feedDomainOf} from './faceEvents';
