@@ -59,7 +59,7 @@ const people = (sql: (q: string) => string) => sql(`
   INSERT INTO persons VALUES ('alice','{"uid":"alice","lid":"${LID(1)}","displayName":"Alice"}'),('bob','{"uid":"bob","lid":"${LID(2)}","displayName":"Bob"}'),
     ('carol','{"uid":"carol","lid":"${LID(3)}","displayName":"Carol","anonymous":true}'),('staff','{"uid":"staff","lid":"${LID(4)}","displayName":"Staff"}'),('dave','{"uid":"dave","lid":"${LID(5)}","displayName":"Dave"}');
   INSERT INTO admins VALUES ('staff','{}');
-  INSERT INTO communities VALUES ('c1','{"lid":"${LID(31)}","name":"The O House","anchorUid":"alice","domain":"theohouse.org","door":"invite","createdAt":"2026-01-01T00:00:00.000000Z",
+  INSERT INTO communities VALUES ('c1','{"lid":"${LID(31)}","name":"The O House","anchorUid":"alice","domain":"theohouse.org","domainVerification":{"domain":"theohouse.org","method":"dns_txt","verifiedAt":"2026-01-01T00:00:00.000000Z"},"door":"invite","createdAt":"2026-01-01T00:00:00.000000Z",
     "theme":{"primary":"#7B9476","text":"#504243","background":"#FEF8F3"},"mail":{"greeting":"Dear friend,","signature":"With gratitude,\\nThe O House","footer":"The O House · a garden"}}'),
     ('c2','{"lid":"${LID(32)}","name":"Example node","anchorUid":"alice","domain":"node.example","door":"open","createdAt":"2026-01-02T00:00:00.000000Z"}');`);
 

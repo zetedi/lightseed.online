@@ -64,9 +64,16 @@ describe('the media crossing', () => {
 
       // The files first, then the crossing with the manifests inside it.
       const targetStoreDir = join(root, 'target');
-      expect(await landMediaFiles(beside, targetStoreDir, sidecar.hashes)).toBe(3);
-      expect(await landMediaFiles(beside, targetStoreDir, sidecar.hashes)).toBe(0); // already there, by name
+      expect(await landMediaFiles(beside, targetStoreDir, sidecar.hashes)).toEqual(sidecar.hashes);
+      expect(await landMediaFiles(beside, targetStoreDir, sidecar.hashes)).toEqual([]); // already there, by name
+      await expect(landMediaFiles(swapped, join(root, 'elsewhere'), sidecar.hashes)).rejects.toMatchObject({ code: 'media_unsound' }); // held to its name as it is written
       await dst.query("INSERT INTO seed.identity_bindings(issuer,subject,uid,binding_kind) VALUES ('https://issuer.example','s-alice','alice','explicit')");
+      // A different picture already standing at the same path on the shore blocks the crossing before anything lands (the review's mending).
+      await dst.query(`INSERT INTO seed.media_objects VALUES ('users/alice/photo_1.png','${JSON.stringify(orphan)}')`);
+      const blocked = await cross(dst, { incoming: bundle, anchor, identities: [{ sourceUid: 'alice', targetUid: 'alice', personLid: LID(1) }], apply: true, media: manifests });
+      expect(blocked.applied).toBe(false);
+      expect(blocked.plan.issues).toEqual([{ code: 'media_conflict', path: 'users/alice/photo_1.png', detail: 'A different picture already stands at this path on this node.' }]);
+      await dst.query("DELETE FROM seed.media_objects WHERE path='users/alice/photo_1.png'");
       const crossing = await cross(dst, { incoming: bundle, anchor, identities: [{ sourceUid: 'alice', targetUid: 'alice', personLid: LID(1) }], apply: true, media: manifests });
       expect(crossing.plan.issues).toEqual([]);
       expect(crossing.applied).toBe(true); expect(crossing.inserted).toBe(2); expect(crossing.pictures).toBe(1);

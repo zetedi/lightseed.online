@@ -85,14 +85,19 @@ secrets — under `config/` with their own paths). A `manifest.json` names every
 and sha256, the migration the soil stands at and the commit the hand ran from; a part whose service
 is not running is left out and said so (`--without-media`, `--without-identity` leave one out on
 purpose). `seed:restore` holds the backup to its manifest first — every file present, its size and
-digest its own — and refuses otherwise; then it lands part by part, each only where nothing stands:
+digest its own — and refuses otherwise; then it looks at EVERY place before anything is written and
+refuses as one report if any part would land where something stands; then it lands part by part:
 the database into an EMPTY database (`--database`, `lightseed` by default; it must exist and carry
-no `seed` schema — a soil is never written over), the media into the API's store (or `--media-dir`
-for a look before trusting), the identity into an EMPTY issuer database, the configuration files
-only where none stands (what was skipped is named). Afterwards provision the runtime role anew and
-restart the API. Proven on the local node: a backup restored into a scratch database and directory
-carried the same counts of records, pictures and bindings; `tests/seedKeeping.test.ts` holds the
-manifest law. Not in a backup by design: the custodian's Ed25519 key (it never enters the node),
+no `seed` schema — a soil is never written over; one transaction, so a failed dump leaves nothing),
+the media into the API's EMPTY store (or `--media-dir`, a new or empty directory, for a look before
+trusting; a standing file is never replaced), the identity into an EMPTY issuer database (one
+transaction), the configuration files only where none stands (what was skipped is named). A part
+that already stands is left out with its flag (`--without-database`, `--without-media`,
+`--without-identity`, `--without-config`), so a restore stopped halfway is finished, never redone
+over itself. Afterwards provision the runtime role anew and restart the API. Proven on the local
+node: a backup restored into a scratch database and directory carried the same counts of records,
+pictures and bindings, and a restore over the standing node was refused in one report naming the
+soil, the store and the realm; `tests/seedKeeping.test.ts` holds the manifest law. Not in a backup by design: the custodian's Ed25519 key (it never enters the node),
 the TLS certificates (ACME issues them anew) and the edge's own state.
 
 The node's **export ceremony** (in-app, staff admin card) remains the human-readable
@@ -328,8 +333,12 @@ THE BINDING CEREMONY (ring 2026-11-03, migration 062): when the API boots, every
 file becomes a durable row (`seed.bind_explicit`), not only when the person's first token arrives —
 so a crossing may land a person before they have spoken here. A subject already bound to another
 uid is never relinked: the conflict is logged and that subject's tokens are refused as before; a
-self-enrolled login the file now names is affirmed as explicit. The ceremony before a crossing is
-therefore: create each person's login at the issuer, name each subject → uid here, restart, import.
+self-enrolled login the file now names is affirmed as explicit. A subject in `disabledSubjects` is
+never bound by a boot (a row it already holds stands — a boot neither re-points nor unmakes a name —
+and still counts as bound for a crossing until removed by hand); and the ceremony is a guarantee:
+the runtime role's grant is probed with the others at boot, and a node whose bindings could not be
+affirmed does not serve. The ceremony before a crossing is therefore: create each person's login
+at the issuer, name each subject → uid here, restart, import.
 
 For Docker, use a local Compose override (keep it outside Git):
 
@@ -1658,9 +1667,13 @@ their census (manifests, files, one digest over the manifests) is sealed INTO TH
 custodian's seal covers the pictures. An unreferenced picture stays (an orphan on both shores); a
 picture the records name but the store does not hold is named in `<bundle>.left.json`. On the far
 side `seed:import -- … --media <dir>` (with its own `SEED_MEDIA_DIR`) holds the sidecar to the sealed
-head and to every file's own name (sha256 = hash) before anything lands, copies the files into the
-store first, then lands the manifests in the records' transaction — a manifest never names a file
-that is not there; a swapped file refuses the whole crossing. The origin's pictures are URLs into
+head and to every file's own name (sha256 = hash) before anything lands, plans a picture already
+standing here at a bundle's path with OTHER files as a `media_conflict` (as a differing record is
+planned; the same picture lands nothing), places the files in the store first — each held to its
+name as it is written — then lands the manifests in the records' transaction, and withdraws the
+files it placed if the crossing does not land; a manifest never names a file that is not there, a
+swapped file refuses the whole crossing, and the sidecar is written before the sealed bundle so no
+head ever names pictures that are not beside it. The origin's pictures are URLs into
 its own storage and do not travel this way (a storage migration is its own ring).
 `tests/seed/media-crossing.postgres-test.ts`.
 
@@ -1703,9 +1716,11 @@ witness rebuilt from the body.
 What it does not do: carry media (pictures stay URLs into the origin's storage), create logins or
 bindings on the far side, or mend the origin. The ceremony in order: export; create each person's
 login at the new node's issuer; name each subject → uid in the auth trust file and restart the API
-(the bindings become durable rows at boot, migration 062); review `identities.json` — a uid the
-records name but no person carries is vouched DEPARTED there (`departed: true`) and travels as a
-name only, with no person and no login; then `seed:import` plans and lands. `tests/originBundle.test.ts` holds the value law, the gathering, the refusals, the pruning
+(the bindings become durable rows at boot, migration 062); review `identities.json`, and
+`departed.json` — the uids the records name but no person carries: the exporter only names them,
+and they travel as names only (no person, no login) when the receiving hand passes that file to
+`seed:import --vouch-departed`, the vouch being the hand's and never the exporter's; then
+`seed:import` plans and lands. `tests/originBundle.test.ts` holds the value law, the gathering, the refusals, the pruning
 and the census; `tests/seed/origin-crossing.postgres-test.ts` lands a Firestore-shaped soil,
 sealed under the origin's own charter, on a real PostgreSQL node.
 
@@ -1954,7 +1969,10 @@ functions (being card, face picture, sitemap, face feed) on this soil (`seed/api
   fields by the shared law, soonest first; `seed.face_events` is the server-only door behind it.
 - **The front door of a face** (ring 2026-11-03) — `/` and `/index.html` are the API's too: at a face
   host (a host in `SEED_FACE_DOORS`, which the edge also answers at through `SEED_FACE_HOSTS`) the
-  shell wears the card of the community whose domain or alias is that host — the origin's own words
+  shell wears the card of the community that WEARS that host — by an alias the steward granted
+  (`door_open`) or by its own DNS-verified domain (`domainVerification`), never by a domain merely
+  written into a record, which any keeper may edit (`seed.wears_host`, migration 063; the mail
+  voice and the face feed answer by the same predicate) — the origin's own words
   (the vision paper stripped of its markup, else "<name> — a living community on the Lifetree
   Network."), the hero or a landing section's `https` picture or `og.png`, the host as home — as the
   origin bakes one per face at deploy (`scripts/face-og.mjs`); at the application host, or at any

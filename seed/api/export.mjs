@@ -48,8 +48,10 @@ try {
   const media = sidecar ? await mediaHeadOf(sidecar) : null;
   const bundle = sealBundle(await buildBundle({ snapshot, charter, exportCommit, charterHashes, withoutAuthority: args.includes('--without-authority'), media }), custodian);
   const out = resolve(positional[0]);
-  await writeSealedBundle(out, bundle, custodian);
+  // The sidecar first: a sealed head that names pictures never stands without them beside it.
   if (sidecar) await writeMediaSidecar(mediaDir, sidecar, process.env.SEED_MEDIA_DIR);
+  try { await writeSealedBundle(out, bundle, custodian); }
+  catch (error) { if (sidecar) console.error(`The sidecar stands in ${mediaDir} without its bundle; remove it before exporting again.`); throw error; }
   if (outside !== null || (sidecar && sidecar.left.length)) await writeFile(`${out}.left.json`, JSON.stringify({ ...(outside !== null ? { outside } : {}), ...(sidecar ? { picturesMissing: sidecar.left } : {}) }, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
   console.log(`Bundle sealed: ${bundle.docs.length} records in ${bundle.head.census.length} collections, manifest ${bundle.manifestHash.slice(0, 16)}…, custodian ${custodian.fingerprint.slice(0, 16)}….`);
   if (sidecar) console.log(`Pictures: ${sidecar.manifests.length} manifests and ${sidecar.hashes.length} files beside the bundle in ${mediaDir}${sidecar.left.length ? `; ${sidecar.left.length} named by the records but not in the store (see ${out}.left.json)` : ''}.`);

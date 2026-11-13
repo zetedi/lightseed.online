@@ -115,7 +115,7 @@ replacement for document queries, live subscriptions, upload/download or server 
 - Complete database, identity, media, configuration and key backup/restore: `seed:backup` and `seed:restore`
   keep and land the database, the media, the identity database and the configuration under one manifest
   (`domain/seedBackup`, 2026-11-03; proven on the local node), a restore refusing a backup that does not answer
-  to its manifest and a soil that already stands. The custodian's key stays outside by design. The Docker
+  to its manifest and, in one report before anything is written, any part that would land where something stands. The custodian's key stays outside by design. The Docker
   proof's own dump/restore check remains the automated one; the keeping's two hands are not yet in it.
 - Signed exports and transactional additive import now exist (`seed:export`, `seed:import`, migration 055;
   PostgreSQL tests cover the seal, tampering, identity anchoring, local authority, idempotence and conflicts),

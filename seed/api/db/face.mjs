@@ -12,10 +12,10 @@ export const faceRepository=withSession=>repositoryOf(withSession,{
       UNION ALL SELECT 4, 'pulse', doc FROM public.pulses WHERE doc->>'lid'=$1 AND length(doc->>'lid')=36) found
     ORDER BY rank LIMIT 1`,[lid]).then(r=>r[0]??null),
   place:(c,domain)=>c.query('SELECT seed.mail_place($1) AS place',[domain]).then(r=>r.rows[0].place),
-  // THE FRONT DOOR (ring 2026-11-03): the community whose domain or alias is the host, whole, as a stranger reads it.
-  placeAt:(c,host)=>rows(c,`SELECT id, doc FROM public.communities WHERE doc->>'domain'=$1
-    OR (jsonb_typeof(doc->'domainAliases')='array' AND doc->'domainAliases' @> to_jsonb($1::text))
-    ORDER BY seed.vision_moment(doc), id LIMIT 1`,[host]).then(r=>r[0]??null),
+  // THE FRONT DOOR (ring 2026-11-03): the community that WEARS the host (seed.wears_host, migration 063: an alias the steward
+  // granted or its own DNS-verified domain — never a domain merely written into a record), whole, as a stranger reads it.
+  placeAt:(c,host)=>rows(c,`SELECT id, doc FROM public.communities WHERE seed.wears_host(doc,$1)
+    ORDER BY (doc->>'domain'=$1) DESC NULLS LAST, seed.vision_moment(doc), id LIMIT 1`,[host]).then(r=>r[0]??null),
   // Only an explicit 'public' is listed — the sitemap is an invitation, not the gate.
   sitemapRows:c=>rows(c,`
     SELECT doc->>'lid' AS lid, doc->'updatedAt' AS updated, doc->'createdAt' AS created FROM public.lifetrees WHERE doc->>'visibility'='public' AND length(doc->>'lid')=36

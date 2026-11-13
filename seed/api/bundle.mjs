@@ -11,10 +11,10 @@ import pg from 'pg';
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { constants as fsConstants } from 'node:fs';
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, link, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, resolve } from 'node:path';
 import { buildCensus, manifestHashOf, verifyBundle, verifyBundleSeal, expectedBeingsIndex, localUidCensus, planBundleMerge,
-  BUNDLE_SEAL_TAG, BUNDLE_FORMAT_VERSION, signingPreimage, crossingCharterProblem } from '../generated/chain.mjs';
+  BUNDLE_SEAL_TAG, BUNDLE_FORMAT_VERSION, signingPreimage, crossingCharterProblem, mediaConflictsOf } from '../generated/chain.mjs';
 import { SEED_BUNDLE_TABLES, bundleReadSql, bundleDocOf, bundleInsertOf } from '../../src/domain/seedBundle.mjs';
 
 // The owner's connection: PG* environment by default (as seed:migrate --local reads it), or explicit.
@@ -108,7 +108,8 @@ export { verifyBundle, verifyBundleSeal, localUidCensus };
 /** @param {import('pg').Client} client
  * @param {{ incoming: *, anchor: { fingerprint: string, publicKeyB64: string }, identities?: Array<{ sourceUid: string, targetUid: string, personLid?: string, departed?: boolean }>, apply?: boolean, media?: Array<{ path: string, doc: * }> }} crossing */
 // THE MEDIA CROSSES (ring 2026-11-03): the sidecar's manifests (verified by the caller against the sealed head
-// and the files' own names, the files already in the store) land in the same transaction as the records.
+// and the files' own names, the files already in the store) land in the same transaction as the records; a
+// manifest standing at the same path with other files is planned as a conflict (domain/mediaCrossing) first.
 export async function cross(client, { incoming, anchor, identities = [], apply = false, media = [] }) {
   if (!anchorSound(anchor)) throw Object.assign(new Error('The trusted anchor must carry a public key and its own fingerprint, obtained outside the bundle.'), { code: 'anchor_unsound' });
   await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
@@ -117,7 +118,12 @@ export async function cross(client, { incoming, anchor, identities = [], apply =
     const bound = new Set((await client.query("SELECT uid FROM seed.identity_bindings WHERE binding_kind='explicit'")).rows.map(r => r.uid));
     const anchored = identities.map(identity => ({ ...identity, loginBound: bound.has(identity.targetUid) }));
     const destination = await readSnapshot(client);
-    const plan = await planBundleMerge(incoming, destination, anchor, sealVerifier, anchored);
+    let plan = await planBundleMerge(incoming, destination, anchor, sealVerifier, anchored);
+    if (media.length) {
+      const standing = (await client.query('SELECT path, doc FROM seed.media_objects WHERE path = ANY($1)', [media.map(manifest => manifest.path)])).rows;
+      const conflicts = mediaConflictsOf(media, standing);
+      if (conflicts.length) plan = { ...plan, issues: [...plan.issues, ...conflicts], ready: false };
+    }
     const already = (await client.query('SELECT doc FROM seed.crossings WHERE manifest_hash=$1', [incoming.manifestHash])).rows[0]?.doc ?? null;
     if (!apply || !plan.ready) { await client.query('ROLLBACK'); return { plan, applied: false, already }; }
     let inserted = 0;
@@ -174,14 +180,28 @@ export const mediaFilePresent = dir => async hash => {
   if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash)) return false;
   try { return sha256Bytes(await readFile(join(dir, hash))) === hash; } catch { return false; }
 };
-// The files into the store, by name; one already there is the same bytes (content-addressed) and stays.
+// The files into the store, by name — each read once, held to its name as it is written (never a window between
+// a check and a copy), staged and linked as the store's own publish does; one already there is the same bytes
+// (content-addressed) and stays. Returns the hashes this hand placed, so a crossing that does not land can
+// withdraw them.
 export async function landMediaFiles(dir, storeDir, hashes) {
   const store = storeDirOf(storeDir);
   await mkdir(store, { recursive: true, mode: 0o700 });
-  let copied = 0;
+  const landed = [];
   for (const hash of hashes) {
-    try { await copyFile(join(dir, hash), join(store, hash), fsConstants.COPYFILE_EXCL); copied++; }
+    if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash)) throw Object.assign(new Error(`Not a picture's name: ${String(hash).slice(0, 80)}.`), { code: 'media_unsound' });
+    const bytes = await readFile(join(dir, hash));
+    if (sha256Bytes(bytes) !== hash) throw Object.assign(new Error(`A file beside the bundle does not answer to its name: ${hash}.`), { code: 'media_unsound' });
+    const staging = join(store, `.cross-${hash}`);
+    await writeFile(staging, bytes, { flag: 'wx', mode: 0o600 });
+    try { await link(staging, join(store, hash)); landed.push(hash); }
     catch (error) { if (error?.code !== 'EEXIST') throw error; }
+    finally { await unlink(staging); }
   }
-  return copied;
+  return landed;
+}
+// The files a hand placed, taken back when its crossing did not land (nothing names them; the sweep frees only marked orphans).
+export async function withdrawMediaFiles(storeDir, hashes) {
+  const store = storeDirOf(storeDir);
+  for (const hash of hashes) if (/^[a-f0-9]{64}$/.test(hash)) await unlink(join(store, hash)).catch(() => undefined);
 }

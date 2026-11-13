@@ -44,13 +44,21 @@ try { await database.ready(); } catch {
 }
 // THE BINDING CEREMONY (ring 2026-11-03): the reviewed bindings become durable rows at boot (seed.bind_explicit, migration 062);
 // a standing row under another uid is never relinked, only reported — that subject's tokens stay refused as before.
+// A disabled subject is never bound by a boot (a row it already holds stands: a boot neither re-points nor unmakes a
+// name); and the ceremony is a guarantee, not a courtesy — a node whose bindings could not be affirmed does not serve.
 if (trust) {
   try {
     const reviewed = seedAuthConfig(trust);
-    const report = await database.bindExplicit(reviewed.issuer, reviewed.bindings);
-    console.log('Identity bindings: ' + report.bound + ' bound, ' + report.standing + ' standing, ' + report.conflicts.length + ' in conflict.');
+    const disabled = new Set(reviewed.disabledSubjects);
+    const bindings = reviewed.bindings.filter(binding => !disabled.has(binding.subject));
+    const report = await database.bindExplicit(reviewed.issuer, bindings);
+    const leftOut = reviewed.bindings.length - bindings.length;
+    console.log('Identity bindings: ' + report.bound + ' bound, ' + report.standing + ' standing, ' + report.conflicts.length + ' in conflict' + (leftOut ? ', ' + leftOut + ' disabled subjects left unbound' : '') + '.');
     for (const conflict of report.conflicts) console.warn('Binding conflict: subject ' + conflict.subject + ' stands bound to ' + conflict.bound + ', the trust file says ' + conflict.uid + '; the durable record wins.');
-  } catch (error) { console.warn('Identity bindings were not synchronised:', error instanceof Error ? error.message : 'unknown'); }
+  } catch (error) {
+    console.error('Identity bindings could not be affirmed:', error instanceof Error ? error.message : 'unknown');
+    await database.close(); process.exit(1);
+  }
 }
 let media;
 if(process.env.SEED_MEDIA_DIR) {

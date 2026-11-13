@@ -11,7 +11,7 @@ SET LOCAL lock_timeout = '10s';
 SET LOCAL search_path = pg_catalog;
 DO $ready$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '062_bindings.sql') THEN
+  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '063_place.sql') THEN
     RAISE EXCEPTION 'Run seed:migrate before provisioning a runtime account.';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -119,6 +119,8 @@ GRANT EXECUTE ON FUNCTION seed.clock_take(timestamptz,integer), seed.clock_settl
   seed.stay_leaves_due(text), seed.stay_leaf_apply(text,jsonb) TO ${role};
 -- THE FACE OF THE NODE (ring 2026-11-03): the face feed's door; the card and the sitemap read as a stranger under the row policies.
 GRANT EXECUTE ON FUNCTION seed.face_events(text) TO ${role};
+-- WHO WEARS A HOST (migration 063): the one predicate behind a face's front door, the mail voice and the face feed.
+GRANT EXECUTE ON FUNCTION seed.wears_host(jsonb,text) TO ${role};
 -- THE RELEASE OF A PICTURE (ring 2026-11-03): the facts and the release the API drives for a hand, the hashes' lock a publish
 -- takes before checking its files, and the sweep's server-only doors; the holder's standing and the naming check stay the soil's.
 GRANT EXECUTE ON FUNCTION seed.media_lock(text[]), seed.picture_context(text,text,text), seed.picture_release(text,text,text),

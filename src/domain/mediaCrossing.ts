@@ -16,7 +16,7 @@ import type { BundleDoc } from './bundle';
 export interface MediaManifest { path: string; doc: Record<string, unknown> }
 export interface MediaSidecar { manifests: MediaManifest[]; hashes: string[]; left: string[] }
 export interface MediaHead { manifests: number; files: number; digest: string }
-export interface MediaIssue { code: 'media_head_missing' | 'media_count' | 'media_digest' | 'media_file_missing' | 'media_manifest_unsound'; detail?: string }
+export interface MediaIssue { code: 'media_head_missing' | 'media_count' | 'media_digest' | 'media_file_missing' | 'media_manifest_unsound' | 'media_conflict'; path?: string; detail?: string }
 
 const MEDIA_HASH_DOMAIN = 'lightseed.media.v1';
 const KEYS = ['primary', 'small', 'large'] as const;
@@ -78,4 +78,15 @@ export const mediaSidecarIssues = async (
   if (head.digest !== await mediaDigestOf(manifests)) issues.push({ code: 'media_digest' });
   for (const hash of hashes) if (!(await present(hash))) issues.push({ code: 'media_file_missing', detail: hash });
   return issues;
+};
+
+// THE SHORE'S OWN PICTURES (the review's mending, 2026-11-03): a manifest already standing at a path the bundle
+// names, with OTHER files, is a conflict — as a differing record is — and never stays silently under the
+// bundle's name; the same files at the same path are the same picture and land nothing. Planned, so a
+// crossing is blocked before anything lands.
+export const mediaConflictsOf = (incoming: readonly MediaManifest[], standing: readonly MediaManifest[]): MediaIssue[] => {
+  const held = new Map(standing.map(manifest => [manifest.path, mediaHashesOf([manifest]).join(',')]));
+  return incoming
+    .filter(manifest => held.has(manifest.path) && held.get(manifest.path) !== mediaHashesOf([manifest]).join(','))
+    .map(manifest => ({ code: 'media_conflict' as const, path: manifest.path, detail: 'A different picture already stands at this path on this node.' }));
 };

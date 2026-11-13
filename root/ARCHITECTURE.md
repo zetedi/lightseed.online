@@ -652,7 +652,9 @@ statements, being the owner's ceremony and not a door.
 
 THE FACES OF THE NODE (2026-11-03). The edge answers at every face host (`SEED_FACE_HOSTS`), and
 the front door — `/` and `/index.html` — is the API's: at a face host the shell wears the card of
-the community whose domain or alias is the host (`domain/facePage` `faceDoorCardOf`: the origin's
+the community that wears the host — a steward-granted alias or its own DNS-verified domain, never
+a domain merely written into a record (`seed.wears_host`, migration 063; the mail voice and the
+face feed answer by the same predicate) — (`domain/facePage` `faceDoorCardOf`: the origin's
 words and picture rules, the host as home), where the origin bakes one per face at deploy; at the
 application host, or at a host the node does not serve, the plain shell; and the plain shell stands
 in whenever the API is silent. A face host is also a host the shell may sign in at: the realm's one
@@ -675,9 +677,11 @@ manifest (`domain/seedBackup`, `seed:backup`): the database (the soil whole), th
 pictures by hash), the identity (the issuer's own database: the realm and every login) and the
 configuration (environment, charter, trust file, runtime secrets), every file named with its size
 and sha256, the migration the soil stands at and the commit of the hand. The other hand
-(`seed:restore`) holds the backup to its manifest before anything is written and lands each part
-only where nothing stands: an empty database, the store, an empty issuer database, a configuration
-file not already there. The custodian's key never enters a backup; the crossing remains the signed,
+(`seed:restore`) holds the backup to its manifest before anything is written, looks at every place
+and refuses as one report if any part would land where something stands, then lands each part
+only there: an empty database (one transaction), an empty store or directory, an empty issuer
+database, a configuration file not already there; a part that stands is left out by its flag, so
+a halted restore is finished, never redone over itself. The custodian's key never enters a backup; the crossing remains the signed,
 mergeable form of the same story.
 
 THE LAST HANDS (migration 061, 2026-11-03). The thirteen hands that still refused by name are

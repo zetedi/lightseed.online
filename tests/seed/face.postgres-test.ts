@@ -81,7 +81,7 @@ const serve = async (options: { shell?: boolean; face?: boolean; remote?: { addr
 const garden = (sql: (q: string) => string, image: string) => sql(`
   INSERT INTO users VALUES ('alice','{"displayName":"Alice"}'),('bob','{"displayName":"Bob"}');
   INSERT INTO persons VALUES ('alice','{"uid":"alice","lid":"${LID(1)}","displayName":"Alice"}'),('bob','{"uid":"bob","lid":"${LID(2)}","displayName":"Bob"}');
-  INSERT INTO communities VALUES ('c1','{"lid":"${LID(31)}","name":"The O House","anchorUid":"alice","domain":"theohouse.org","domainAliases":["door.example"],"door":"invite","createdAt":"2026-01-01T00:00:00.000000Z"}');
+  INSERT INTO communities VALUES ('c1','{"lid":"${LID(31)}","name":"The O House","anchorUid":"alice","domain":"theohouse.org","domainVerification":{"domain":"theohouse.org","method":"dns_txt","verifiedAt":"2026-01-01T00:00:00.000000Z"},"domainAliases":["door.example"],"door":"invite","createdAt":"2026-01-01T00:00:00.000000Z"}');
   INSERT INTO lifetrees VALUES
     ('t1','{"lid":"${LID(11)}","anchorUid":"alice","name":"Nur <3","body":"A tree of light.\\n\\nIt   stands \\"here\\" & grows.","treeType":"LIGHTTREE","visibility":"public","domain":"theohouse.org","imageUrl":"${image}","createdAt":"2026-01-02T00:00:00.000000Z","updatedAt":"2026-10-30T00:00:00.000000Z"}'),
     ('t2','{"lid":"${LID(12)}","anchorUid":"alice","name":"Hidden","body":"secret words","treeType":"LIGHTTREE","visibility":"private","domain":"node.example","createdAt":"2026-01-03T00:00:00.000000Z"}'),
@@ -297,18 +297,24 @@ describe('the front door of a face', () => {
   it('dresses the shell for the community at the face host alone', async () => {
     const t = await serve();
     try {
-      cluster.sql(`INSERT INTO communities VALUES ('house','{"lid":"${LID(31)}","anchorUid":"alice","name":"The O House","door":"open","domain":"door.example","domainAliases":["theohouse.org"],
-        "papers":[{"key":"vision","html":"<p>A house of <b>light</b></p>"}],"heroImageUrl":"/v1/media?path=communities%2Fhouse%2Fhero_1.webp","createdAt":"2026-01-01T00:00:00.000000Z"}')`);
+      // The house wears door.example by its DNS-verified domain and theohouse.org by a steward-granted alias; an older
+      // community that merely WROTE door.example into its domain field (any keeper can) wears nothing — the review's mending.
+      cluster.sql(`INSERT INTO communities VALUES ('house','{"lid":"${LID(31)}","anchorUid":"alice","name":"The O House","door":"open","domain":"door.example","domainVerification":{"domain":"door.example","method":"dns_txt","verifiedAt":"2026-01-01T00:00:00.000000Z"},"domainAliases":["theohouse.org"],
+        "papers":[{"key":"vision","html":"<p>A house of <b>light</b></p>"}],"heroImageUrl":"/v1/media?path=communities%2Fhouse%2Fhero_1.webp","createdAt":"2026-01-01T00:00:00.000000Z"}'),
+        ('older','{"lid":"${LID(32)}","anchorUid":"bob","name":"The Claimant","door":"open","domain":"door.example","papers":[{"key":"vision","html":"<p>Mine now</p>"}],"createdAt":"2025-01-01T00:00:00.000000Z"}'),
+        ('alone','{"lid":"${LID(33)}","anchorUid":"bob","name":"Unverified","door":"open","domain":"claim.example","createdAt":"2025-06-01T00:00:00.000000Z"}')`);
       const front = await t.get('/', { 'x-forwarded-host': 'door.example' });
       expect(front.status).toBe(200); expect(front.type).toContain('text/html'); expect(front.cache).toBe('no-cache');
       expect(front.text).toContain('<title>The O House</title>');
+      expect(front.text).not.toContain('The Claimant');
       expect(front.text).toContain('<meta property="og:description" content="A house of light" />');
       expect(front.text).toContain('<meta property="og:url" content="https://door.example/" />');
       expect(front.text).toContain('<meta property="og:image" content="https://door.example/v1/media?path=communities%2Fhouse%2Fhero_1.webp" />');
       expect(front.text).not.toContain('og:image:width');
       // The alias is a host the node serves too (SEED_FACE_DOORS), so it wears the same card.
       expect((await t.get('/index.html', { 'x-forwarded-host': 'theohouse.org' })).text).toContain('<title>The O House</title>');
-      // The node's own host and a stranger's host keep the plain shell.
+      // A domain merely written into a record wears no front door; the node's own host and a stranger's host keep the plain shell.
+      expect((await t.get('/', { 'x-forwarded-host': 'claim.example' })).text).toContain('<title>.seed — Example node, growing together</title>');
       expect((await t.get('/', { 'x-forwarded-host': 'node.example' })).text).toContain('<title>.seed — Example node, growing together</title>');
       expect((await t.get('/', { 'x-forwarded-host': 'evil.example' })).text).toContain('<title>.seed — Example node, growing together</title>');
       expect((await t.get('/', { host: 'api' })).text).toContain('<title>.seed — Example node, growing together</title>');

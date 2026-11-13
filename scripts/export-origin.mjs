@@ -8,8 +8,9 @@
 // or a serviceAccount.json beside the repository) inside ONE read-only transaction at one moment, so
 // the census is a snapshot, not a smear. Writes bundle.json (owner-only, never overwriting), its PUBLIC
 // anchor beside it (<bundle>.anchor.json — hand it over by another road), the census of identities
-// (<bundle>.identities.json — the receiving node's identities.json once every login is bound) and what
-// stayed behind (<bundle>.left.json). Exit 0 = sealed, 2 = refused (an unknown collection, a record
+// (<bundle>.identities.json — the receiving node's identities.json once every login is bound), the departed
+// (<bundle>.departed.json — uids no person carries; the receiving hand vouches them, seed:import
+// --vouch-departed) and what stayed behind (<bundle>.left.json). Exit 0 = sealed, 2 = refused (an unknown collection, a record
 // that could not land), 1 = error.
 import { existsSync, readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -140,6 +141,7 @@ try {
 
   await writeSealedBundle(out, bundle, custodian);
   await writeOwnerOnly(`${out}.identities.json`, identities);
+  if (departed.length) await writeOwnerOnly(`${out}.departed.json`, departed); // the vouch is the receiving hand's: seed:import --vouch-departed
   await writeOwnerOnly(`${out}.left.json`, { left: snapshot.left, rebuilt: snapshot.rebuilt, unlandable: snapshot.unlandable, broken: pruned.broken, outside, ghosts, beings });
 
   console.log(`Bundle sealed at ${readTime.toDate().toISOString()}: ${bundle.docs.length} records in ${bundle.head.census.length} collections, manifest ${bundle.manifestHash.slice(0, 16)}…, custodian ${custodian.fingerprint.slice(0, 16)}….`);
@@ -148,7 +150,7 @@ try {
   if (snapshot.unlandable.length) console.log(`Left behind unlandable (${snapshot.unlandable.length}) — named in ${out}.left.json.`);
   if (pruned.broken.length) console.log(`Left behind broken (${pruned.broken.length} blocks whose chain does not meet) — named in ${out}.left.json.`);
   if (snapshot.rebuilt.length) console.log(`Rebuilt on the far side: ${snapshot.rebuilt.join(', ')} (${beings.onOrigin} beings on the origin, ${beings.inWitness} in the witness; only on the origin ${beings.onlyOnOrigin.length}, only in the witness ${beings.onlyInWitness.length}).`);
-  console.log(`Identities: ${identities.length - departed.length} bound to a person and ${departed.length} vouched departed (${out}.identities.json — review it; a departed uid travels as a name only); ghosts ${ghosts.length}${ghosts.length ? ': ' + ghosts.map(g => `${g.uid} (${g.reason})`).join(', ') : ''}.`);
+  console.log(`Identities: ${identities.length} bound to a person (${out}.identities.json — the receiving node's identities.json once every login is bound)${departed.length ? `; ${departed.length} departed — uids the records name but no person carries — in ${out}.departed.json: the receiving hand vouches them with seed:import --vouch-departed and they travel as names only` : ''}; ghosts ${ghosts.length}${ghosts.length ? ': ' + ghosts.map(g => `${g.uid} (${g.reason})`).join(', ') : ''}.`);
   console.log(`Hand the receiving node ${out}.anchor.json by another road than the bundle; media and queues do not travel.`);
 } catch (error) {
   console.error(error instanceof SyntaxError ? 'Invalid JSON input.' : error instanceof Error ? error.message : 'Export failed.');

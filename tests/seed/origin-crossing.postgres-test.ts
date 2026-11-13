@@ -61,14 +61,16 @@ describe('the origin crosses', () => {
       const { identities, departed, ghosts } = originIdentities(bundle.docs);
       expect(ghosts).toEqual([]);
       expect(departed).toEqual(['gone']);
-      expect(identities.map(i => i.sourceUid).sort()).toEqual(['alice', 'bob', 'gone']);
+      expect(identities.map(i => i.sourceUid).sort()).toEqual(['alice', 'bob']);
+      // The vouch for the departed is the receiving hand's (seed:import --vouch-departed), never the exporter's.
+      const vouched = [...identities, ...departed.map(uid => ({ sourceUid: uid, targetUid: uid, departed: true as const }))];
 
       // Nobody is bound yet: the whole proposal waits.
-      let crossing = await cross(dst, { incoming: bundle, anchor, identities, apply: true });
+      let crossing = await cross(dst, { incoming: bundle, anchor, identities: vouched, apply: true });
       expect(crossing.applied).toBe(false);
       expect(crossing.plan.issues.map((i: Json) => i.code)).toEqual(['identity_conflict', 'identity_conflict']);
       for (const uid of ['alice', 'bob']) await dst.query("INSERT INTO seed.identity_bindings(issuer,subject,uid,binding_kind) VALUES ('https://issuer.example',$1,$2,'explicit')", [`sub-${uid}`, uid]);
-      crossing = await cross(dst, { incoming: bundle, anchor, identities, apply: true });
+      crossing = await cross(dst, { incoming: bundle, anchor, identities: vouched, apply: true });
       expect(crossing.plan.issues).toEqual([]);
       expect(crossing.applied).toBe(true); expect(crossing.inserted).toBe(8); // two users, two persons, the tree, its love, the block, the keeper link
 

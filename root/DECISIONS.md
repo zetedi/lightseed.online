@@ -6,6 +6,35 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · What the review found** — The five rings below were reviewed on four layers before
+any of them was committed, and seven defects and three gaps between word and code came back; this
+ring records what each became. WHO WEARS A HOST (migration 063, `seed.wears_host`): a face's front
+door, the voice of its mail and its face feed had answered to any community whose `domain` field
+named the host — a field any keeper may edit — so an older community could wear another's door;
+now a host is worn only by a steward-granted alias or a DNS-verified domain, and the three doors
+answer by that one predicate. THE KEEPING looks at every place before it writes anything and
+refuses as one report (a restore had stopped halfway with the soil landed and the realm refused,
+and could not be rerun); a standing file is never replaced (`tar -k`, an empty store or directory
+required); each database lands in one transaction; a part that stands is left out by its flag.
+THE MEDIA: a picture already standing at a bundle's path with other files is planned as
+`media_conflict` (the shore's bytes were kept silently under the bundle's name); the files a hand
+places are withdrawn when the crossing does not land; each file is held to its name as it is
+written; the sidecar is written before the sealed bundle. THE BINDING CEREMONY is a guarantee: the
+grant is probed at boot with the others and a node whose bindings could not be affirmed does not
+serve (it had warned and served); a disabled subject is never bound by a boot. AND THE VOUCH FOR
+THE DEPARTED IS THE HAND'S: the exporter had written `departed: true` into `identities.json`
+itself, which the ring below rejects in words; now it names them apart (`departed.json`) and only
+`seed:import --vouch-departed` lets them cross — correcting that ring's sentence. REJECTED: amending
+the five rings in place (a ring is corrected by a new one, even an hour later); fixing the door
+in the API alone (the mail voice and the feed shared the hole; the soil holds the one rule);
+`--only <part>` for the restore (the `--without` flags already name what stands). Plain contract —
+guaranteed: no community wears a host it was not granted or did not prove; a restore writes nothing
+unless every part can land; a crossing never shows the shore's picture under the bundle's name, and
+leaves no file of its own behind when it does not land; a boot binds or does not serve; the
+departed cross only by the receiving hand's word. Not guaranteed: the origin's own face resolution
+(Firebase bakes a face's card at deploy by the charter's `door`); a disabled subject's standing row
+(removed by hand); the keeping's hands inside the Docker proof.
+
 **2026-11-03 · The keeping** — A backup was the database alone (`backup.sh`); the media, the
 identity and the configuration had no hand, and the release contract named "complete backup/restore"
 among what was still required. Now `seed:backup` keeps the four parts under one manifest

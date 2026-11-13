@@ -1,7 +1,7 @@
 // THE MEDIA CROSSES (ring 2026-11-03): the pictures the records name travel beside the bundle, their census
 // sealed into the head, every file answering to its own name; what is named but not held is named as left.
 import { describe, expect, it } from 'vitest';
-import { mediaReferencedBy, mediaHashesOf, mediaSidecarOf, mediaDigestOf, mediaHeadOf, mediaSidecarIssues } from '../src/domain/mediaCrossing';
+import { mediaReferencedBy, mediaHashesOf, mediaSidecarOf, mediaDigestOf, mediaHeadOf, mediaSidecarIssues, mediaConflictsOf } from '../src/domain/mediaCrossing';
 
 const H = (n: number) => n.toString(16).padStart(64, '0');
 const descriptor = (n: number, type = 'image/webp') => ({ hash: H(n), type, size: 1000 + n });
@@ -38,5 +38,11 @@ describe('the media crossing', () => {
     expect((await mediaSidecarIssues(head, [manifest('communities/c1/logo_1.webp', 2)], all)).map(i => i.code)).toEqual(['media_digest']);
     expect(await mediaSidecarIssues(head, manifests, async hash => hash !== H(2))).toEqual([{ code: 'media_file_missing', detail: H(2) }]);
     expect((await mediaSidecarIssues(head, [{ path: 'communities/c1/logo_1.webp', doc: { primary: 1 } }] as never, all)).map(i => i.code)).toEqual(['media_manifest_unsound']);
+  });
+  it('plans a different picture standing at a bundle path as a conflict, and the same picture as nothing', () => {
+    const standing = [manifest('a', 1), manifest('b', 4)];
+    expect(mediaConflictsOf([manifest('a', 1), manifest('c', 7)], standing)).toEqual([]); // same files at a, nothing at c
+    expect(mediaConflictsOf([manifest('b', 1)], standing)).toEqual([{ code: 'media_conflict', path: 'b', detail: 'A different picture already stands at this path on this node.' }]);
+    expect(mediaConflictsOf([{ path: 'a', doc: { ...manifest('a', 1).doc, large: descriptor(9) } }], standing)).toHaveLength(1); // one variant swapped is another picture
   });
 });
