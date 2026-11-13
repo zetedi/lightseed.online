@@ -19,6 +19,13 @@
 import { readFileSync, writeFileSync, rmSync, mkdirSync, cpSync, existsSync } from 'node:fs';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { buildSeedDomain } from '../seed/build-domain.mjs';
+
+// WHO WEARS THE DOOR (ring 2026-11-14): the community dressed onto a face is chosen by the ONE law the
+// node and the functions share (domain/communityDoor chooseCradle: a DNS-proven domain, then a
+// steward-granted alias, then — at the origin still — the eldest bare claim, never the query's first
+// hit), read from the generated domain so this script carries no copy of it.
+const { chooseCradle, wearsHost } = await import((await buildSeedDomain()).path);
 
 const charter = JSON.parse(readFileSync(new URL('../node.json', import.meta.url), 'utf8'));
 const faces = charter.faces.slice(1); // the first face is the app itself, served from dist/
@@ -39,9 +46,19 @@ try { initializeApp({ credential: applicationDefault(), projectId: charter.fireb
 const communityAt = async (domain) => {
   if (!db) return null;
   try {
-    let snap = await db.collection('communities').where('domain', '==', domain).limit(1).get();
-    if (snap.empty) snap = await db.collection('communities').where('domainAliases', 'array-contains', domain).limit(1).get();
-    return snap.empty ? null : snap.docs[0].data();
+    const [byDomain, byAlias] = await Promise.all([
+      db.collection('communities').where('domain', '==', domain).limit(5).get(),
+      db.collection('communities').where('domainAliases', 'array-contains', domain).limit(5).get(),
+    ]);
+    const seen = new Set();
+    const claimants = [...byDomain.docs, ...byAlias.docs].filter((d) => !seen.has(d.id) && seen.add(d.id));
+    const chosen = chooseCradle(claimants, domain, (d) => {
+      const c = d.data();
+      return { domain: c.domain, domainAliases: c.domainAliases, domainVerification: c.domainVerification, createdAtMs: c.createdAt?.toMillis?.() ?? Number.MAX_SAFE_INTEGER };
+    });
+    if (!chosen) return null;
+    if (!wearsHost(chosen.data(), domain)) console.warn(`face-og: ${domain} is worn by CLAIM, not by proof — community ${chosen.id} names it as its domain without a DNS proof or a granted alias; verify the domain or grant the door, or another claim could take this card.`);
+    return chosen.data();
   } catch (e) { console.warn(`face-og: could not read the community at ${domain} (${e.message}).`); return null; }
 };
 

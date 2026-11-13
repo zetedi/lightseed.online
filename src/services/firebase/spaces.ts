@@ -7,8 +7,7 @@ import { type PulseVisibility } from '../../domain/pulse';
 import { db, functions, toMillis, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, communitiesCollection, lightHousesCollection, communityInvitesCollection } from './core';
 import { graphStore } from '../../services/store';
 import { nodeCapacityGate, DEFAULT_NODE_LIMITS } from '../../domain/limits';
-import { chooseDomainClaimant } from '../../domain/communityDoor';
-import { isDomainVerified } from '../../domain/domainVerification';
+import { chooseCradle } from '../../domain/communityDoor';
 import { getNodeLimits } from './trees';
 import { createBlock } from '../../utils/crypto';
 
@@ -154,26 +153,23 @@ export const fetchCommunities = async () => {
 export const getCommunityByDomain = async (domain: string): Promise<Community | null> => {
     const normalized = domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     // More than one community can claim a domain (nothing enforces uniqueness at write time —
-    // a stray stamp once handed a face's title to a newborn circle). The choice is a LAW
-    // (domain/communityDoor.chooseDomainClaimant): DNS-proven first, else the eldest claim —
-    // never Firestore's arbitrary first hit.
-    const claimantFacts = (c: Community) => ({
-        verified: isDomainVerified(c),
+    // a stray stamp once handed a face's title to a newborn circle), and a community whose true
+    // address is elsewhere may answer this hostname as an ALIAS (theohouse.org serving as
+    // theohouse.web.app until its DNS connects). WHO WEARS THE HOST is a LAW (domain/communityDoor
+    // chooseCradle, ring 2026-11-14 — the twin of the node's seed.wears_host): a DNS-proven domain,
+    // then a steward-granted alias, then the eldest bare claim — never Firestore's arbitrary first hit.
+    // The `domain` stays the ONE place-of-record stamp for scoping; an alias only opens the door.
+    const [byDomain, byAlias] = await Promise.all([
+        getDocs(query(communitiesCollection, where('domain', '==', normalized), limit(5))),
+        getDocs(query(communitiesCollection, where('domainAliases', 'array-contains', normalized), limit(5))),
+    ]);
+    const seen = new Set<string>();
+    const claimants = [...byDomain.docs, ...byAlias.docs].filter(d => !seen.has(d.id) && !!seen.add(d.id))
+        .map(d => ({ id: d.id, ...d.data() } as Community));
+    return chooseCradle(claimants, normalized, c => ({
+        domain: c.domain, domainAliases: c.domainAliases, domainVerification: (c as { domainVerification?: { domain?: string } | null }).domainVerification,
         createdAtMs: toMillis((c as { createdAt?: unknown }).createdAt) || Number.MAX_SAFE_INTEGER,
-    });
-    const q = query(communitiesCollection, where('domain', '==', normalized), limit(5));
-    const snap = await getDocs(q);
-    const canonical = chooseDomainClaimant(
-        snap.docs.map(d => ({ id: d.id, ...d.data() } as Community)), claimantFacts);
-    if (canonical) return canonical;
-    // ALIASES — a community whose true address is elsewhere may still answer this hostname
-    // (theohouse.org serving as theohouse.web.app until its DNS connects). The `domain`
-    // stays the ONE place-of-record stamp for scoping; aliases only open the door. A DNS
-    // proof binds only the canonical domain, so among alias claimants age alone decides.
-    const byAlias = await getDocs(query(communitiesCollection, where('domainAliases', 'array-contains', normalized), limit(5)));
-    return chooseDomainClaimant(
-        byAlias.docs.map(d => ({ id: d.id, ...d.data() } as Community)),
-        c => ({ verified: false, createdAtMs: toMillis((c as { createdAt?: unknown }).createdAt) || Number.MAX_SAFE_INTEGER }));
+    }));
 };
 
 export const getCommunityById = async (id: string): Promise<Community | null> => {

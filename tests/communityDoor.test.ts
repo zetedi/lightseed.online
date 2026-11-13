@@ -4,9 +4,11 @@ import {
   communitiesOnView,
   motherDoorUrl,
   dataDomainFor, reflectsInstancePublic, communityInviteUrl, inviteIdFromPath,
-  showsPlaceOfRecord, normalizePlaceOfRecord, leaveRefusal, chooseDomainClaimant,
+  showsPlaceOfRecord, normalizePlaceOfRecord, leaveRefusal, chooseDomainClaimant, chooseCradle, cradleRankOf,
   type CommunityInviteCheck,
 } from '../src/domain/communityDoor';
+import { chooseCradle as serverChooseCradle, cradleRankOf as serverCradleRankOf, hostWearingOf as serverHostWearingOf } from '../functions/src/cradle';
+import { hostWearingOf } from '../src/domain/domainVerification';
 
 const NOW = 1783382400000;
 
@@ -256,5 +258,55 @@ describe('chooseDomainClaimant — who answers for an address', () => {
     const b = c('b', false, 1000);
     expect(chooseDomainClaimant([a, b], facts)).toBe(a);
     expect(chooseDomainClaimant([], facts)).toBeNull();
+  });
+});
+
+describe('chooseCradle — who wears a host (the origin twin of seed.wears_host)', () => {
+  type C = { id: string; domain?: string; domainAliases?: string[]; domainVerification?: { domain: string } | null; createdAtMs: number };
+  const facts = (c: C) => c;
+  const proven: C = { id: 'proven', domain: 'theo.example', domainVerification: { domain: 'theo.example' }, createdAtMs: 3000 };
+  const granted: C = { id: 'granted', domain: 'home.example', domainAliases: ['theo.example'], createdAtMs: 2000 };
+  const elderClaim: C = { id: 'elder-claim', domain: 'theo.example', createdAtMs: 1000 };
+  const youngClaim: C = { id: 'young-claim', domain: 'theo.example', createdAtMs: 4000 };
+
+  it('ranks a proven domain before a granted alias before a bare claim', () => {
+    expect(cradleRankOf(proven, 'theo.example')).toBe(0);
+    expect(cradleRankOf(granted, 'theo.example')).toBe(1);
+    expect(cradleRankOf(elderClaim, 'theo.example')).toBe(2);
+    expect(cradleRankOf(proven, 'other.example')).toBe(2);
+  });
+
+  it('the proven domain answers first, then the granted alias, whatever their age', () => {
+    expect(chooseCradle([elderClaim, granted, proven, youngClaim], 'theo.example', facts)).toBe(proven);
+    expect(chooseCradle([elderClaim, youngClaim, granted], 'theo.example', facts)).toBe(granted);
+  });
+
+  it('among bare claims the eldest stands — and the node may refuse claims altogether', () => {
+    expect(chooseCradle([youngClaim, elderClaim], 'theo.example', facts)).toBe(elderClaim);
+    expect(chooseCradle([youngClaim, elderClaim], 'theo.example', facts, { claimsAnswer: false })).toBeNull();
+    expect(chooseCradle([youngClaim, granted], 'theo.example', facts, { claimsAnswer: false })).toBe(granted);
+    expect(chooseCradle([], 'theo.example', facts)).toBeNull();
+  });
+
+  it('normalizes the host and the record alike; ties keep the caller\'s order', () => {
+    expect(chooseCradle([granted], 'https://WWW.theo.example/door', facts)).toBe(granted);
+    const twin: C = { ...elderClaim, id: 'twin' };
+    expect(chooseCradle([elderClaim, twin], 'theo.example', facts)).toBe(elderClaim);
+    expect(chooseCradle([twin, elderClaim], 'theo.example', facts)).toBe(twin);
+  });
+
+  it('the functions mirror is the same law', () => {
+    const hosts = ['theo.example', 'https://www.theo.example/', 'other.example', ''];
+    const sets: C[][] = [[elderClaim, granted, proven, youngClaim], [youngClaim, elderClaim], [granted], [], [proven, granted]];
+    for (const host of hosts) {
+      for (const c of [proven, granted, elderClaim, youngClaim]) {
+        expect(serverHostWearingOf(c, host)).toBe(hostWearingOf(c, host));
+        expect(serverCradleRankOf(c, host)).toBe(cradleRankOf(c, host));
+      }
+      for (const set of sets) {
+        expect(serverChooseCradle(set, host, facts)).toBe(chooseCradle(set, host, facts));
+        expect(serverChooseCradle(set, host, facts, { claimsAnswer: false })).toBe(chooseCradle(set, host, facts, { claimsAnswer: false }));
+      }
+    }
   });
 });

@@ -5,7 +5,7 @@ import { charter, charterHosts } from "./charter";
 import { FACE_PREVIEW_MAX_BYTES, facePreviewAttempts, facePreviewDoorOf, facePreviewKeyOf, facePreviewUrlOf, sharePlaceNameOf, shareTitleOf } from "./facePreview";
 import { getStorage } from "firebase-admin/storage";
 import sharp from "sharp";
-import { FACE_BUCKET, db, placeOfDomain, tsToMs } from "./core";
+import { FACE_BUCKET, cradleAt, db, placeOfDomain, tsToMs } from "./core";
 
 // ---------------------------------------------------------------------------
 // The living world, visible — per-being link previews + the living sitemap.
@@ -416,11 +416,10 @@ export const faceEvents = onRequest({ cors: true }, async (req, res) => {
     const domain = feedDomainOf(req.query.domain, canonicalHost(req));
     if (!domain) { res.status(400).json({ error: "domain" }); return; }
     try {
-        // A face answers by its NAME or at a DOOR — the same fallback as getCommunityByDomain.
-        let cradle = await db.collection("communities").where("domain", "==", domain).limit(1).get();
-        if (cradle.empty) cradle = await db.collection("communities").where("domainAliases", "array-contains", domain).limit(1).get();
-        if (cradle.empty) { res.status(404).json({ error: "no cradle at this domain", events: [] }); return; }
-        const home = String(cradle.docs[0].data().domain || domain);
+        // A face answers by its NAME or at a DOOR — the one law of the cradle (core.ts cradleAt, ring 2026-11-14).
+        const cradle = await cradleAt(domain);
+        if (!cradle) { res.status(404).json({ error: "no cradle at this domain", events: [] }); return; }
+        const home = String(cradle.data().domain || domain);
         const pulses = await db.collection("pulses")
             .where("domain", "==", home)
             .where("type", "==", "event")

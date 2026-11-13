@@ -8,6 +8,8 @@ import {
   challengeRecordValue,
   isDomainVerified,
   txtProvesChallenge,
+  hostWearingOf,
+  wearsHost,
 } from '../src/domain/domainVerification';
 
 const NOW = 1783382400000;
@@ -65,5 +67,21 @@ describe('domain verification — proof of control, nothing more', () => {
     expect(isDomainVerified({ domain: 'moved.org', domainVerification: { domain: 'example.org' } })).toBe(false);
     expect(isDomainVerified({ domain: 'example.org', domainVerification: null })).toBe(false);
     expect(isDomainVerified({ domain: 'example.org' })).toBe(false);
+  });
+
+  it('a host is worn by a proven domain or a granted alias — a bare claim wears nothing', () => {
+    const proven = { domain: 'example.org', domainVerification: { domain: 'example.org' } };
+    const granted = { domain: 'elsewhere.org', domainAliases: ['Example.ORG', 'face.web.app'] };
+    const claim = { domain: 'example.org' };
+    expect(hostWearingOf(proven, 'example.org')).toBe('domain');
+    expect(hostWearingOf(proven, 'https://www.example.org/')).toBe('domain');
+    expect(hostWearingOf(granted, 'example.org')).toBe('alias');
+    expect(hostWearingOf(granted, 'face.web.app')).toBe('alias');
+    expect(hostWearingOf(claim, 'example.org')).toBeNull();
+    expect(hostWearingOf({ domain: 'moved.org', domainVerification: { domain: 'example.org' } }, 'example.org')).toBeNull(); // the proof binds the domain it proved
+    expect(hostWearingOf(proven, 'other.org')).toBeNull();
+    expect(hostWearingOf(proven, '')).toBeNull();
+    expect(wearsHost(proven, 'example.org')).toBe(true);
+    expect(wearsHost(claim, 'example.org')).toBe(false);
   });
 });

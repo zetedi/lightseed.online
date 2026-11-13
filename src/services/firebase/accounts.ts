@@ -8,6 +8,7 @@ import type { Desires } from '../../domain/desires';
 import { charter } from '../../config/charter';
 import { subscriptionIdOf, isSubscriberEmail, normalizeSubscriberEmail, normalizePlaceDomain } from '../../domain/newsletter';
 import { uuidv7 } from '../../utils/id';
+import { getCommunityByDomain } from './spaces';
 import { auth, db, functions, googleProvider, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, networkInvitesCollection, newsletterConfigRef } from './core';
 
 // Identity Stage 1: the canonical PERSON entity, one per user (doc id = uid, so it's
@@ -218,10 +219,8 @@ export const createNetworkInvite = async (email: string, invitedByUserId: string
     // acceptance can mint membership of it. The Cloud Function verifies the inviter actually
     // belongs to that node before minting — a stranger can't grant membership by stamping a node.
     const normHost = window.location.hostname.replace(/^www\./, '');
-    const hostSnap = await getDocs(query(collection(db, 'communities'), where('domain', '==', normHost), limit(1))).catch(() => null);
-    const hostNode = hostSnap && !hostSnap.empty
-        ? { id: hostSnap.docs[0].id, domain: (hostSnap.docs[0].data() as { domain?: string }).domain || normHost }
-        : null;
+    const host = await getCommunityByDomain(normHost).catch(() => null); // who WEARS the host (one law, ring 2026-11-14)
+    const hostNode = host ? { id: host.id, domain: host.domain || normHost } : null;
 
     const ref = await addDoc(networkInvitesCollection, {
         email: cleanEmail, invitedByUserId, status: 'pending', message, createdAt: serverTimestamp(),

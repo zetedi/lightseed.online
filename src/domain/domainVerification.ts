@@ -77,3 +77,25 @@ export const isDomainVerified = (
 ): boolean =>
   !!community.domainVerification?.domain &&
   normalizeAnchorDomain(community.domain) === community.domainVerification.domain;
+
+// WHO WEARS A HOST (ring 2026-11-14): the origin's twin of the node's `seed.wears_host` (migration 063).
+// A community wears a host — its front door, the voice of its mail, its face feed — by its own domain
+// PROVEN by DNS (`domainVerification.domain`, written by the server alone at observation) or by an
+// ALIAS the steward granted (`domainAliases`, written by the door grant alone). A domain merely written
+// into the record is a CLAIM: any keeper may edit it, and a claim wears nothing. The proven domain
+// speaks before the granted alias, as the node prefers the verified cradle.
+export type HostWearing = 'domain' | 'alias';
+export const hostWearingOf = (
+  community: { domain?: string | null; domainAliases?: readonly string[] | null; domainVerification?: { domain?: string } | null },
+  host: string,
+): HostWearing | null => {
+  const h = normalizeAnchorDomain(host || '');
+  if (!h) return null;
+  if (normalizeAnchorDomain(community.domain || '') === h && community.domainVerification?.domain === h) return 'domain';
+  if ((community.domainAliases || []).map(normalizeAnchorDomain).includes(h)) return 'alias';
+  return null;
+};
+export const wearsHost = (
+  community: { domain?: string | null; domainAliases?: readonly string[] | null; domainVerification?: { domain?: string } | null },
+  host: string,
+): boolean => hostWearingOf(community, host) !== null;

@@ -7,6 +7,7 @@ import { randomBytes } from "node:crypto";
 import { uuidv7 } from "./mint";
 import { charter, NODE_ORIGIN, mailFromOf, charterOwnDomains } from "./charter";
 import { mailVoiceOf, dressMailText, type MailVoice, type MailVoiceSource } from "./mailVoice";
+import { chooseCradle, normalizeAnchorDomain } from "./cradle";
 import { initializeApp } from "firebase-admin/app";
 
 initializeApp();
@@ -44,25 +45,36 @@ export const placeOfCommunity = (c: Record<string, unknown>, domain?: string): M
     domain: String(c.domain || domain || ""),
     source: { name: c.name as string, domain: (c.domain as string) || domain, theme: c.theme as MailVoiceSource["theme"], mail: c.mail as MailVoiceSource["mail"] },
 });
+// THE CRADLE AT A HOST (ring 2026-11-14): the community that answers for a hostname — the ray's home,
+// the mail's place, the face feed — read by BOTH claims (its own `domain`, a granted alias) and chosen by
+// the one law (cradle.ts: a DNS-proven domain, then a steward-granted alias, then the eldest bare claim),
+// never Firestore's arbitrary first hit, which could hand a face to whichever record wrote the name last.
+export const cradleAt = async (domain: string) => {
+    const [byDomain, byAlias] = await Promise.all([
+        db.collection("communities").where("domain", "==", domain).limit(5).get(),
+        db.collection("communities").where("domainAliases", "array-contains", domain).limit(5).get(),
+    ]);
+    const seen = new Set<string>();
+    const claimants = [...byDomain.docs, ...byAlias.docs].filter((d) => !seen.has(d.id) && !!seen.add(d.id));
+    return chooseCradle(claimants, domain, (d) => {
+        const c = d.data() as { domain?: string; domainAliases?: string[]; domainVerification?: { domain?: string } | null; createdAt?: unknown };
+        return { domain: c.domain, domainAliases: c.domainAliases, domainVerification: c.domainVerification, createdAtMs: tsToMs(c.createdAt) || Number.MAX_SAFE_INTEGER };
+    });
+};
 // The community rooted at a domain (or answering at it as an alias), by id — the place a
 // ray is kindled in when the tree names only its domain (ring 2026-09-19).
 export const communityIdOfDomain = async (domainRaw: unknown): Promise<string | undefined> => {
     const domain = String(domainRaw || "").trim().toLowerCase().replace(/^www\./, "");
     if (!domain) return undefined;
-    try {
-        let cradle = await db.collection("communities").where("domain", "==", domain).limit(1).get();
-        if (cradle.empty) cradle = await db.collection("communities").where("domainAliases", "array-contains", domain).limit(1).get();
-        return cradle.empty ? undefined : cradle.docs[0].id;
-    } catch { return undefined; }
+    try { return (await cradleAt(domain))?.id; } catch { return undefined; }
 };
 export const placeOfDomain = async (domainRaw: unknown): Promise<MailPlace> => {
     const domain = String(domainRaw || "").trim().toLowerCase().replace(/^www\./, "");
     if (!domain || charterOwnDomains(charter).includes(domain)) return null;
     try {
-        let cradle = await db.collection("communities").where("domain", "==", domain).limit(1).get();
-        if (cradle.empty) cradle = await db.collection("communities").where("domainAliases", "array-contains", domain).limit(1).get();
-        if (cradle.empty) return { domain };
-        return placeOfCommunity(cradle.docs[0].data() as Record<string, unknown>, domain);
+        const cradle = await cradleAt(domain);
+        if (!cradle) return { domain };
+        return placeOfCommunity(cradle.data() as Record<string, unknown>, domain);
     } catch { return { domain }; }
 };
 
@@ -133,11 +145,7 @@ export const keeperLinkRef = (uid: string, communityId: string) =>
 export const secretKeeperRef = (uid: string, treeId: string) =>
     db.collection("secretLinks").doc(`${uid}__keeper__${treeId}`);
 
-export const normalizeAnchorDomain = (value: string): string => {
-    const withoutScheme = value.trim().toLowerCase().replace(/^https?:\/\//, "");
-    const authority = withoutScheme.split(/[/?#]/, 1)[0] || "";
-    return authority.replace(/^www\./, "").replace(/:\d+$/, "");
-};
+export { normalizeAnchorDomain };
 
 export const tsToMs = (t: unknown): number =>
     t && typeof (t as { toMillis?: unknown }).toMillis === "function" ? (t as { toMillis: () => number }).toMillis()

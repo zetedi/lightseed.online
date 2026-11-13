@@ -1,3 +1,5 @@
+import { hostWearingOf } from './domainVerification';
+
 // The DOOR — who may join a community, and how. Distinct from `visibility` (who may SEE):
 // a community can be publicly visible with a closed door, or quietly visible with an open one.
 //
@@ -47,6 +49,40 @@ export const chooseDomainClaimant = <T>(
     }
   }
   return best;
+};
+
+// THE CRADLE AT A HOST (ring 2026-11-14): among the communities that claim a host — by `domain` or by
+// an alias — the one that WEARS it answers first (domainVerification.hostWearingOf: a DNS-proven domain,
+// then a steward-granted alias — the node's law, `seed.wears_host` of migration 063), and among equals
+// the eldest claim; a bare claim answers only when nothing is worn, and a caller may refuse claims
+// altogether (`claimsAnswer: false` — the node's strictness). Never the query's arbitrary first hit.
+export interface CradleFacts {
+  domain?: string | null;
+  domainAliases?: readonly string[] | null;
+  domainVerification?: { domain?: string } | null;
+  createdAtMs: number;
+}
+export type CradleRank = 0 | 1 | 2; // proven domain, granted alias, bare claim
+export const cradleRankOf = (facts: CradleFacts, host: string): CradleRank => {
+  const wearing = hostWearingOf(facts, host);
+  return wearing === 'domain' ? 0 : wearing === 'alias' ? 1 : 2;
+};
+export const chooseCradle = <T>(
+  candidates: readonly T[],
+  host: string,
+  facts: (candidate: T) => CradleFacts,
+  options: { claimsAnswer?: boolean } = {},
+): T | null => {
+  let best: { candidate: T; rank: CradleRank; createdAtMs: number } | null = null;
+  for (const candidate of candidates) {
+    const f = facts(candidate);
+    const rank = cradleRankOf(f, host);
+    if (rank === 2 && options.claimsAnswer === false) continue;
+    if (!best || rank < best.rank || (rank === best.rank && f.createdAtMs < best.createdAtMs)) {
+      best = { candidate, rank, createdAtMs: f.createdAtMs };
+    }
+  }
+  return best?.candidate ?? null;
 };
 
 // LEAVING is the door's other direction: any member may withdraw their own membership link,

@@ -25,7 +25,9 @@ export {decisionIdentity,decisionSignaturePayload,decisionEpochSignaturePayload,
 export {keyStandingAt,keyStandingCounts} from './keyEpoch';
 export {signingPreimage} from './signing';
 export {normalizeDoor,isDoorName,doorClaimRefusal,doorChallengeId} from './doors';
-export {challengeRecordName,challengeRecordValue,txtProvesChallenge,challengeIsLive,DOMAIN_CHALLENGE_TTL_MS} from './domainVerification';
+export {challengeRecordName,challengeRecordValue,txtProvesChallenge,challengeIsLive,DOMAIN_CHALLENGE_TTL_MS,hostWearingOf,wearsHost} from './domainVerification';
+// THE CRADLE AT A HOST (ring 2026-11-14): the origin's face-og and the node share who answers at a host.
+export {chooseCradle,cradleRankOf} from './communityDoor';
 export {normalizeAnchorDomain} from './interbeingMatrix';
 // THE CROSSING (ring 2026-11-02): the bundle law, the merge planner and the charter check, so the
 // installation's export/import (seed/api/bundle.mjs) speaks the one law the browser and tests hold.

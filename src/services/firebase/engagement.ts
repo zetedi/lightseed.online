@@ -2,6 +2,7 @@ import { query, getDocs, addDoc, serverTimestamp, doc, runTransaction, getDoc, w
 import { httpsCallable } from 'firebase/functions';
 import { type Alignment } from '../../types';
 import { uuidv7 } from '../../utils/id';
+import { alignmentForSyncBlock } from '../../domain/alignmentMatch';
 import { db, functions, toMillis, mapDoc, pulsesCollection, alignmentsCollection } from './core';
 
 // What the initiator supplies; lid/status/createdAt are stamped here, messages grow later.
@@ -47,19 +48,18 @@ export const getAlignmentById = async (id: string): Promise<Alignment | null> =>
 // (a proposal always precedes its acceptance sync-block). Two single-field queries → dedupe.
 // NOTE: migrateBackfillMatchIds (below) stamps matchId onto those legacy blocks with this same
 // logic — after a verified run this fallback is a harmless safety net and can be removed.
+// The choice itself is the ONE law both backends share (domain/alignmentMatch, ring 2026-11-03):
+// this hand only reads the candidates and hands them over with their moments as milliseconds.
 export const findAlignmentForSyncBlock = async (treeId: string, blockAtMillis?: number): Promise<Alignment | null> => {
     const [asInitiator, asTarget] = await Promise.all([
         getDocs(query(alignmentsCollection, where('initiatorTreeId', '==', treeId))),
         getDocs(query(alignmentsCollection, where('targetTreeId', '==', treeId))),
     ]);
-    const byId = new Map<string, Alignment>();
-    [...asInitiator.docs, ...asTarget.docs].forEach(d => byId.set(d.id, mapDoc(d) as Alignment));
-    const accepted = Array.from(byId.values()).filter(a => a.status === 'ACCEPTED');
-    if (accepted.length === 0) return null;
-    const at = blockAtMillis ?? Number.POSITIVE_INFINITY;
-    const proposedBefore = accepted.filter(a => (a.createdAt?.toMillis() ?? 0) <= at);
-    const pool = proposedBefore.length > 0 ? proposedBefore : accepted;
-    return pool.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))[0] ?? null;
+    const candidates = [...asInitiator.docs, ...asTarget.docs].map(d => {
+        const alignment = mapDoc(d) as Alignment;
+        return { id: d.id, status: alignment.status, createdAtMs: alignment.createdAt?.toMillis() ?? 0, alignment };
+    });
+    return alignmentForSyncBlock(candidates, blockAtMillis)?.alignment ?? null;
 };
 
 // One-time migration for legacy alignment sync-blocks: every pulse minted with `isMatch: true`
