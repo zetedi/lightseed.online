@@ -643,9 +643,12 @@ THE LAYERS OF THE API (2026-11-03). From the door inward: HTTP (`seed/api/server
 no SQL) → repositories (`seed/api/db/*.mjs`: every SQL statement, the session and the transaction,
 PostgreSQL's own) → the pure domain. A service asks a repository for facts and hands it what the law
 allowed to apply, inside one session the repository opens as the hand, so the organ pattern of
-migration 044 stays whole across the seam. The pictures organ is the pattern (`seed/api/db/pictures.mjs`
-beneath `seed/api/pictures.mjs`); `database.mjs` and the other organs follow in their own rings, and
-every new organ is written in this shape.
+migration 044 stays whole across the seam. The pictures organ was the pattern, and the same evening
+the rest followed: twenty repositories under `seed/api/db/` (the session and the readiness, then one
+per feature) hold every statement the API speaks; the doors the HTTP edge calls stand in
+`seed/api/node.mjs` with no statement in them (`database.mjs` keeps the old name by re-export);
+the organs reach the soil only through their repositories. The crossing alone keeps its own
+statements, being the owner's ceremony and not a door.
 
 THE LAST HANDS (migration 061, 2026-11-03). The thirteen hands that still refused by name are
 grown, and the parity count is zero. The origin's five provider hands are the realm's own doors

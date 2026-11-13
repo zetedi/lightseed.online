@@ -7,22 +7,24 @@
 // to the courier where the mail organ is grown. THE LEAVES (mintStayLeaves): every completed stay
 // becomes a leaf on its bed's chain, sealed here with the canonical hash and applied under the
 // bed's lock. Nothing here is reachable by a request; nothing here reads a clock but `now`.
+// THE LAYERS (same day): a SERVICE — the statements live in db/clock.mjs and db/pictures.mjs.
 import {randomBytes,randomUUID} from 'node:crypto';
 import {uuidv7} from '../../src/domain/uuidv7.mjs';
 import {CLOCK_JOBS,CLOCK_LEASE_MS,nextClockDueMs,localDateOf,judgeThirst,stayLeafIsDue,bedHeadOf,stayLeafRecordOf,
   computeCanonicalHash,BLOCK_HASH_VERSION} from '../generated/chain.mjs';
 import {sweepOrphans} from './pictures.mjs';
 import {picturesRepository} from './db/pictures.mjs';
+import {clockRepository} from './db/clock.mjs';
 
-const run=(c,sql,params)=>c.query(sql,params).then(r=>r.rows[0].result);
 const docId=()=>randomBytes(10).toString('hex');
 
 /** @param {{withSession: (uid: string | null, work: (c: *) => Promise<*>) => Promise<*>, timeZone: string, notify?: boolean,
  *   media?: {remove: (hash: string) => Promise<void>} | null, log?: {warn: (...args: *[]) => void}, now?: () => number, leaseMs?: number}} options */
 export function createClock({withSession,timeZone,notify=false,media=null,log=console,now=Date.now,leaseMs=CLOCK_LEASE_MS}) {
+  const ledger=clockRepository(withSession);
   // THE THIRST: the morning sweep over every scheduled tree.
   async function thirst(moment) {
-    const trees=await withSession(null,c=>run(c,'SELECT seed.thirst_trees() AS result',[]));
+    const trees=await ledger.thirstTrees(null);
     const report={trees:trees.length,overdue:0,asked:0,rewritten:0,failed:0};
     for(const tree of trees) {
       try {
@@ -30,8 +32,7 @@ export function createClock({withSession,timeZone,notify=false,media=null,log=co
         if(!judgment)continue;
         if(judgment.overdue)report.overdue++;
         const ask=judgment.ask?{...judgment.ask.content,id:docId(),lid:uuidv7(moment,randomBytes(10)),hash:randomUUID()}:null;
-        const result=await withSession(null,c=>run(c,'SELECT seed.thirst_apply($1,$2::jsonb,$3,$4::jsonb,$5) AS result',
-          [tree.id,JSON.stringify(judgment.patch),judgment.ask?.standingPulseId??null,ask?JSON.stringify(ask):null,notify]));
+        const result=await ledger.thirstApply(null,tree.id,judgment.patch,judgment.ask?.standingPulseId??null,ask,notify);
         if(result?.rewritten)report.rewritten++;
         else if(result?.raised)report.asked++;
       } catch(error) {report.failed++;log.warn('thirst check failed for tree',tree.id,error instanceof Error?error.message:'unknown');}
@@ -42,7 +43,7 @@ export function createClock({withSession,timeZone,notify=false,media=null,log=co
   // THE LEAVES: every completed stay sealed onto its bed's chain.
   async function leaves(moment) {
     const today=localDateOf(moment,timeZone);
-    const due=await withSession(null,c=>run(c,'SELECT seed.stay_leaves_due($1) AS result',[today]));
+    const due=await ledger.leavesDue(null,today);
     const report={today,due:due.length,leafed:0,skipped:0,failed:0};
     for(const item of due) {
       try {
@@ -50,7 +51,7 @@ export function createClock({withSession,timeZone,notify=false,media=null,log=co
         const previousHash=bedHeadOf(item.bed),mintedAt=now();
         const record=stayLeafRecordOf({stayId:item.id,stay:item.stay,id:docId(),lid:uuidv7(mintedAt,randomBytes(10)),mintedAt,previousHash});
         const hash=await computeCanonicalHash(previousHash,mintedAt,record);
-        const result=await withSession(null,c=>run(c,'SELECT seed.stay_leaf_apply($1,$2::jsonb) AS result',[item.id,JSON.stringify({...record,hash,hashVersion:BLOCK_HASH_VERSION})]));
+        const result=await ledger.leafApply(null,item.id,{...record,hash,hashVersion:BLOCK_HASH_VERSION});
         if(result)report.leafed++;else report.skipped++;
       } catch(error) {
         report.failed++;
@@ -73,14 +74,14 @@ export function createClock({withSession,timeZone,notify=false,media=null,log=co
     const ran=[];
     try {
       const moment=now();
-      const due=await withSession(null,c=>run(c,'SELECT seed.clock_take($1,$2) AS result',[new Date(moment).toISOString(),leaseMs]));
+      const due=await ledger.take(null,new Date(moment).toISOString(),leaseMs);
       for(const {job} of due) {
         if(!Object.hasOwn(jobs,job))continue;
         let outcome='done',report=null;
         try {report=await jobs[job](moment);}
         catch(error) {outcome='failed';report={error:error instanceof Error?error.message:'unknown'};log.warn(`clock job ${job} failed:`,report.error);}
         const nextDueAt=nextClockDueMs(CLOCK_JOBS[job].hour,timeZone,moment);
-        await withSession(null,c=>c.query('SELECT seed.clock_settle($1,$2,$3,$4::jsonb)',[job,new Date(nextDueAt).toISOString(),outcome,JSON.stringify(report)]))
+        await ledger.settle(null,job,new Date(nextDueAt).toISOString(),outcome,report)
           .catch(error=>log.warn(`clock job ${job} could not be settled:`,error instanceof Error?error.message:'unknown'));
         ran.push({job,outcome,report,nextDueAt});
       }

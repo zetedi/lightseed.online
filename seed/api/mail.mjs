@@ -9,14 +9,15 @@
 // law's patience, giving up out loud. Identity never rides a letter: the sender is the charter's,
 // the voice a place's record, the recipients the node's own facts. Nothing here is reachable by a
 // request except through mailCommand, unsubscribe and requestInvite.
+// THE LAYERS (same day): a SERVICE — the statements live in db/mail.mjs; a hand's facts and apply share one session.
 import {randomBytes} from 'node:crypto';
 import {uuidv7} from '../../src/domain/uuidv7.mjs';
 import {mailVoiceOf,systemMailOf,systemLetterOf,reachRecipientsOf,reachThrottleIdOf,reachMayWrite,reachLetterOf,knockLetterOf,knockRecipientsOf,
   welcomeLetterOf,newsletterFooterOf,unsubscribeUrlOf,newsletterHeadersOf,mailSettlementOf,outboxIsStale,MAIL_DAILY_LIMIT,MAIL_MAX_ATTEMPTS,
   audienceOf,newsletterSendRefusal,normalizePlaceDomain,notificationOf,mailFromOf,charterOwnDomains,charterOrigin,publicNameOf,independentCharterProblem} from '../generated/chain.mjs';
 import {refuse} from './organs.mjs';
+import {mailRepository} from './db/mail.mjs';
 
-const run=(c,sql,params)=>c.query(sql,params).then(r=>r.rows[0].result);
 const lid=()=>uuidv7(Date.now(),randomBytes(10));
 const text=value=>typeof value==='string'?value:'';
 const msOf=value=>{if(typeof value!=='string')return null;const ms=Date.parse(value);return Number.isFinite(ms)?ms:null;};
@@ -24,6 +25,7 @@ const doorOf=raw=>{
   const door=text(raw).trim().toLowerCase().replace(/^www\./,'');
   return /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}$/.test(door) && door.length<=253?door:null;
 };
+const nothing={letters:[],throttles:[],knocks:[]};
 
 /** The organ, configured by the installation: the charter (name, domains, sender), the public origin,
  * the postal line of every footer, and the two couriers — `transport` (nodemailer-shaped: sendMail)
@@ -41,28 +43,29 @@ export function createMailOrgan({charter,nodeOrigin=null,postal=null,transport=n
     ...(plain?{text:plain}:{}),...(headers?{headers}:{})});
 
   async function mailCommand(withSession,uid,command) {
-    if(command.action==='status')return withSession(uid,async c=>{
-      const delivery=await run(c,'SELECT seed.mail_status($1) AS result',[command.id]);
+    const mail=mailRepository(withSession);
+    if(command.action==='status') {
+      const delivery=await mail.status(uid,command.id);
       if(!delivery)refuse('mail_missing',404);
       return {delivery};
-    });
+    }
     if(!transport)refuse('mail_unavailable',503);
     if(command.action==='send_system') {
-      const mail=systemMailOf(command,charter.name);
-      if('refusal' in mail)refuse(mail.refusal,400);
-      return withSession(uid,async c=>{
-        await run(c,'SELECT seed.mail_quota($1) AS result',[MAIL_DAILY_LIMIT]);
+      const system=systemMailOf(command,charter.name);
+      if('refusal' in system)refuse(system.refusal,400);
+      return mail.session(uid,async s=>{
+        await s.quota(MAIL_DAILY_LIMIT);
         // The door the hand stood at names the place whose voice dresses the letter; a node door, or no place, is the node.
         const door=doorOf(command.domain);
-        const source=door && !ownDomains.includes(door)?(await run(c,'SELECT seed.mail_place($1) AS result',[door]))??{domain:door}:null;
-        const letter=systemLetterOf(mail.text,mail.ctaUrl,mail.ctaLabel,voiceOf(source));
-        const ids=await run(c,'SELECT seed.mail_enqueue($1::jsonb) AS result',[JSON.stringify([letterOf({to:mail.recipients,subject:mail.subject,html:letter.html,text:letter.text,
-          place:source?{name:text(source.name),domain:text(source.domain)}:null})])]);
+        const source=door && !ownDomains.includes(door)?(await s.place(door))??{domain:door}:null;
+        const letter=systemLetterOf(system.text,system.ctaUrl,system.ctaLabel,voiceOf(source));
+        const ids=await s.enqueue([letterOf({to:system.recipients,subject:system.subject,html:letter.html,text:letter.text,
+          place:source?{name:text(source.name),domain:text(source.domain)}:null})]);
         return {success:true,id:ids[0]};
       });
     }
-    return withSession(uid,async c=>{
-      const context=await run(c,'SELECT seed.newsletter_context($1) AS result',[command.communityId]);
+    return mail.session(uid,async s=>{
+      const context=await s.newsletterContext(command.communityId);
       if(!context)refuse('community_missing',404);
       const home=normalizePlaceDomain(text(context.community.domain));
       const audience=audienceOf(context.subscriptions,home);
@@ -80,17 +83,17 @@ export function createMailOrgan({charter,nodeOrigin=null,postal=null,transport=n
         letters.push(letterOf({to:[String(sub.email)],uid:typeof sub.uid==='string'?sub.uid:null,place,subject:command.subject,
           html:command.html+newsletterFooterOf({placeName:place.name,unsubscribeUrl:unsubscribe},voice),headers:newsletterHeadersOf(unsubscribe)}));
       }
-      return run(c,'SELECT seed.apply_newsletter($1,$2::jsonb,$3::jsonb,$4,$5) AS result',[command.communityId,JSON.stringify(letters),JSON.stringify(tokens),command.subject,isNodePlace]);
+      return s.applyNewsletter(command.communityId,letters,tokens,command.subject,isNodePlace);
     });
   }
 
   // ── THE EFFECTS, COMPOSED FROM FACTS ──────────────────────────────────────────────────────
   // Letters to queue and throttle marks to set for one effect, plus the knocks to push after it lands.
-  async function compose(withSession,effect) {
+  async function compose(mail,effect) {
     const nowMs=now();
     if(effect.kind==='reach') {
-      const context=await withSession(null,c=>run(c,'SELECT seed.reach_context($1) AS result',[effect.ref]));
-      if(!context)return {letters:[],throttles:[],knocks:[]};
+      const context=await mail.reachContext(null,effect.ref);
+      if(!context)return nothing;
       const pulse=context.pulse??{};
       const voice=voiceOf(context.place??null);
       const facts=new Map((Array.isArray(context.recipients)?context.recipients:[]).map(r=>[r.uid,r]));
@@ -110,8 +113,8 @@ export function createMailOrgan({charter,nodeOrigin=null,postal=null,transport=n
       return {letters,throttles,knocks};
     }
     if(effect.kind==='join_request') {
-      const context=await withSession(null,c=>run(c,'SELECT seed.knock_context($1) AS result',[effect.ref]));
-      if(!context || !transport)return {letters:[],throttles:[],knocks:[]};
+      const context=await mail.knockContext(null,effect.ref);
+      if(!context || !transport)return nothing;
       const community=context.community??{};
       const voice=voiceOf({name:community.name,domain:community.domain,theme:community.theme,mail:community.mail});
       const who=context.requester??{};
@@ -124,52 +127,53 @@ export function createMailOrgan({charter,nodeOrigin=null,postal=null,transport=n
       return {letters,throttles:[],knocks:[]};
     }
     if(effect.kind==='welcome') {
-      const context=await withSession(null,c=>run(c,'SELECT seed.welcome_context($1) AS result',[effect.ref]));
-      if(!context || !transport || typeof context.email!=='string' || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(context.email))return {letters:[],throttles:[],knocks:[]};
+      const context=await mail.welcomeContext(null,effect.ref);
+      if(!context || !transport || typeof context.email!=='string' || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(context.email))return nothing;
       const words=welcomeLetterOf({displayName:text(context.displayName),nodeName:charter.name});
       const letter=systemLetterOf(words.text,'','Open',voiceOf(null));
       return {letters:[letterOf({to:[context.email],uid:effect.ref,subject:words.subject,html:letter.html,text:letter.text})],throttles:[],knocks:[]};
     }
-    return {letters:[],throttles:[],knocks:[]};
+    return nothing;
   }
 
   // A knock on a device; a device that is gone (404/410) is dropped from the ledger.
-  async function knock(withSession,{uid,subscription,notice}) {
+  async function knock(mail,{uid,subscription,notice}) {
     const sub=subscription??{};
     if(typeof sub.endpoint!=='string' || typeof sub.keys?.p256dh!=='string' || typeof sub.keys?.auth!=='string')return;
     try {await push.send({endpoint:sub.endpoint,keys:{p256dh:sub.keys.p256dh,auth:sub.keys.auth}},notice);}
     catch(error) {
       const status=error?.statusCode;
-      if(status===404 || status===410)await withSession(null,c=>c.query('SELECT seed.push_drop($1,$2)',[uid,sub.id])).catch(()=>undefined);
+      if(status===404 || status===410)await mail.pushDrop(null,uid,sub.id).catch(()=>undefined);
       else log.warn('push knock failed:',status??(error instanceof Error?error.message:'unknown'));
     }
   }
 
   // ── THE COURIER: effects, then letters, then the sweep — one tick ──────────────────────────
   function createCourier(withSession,{batch=20,leaseMs=120000}={}) {
+    const mail=mailRepository(withSession);
     let busy=false,timer=null;
     async function tick() {
       if(busy)return null;
       busy=true;
       const report={effects:0,letters:0,delivered:0,failed:0,retried:0};
       try {
-        const effects=await withSession(null,c=>run(c,'SELECT seed.outbox_take($1,$2) AS result',[batch,leaseMs]));
+        const effects=await mail.outboxTake(null,batch,leaseMs);
         for(const effect of effects) {
           report.effects++;
           try {
-            if(outboxIsStale(msOf(effect.createdAt)??0,now())){await withSession(null,c=>c.query('SELECT seed.outbox_settle($1,$2,NULL)',[effect.id,'stale']));continue;}
-            const {letters,throttles,knocks}=await compose(withSession,effect);
-            await withSession(null,c=>c.query('SELECT seed.apply_courier($1,$2::jsonb,$3::text[])',[effect.id,JSON.stringify(letters),throttles]));
+            if(outboxIsStale(msOf(effect.createdAt)??0,now())){await mail.outboxSettle(null,effect.id,'stale',null);continue;}
+            const {letters,throttles,knocks}=await compose(mail,effect);
+            await mail.applyCourier(null,effect.id,letters,throttles);
             report.letters+=letters.length;
-            for(const k of knocks)await knock(withSession,k);
+            for(const k of knocks)await knock(mail,k);
           } catch(error) {
             const give=effect.attempts>=MAIL_MAX_ATTEMPTS;
             log.warn(`effect ${effect.kind} ${effect.ref} failed (attempt ${effect.attempts}):`,error instanceof Error?error.message:'unknown');
-            await withSession(null,c=>c.query('SELECT seed.outbox_settle($1,$2,$3)',[effect.id,give?'failed':'retry',give?null:mailSettlementOf({attempts:effect.attempts,ok:false}).nextInMs])).catch(()=>undefined);
+            await mail.outboxSettle(null,effect.id,give?'failed':'retry',give?null:mailSettlementOf({attempts:effect.attempts,ok:false}).nextInMs).catch(()=>undefined);
           }
         }
         if(transport) {
-          const letters=await withSession(null,c=>run(c,'SELECT seed.mail_take($1,$2) AS result',[batch,leaseMs]));
+          const letters=await mail.take(null,batch,leaseMs);
           for(const letter of letters) {
             const d=letter.doc??{};
             let settlement;
@@ -181,10 +185,10 @@ export function createMailOrgan({charter,nodeOrigin=null,postal=null,transport=n
               settlement=mailSettlementOf({attempts:Number(letter.attempts)||1,ok:false,error:error instanceof Error?error.message:'delivery_failed'});
               if(settlement.state==='ERROR')report.failed++;else report.retried++;
             }
-            await withSession(null,c=>c.query('SELECT seed.mail_settle($1,$2,$3,$4)',[letter.id,settlement.state,settlement.error,settlement.nextInMs])).catch(()=>undefined);
+            await mail.settle(null,letter.id,settlement.state,settlement.error,settlement.nextInMs).catch(()=>undefined);
           }
         }
-        await withSession(null,c=>c.query('SELECT seed.mail_sweep()')).catch(()=>undefined);
+        await mail.sweep(null).catch(()=>undefined);
       } finally {busy=false;}
       return report;
     }

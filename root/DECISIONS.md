@@ -6,6 +6,27 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · Then all: the layers everywhere** — With the pictures organ as the reviewed pattern,
+every statement of the API moved into a repository the same evening: `seed/api/db/` holds the session
+(PostgreSQL's own: the pool, the guard, one transaction per hand), the readiness probes, and one
+repository per feature, each a closed set of statements built by one shape (`statements.mjs`: a
+statement is a one-shot call in its own session, or part of `session(uid, body)` — every statement
+bound to one transaction as the hand). The doors the HTTP edge calls became `node.mjs` (services:
+the command laws, the births and acceptances prepared by the shared law, the refusals, not one
+statement), with `database.mjs` re-exporting `createDatabase` so main, the harness and the Docker
+proof moved nothing. The organs kept their constructors (`createMailOrgan`, `createClock`,
+`createFace`, `createAiOrgan` still take `withSession`) and build their repository inside, so the
+tests and main stayed as they were while the organs' bodies lost every statement. REJECTED: changing
+the organs' constructors to take repositories (every test and main would move for no gain in the
+seam); a repository per table (one operation's transaction would scatter — the repositories are per
+feature, as the organ pattern is per operation); moving the crossing's statements too (the owner's
+ceremony with the owner's client is not a door; it stays whole in `bundle.mjs`); renaming
+`createDatabase` everywhere (a name that calls is not a layer; the re-export says where the doors
+live). Plain contract — guaranteed: no service under `seed/api/` speaks a statement (grep SELECT in
+the services finds none outside `bundle.mjs`); every PostgreSQL suite runs unchanged through the
+layers; the statements' text is the original's, moved not rewritten. Not guaranteed: a second soil
+(the repositories are PostgreSQL's by design), the organs' option signatures as a public API.
+
 **2026-11-03 · The binding ceremony** — Before a crossing could land a person, the installation's
 binding of their login had to be a durable row, and until this ring only the person's first token
 wrote it (`seed.resolve_identity`): a node would have had every member sign in to an empty soil

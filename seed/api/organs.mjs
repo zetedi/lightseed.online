@@ -5,12 +5,15 @@
 // shared domain bundle (the same source the browser and the functions mirror), and stores what the
 // law allowed (seed.apply_<x>). Nothing here trusts a claim: identity is the session's, standing is
 // read, amounts are the law's, moments are the server's. DNS is observed OUTSIDE every transaction.
+// THE LAYERS (ring 2026-11-03): these are SERVICES — the statements live in db/light.mjs; a session
+// of that repository holds one organ's facts and apply in one transaction, the law between.
 import {createHash,createPublicKey,verify,randomBytes} from 'node:crypto';
 import {uuidv7} from '../../src/domain/uuidv7.mjs';
 import {judgeWitness,kindleDayKeyFromMs,judgeAppreciation,judgeSpend,unmintRefusal,STAFF_OVERRIDABLE_REFUSALS,touchRestoreOf,
   decisionIdentity,decisionSignaturePayload,decisionEpochSignaturePayload,DECISION_DOMAIN,DECISION_EPOCH_DOMAIN,
   keyStandingAt,keyStandingCounts,signingPreimage,normalizeDoor,isDoorName,doorClaimRefusal,
   challengeRecordName,challengeRecordValue,txtProvesChallenge,challengeIsLive,DOMAIN_CHALLENGE_TTL_MS} from '../generated/chain.mjs';
+import {lightRepository} from './db/light.mjs';
 
 // A refusal the law spoke, carried to the HTTP edge by name (server.mjs answers {error: refusal}).
 export const refuse=(refusal,status)=>{throw Object.assign(new Error('Organ refused'),{code:'ORGAN_REFUSED',refusal,status});};
@@ -27,7 +30,6 @@ const msOf=value=>{
   const ms=Date.parse(value);return Number.isFinite(ms)?ms:null;
 };
 const text=value=>typeof value==='string'?value:'';
-const run=(c,sql,params)=>c.query(sql,params).then(r=>r.rows[0].result);
 
 // ── LIGHT ────────────────────────────────────────────────────────────────────────────────────
 // The circle witnesses a watering: the facts are the node's (standing, day, rays), the judgment the
@@ -137,25 +139,26 @@ export function prepareSpend({uid,context,decisionId}) {
 }
 
 export function lightCommand(withSession,uid,command) {
-  if(command.action==='witness')return withSession(uid,async c=>{
-    const context=(await c.query('SELECT seed.witness_context($1) AS context',[command.pulseId])).rows[0].context;
+  const light=lightRepository(withSession);
+  if(command.action==='witness')return light.session(uid,async s=>{
+    const context=await s.witnessContext(command.pulseId);
     const prepared=prepareWitness({uid,context,pulseId:command.pulseId});
-    if(!prepared.already)await c.query('SELECT seed.apply_witness($1,$2::jsonb)',[command.pulseId,JSON.stringify(prepared.rays)]);
+    if(!prepared.already)await s.applyWitness(command.pulseId,prepared.rays);
     return prepared.result;
   });
-  if(command.action==='appreciate')return withSession(uid,async c=>{
-    const context=(await c.query('SELECT seed.appreciation_context($1) AS context',[command.offeringId])).rows[0].context;
+  if(command.action==='appreciate')return light.session(uid,async s=>{
+    const context=await s.appreciationContext(command.offeringId);
     const prepared=prepareAppreciation({uid,context,offeringId:command.offeringId,units:command.units});
-    await c.query('SELECT seed.apply_appreciation($1,$2::jsonb,$3::jsonb)',[command.offeringId,JSON.stringify(prepared.gift),JSON.stringify(prepared.takes)]);
+    await s.applyAppreciation(command.offeringId,prepared.gift,prepared.takes);
     return prepared.result;
   });
-  if(command.action==='spend')return withSession(uid,async c=>{
-    const context=(await c.query('SELECT seed.spend_context($1) AS context',[command.decisionId])).rows[0].context;
+  if(command.action==='spend')return light.session(uid,async s=>{
+    const context=await s.spendContext(command.decisionId);
     const prepared=prepareSpend({uid,context,decisionId:command.decisionId});
-    await c.query('SELECT seed.apply_spend($1,$2::jsonb)',[command.decisionId,JSON.stringify(prepared.spend)]);
+    await s.applySpend(command.decisionId,prepared.spend);
     return prepared.result;
   });
-  return withSession(uid,c=>run(c,'SELECT seed.reset_light() AS result'));
+  return light.reset(uid);
 }
 
 // ── THE UNMINT: the head taken back, its touch lifted (domain/unmint) ───────────────────────
@@ -173,18 +176,18 @@ export function prepareUnmint({uid,context}) {
   return {lifted:restore.set,cleared:restore.clear,names:[...Object.keys(restore.set),...restore.clear]};
 }
 export function unmint(withSession,uid,pulseId) {
-  return withSession(uid,async c=>{
-    const context=(await c.query('SELECT seed.unmint_context($1) AS context',[pulseId])).rows[0].context;
+  return lightRepository(withSession).session(uid,async s=>{
+    const context=await s.unmintContext(pulseId);
     const prepared=prepareUnmint({uid,context});
-    const head=await run(c,'SELECT seed.apply_unmint($1,$2::jsonb,$3::text[]) AS result',[pulseId,JSON.stringify(prepared.lifted),prepared.cleared]);
+    const head=await s.applyUnmint(pulseId,prepared.lifted,prepared.cleared);
     return {...head,lifted:prepared.names};
   });
 }
 
 // ── STAFF and the ACCOUNT'S DEPARTURE: the law stands in SQL alone ───────────────────────────
-export const staffCommand=(withSession,uid,command)=>withSession(uid,c=>run(c,'SELECT seed.staff_command($1::jsonb) AS result',[JSON.stringify(command)]));
-export const accountCommand=(withSession,uid,command)=>withSession(uid,c=>run(c,'SELECT seed.delete_account($1,$2) AS result',
-  [command.action==='delete_mine'?uid:command.uid,command.action==='delete_mine'?(command.heirUid??null):null]));
+export const staffCommand=(withSession,uid,command)=>lightRepository(withSession).staff(uid,command);
+export const accountCommand=(withSession,uid,command)=>lightRepository(withSession).deleteAccount(uid,
+  command.action==='delete_mine'?uid:command.uid,command.action==='delete_mine'?(command.heirUid??null):null);
 
 // ── DOMAIN PROOFS AND DOORS ─────────────────────────────────────────────────────────────────
 // The node's own hostname is a node door; the faces the installation names (SEED_FACE_DOORS) are
@@ -204,20 +207,21 @@ async function observe(resolveTxt,name,challengeToken) {
   if(!Array.isArray(records) || !txtProvesChallenge(records,challengeToken))refuse('txt_mismatch',409);
 }
 export async function domainCommand(withSession,uid,command,{nodeDomain,faceDoors,resolveTxt}) {
+  const light=lightRepository(withSession);
   const ttl=DOMAIN_CHALLENGE_TTL_MS,cid=command.communityId;
   if(command.action==='start_verification') {
-    const {challenge,domain}=await withSession(uid,c=>run(c,'SELECT seed.domain_challenge($1,$2,$3) AS result',[cid,token(),ttl]));
+    const {challenge,domain}=await light.domainChallenge(uid,cid,token(),ttl);
     return {domain,...challengeRecord(domain,challenge)};
   }
   if(command.action==='check_verification') {
-    const {challenge,domain}=await withSession(uid,c=>run(c,'SELECT seed.domain_challenge($1,NULL,$2) AS result',[cid,ttl]));
+    const {challenge,domain}=await light.domainChallenge(uid,cid,null,ttl);
     liveness(challenge,Date.now());
     if(challenge.domain!==domain)refuse('domain_changed',409);
     await observe(resolveTxt,challengeRecordName(challenge.domain),challenge.token);
-    return withSession(uid,c=>run(c,'SELECT seed.domain_verified($1,$2,$3) AS result',[cid,challenge.token,ttl]));
+    return light.domainVerified(uid,cid,challenge.token,ttl);
   }
   if(command.action==='list_doors') {
-    const claims=await withSession(uid,c=>run(c,'SELECT seed.door_claims($1) AS result',[cid]));
+    const claims=await light.doorClaims(uid,cid);
     if(claims===null)refuse('forbidden',403);
     return {claims:claims.map(x=>({door:x.door,kind:x.kind,...(x.token?challengeRecord(x.door,x):{})}))};
   }
@@ -225,22 +229,22 @@ export async function domainCommand(withSession,uid,command,{nodeDomain,faceDoor
   if(!isDoorName(door))refuse('door_not_hostname',400);
   const kind=doorKindOf(door,{nodeDomain,faceDoors});
   if(command.action==='start_door') {
-    const read=await withSession(uid,c=>run(c,'SELECT seed.door_claim($1,$2,NULL,NULL,$3) AS result',[cid,door,ttl]));
+    const read=await light.doorClaim(uid,cid,door,null,null,ttl);
     const refusal=doorClaimRefusal({door,kind,community:{id:cid,domain:read.community?.domain,domainAliases:read.community?.domainAliases},claimedBy:read.claimant?{id:read.claimant}:null});
     if(refusal)refuse(refusal,409);
-    const {challenge}=await withSession(uid,c=>run(c,'SELECT seed.door_claim($1,$2,$3,$4,$5) AS result',[cid,door,kind,kind==='custom'?token():null,ttl]));
+    const {challenge}=await light.doorClaim(uid,cid,door,kind,kind==='custom'?token():null,ttl);
     return {door,kind,...(kind==='custom'?challengeRecord(door,challenge):{})};
   }
   if(command.action==='check_door') {
-    const {challenge}=await withSession(uid,c=>run(c,'SELECT seed.door_claim($1,$2,NULL,NULL,$3) AS result',[cid,door,ttl]));
+    const {challenge}=await light.doorClaim(uid,cid,door,null,null,ttl);
     if(!challenge || !challenge.token)refuse('no_challenge',409);
     liveness(challenge,Date.now());
     await observe(resolveTxt,challengeRecordName(door),challenge.token);
-    return withSession(uid,c=>run(c,'SELECT seed.door_open($1,$2,false,$3,$4) AS result',[cid,door,challenge.token,ttl]));
+    return light.doorOpen(uid,cid,door,false,challenge.token,ttl);
   }
   if(command.action==='grant_door') {
     if(kind!=='face')refuse('door_not_face',409);
-    return withSession(uid,c=>run(c,'SELECT seed.door_open($1,$2,true,NULL,$3) AS result',[cid,door,ttl]));
+    return light.doorOpen(uid,cid,door,true,null,ttl);
   }
-  return withSession(uid,c=>run(c,'SELECT seed.door_withdraw($1,$2) AS result',[cid,door]));
+  return light.doorWithdraw(uid,cid,door);
 }

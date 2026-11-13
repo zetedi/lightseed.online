@@ -6,11 +6,11 @@
 // the answer or the refusal back by name. THE KEEPING (save_credential): a key is sealed under the
 // installation's credential key (AES-256-GCM, bound to its row name) before it touches the soil;
 // an empty key removes. Nothing here is reachable except through aiCommand; no route returns a key.
+// THE LAYERS (same day): a SERVICE — the statements live in db/ai.mjs; the credit is one session.
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
 import {AI_RAIL_PROVIDERS,AI_DEFAULT_MODEL,AI_KIND_COUNTER,AI_KIND_LIMIT,nodeAiRefusal,aiKindOf,providerStatusOf,providerKeyRejected,aiRailRefusal,credentialIdOf,keyHintOf} from '../generated/chain.mjs';
 import {refuse} from './organs.mjs';
-
-const run=(c,sql,params)=>c.query(sql,params).then(r=>r.rows[0].result);
+import {aiRepository} from './db/ai.mjs';
 
 /** The cipher over a kept key: 32 bytes from SEED_CREDENTIAL_KEY (base64 or hex). A row is sealed with
  * its own name as associated data, so a ciphertext moved to another row will not open. @param {string} secret */
@@ -48,19 +48,18 @@ export function createCredentialCipher(secret) {
 export function createAiOrgan({rails={},cipher=null,nodeKeys={},log=console}) {
   const providers=AI_RAIL_PROVIDERS.filter(p=>rails[p] && typeof rails[p].complete==='function');
 
-  async function keep(withSession,uid,command) {
+  async function keep(ai,uid,command) {
     if(!cipher)refuse('credentials_unavailable',503);
-    if(!command.key)return withSession(uid,c=>run(c,'SELECT seed.credential_remove($1,$2,$3,$4) AS result',[command.scope,command.holderId,command.provider,command.intelligenceId]));
+    if(!command.key)return ai.remove(uid,command.scope,command.holderId,command.provider,command.intelligenceId);
     const sealed=cipher.seal(command.key,credentialIdOf(command.scope,command.holderId,command.provider));
-    return withSession(uid,c=>run(c,'SELECT seed.credential_save($1,$2,$3,$4,$5,$6,$7) AS result',
-      [command.scope,command.holderId,command.provider,sealed.ciphertext,sealed.keyId,keyHintOf(command.key),command.intelligenceId]));
+    return ai.save(uid,command.scope,command.holderId,command.provider,sealed.ciphertext,sealed.keyId,keyHintOf(command.key),command.intelligenceId);
   }
 
   // Whose key answers: a kept credential the hand may spend, else the node's — gated and counted.
-  async function credit(withSession,uid,command,kind) {
-    return withSession(uid,async c=>{
+  async function credit(ai,uid,command,kind) {
+    return ai.session(uid,async s=>{
       if(command.credential && cipher) {
-        const kept=await run(c,'SELECT seed.credential_take($1,$2,$3) AS result',[command.credential.scope,command.credential.holderId,command.provider]);
+        const kept=await s.take(command.credential.scope,command.credential.holderId,command.provider);
         if(kept) {
           try {return {apiKey:cipher.open(kept.ciphertext,kept.id,kept.keyId),source:'byo'};}
           catch(error) {log.warn('a kept credential could not be opened:',kept.id,error?.code??error?.message);}
@@ -68,20 +67,21 @@ export function createAiOrgan({rails={},cipher=null,nodeKeys={},log=console}) {
       }
       const apiKey=nodeKeys[command.provider]||null;
       if(!apiKey)refuse('ai_key_missing',412);
-      const refusal=nodeAiRefusal(await run(c,'SELECT seed.ai_gate() AS result',[])??{});
+      const refusal=nodeAiRefusal(await s.gate()??{});
       if(refusal)refuse(refusal,403);
-      await run(c,'SELECT seed.ai_quota($1,$2) AS result',[AI_KIND_COUNTER[kind],AI_KIND_LIMIT[kind]]);
+      await s.quota(AI_KIND_COUNTER[kind],AI_KIND_LIMIT[kind]);
       return {apiKey,source:'node'};
     });
   }
 
   async function aiCommand(withSession,uid,command) {
-    if(command.action==='save_credential')return keep(withSession,uid,command);
+    const ai=aiRepository(withSession);
+    if(command.action==='save_credential')return keep(ai,uid,command);
     const rail=providers.includes(command.provider)?rails[command.provider]:null;
     if(!rail)refuse('ai_provider_unknown',400);
     const model=command.model??AI_DEFAULT_MODEL[command.provider];
     const kind=aiKindOf({model,imageOut:command.image});
-    const key=await credit(withSession,uid,command,kind);
+    const key=await credit(ai,uid,command,kind);
     let answer;
     try {answer=await rail.complete({apiKey:key.apiKey,model,system:command.system,messages:command.messages,json:command.json,image:command.image});}
     catch(error) {

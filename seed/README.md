@@ -1717,10 +1717,22 @@ the repository opens as the hand) → the pure DOMAIN (`src/domain`, compiled in
 `seed/generated/chain.mjs`). The pictures organ is the pattern, refactored first:
 `seed/api/db/pictures.mjs` holds the release's facts and apply (one session as the hand), the orphan
 sweep (one transaction under the hash's lock, the file taken inside it by the caller) and the due
-list; `seed/api/pictures.mjs` keeps the law and the refusals and no longer knows a statement.
-`database.mjs` (131 statements) and the other organs follow in their own rings; until then the
-repository is the shape every new organ is written in. `tests/seed/pictures.postgres-test.ts` and
-`tests/seed/clock.postgres-test.ts` run unchanged through the layers.
+list; `seed/api/pictures.mjs` keeps the law and the refusals and no longer knows a statement. The same
+evening the rest followed ("then all"): `seed/api/db/` holds twenty repositories — `session.mjs`
+(the pool, the guard against an unsafe role, one transaction per hand with `seed.uid` set),
+`readiness.mjs` (the boot's privilege probes), and one repository per feature (identity, beings,
+documents, communities, trees, media, chains, offerings, events, alignments, signing, light, mail,
+ai, clock, face, pictures, repairs), each a closed set of statements built with `statements.mjs`:
+every statement becomes a one-shot call in a session of its own, and `session(uid, body)` hands the
+body every statement bound to ONE transaction as the hand, so an organ's facts and apply stay in
+one transaction with the law between. The doors the HTTP edge calls live in `seed/api/node.mjs`
+(`createNode`: the command laws, the births and acceptances prepared by the shared law, the
+refusals — no statement), and `database.mjs` only re-exports it as `createDatabase`, so main, the
+test harness and the Docker proof call the old name. The organs (`organs.mjs`, `mail.mjs`, `ai.mjs`,
+`clock.mjs`, `face.mjs`) keep their constructors and laws and reach the soil only through their
+repositories. Only the crossing (`seed/api/bundle.mjs`) keeps its own statements: it is the owner's
+ceremony with the owner's client, not a request-serving door. Every PostgreSQL suite runs unchanged
+through the layers.
 
 ### The last hands (migration 061)
 

@@ -10,6 +10,7 @@
 // stranger reads — the runtime role under the row policies with no session — and the card gate is
 // applied on top. No request here ever fetches the shell over the network (the origin's mirror-guard
 // lesson): the built application is mounted read-only beside the API (SEED_SHELL_DIR).
+// THE LAYERS (same day): a SERVICE — the statements live in db/face.mjs.
 import { mkdir, open, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -19,6 +20,7 @@ import sharp from 'sharp';
 import { seedMediaPath } from '../../src/domain/seedMedia.mjs';
 import { lidOfDoor, publicCardOf, canonicalHostOf, faceSourceOf, isPublicAddress, shareCardOf, shellCardOf, sitemapXmlOf, SITEMAP_MAX_BEINGS,
   facePreviewAttempts, facePreviewKeyOf, FACE_PREVIEW_MAX_BYTES, faceFeedOf, feedDomainOf, momentMsOf } from '../generated/chain.mjs';
+import { faceRepository } from './db/face.mjs';
 
 const FACE_SOURCE_MAX_BYTES = 40 * 1024 * 1024;
 const FACE_FETCH_TIMEOUT_MS = 20_000;
@@ -29,6 +31,7 @@ const FACE_RENDERS_AT_ONCE = 2;
  *   shellDir?: string|null, cacheDir?: string|null, hosts: string[], nodeDomain: string, nodeName: string, log?: *, fetch?: *, lookup?: (host: string) => Promise<{address: string}[]>}} p */
 export function createFace({ withSession, mediaGet, media = null, shellDir = null, cacheDir = null, hosts, nodeDomain, nodeName, log = console,
   fetch = globalThis.fetch, lookup = host => dnsLookup(host, { all: true }) }) {
+  const soil = faceRepository(withSession);
   const ownHosts = [...new Set([nodeDomain, ...hosts].map(h => h.toLowerCase()))];
   const hostOf = req => canonicalHostOf(req.headers['x-forwarded-host'] ?? req.headers.host, ownHosts, nodeDomain);
   const fault = (what, error) => log.error(`face ${what} failed:`, error?.code ?? '', error instanceof Error ? error.message : String(error));
@@ -50,19 +53,13 @@ export function createFace({ withSession, mediaGet, media = null, shellDir = nul
   async function publicBeing(door) {
     const lid = lidOfDoor(door);
     if (!lid) return null;
-    const rows = await withSession(null, async c => (await c.query(`
-      SELECT * FROM (
-        SELECT 1 AS rank, 'tree' AS kind, doc FROM public.lifetrees WHERE doc->>'lid'=$1 AND length(doc->>'lid')=36
-        UNION ALL SELECT 2, 'house', doc FROM public.light_houses WHERE doc->>'lid'=$1 AND length(doc->>'lid')=36
-        UNION ALL SELECT 3, 'vision', doc FROM public.visions WHERE doc->>'lid'=$1 AND length(doc->>'lid')=36
-        UNION ALL SELECT 4, 'pulse', doc FROM public.pulses WHERE doc->>'lid'=$1 AND length(doc->>'lid')=36) found
-      ORDER BY rank LIMIT 1`, [lid])).rows);
-    if (!rows.length) return null;
-    const card = publicCardOf(rows[0].kind, rows[0].doc);
+    const row = await soil.publicBeing(null, lid);
+    if (!row) return null;
+    const card = publicCardOf(row.kind, row.doc);
     return card ? { lid, card } : null;
   }
   // The place a being's ground names (the mail organ's lookup: the community at the domain, else at the door).
-  const placeOf = domain => withSession(null, async c => (await c.query('SELECT seed.mail_place($1) AS place', [domain])).rows[0].place);
+  const placeOf = domain => soil.place(null, domain);
 
   async function card(req, res, door) {
     const host = hostOf(req);
@@ -162,10 +159,7 @@ export function createFace({ withSession, mediaGet, media = null, shellDir = nul
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=21600');
     try {
       // Only an explicit 'public' is listed — the sitemap is an invitation, not the gate (the card above still serves the legacy-absent).
-      const rows = await withSession(null, async c => (await c.query(`
-        SELECT doc->>'lid' AS lid, doc->'updatedAt' AS updated, doc->'createdAt' AS created FROM public.lifetrees WHERE doc->>'visibility'='public' AND length(doc->>'lid')=36
-        UNION ALL SELECT doc->>'lid', doc->'updatedAt', doc->'createdAt' FROM public.light_houses WHERE doc->>'visibility'='public' AND length(doc->>'lid')=36
-        UNION ALL SELECT doc->>'lid', doc->'updatedAt', doc->'createdAt' FROM public.visions WHERE doc->>'visibility'='public' AND length(doc->>'lid')=36`)).rows);
+      const rows = await soil.sitemapRows(null);
       const beings = rows.map(r => ({ lid: r.lid, ms: momentMsOf(r.updated) || momentMsOf(r.created) }));
       if (beings.length > SITEMAP_MAX_BEINGS) log.warn(`sitemap: ${beings.length} public beings exceed the ${SITEMAP_MAX_BEINGS}-entry cap; newest kept.`);
       res.writeHead(200); res.end(sitemapXmlOf(host, beings));
@@ -180,7 +174,7 @@ export function createFace({ withSession, mediaGet, media = null, shellDir = nul
     const domain = feedDomainOf(param, hostOf(req).split(':')[0]);
     if (!domain) { send(400, { error: 'domain' }); return; }
     try {
-      const feed = await withSession(null, async c => (await c.query('SELECT seed.face_events($1) AS feed', [domain])).rows[0].feed);
+      const feed = await soil.events(null, domain);
       if (!feed) { send(404, { error: 'no cradle at this domain', events: [] }); return; }
       send(200, { domain: feed.domain, events: faceFeedOf(Array.isArray(feed.events) ? feed.events : []) });
     } catch (error) { fault('events', error); send(200, { domain, events: [] }); } // never a broken feed — silence stands in
