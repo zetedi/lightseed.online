@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Real code+PKCE flow against a disposable issuer; never uses installation accounts.
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, delimiter } from 'node:path';
 import { randomBytes, createHash } from 'node:crypto';
@@ -75,6 +75,51 @@ try {
   const accounts = await accountsResponse.json();
   assert.equal(accounts.length, 1);
   const accountId = accounts[0].id;
+  console.log('Checking the enrollment at scale: a census of persons becomes logins and bindings.');
+  // THE ENROLLMENT AT SCALE (ring 2026-11-14): alice already has an account (bound by address, never made twice),
+  // bob has none (made: enabled, unverified, a password to set), the departed get no login; the trust file
+  // after the ceremony is written beside the given one and a second run finds nothing to do.
+  const census = join(directory, 'census'); await mkdir(census, { mode: 0o700 });
+  const lid = n => `019a0000-0000-7000-8000-${String(n).padStart(12, '0')}`;
+  await writeFile(join(census, 'identities.json'), JSON.stringify([
+    { sourceUid: 'alice', targetUid: 'alice', personLid: lid(1) }, { sourceUid: 'bob', targetUid: 'bob', personLid: lid(2) },
+    { sourceUid: 'gone', targetUid: 'gone', departed: true }]), { mode: 0o600 });
+  await writeFile(join(census, 'bundle.json'), JSON.stringify({ head: {}, docs: [
+    { path: 'users/alice', data: { uid: 'alice', email: 'Alice@example.test', displayName: 'Alice Test' } },
+    { path: 'users/bob', data: { uid: 'bob', email: 'bob@example.test', displayName: 'Bob the Builder' } }] }), { mode: 0o600 });
+  const trustBefore = join(census, 'auth.json');
+  await writeFile(trustBefore, JSON.stringify({ version: 1, issuer, audience: 'lightseed-api', tokenProfile: 'keycloak', clientId: 'lightseed-web', jwks: { keys: [] }, bindings: [] }), { mode: 0o600 });
+  const enroll = (trust, out, ...extra) => new Promise((accept, reject) => {
+    const child = spawn(process.execPath, [resolve('scripts/enroll-seed-identities.mjs'), join(census, 'identities.json'), '--people', join(census, 'bundle.json'), '--trust', trust, '--admin', origin, '--out', out, ...extra], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '', stderr = '';
+    child.stdout.on('data', b => { stdout += b; }); child.stderr.on('data', b => { stderr += b; });
+    child.on('error', reject);
+    child.on('close', code => accept({ code, stdout, stderr }));
+  });
+  const trustAfter = join(census, 'auth.enrolled.json');
+  const planned = await enroll(trustBefore, trustAfter);
+  assert.equal(planned.code, 0, 'The enrollment plan must be clear: ' + planned.stderr.slice(-500));
+  assert.match(planned.stdout, /1 accounts to make, 1 standing accounts to bind, 0 already bound, 1 departed/);
+  await assert.rejects(() => readFile(trustAfter), 'A plan writes nothing');
+  const applied = await enroll(trustBefore, trustAfter, '--apply');
+  assert.equal(applied.code, 0, 'The enrollment must apply: ' + applied.stderr.slice(-500));
+  assert.match(applied.stdout, /Applied: 1 accounts made, 1 standing accounts bound/);
+  const enrolled = JSON.parse(await readFile(trustAfter, 'utf8'));
+  assert.equal(enrolled.issuer, issuer);
+  assert.equal(enrolled.bindings.length, 2);
+  assert.deepEqual(enrolled.bindings.find(b => b.uid === 'alice'), { subject: accountId, uid: 'alice' });
+  const bobBinding = enrolled.bindings.find(b => b.uid === 'bob'); assert.ok(bobBinding?.subject);
+  const bobResponse = await request(origin + '/admin/realms/lightseed/users/' + bobBinding.subject, { headers: { authorization: 'Bearer ' + adminToken } });
+  assert.equal(bobResponse.status, 200);
+  const bob = await bobResponse.json();
+  assert.equal(bob.email, 'bob@example.test'); assert.equal(bob.enabled, true); assert.equal(bob.emailVerified, false);
+  assert.deepEqual([...bob.requiredActions].sort(), ['UPDATE_PASSWORD', 'VERIFY_EMAIL']);
+  assert.equal(bob.attributes?.lightseedUid, undefined); // the issuer carries no uid: the trust file is the binding
+  assert.equal(bob.firstName, 'Bob the'); assert.equal(bob.lastName, 'Builder');
+  const again = await enroll(trustAfter, join(census, 'auth.again.json'), '--apply');
+  assert.equal(again.code, 0); assert.match(again.stdout, /0 accounts to make, 0 standing accounts to bind, 2 already bound/); assert.match(again.stdout, /nothing to do/);
+  await assert.rejects(() => readFile(join(census, 'auth.again.json')), 'Nothing to do writes nothing');
+  // The authenticator the API builds from the file after the ceremony binds alice's account to her uid.
   console.log('Checking authorization-code sign-in with S256 PKCE.');
   const verifier = randomBytes(32).toString('base64url');
   const challenge = createHash('sha256').update(verifier).digest('base64url');

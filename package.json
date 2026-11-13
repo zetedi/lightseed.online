@@ -52,6 +52,7 @@
     "seed:restore": "node scripts/restore-seed.mjs",
     "test:seed:docker": "node scripts/test-seed-docker.mjs",
     "seed:identity:configure": "node scripts/configure-seed-identity.mjs",
+    "seed:identity:enroll": "node scripts/enroll-seed-identities.mjs",
     "test:seed:identity": "node scripts/test-seed-identity.mjs",
     "seed:web:build": "vite build --config vite.seed.config.ts",
     "seed:domain:build": "node seed/build-domain.mjs",
