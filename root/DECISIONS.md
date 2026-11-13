@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The keeping** — A backup was the database alone (`backup.sh`); the media, the
+identity and the configuration had no hand, and the release contract named "complete backup/restore"
+among what was still required. Now `seed:backup` keeps the four parts under one manifest
+(`domain/seedBackup`: every file by size and sha256, the soil's migration, the hand's commit) into a
+new owner-only directory, and `seed:restore` holds a backup to its manifest before anything is
+written and lands each part only where nothing stands. REJECTED: a single archive (four parts of
+different natures, a manifest that can name each; a directory a keeper can read with their eyes);
+restoring over a standing soil, realm or file (a restore that could overwrite is a restore that can
+destroy — the empty place is the only place); a realm export through the issuer's own tooling (its
+database holds the logins whole, and pg_dump is the one law both soils already trust); keeping the
+custodian's key with the rest (it never enters the node, so it never enters a backup of it);
+pruning old backups automatically (retention is a reviewed act after a tested restore). Plain
+contract — guaranteed: a backup answers to its manifest or is refused; a restore never overwrites a
+soil, a realm or a file; a part left out is said so. Not guaranteed: the two hands inside the Docker
+proof (its own dump/restore check stands), the TLS certificates and the edge's state, a backup taken
+while the API writes (pg_dump is consistent; the media tar is the store at that moment).
+
 **2026-11-03 · The media crosses** — "Media and queues do not travel" was the crossing's last named
 hole between nodes. Now the pictures a bundle's records name travel in a SIDECAR beside the bundle
 (`domain/mediaCrossing`): the content-addressed files by hash and their manifests, the manifests'

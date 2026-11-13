@@ -69,16 +69,36 @@ startup checks, session cleanup after failures and concurrent pooled requests.
 ## Back up / restore
 
 ```bash
-./backup.sh                   # completed pg_dump into seed/backups/
-docker compose exec -T db psql -U lightseed lightseed < backups/<file>.sql   # restore
+./backup.sh                   # the database alone: a completed pg_dump into seed/backups/
+docker compose exec -T db psql -U lightseed lightseed < backups/<file>.sql   # its restore
+
+# THE KEEPING (ring 2026-11-03): the whole node into one new owner-only directory, and back.
+npm run seed:backup -- [--local] /private/backups/lightseed-2026-11-03
+npm run seed:restore -- [--local] /private/backups/lightseed-2026-11-03 [--database <empty db>] [--media-dir <path>]
 ```
 
+`seed:backup` keeps what a whole node is made of (`domain/seedBackup`): the DATABASE (pg_dump of
+the soil, `--no-owner --no-acl`, so it restores into any empty database), the MEDIA (the pictures by
+hash, one tar from the API's store), the IDENTITY (pg_dump of the issuer's own database: the realm
+and every login) and the CONFIGURATION (the environment, the charter, the trust file, the runtime
+secrets — under `config/` with their own paths). A `manifest.json` names every file with its size
+and sha256, the migration the soil stands at and the commit the hand ran from; a part whose service
+is not running is left out and said so (`--without-media`, `--without-identity` leave one out on
+purpose). `seed:restore` holds the backup to its manifest first — every file present, its size and
+digest its own — and refuses otherwise; then it lands part by part, each only where nothing stands:
+the database into an EMPTY database (`--database`, `lightseed` by default; it must exist and carry
+no `seed` schema — a soil is never written over), the media into the API's store (or `--media-dir`
+for a look before trusting), the identity into an EMPTY issuer database, the configuration files
+only where none stands (what was skipped is named). Afterwards provision the runtime role anew and
+restart the API. Proven on the local node: a backup restored into a scratch database and directory
+carried the same counts of records, pictures and bindings; `tests/seedKeeping.test.ts` holds the
+manifest law. Not in a backup by design: the custodian's Ed25519 key (it never enters the node),
+the TLS certificates (ACME issues them anew) and the edge's own state.
+
 The node's **export ceremony** (in-app, staff admin card) remains the human-readable
-soul-backup: records as JSON, chains with seals verbatim. `pg_dump` is the body;
-the export is the story.
-Backups use owner-only file permissions and receive their final name only after
-`pg_dump` succeeds. No backup is automatically deleted; review retention after testing
-a restore. These dumps contain database data only, not future media/auth volumes.
+soul-backup: records as JSON, chains with seals verbatim; the crossing (`seed:export`) is the
+signed, mergeable form of it. `pg_dump` is the body; the export is the story. No backup is
+automatically deleted; review retention after testing a restore.
 
 ## Merge preparation
 

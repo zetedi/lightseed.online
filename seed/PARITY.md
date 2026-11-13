@@ -112,8 +112,11 @@ replacement for document queries, live subscriptions, upload/download or server 
 - Secure VPS ingress/TLS, installation/upgrade and service health. Durable scheduled work now
   stands in the clock's ledger (migration 058: due moment, lease, outcome and report per job);
   its proof on a long-running VPS remains.
-- Complete database, identity, media, configuration and key backup/restore. Existing Docker
-  proof covers fresh application DB install, API restrictions, restart and DB data restore only.
+- Complete database, identity, media, configuration and key backup/restore: `seed:backup` and `seed:restore`
+  keep and land the database, the media, the identity database and the configuration under one manifest
+  (`domain/seedBackup`, 2026-11-03; proven on the local node), a restore refusing a backup that does not answer
+  to its manifest and a soil that already stands. The custodian's key stays outside by design. The Docker
+  proof's own dump/restore check remains the automated one; the keeping's two hands are not yet in it.
 - Signed exports and transactional additive import now exist (`seed:export`, `seed:import`, migration 055;
   PostgreSQL tests cover the seal, tampering, identity anchoring, local authority, idempotence and conflicts),
   and the origin's Firestore soil leaves as the same bundle (`seed:export:origin`, 2026-11-03: one read-only

@@ -670,6 +670,16 @@ transaction — a manifest never names a file that is not there. What is named b
 as left; what is held but not named stays an orphan on both shores. The origin's pictures are URLs
 into its own storage and do not travel this way.
 
+THE KEEPING (2026-11-03). What a whole node is made of, kept in one owner-only directory under one
+manifest (`domain/seedBackup`, `seed:backup`): the database (the soil whole), the media (the
+pictures by hash), the identity (the issuer's own database: the realm and every login) and the
+configuration (environment, charter, trust file, runtime secrets), every file named with its size
+and sha256, the migration the soil stands at and the commit of the hand. The other hand
+(`seed:restore`) holds the backup to its manifest before anything is written and lands each part
+only where nothing stands: an empty database, the store, an empty issuer database, a configuration
+file not already there. The custodian's key never enters a backup; the crossing remains the signed,
+mergeable form of the same story.
+
 THE LAST HANDS (migration 061, 2026-11-03). The thirteen hands that still refused by name are
 grown, and the parity count is zero. The origin's five provider hands are the realm's own doors
 reached by a redirect (`domain/issuerDoors`: an identity-provider hint, a login hint, the

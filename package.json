@@ -48,6 +48,8 @@
     "seed:export": "node seed/api/export.mjs",
     "seed:export:origin": "node scripts/export-origin.mjs",
     "seed:import": "node seed/api/import.mjs",
+    "seed:backup": "node scripts/backup-seed.mjs",
+    "seed:restore": "node scripts/restore-seed.mjs",
     "test:seed:docker": "node scripts/test-seed-docker.mjs",
     "seed:identity:configure": "node scripts/configure-seed-identity.mjs",
     "test:seed:identity": "node scripts/test-seed-identity.mjs",

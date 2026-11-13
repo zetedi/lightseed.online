@@ -97,9 +97,11 @@ permission to ship a reduced-feature node.
    edge answers at every face host, the front door wears the community's card, and the shell
    signs in at the face it stands at (one realm, every origin a redirect URI).
 6. Bootstrap authority and the first keeper without a public first-visitor claim —
-   `seed:keeper` appoints the keeper from the installation (2026-11-02).
-   Verify a clean Compose installation, persistence, complete backup/restore and
-   overlapping imports. Walk all supported features with Firebase access blocked.
+   `seed:keeper` appoints the keeper from the installation (2026-11-02). The keeping stands
+   (2026-11-03): `seed:backup` and `seed:restore` carry the database, the media, the identity
+   and the configuration under one manifest, proven on the local node. Still to verify on a
+   long-running VPS: a clean Compose installation, persistence, overlapping imports. Walk all
+   supported features with Firebase access blocked.
 
 Database configuration, backup hardening and the initial API container are implemented
 and tested. Full PostgreSQL authorization and independent browser verification remain outstanding.
