@@ -89,6 +89,8 @@ export function createDatabase(config) {
       return withSession(null, async c => (await c.query('SELECT seed.resolve_identity($1,$2,$3,$4,$5) AS uid',
         [issuer, subject, explicitUid, open, 'oidc_' + uuidv7()])).rows[0].uid);
     },
+    // THE BINDING CEREMONY (ring 2026-11-03): the reviewed bindings become durable rows at boot (seed.bind_explicit).
+    bindExplicit:(issuer,bindings)=>withSession(null,async c=>(await c.query('SELECT seed.bind_explicit($1,$2::jsonb) AS result',[issuer,JSON.stringify(bindings)])).rows[0].result),
     ready: () => withSession(null, async c => {
       if(!(await c.query("SELECT has_function_privilege(current_user,'seed.person_lid_candidates(text)','EXECUTE') AS allowed")).rows[0].allowed)throw new Error('being_lookup_unavailable');
       if(!(await c.query("SELECT has_table_privilege(current_user,'public.pulses','SELECT') AND has_function_privilege(current_user,'seed.can_read_pulse(jsonb)','EXECUTE') AS allowed")).rows[0].allowed)throw new Error('pulse_reads_unavailable');

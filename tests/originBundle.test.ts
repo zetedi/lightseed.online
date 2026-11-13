@@ -141,9 +141,10 @@ describe('the origin leaves', () => {
 
   it('counts the identities the far side must bind, and the ghosts it cannot', async () => {
     const haunted = { ...soil, 'pulses/p3': { lid: LID(23), authorId: 'departed', lifetreeId: 't1', recipientUid: 'gone' }, 'users/u3': { lid: LID(3) }, 'persons/u3': { uid: 'u3', lid: LID(4) }, 'users/u4': { displayName: 'No lid' }, 'persons/u4': { uid: 'u4' }, 'pulses/p4': { lid: LID(24), authorId: 'u3', seenBy: ['u4'] } };
-    const { identities, ghosts } = originIdentities((await originSnapshot(readerOf(haunted))).docs);
-    expect(identities).toEqual([{ sourceUid: 'u1', targetUid: 'u1', personLid: LID(1) }, { sourceUid: 'u2', targetUid: 'u2', personLid: LID(2) }]);
-    expect(ghosts).toEqual([{ uid: 'gone', reason: 'person_missing' }, { uid: 'u3', reason: 'lid_disagrees' }, { uid: 'u4', reason: 'lid_missing' }]);
+    const { identities, departed, ghosts } = originIdentities((await originSnapshot(readerOf(haunted))).docs);
+    expect(identities).toEqual([{ sourceUid: 'gone', targetUid: 'gone', departed: true }, { sourceUid: 'u1', targetUid: 'u1', personLid: LID(1) }, { sourceUid: 'u2', targetUid: 'u2', personLid: LID(2) }]);
+    expect(departed).toEqual(['gone']);
+    expect(ghosts).toEqual([{ uid: 'u3', reason: 'lid_disagrees' }, { uid: 'u4', reason: 'lid_missing' }]);
   });
 
   it('lets the origin\'s own version-1 charter sign a head, as a sound version-2 charter does', async () => {

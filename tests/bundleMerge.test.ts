@@ -200,3 +200,28 @@ describe('identities anchored by an installation-bound login', () => {
     expect(plan.issues.map(i => i.code)).toContain('identity_conflict');
   });
 });
+
+// THE BINDING CEREMONY (ring 2026-11-03): a departed uid — an account deleted at the origin whose traces
+// (a love, a seat in a block) still name it — may cross as a NAME when the installation vouches it is
+// departed: no person record on either side, no login bound. A person who exists is never departed.
+describe('departed identities travel as names', () => {
+  const traces = [record('pulses/p1', { lid, authorId: 'ann', seenBy: ['gone'] }), record('users/ann', { lid: otherLid }), record('persons/ann', { uid: 'ann', lid: otherLid })];
+  const ann = { sourceUid: 'ann', targetUid: 'ann', personLid: otherLid, loginBound: true };
+  it('a vouched departed uid needs no person and no login', async () => {
+    const plan = await planBundleMerge(await bundle(traces), [], anchor, acceptSeal, [ann, { sourceUid: 'gone', targetUid: 'gone', departed: true }]);
+    expect(plan.issues).toEqual([]);
+    expect(plan.ready).toBe(true);
+  });
+  it('without the vouch the uid is unbound; with a person or a login it is not departed', async () => {
+    const unbound = await planBundleMerge(await bundle(traces), [], anchor, acceptSeal, [ann]);
+    expect(unbound.issues.map(i => i.code)).toEqual(['identity_unbound']);
+    const present = await planBundleMerge(await bundle([...traces, record('persons/gone', { uid: 'gone', lid: '019f6381-48fd-7fcc-9382-e99d923f38ac' })]), [], anchor, acceptSeal, [ann, { sourceUid: 'gone', targetUid: 'gone', departed: true }]);
+    expect(present.issues.map(i => i.code)).toEqual(['identity_conflict']);
+    const here = await planBundleMerge(await bundle(traces), [record('users/gone', { lid: '019f6381-48fd-7fcc-9382-e99d923f38ac' })], anchor, acceptSeal, [ann, { sourceUid: 'gone', targetUid: 'gone', departed: true }]);
+    expect(here.issues.map(i => i.code)).toEqual(['identity_conflict']);
+    const login = await planBundleMerge(await bundle(traces), [], anchor, acceptSeal, [ann, { sourceUid: 'gone', targetUid: 'gone', departed: true, loginBound: true }]);
+    expect(login.issues.map(i => i.code)).toEqual(['identity_conflict']);
+    const renamed = await planBundleMerge(await bundle(traces), [], anchor, acceptSeal, [ann, { sourceUid: 'gone', targetUid: 'elsewhere', departed: true }]);
+    expect(renamed.issues.map(i => i.code)).toEqual(['identity_rewrite_required']);
+  });
+});

@@ -304,6 +304,13 @@ perform import merging. Restart the API after changing bindings or public keys;
 removing a binding then denies its tokens. Provider logout alone does not invalidate
 an already issued token: token-level revocation is not implemented.
 
+THE BINDING CEREMONY (ring 2026-11-03, migration 062): when the API boots, every binding in this
+file becomes a durable row (`seed.bind_explicit`), not only when the person's first token arrives —
+so a crossing may land a person before they have spoken here. A subject already bound to another
+uid is never relinked: the conflict is logged and that subject's tokens are refused as before; a
+self-enrolled login the file now names is affirmed as explicit. The ceremony before a crossing is
+therefore: create each person's login at the issuer, name each subject → uid here, restart, import.
+
 For Docker, use a local Compose override (keep it outside Git):
 
 ```yaml
@@ -1657,10 +1664,10 @@ witness rebuilt from the body.
 
 What it does not do: carry media (pictures stay URLs into the origin's storage), create logins or
 bindings on the far side, or mend the origin. The ceremony in order: export; create each person's
-login at the new node's issuer; bind each subject to its uid in the auth trust file; the durable
-explicit binding is written by that person's first token (`seed.resolve_identity`) — writing those
-rows from the reviewed file before anyone logs in is the next ring; then `seed:import` plans and
-lands. `tests/originBundle.test.ts` holds the value law, the gathering, the refusals, the pruning
+login at the new node's issuer; name each subject → uid in the auth trust file and restart the API
+(the bindings become durable rows at boot, migration 062); review `identities.json` — a uid the
+records name but no person carries is vouched DEPARTED there (`departed: true`) and travels as a
+name only, with no person and no login; then `seed:import` plans and lands. `tests/originBundle.test.ts` holds the value law, the gathering, the refusals, the pruning
 and the census; `tests/seed/origin-crossing.postgres-test.ts` lands a Firestore-shaped soil,
 sealed under the origin's own charter, on a real PostgreSQL node.
 

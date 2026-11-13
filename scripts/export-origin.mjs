@@ -129,7 +129,7 @@ try {
     for (const issue of verdict.issues.slice(0, 20)) console.error(`  ${issue.code}${issue.path ? ' ' + issue.path : ''}${issue.detail ? ': ' + issue.detail : ''}`);
     process.exit(2);
   }
-  const { identities, ghosts } = originIdentities(bundle.docs);
+  const { identities, departed, ghosts } = originIdentities(bundle.docs);
   const witness = new Set(expectedBeingsIndex(bundle.docs).map(entry => entry.lid));
   const origin = new Set(beingsOnOrigin);
   const beings = {
@@ -148,7 +148,7 @@ try {
   if (snapshot.unlandable.length) console.log(`Left behind unlandable (${snapshot.unlandable.length}) — named in ${out}.left.json.`);
   if (pruned.broken.length) console.log(`Left behind broken (${pruned.broken.length} blocks whose chain does not meet) — named in ${out}.left.json.`);
   if (snapshot.rebuilt.length) console.log(`Rebuilt on the far side: ${snapshot.rebuilt.join(', ')} (${beings.onOrigin} beings on the origin, ${beings.inWitness} in the witness; only on the origin ${beings.onlyOnOrigin.length}, only in the witness ${beings.onlyInWitness.length}).`);
-  console.log(`Identities: ${identities.length} bound to a person (${out}.identities.json); ghosts ${ghosts.length}${ghosts.length ? ': ' + ghosts.map(g => `${g.uid} (${g.reason})`).join(', ') : ''}.`);
+  console.log(`Identities: ${identities.length - departed.length} bound to a person and ${departed.length} vouched departed (${out}.identities.json — review it; a departed uid travels as a name only); ghosts ${ghosts.length}${ghosts.length ? ': ' + ghosts.map(g => `${g.uid} (${g.reason})`).join(', ') : ''}.`);
   console.log(`Hand the receiving node ${out}.anchor.json by another road than the bundle; media and queues do not travel.`);
 } catch (error) {
   console.error(error instanceof SyntaxError ? 'Invalid JSON input.' : error instanceof Error ? error.message : 'Export failed.');

@@ -2,6 +2,7 @@ import { createMediaStore } from './media.mjs';
 import { seedNodeDomain } from '../../src/domain/seedCommunity.mjs';
 import { readFile } from 'node:fs/promises';
 import { createAuthenticator } from './auth.mjs';
+import { seedAuthConfig } from '../../src/domain/seedAuth.mjs';
 import { createDatabase } from './database.mjs';
 import { createApi } from './server.mjs';
 import { createMailOrgan, smtpTransportOptions } from './mail.mjs';
@@ -24,12 +25,13 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   console.error('Invalid API port.'); process.exit(1);
 }
 const database = createDatabase();
-let authenticate;
+let authenticate, trust = null;
 if (process.env.SEED_AUTH_CONFIG) {
   try {
     const source = await readFile(process.env.SEED_AUTH_CONFIG);
     if (source.length > 2 * 1024 * 1024) throw new Error('auth_config_too_large');
-    authenticate = await createAuthenticator(JSON.parse(source.toString('utf8')), database.resolveIdentity, database.recordEmail);
+    trust = JSON.parse(source.toString('utf8'));
+    authenticate = await createAuthenticator(trust, database.resolveIdentity, database.recordEmail);
   } catch { console.error('Invalid authentication configuration.'); process.exit(1); }
 }
 const nodeDomain = seedNodeDomain(process.env.SEED_NODE_ORIGIN);
@@ -39,6 +41,16 @@ if (process.env.SEED_NODE_ORIGIN && !nodeDomain) {
 try { await database.ready(); } catch {
   console.error('Database is unavailable or the account is unsafe for serving requests.');
   await database.close(); process.exit(1);
+}
+// THE BINDING CEREMONY (ring 2026-11-03): the reviewed bindings become durable rows at boot (seed.bind_explicit, migration 062);
+// a standing row under another uid is never relinked, only reported — that subject's tokens stay refused as before.
+if (trust) {
+  try {
+    const reviewed = seedAuthConfig(trust);
+    const report = await database.bindExplicit(reviewed.issuer, reviewed.bindings);
+    console.log('Identity bindings: ' + report.bound + ' bound, ' + report.standing + ' standing, ' + report.conflicts.length + ' in conflict.');
+    for (const conflict of report.conflicts) console.warn('Binding conflict: subject ' + conflict.subject + ' stands bound to ' + conflict.bound + ', the trust file says ' + conflict.uid + '; the durable record wins.');
+  } catch (error) { console.warn('Identity bindings were not synchronised:', error instanceof Error ? error.message : 'unknown'); }
 }
 let media;
 if(process.env.SEED_MEDIA_DIR) {

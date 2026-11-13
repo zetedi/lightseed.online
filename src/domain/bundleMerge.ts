@@ -14,11 +14,16 @@ import { isLid } from './dataAuthority';
 export interface MergeIdentity {
   sourceUid: string;
   targetUid: string;
-  personLid: string;
+  // The person LID both nodes must agree on — absent only for a DEPARTED uid.
+  personLid?: string;
   // The destination's installation bound a login to targetUid by reviewed configuration (an explicit
   // issuer/subject binding, never an email match). Set by the executor from its own records, not by
   // the operator's file: with it, the person may ARRIVE with the import before they have spoken there.
   loginBound?: boolean;
+  // THE DEPARTED (ring 2026-11-03): an account deleted at the origin whose traces — a love, a seat in a
+  // block — still name it. The receiving hand vouches it departed, and it crosses as a NAME: no person
+  // record on either side, no login bound; a person who exists is never departed.
+  departed?: boolean;
 }
 
 export interface MergeIssue {
@@ -149,6 +154,13 @@ export async function planBundleMerge(
     }
     const sourcePersons = ['users', 'persons'].map(c => incomingByPath.get(`${c}/${uid}`)).filter(d => d !== undefined);
     const targetPersons = ['users', 'persons'].map(c => current.get(`${c}/${uid}`)).filter(d => d !== undefined);
+    if (binding.departed === true) {
+      // A departed uid travels as a name: nobody is that person on either side, and no login answers to it.
+      if (sourcePersons.length > 0 || targetPersons.length > 0 || binding.loginBound === true) {
+        issues.push({ code: 'identity_conflict', detail: `Identity ${uid} is vouched departed but a person or a login still answers to it.` });
+      }
+      continue;
+    }
     // Anchored on the far side by a person record carrying the same LID, or by a login the
     // installation itself bound to this uid (the person then arrives with the import).
     const anchoredByLogin = binding.loginBound === true && targetPersons.length === 0;

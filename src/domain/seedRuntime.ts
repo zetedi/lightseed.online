@@ -11,7 +11,7 @@ SET LOCAL lock_timeout = '10s';
 SET LOCAL search_path = pg_catalog;
 DO $ready$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '061_repairs.sql') THEN
+  IF NOT EXISTS (SELECT 1 FROM seed.schema_migrations WHERE name = '062_bindings.sql') THEN
     RAISE EXCEPTION 'Run seed:migrate before provisioning a runtime account.';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -127,6 +127,8 @@ GRANT EXECUTE ON FUNCTION seed.media_lock(text[]), seed.picture_context(text,tex
 GRANT EXECUTE ON FUNCTION seed.repair_pulse_visibility(), seed.repair_pulse_type_casing(), seed.repair_tree_visibility(),
   seed.repair_vision_chains_due(), seed.repair_vision_chain(text,text), seed.repair_lids_due(), seed.repair_lid(text,text,text),
   seed.repair_match_ids_due(), seed.repair_alignments_of_tree(text), seed.repair_match_id(text,text), seed.repair_lid_index() TO ${role};
+-- THE BINDING CEREMONY (ring 2026-11-03): the reviewed bindings become durable rows when the API boots.
+GRANT EXECUTE ON FUNCTION seed.bind_explicit(text,jsonb) TO ${role};
 COMMIT;
 `;
 }

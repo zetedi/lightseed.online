@@ -86,9 +86,9 @@ permission to ship a reduced-feature node.
    transaction (2026-11-02); `seed:export:origin` exports the origin's Firestore soil as the
    same sealed bundle, naming what cannot travel, and both exporters let ONE community leave
    with its circle, everything its members anchor and everything placed at it (`--community`,
-   2026-11-03); the origin's fossils were swept the same day. Media transport, the binding
-   ceremony (explicit login rows written by the installation before the import; departed uids
-   whose traces travel as names) and identity enrollment at scale remain. The last thirteen
+   2026-11-03); the origin's fossils were swept the same day; the binding ceremony stands
+   (migration 062: the trust file's bindings become rows at boot, departed uids cross as names
+   when vouched). Media transport and identity enrollment at scale remain. The last thirteen
    refusing hands are grown (2026-11-03, migration 061: the issuer's doors driven through the
    realm, the one-time backfills as the keeper's own audits and repairs, the first-keeper claim
    answered by the installation's appointment) — the parity count is zero. The API has its

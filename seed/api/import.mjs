@@ -30,8 +30,11 @@ try {
   const anchor = await readJson(option('--anchor'));
   const identities = option('--identities') ? await readJson(option('--identities')) : [];
   if (!incoming?.head || !Array.isArray(incoming.docs) || typeof incoming.manifestHash !== 'string' || !incoming.seal) throw new Error('Expected a sealed NodeBundle.');
-  if (!Array.isArray(identities) || identities.some(i => !i || ['sourceUid', 'targetUid', 'personLid'].some(k => typeof i[k] !== 'string' || !i[k]))) {
-    throw new Error('Each identity binding needs sourceUid, targetUid and personLid.');
+  // Each identity binds a uid to itself with its person LID — or vouches the uid DEPARTED (no person, no login; its traces travel as names).
+  const sound = i => i && typeof i === 'object' && ['sourceUid', 'targetUid'].every(k => typeof i[k] === 'string' && i[k])
+    && (i.departed === true ? i.personLid === undefined : typeof i.personLid === 'string' && i.personLid.length > 0);
+  if (!Array.isArray(identities) || !identities.every(sound)) {
+    throw new Error('Each identity binding needs sourceUid, targetUid and personLid — or departed: true in place of a person.');
   }
   await client.connect();
   const { plan, applied, inserted, already } = await cross(client, { incoming, anchor, identities, apply: args.includes('--apply') });

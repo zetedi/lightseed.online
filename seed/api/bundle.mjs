@@ -102,7 +102,7 @@ export { verifyBundle, verifyBundleSeal, localUidCensus };
 // not spoken here yet may arrive with the import once the installation bound their login by reviewed
 // configuration), and with `apply` every planned insert lands — or the whole crossing rolls back.
 /** @param {import('pg').Client} client
- * @param {{ incoming: *, anchor: { fingerprint: string, publicKeyB64: string }, identities?: Array<{ sourceUid: string, targetUid: string, personLid: string }>, apply?: boolean }} crossing */
+ * @param {{ incoming: *, anchor: { fingerprint: string, publicKeyB64: string }, identities?: Array<{ sourceUid: string, targetUid: string, personLid?: string, departed?: boolean }>, apply?: boolean }} crossing */
 export async function cross(client, { incoming, anchor, identities = [], apply = false }) {
   if (!anchorSound(anchor)) throw Object.assign(new Error('The trusted anchor must carry a public key and its own fingerprint, obtained outside the bundle.'), { code: 'anchor_unsound' });
   await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');

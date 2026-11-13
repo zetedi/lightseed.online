@@ -6,6 +6,25 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The binding ceremony** — Before a crossing could land a person, the installation's
+binding of their login had to be a durable row, and until this ring only the person's first token
+wrote it (`seed.resolve_identity`): a node would have had every member sign in to an empty soil
+before their trees arrived. Now the reviewed trust file becomes rows when the API boots
+(`seed.bind_explicit`, migration 062), under the resolver's own validation and the same advisory lock,
+so the ceremony is: one login per person at the issuer, the subjects named, a restart, the import.
+And the departed — accounts deleted at the origin whose traces still name them (two in the real
+census) — cross as names when the identities file vouches them (`departed: true`): no person on
+either side, no login, or the vouch is a conflict; the origin exporter writes the vouch into
+`identities.json` for the receiving hand to review and pass on. REJECTED: a separate `seed:bind`
+script (a second ceremony to learn, where "edit the file and restart" already was the ritual);
+relinking a standing row to the file's uid (the durable record wins; a name is never re-pointed by
+a boot); dropping the traces of the departed from the bundle (chains cannot be cut, and a block that
+names someone who left still happened); binding the departed automatically at import (the vouch is
+the receiving hand's, passed on in the file it reviews). Plain contract — guaranteed: after a boot
+every binding in the trust file has a row or a logged conflict; a departed uid lands only without
+a person and without a login. Not guaranteed: the logins themselves (one per person at the issuer,
+by the realm's own means), media.
+
 **2026-11-03 · The last hands** — Asked what "remove all legacy code and migrate the existing ones
 to the new db" meant, Zoltán chose: port the thirteen hands that still refused by name, and keep
 Firebase as the origin until the crossing day. The five provider hands became the REALM's own doors

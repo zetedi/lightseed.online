@@ -200,23 +200,26 @@ export const pruneBrokenChains = (docs: BundleDoc[]): { docs: BundleDoc[]; broke
 // THE CENSUS OF IDENTITIES: every uid the bundle names, with the person LID it must be anchored to on
 // the far side (domain/bundleMerge asks that users/{uid} and persons/{uid} agree on it). The uids are
 // kept — signed history cannot be renamed — so each entry binds a uid to itself; what the receiving
-// installation adds is the login it vouches for. A uid without a person, or whose records disagree,
-// is a ghost: it cannot be bound and will block the crossing until the hand decides.
-export interface OriginIdentity { sourceUid: string; targetUid: string; personLid: string }
-export type OriginGhostReason = 'person_missing' | 'lid_missing' | 'lid_disagrees';
+// installation adds is the login it vouches for. A uid the records name but no person carries is
+// DEPARTED (an account deleted at the origin, its traces standing): it travels as a name when the
+// receiving hand passes the vouch on (`departed: true`, domain/bundleMerge). A person whose records
+// carry no lid, or disagree on it, is a ghost: it cannot be bound and blocks the crossing until mended.
+export interface OriginIdentity { sourceUid: string; targetUid: string; personLid?: string; departed?: true }
+export type OriginGhostReason = 'lid_missing' | 'lid_disagrees';
 export interface OriginGhost { uid: string; reason: OriginGhostReason }
 
-export const originIdentities = (docs: BundleDoc[]): { identities: OriginIdentity[]; ghosts: OriginGhost[] } => {
+export const originIdentities = (docs: BundleDoc[]): { identities: OriginIdentity[]; departed: string[]; ghosts: OriginGhost[] } => {
   const byPath = new Map(docs.map(doc => [doc.path, doc.data]));
   const identities: OriginIdentity[] = [];
+  const departed: string[] = [];
   const ghosts: OriginGhost[] = [];
   for (const uid of localUidCensus(docs)) {
     const records = [byPath.get(`persons/${uid}`), byPath.get(`users/${uid}`)].filter((record): record is Record<string, unknown> => record !== undefined);
-    if (records.length === 0) { ghosts.push({ uid, reason: 'person_missing' }); continue; }
+    if (records.length === 0) { departed.push(uid); identities.push({ sourceUid: uid, targetUid: uid, departed: true }); continue; }
     const lids = records.map(record => record.lid);
     if (lids.some(lid => typeof lid !== 'string' || !isLid(lid))) { ghosts.push({ uid, reason: 'lid_missing' }); continue; }
     if (new Set(lids).size !== 1) { ghosts.push({ uid, reason: 'lid_disagrees' }); continue; }
     identities.push({ sourceUid: uid, targetUid: uid, personLid: lids[0] as string });
   }
-  return { identities, ghosts };
+  return { identities, departed, ghosts };
 };

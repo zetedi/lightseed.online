@@ -38,7 +38,8 @@ const soil = {
   'persons/bob': { uid: 'bob', lid: LID(2), displayName: 'Bob' },
   'lifetrees/t1': { lid: LID(11), anchorUid: 'alice', name: 'Nur', treeType: 'LIGHTTREE', visibility: 'public', genesisHash: 'g1', latestHash: 'h1', blockHeight: 1, createdAt: stamp('2026-01-02T00:00:00Z', 5) },
   'lifetrees/t1/loves/bob': { uid: 'bob', at: stamp('2026-03-01T00:00:00Z') },
-  'pulses/p1': { lid: LID(21), authorId: 'alice', lifetreeId: 't1', type: 'tree_growth', visibility: 'public', hash: 'h1', previousHash: 'g1', createdAt: stamp('2026-02-01T00:00:00Z') },
+  // The block names a departed account among those who saw it: a trace that travels as a name.
+  'pulses/p1': { lid: LID(21), authorId: 'alice', lifetreeId: 't1', type: 'tree_growth', visibility: 'public', hash: 'h1', previousHash: 'g1', seenBy: ['gone'], createdAt: stamp('2026-02-01T00:00:00Z') },
   'links/alice__keeper__t1': { lid: LID(61), type: 'link', rel: 'keeper', from: 'alice', to: 't1', createdAt: stamp('2026-01-02T00:00:00Z', 9) },
   'config/superadmin': { uid: 'alice' },
   'config/dataAuthority': { nodeLid: origin.nodeLid },
@@ -57,9 +58,10 @@ describe('the origin crosses', () => {
       const anchor = { fingerprint: custodian.fingerprint, publicKeyB64: custodian.publicKeyB64 };
       const bundle = sealBundle(await buildBundle({ snapshot: snapshot.docs, charter: origin, exportCommit: commit, charterHashes: hashes, withoutAuthority: true }), custodian);
       expect(bundle.head).toMatchObject({ nodeLid: origin.nodeLid, domain: 'lightseed.online' });
-      const { identities, ghosts } = originIdentities(bundle.docs);
+      const { identities, departed, ghosts } = originIdentities(bundle.docs);
       expect(ghosts).toEqual([]);
-      expect(identities.map(i => i.sourceUid).sort()).toEqual(['alice', 'bob']);
+      expect(departed).toEqual(['gone']);
+      expect(identities.map(i => i.sourceUid).sort()).toEqual(['alice', 'bob', 'gone']);
 
       // Nobody is bound yet: the whole proposal waits.
       let crossing = await cross(dst, { incoming: bundle, anchor, identities, apply: true });

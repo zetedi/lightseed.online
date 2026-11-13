@@ -660,6 +660,17 @@ the alignment the one law names, the index audited for the nameless and for one 
 beings; every statement judges the keeper, every run is idempotent, a sealed block is never touched.
 `claimSuperAdmin` answers no by the node's law: the keeper is appointed by the installation.
 
+THE BINDING CEREMONY (migration 062, 2026-11-03). The installation's reviewed bindings (the auth
+trust file: issuer subject → local uid) become durable rows when the API boots (`seed.bind_explicit`),
+not only when a person's first token arrives — so a crossing lands a person before they have spoken
+here. A row standing under another uid is never relinked: the conflict is logged, that subject's
+tokens stay refused; a self-enrolled login the file now names is affirmed as explicit. And a uid the
+records name but no person carries — an account deleted at the origin, its traces standing — crosses
+as a NAME when the identities file vouches it departed (`departed: true`, `domain/bundleMerge`): no
+person on either side, no login bound, else the vouch is a conflict. The ceremony before a crossing:
+one login per person at the issuer, the subjects named in the trust file, a restart, the identities
+file reviewed, the import.
+
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node
 composes from plain words in the voice of its place under a daily quota, the letter of a
