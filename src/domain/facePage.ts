@@ -219,3 +219,27 @@ export const sitemapXmlOf = (host: string, beings: ReadonlyArray<{ lid: string; 
   });
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[home, ...entries].join('\n')}\n</urlset>\n`;
 };
+
+// ── THE FRONT DOOR OF A FACE (ring 2026-11-03) ───────────────────────────────────────────
+// `/` at a face host wears the community's own card, as the origin bakes one per face at deploy
+// (scripts/face-og.mjs); on the node the API dresses the shell at request time from the community
+// whose domain or alias is the host. The words are the origin's: the vision paper stripped of its
+// markup, else "<name> — a living community on the Lifetree Network."; the picture the hero, else
+// the first https picture of a landing section, else the node's og.png; a relative picture (the
+// node's own media door) made absolute at the host. The twitter card keeps the shell's own kind.
+const stripHtml = (html: string): string => collapseWhitespace(html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;| /g, ' '));
+export const communityVisionOf = (community: unknown): string => {
+  const papers = doc(community).papers;
+  const vision = Array.isArray(papers) ? papers.find(p => p && typeof p === 'object' && (p as { key?: unknown }).key === 'vision') as { html?: unknown } | undefined : undefined;
+  return text(vision?.html);
+};
+export const faceDoorCardOf = (p: { host: string; community: unknown; nodeName?: string }): ShareCard => {
+  const c = doc(p.community);
+  const name = text(c.name) || p.host;
+  const description = truncate160(stripHtml(communityVisionOf(p.community))) || `${name} — a living community on the Lifetree Network.`;
+  const sections = Array.isArray(c.landingSections) ? c.landingSections : [];
+  const sectionImage = sections.map(s => (s && typeof s === 'object' ? text((s as { props?: { imageUrl?: unknown } }).props?.imageUrl) : '')).find(u => /^https:\/\//.test(u));
+  const raw = text(c.heroImageUrl) || sectionImage || '/og.png';
+  const image = /^https?:\/\//.test(raw) ? raw : `https://${p.host}${raw.startsWith('/') ? '' : '/'}${raw}`;
+  return { title: name, siteName: name, description, image, url: `https://${p.host}/` };
+};

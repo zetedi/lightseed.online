@@ -54,3 +54,16 @@ describe('the claimed name (ring 2026-11-01)', () => {
     expect((scope.protocolMappers[1].config as Record<string, string>)['claim.name']).toBe('preferred_username');
   });
 });
+
+// THE FACES (ring 2026-11-03): the realm's one client answers at the application origin and every face host.
+describe('the faces of the realm', () => {
+  it('lists every origin as a redirect URI, a web origin and a logout door, and refuses what is not an https origin', () => {
+    const realm = seedIdentityRealm(['https://app.example', 'https://seed.face.example', 'https://app.example']);
+    const client = realm.clients[0];
+    expect(client.redirectUris).toEqual(['https://app.example/auth/callback', 'https://seed.face.example/auth/callback']);
+    expect(client.webOrigins).toEqual(['https://app.example', 'https://seed.face.example']);
+    expect(client.attributes['post.logout.redirect.uris']).toBe('https://app.example/##https://seed.face.example/');
+    expect(seedIdentityRealm('https://app.example').clients[0].redirectUris).toEqual(['https://app.example/auth/callback']);
+    for (const bad of [[], ['https://app.example', 'http://face.example'], ['https://app.example/path'], ['https://u@app.example']]) expect(() => seedIdentityRealm(bad)).toThrow('invalid_app_origin');
+  });
+});

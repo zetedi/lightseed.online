@@ -172,3 +172,14 @@ describe('independent community writes from the browser', () => {
     await expect(session.communityCommand({ action: 'join', id: 'garden' })).rejects.toThrow('authentication_required');
   });
 });
+
+// THE FACES (ring 2026-11-03): the shell's config names every origin it may stand at; the application origin is always one.
+describe('the origins the shell may stand at', () => {
+  it('defaults to the application origin alone, admits listed https origins once, and refuses the rest', () => {
+    const issuer = 'https://identity.example/realms/lightseed';
+    expect(seedBrowserConfig({ appOrigin: 'https://app.example', issuer }).origins).toEqual(['https://app.example']);
+    expect(seedBrowserConfig({ appOrigin: 'https://app.example', issuer, origins: ['https://seed.face.example', 'https://app.example', 'https://seed.face.example'] }).origins)
+      .toEqual(['https://app.example', 'https://seed.face.example']);
+    for (const origins of [['http://face.example'], ['https://face.example/'], 'https://face.example', [7]]) expect(() => seedBrowserConfig({ appOrigin: 'https://app.example', issuer, origins })).toThrow();
+  });
+});

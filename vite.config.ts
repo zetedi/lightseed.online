@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import checkoutCharter from './src/config/charter.json';
 import { seedBrowserConfig } from './src/domain/seedBrowser';
-import { charterOrigin, charterPublicOf, robotsTxtOf, shellOriginProblem, shellStructuredDataOf, shellVarsOf, webManifestOf, type NodeCharter } from './src/domain/charter';
+import { charterHosts, charterOrigin, charterPublicOf, robotsTxtOf, shellOriginProblem, shellStructuredDataOf, shellVarsOf, webManifestOf, type NodeCharter } from './src/domain/charter';
 import { independentCharterProblem } from './src/domain/independentCharter';
 
 // THE ROOT AS FILES (ring 2026-09-13). Every root/*.md is served at /root/<NAME>.md — by this
@@ -44,9 +44,6 @@ export default defineConfig(({ mode }) => {
     // installation's HTTPS origins instead of a Firebase config, and the bundle is refused
     // outright if any Firebase module reaches it.
     const independent = mode === 'independent';
-    const browserConfig = independent
-        ? seedBrowserConfig({ appOrigin: combinedEnv.SEED_WEB_ORIGIN, issuer: combinedEnv.SEED_IDENTITY_ISSUER })
-        : null;
 
     // THE NODE (ring 2026-09-06) / THE SHELL WEARS THE CHARTER (ring 2026-11-03): the shell's
     // name, colours, card, structured data, manifest, robots.txt and public envelope come from
@@ -69,6 +66,11 @@ export default defineConfig(({ mode }) => {
         if (problem) throw new Error(`SEED_WEB_ORIGIN cannot serve this charter's shell: ${problem}.`);
     }
     Object.assign(process.env, shellVarsOf(charter, origin));
+    // THE FACES (ring 2026-11-03): the shell may stand at the application origin and at every host the
+    // charter answers at (the faces' doors and domains) — each a redirect URI of the realm's client.
+    const browserConfig = independent
+        ? seedBrowserConfig({ appOrigin: combinedEnv.SEED_WEB_ORIGIN, issuer: combinedEnv.SEED_IDENTITY_ISSUER, origins: charterHosts(charter).map(host => `https://${host}`) })
+        : null;
     const nodeShell = (): Plugin => {
         const charterJson = path.resolve(cwd, 'src/config/charter.json');
         const files: Record<string, string> = {

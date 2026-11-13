@@ -93,3 +93,16 @@ describe('the face of the node', () => {
     expect(seedRequest('POST', '/faceEvents', undefined)).toMatchObject({ status: 405 });
   });
 });
+
+// THE FRONT DOOR OF A FACE (ring 2026-11-03): `/` and /index.html are the API's, by GET alone.
+describe('the front door', () => {
+  it('routes the root and index.html to the face, GET and HEAD alone', () => {
+    for (const target of ['/', '/?x=1', '/index.html', '/index.html?v=2']) {
+      expect(seedRequest('GET', target, undefined)).toEqual({ kind: 'frontDoor' });
+      expect(seedRequest('HEAD', target, undefined)).toEqual({ kind: 'frontDoor' });
+      expect(seedRequest('POST', target, undefined)).toMatchObject({ status: 405 });
+    }
+    expect(seedRequest('GET', '/index.htm', undefined)).not.toMatchObject({ kind: 'frontDoor' });
+    expect(seedRequest('GET', '/v1/communities', undefined)).not.toMatchObject({ kind: 'frontDoor' });
+  });
+});

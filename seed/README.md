@@ -500,6 +500,8 @@ Prepare a new realm for the exact application origin:
 
 ```sh
 npm run seed:identity:configure -- https://app.your-node.example /private/lightseed-realm.json
+# with faces: every origin the shell may stand at, comma-separated (ring 2026-11-03)
+npm run seed:identity:configure -- https://app.your-node.example,https://seed.face.example /private/lightseed-realm.json
 ```
 
 Copy `seed/identity/.env.example` to a private `seed/identity/.env`, supply separate
@@ -654,14 +656,16 @@ issuer at `SEED_IDENTITY_HOST`. The issuer's compose joins only the shared `ligh
 network, never the application database's.
 
 ```sh
-# seed/.env: SEED_APP_HOST, SEED_IDENTITY_HOST, SEED_TLS=acme, SEED_ACME_EMAIL, SEED_NODE_ORIGIN, SEED_FACE_DOORS (optional)
+# seed/.env: SEED_APP_HOST, SEED_IDENTITY_HOST, SEED_TLS=acme, SEED_ACME_EMAIL, SEED_NODE_ORIGIN,
+#            SEED_FACE_DOORS (optional, comma-separated) and the same hosts as SEED_FACE_HOSTS (space-separated, for the edge)
 SEED_CHARTER=seed/charter/node.json SEED_WEB_ORIGIN=https://$SEED_APP_HOST SEED_IDENTITY_ISSUER=https://$SEED_IDENTITY_HOST/realms/lightseed npm run build:independent   # the charter at SEED_CHARTER_DIR, seen from the repo root
 cd seed && docker compose --profile api --profile edge up -d --build --wait
 docker compose --env-file identity/.env -f identity/compose.yml up -d   # after the edge created the network
 ```
 
 On a VPS the certificates come from ACME: `SEED_ACME_EMAIL` must be set, ports 80/443 open,
-and both hosts must resolve to the machine. For a local walk set `SEED_TLS=internal`,
+and both hosts — and every face host in `SEED_FACE_HOSTS` — must resolve to the machine; the one
+site answers at all of them, each its own origin (ring 2026-11-03). For a local walk set `SEED_TLS=internal`,
 hosts under `.localhost` (`seed.localhost`, `identity.localhost` — Chrome resolves them to
 loopback) and ports such as `SEED_EDGE_HTTPS_PORT=8443`; Caddy is then its own certificate
 authority. Trust its root (`docker compose cp proxy:/data/caddy/pki/authorities/local/root.crt .`)
@@ -1914,13 +1918,26 @@ functions (being card, face picture, sitemap, face feed) on this soil (`seed/api
 - **The face feed** — `/faceEvents?domain=<face>` answers a mother site (CORS open) with the cradle's
   public AND node gatherings — a visitor at the face is at the node — shaped to the origin's seven
   fields by the shared law, soonest first; `seed.face_events` is the server-only door behind it.
+- **The front door of a face** (ring 2026-11-03) — `/` and `/index.html` are the API's too: at a face
+  host (a host in `SEED_FACE_DOORS`, which the edge also answers at through `SEED_FACE_HOSTS`) the
+  shell wears the card of the community whose domain or alias is that host — the origin's own words
+  (the vision paper stripped of its markup, else "<name> — a living community on the Lifetree
+  Network."), the hero or a landing section's `https` picture or `og.png`, the host as home — as the
+  origin bakes one per face at deploy (`scripts/face-og.mjs`); at the application host, or at any
+  host the node does not serve, the plain shell. The law is `domain/facePage` `faceDoorCardOf`.
 - **The edge stands in** — should the API answer 5xx or nothing at all, Caddy serves the plain shell
-  at `/b/*` and `og.png` at `/face/*` itself: never a broken page, never a leaked name.
+  at `/b/*`, `/` and `/index.html`, and `og.png` at `/face/*` itself: never a broken page, never a
+  leaked name.
 
 The face is grown when the node knows its origin (`SEED_NODE_ORIGIN`); the host that enters a card's
 URLs is only one the node serves (its origin, `SEED_FACE_DOORS`, the charter's domains), any other
-collapses to the node's own. `tests/seed/face.postgres-test.ts` walks every door against real
-PostgreSQL through the API with no bearer anywhere.
+collapses to the node's own. A face host is also a host the shell may SIGN IN at: the realm's one
+client lists every origin (`seed:identity:configure` takes them comma-separated), the build's browser
+configuration names them (`domain/seedBrowser` origins, from the charter's hosts), and the shell at
+a face returns to that face — the node's form of the origin's cross-host SSO (`mintSsoToken`): one
+realm, one session cookie at the issuer, a silent second sign-in at the next host.
+`tests/seed/face.postgres-test.ts` walks every door against real PostgreSQL through the API with no
+bearer anywhere.
 
 
 ### The release of a picture (migration 060)

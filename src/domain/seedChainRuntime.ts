@@ -58,7 +58,8 @@ export {CLOCK_JOBS,CLOCK_JOB_NAMES,CLOCK_DEFAULT_TIME_ZONE,CLOCK_LEASE_MS,isTime
 export {judgeThirst,waterMeText,guardiansThreadIdOf,momentMsOf} from './thirst';
 export {stayLeafIsDue,bedHeadOf,stayLeafRecordOf} from './stayLeaf';
 // THE FACE OF THE NODE (ring 2026-11-03): the card gate and shape, the host, the picture source, the shell swap, the sitemap, the feed.
-export {lidOfDoor,isPublicBeing,publicCardOf,canonicalHostOf,cardDescriptionOf,faceSourceOf,isPublicAddress,shareCardOf,shellCardOf,sitemapXmlOf,SITEMAP_MAX_BEINGS} from './facePage';
+export {lidOfDoor,isPublicBeing,publicCardOf,canonicalHostOf,cardDescriptionOf,faceSourceOf,isPublicAddress,shareCardOf,shellCardOf,sitemapXmlOf,SITEMAP_MAX_BEINGS,
+  faceDoorCardOf,communityVisionOf} from './facePage';
 export {facePreviewAttempts,facePreviewKeyOf,FACE_PREVIEW_MAX_BYTES} from './facePreview';
 export {faceFeedOf,feedDomainOf} from './faceEvents';
 // THE RELEASE OF A PICTURE (ring 2026-11-03): the seats that may be released and whether a holder still shows one.

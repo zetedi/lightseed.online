@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
+import { faceDoorCardOf, communityVisionOf,
   canonicalHostOf, cardDescriptionOf, faceSourceOf, isPublicAddress, isPublicBeing, lidOfDoor, publicCardOf,
   shareCardOf, shellCardOf, sitemapXmlOf, SITEMAP_MAX_BEINGS,
 } from '../src/domain/facePage';
@@ -180,5 +180,23 @@ describe('the sitemap', () => {
     const many = sitemapXmlOf('h', Array.from({ length: SITEMAP_MAX_BEINGS + 5 }, (_, i) => ({ lid: `l${i}`, ms: i })));
     expect((many.match(/<url>/g) ?? []).length).toBe(SITEMAP_MAX_BEINGS + 1);
     expect(many).not.toContain('/b/l0<');
+  });
+});
+
+// THE FRONT DOOR OF A FACE (ring 2026-11-03): `/` at a face host wears the community's card, with the
+// origin's words and picture rules, the picture made absolute at the host.
+describe('the front door of a face', () => {
+  it('dresses the card from the community: the vision paper stripped, the hero or a section picture or og.png, the host as home', () => {
+    const community = { name: 'The O House', papers: [{ key: 'about', html: '<p>not this</p>' }, { key: 'vision', html: '<h1>A   house</h1>&nbsp;of <b>light</b>' }],
+      heroImageUrl: '/v1/media?path=communities%2Fc1%2Fhero_1.webp', landingSections: [{ props: { imageUrl: 'https://pictures.example/section.jpg' } }] };
+    expect(faceDoorCardOf({ host: 'seed.theohouse.org', community, nodeName: 'Example node' })).toEqual({
+      title: 'The O House', siteName: 'The O House', description: 'A house of light',
+      image: 'https://seed.theohouse.org/v1/media?path=communities%2Fc1%2Fhero_1.webp', url: 'https://seed.theohouse.org/' });
+    expect(faceDoorCardOf({ host: 'seed.theohouse.org', community: { ...community, heroImageUrl: undefined } }).image).toBe('https://pictures.example/section.jpg');
+    expect(faceDoorCardOf({ host: 'seed.theohouse.org', community: { ...community, heroImageUrl: '', landingSections: [{ props: { imageUrl: 'http://insecure.example/x.jpg' } }] } }).image).toBe('https://seed.theohouse.org/og.png');
+    expect(faceDoorCardOf({ host: 'seed.theohouse.org', community: { name: 'Bare' } })).toMatchObject({ description: 'Bare — a living community on the Lifetree Network.', image: 'https://seed.theohouse.org/og.png' });
+    expect(faceDoorCardOf({ host: 'seed.theohouse.org', community: null })).toMatchObject({ title: 'seed.theohouse.org', description: 'seed.theohouse.org — a living community on the Lifetree Network.' });
+    expect(faceDoorCardOf({ host: 'h.example', community: { name: 'Long', papers: [{ key: 'vision', html: 'x'.repeat(400) }] } }).description).toHaveLength(160);
+    expect(communityVisionOf({ papers: 'not a list' })).toBe('');
   });
 });

@@ -4,10 +4,14 @@ import { ISSUER_CLIENT_ID, issuerSigninArgs, issuerRegistrationEndpoint, issuerR
 import type { IdentityClient } from './session';
 
 export function createSeedIdentity(config: SeedBrowserConfig): IdentityClient {
-  if (window.location.origin !== config.appOrigin) throw new Error('unexpected_app_origin');
+  // THE FACES (ring 2026-11-03): the shell may stand at the application origin or at any face host the
+  // charter names (config.origins, every one a redirect URI of the realm's client); the door it stands
+  // at is the one it returns to. Any other origin is not one of ours.
+  const origin = window.location.origin;
+  if (!config.origins.includes(origin)) throw new Error('unexpected_app_origin');
   const settings: UserManagerSettings = {
     authority: config.issuer, client_id: ISSUER_CLIENT_ID,
-    redirect_uri: config.appOrigin + '/auth/callback', post_logout_redirect_uri: config.appOrigin + '/',
+    redirect_uri: origin + '/auth/callback', post_logout_redirect_uri: origin + '/',
     response_type: 'code', scope: 'openid lightseed:api', loadUserInfo: false, disablePKCE: false,
     automaticSilentRenew: true, revokeTokensOnSignout: true,
     // THE SESSION SURVIVES A RELOAD (ring 2026-11-02): the tokens rest in THIS TAB's own session

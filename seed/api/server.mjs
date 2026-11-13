@@ -85,7 +85,7 @@ export function createApi(database, authenticate = async () => null, options = {
       }
       // THE FACE OF THE NODE (ring 2026-11-03): the being card, its small picture, the living sitemap and the face feed — grown
       // when the node knows its origin; the edge serves the shell itself (or og.png) whenever these answer 5xx.
-      else if(['beingCard','facePicture','sitemap','faceEvents'].includes(request.kind)) {
+      else if(['beingCard','facePicture','sitemap','faceEvents','frontDoor'].includes(request.kind)) {
         if(!options.face){send(503,{error:'face_unavailable'});return;}
         await options.face.answer(request,req,res);
       }

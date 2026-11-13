@@ -6,6 +6,26 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The faces of the node** — The edge served one host, and a face host's front door
+wore the node's card (the origin bakes one per face at deploy, `scripts/face-og.mjs`); the shell
+could sign in at the application origin alone. Now the one site answers at every face host
+(`SEED_FACE_HOSTS` beside `SEED_FACE_DOORS`), the front door `/` is the API's — the shell dressed
+at request time with the card of the community whose domain or alias is the host, by the origin's
+own words and picture rules (`faceDoorCardOf`), the plain shell at the application host, at a
+stranger's host, and whenever the API is silent — and the realm's one client lists every origin,
+the build naming them from the charter's hosts, so the shell signs in at the face it stands at and
+returns there: the node's form of the origin's cross-host SSO, with no token minted by the node
+(the issuer holds the one session; the second sign-in is silent). REJECTED: baking a face shell per
+host at build time (one shell, one build, one mount; the card is a request's, as the being card is);
+serving `/` statically at the edge for face hosts (the edge cannot know the community; it stands
+in only when the API is silent); a second OIDC client per face (one client, many redirect URIs,
+one session); minting SSO tokens on the node (the realm is the SSO). Plain contract — guaranteed:
+at a face host the front door wears the community's card and never a leaked name; at every other
+host the plain shell; a face host listed in the charter is an origin the shell may sign in at once
+the realm lists it. Not guaranteed: a face host the charter does not name, a face card before the
+community record carries a domain or alias, the local walk at a face host (one host at
+`.localhost`).
+
 **2026-11-03 · Then all: the layers everywhere** — With the pictures organ as the reviewed pattern,
 every statement of the API moved into a repository the same evening: `seed/api/db/` holds the session
 (PostgreSQL's own: the pool, the guard, one transaction per hand), the readiness probes, and one

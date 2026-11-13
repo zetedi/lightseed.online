@@ -3,6 +3,9 @@
 # host. On a VPS the certificates come from ACME (SEED_TLS=acme, SEED_ACME_EMAIL set); for a
 # local walk SEED_TLS=internal makes Caddy its own CA (trust its root, or bypass per host).
 # Credentials never pass through here: the browser carries the issuer's bearer token to /v1.
+# THE FACES (ring 2026-11-03): the same site answers at every face host (SEED_FACE_HOSTS,
+# space-separated, each resolving to this machine), and the front door `/` is the API's: at a
+# face host it wears the community's card, at the application host the plain shell.
 {
 	admin off
 }
@@ -24,9 +27,9 @@
 	encode zstd gzip
 }
 
-# The application and its API, one origin: the OIDC callback and the service worker both
+# The application and its API, one origin per host: the OIDC callback and the service worker both
 # depend on it, and the API needs no cross-origin policy.
-{$SEED_APP_HOST} {
+{$SEED_APP_HOST} {$SEED_FACE_HOSTS} {
 	import tls-{$SEED_TLS:acme}
 	import hardening
 	handle /v1/* {
@@ -69,6 +72,30 @@
 	handle /faceEvents {
 		reverse_proxy api:8081
 	}
+	# THE FRONT DOOR (ring 2026-11-03): `/` and /index.html are the API's — the community's card at a face
+	# host, the plain shell at the application host — and the plain shell stands in whenever the API is silent.
+	handle / {
+		reverse_proxy api:8081 {
+			@silent status 500 502 503 504
+			handle_response @silent {
+				root * /srv/app
+				rewrite * /index.html
+				header Cache-Control "no-store"
+				file_server
+			}
+		}
+	}
+	handle /index.html {
+		reverse_proxy api:8081 {
+			@silent status 500 502 503 504
+			handle_response @silent {
+				root * /srv/app
+				rewrite * /index.html
+				header Cache-Control "no-store"
+				file_server
+			}
+		}
+	}
 	handle_errors {
 		@card path /b/*
 		handle @card {
@@ -86,12 +113,20 @@
 				status 200
 			}
 		}
+		@front path / /index.html
+		handle @front {
+			root * /srv/app
+			rewrite * /index.html
+			file_server {
+				status 200
+			}
+		}
 	}
 	handle {
 		root * /srv/app
 		@assets path /assets/*
 		header @assets Cache-Control "public, max-age=31536000, immutable"
-		@shell path / /index.html /auth/callback
+		@shell path /auth/callback
 		header @shell Cache-Control "no-store"
 		header /sw.js Cache-Control "no-cache"
 		# Every door the shell knows (/b/<lid>, /i/<id>, /events …) serves the shell; the

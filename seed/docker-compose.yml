@@ -76,6 +76,8 @@ services:
     environment:
       SEED_APP_HOST: ${SEED_APP_HOST:?Set the application host, e.g. app.your-node.example}
       SEED_IDENTITY_HOST: ${SEED_IDENTITY_HOST:?Set the identity host, e.g. identity.your-node.example}
+      # THE FACES (ring 2026-11-03): the face hosts the edge also answers at, space-separated (the same hosts as SEED_FACE_DOORS).
+      SEED_FACE_HOSTS: ${SEED_FACE_HOSTS:-}
       SEED_TLS: ${SEED_TLS:-acme}
       SEED_ACME_EMAIL: ${SEED_ACME_EMAIL:-}
     ports:

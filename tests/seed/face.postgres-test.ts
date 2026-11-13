@@ -290,3 +290,28 @@ describe('the face feed', () => {
     } finally { await t.close(); }
   });
 });
+
+// THE FRONT DOOR OF A FACE (ring 2026-11-03): `/` at a face host wears the community's card; at the node's own
+// host the plain shell; at a host the node does not serve, the plain shell — never a leaked name.
+describe('the front door of a face', () => {
+  it('dresses the shell for the community at the face host alone', async () => {
+    const t = await serve();
+    try {
+      cluster.sql(`INSERT INTO communities VALUES ('house','{"lid":"${LID(31)}","anchorUid":"alice","name":"The O House","door":"open","domain":"door.example","domainAliases":["theohouse.org"],
+        "papers":[{"key":"vision","html":"<p>A house of <b>light</b></p>"}],"heroImageUrl":"/v1/media?path=communities%2Fhouse%2Fhero_1.webp","createdAt":"2026-01-01T00:00:00.000000Z"}')`);
+      const front = await t.get('/', { 'x-forwarded-host': 'door.example' });
+      expect(front.status).toBe(200); expect(front.type).toContain('text/html'); expect(front.cache).toBe('no-cache');
+      expect(front.text).toContain('<title>The O House</title>');
+      expect(front.text).toContain('<meta property="og:description" content="A house of light" />');
+      expect(front.text).toContain('<meta property="og:url" content="https://door.example/" />');
+      expect(front.text).toContain('<meta property="og:image" content="https://door.example/v1/media?path=communities%2Fhouse%2Fhero_1.webp" />');
+      expect(front.text).not.toContain('og:image:width');
+      // The alias is a host the node serves too (SEED_FACE_DOORS), so it wears the same card.
+      expect((await t.get('/index.html', { 'x-forwarded-host': 'theohouse.org' })).text).toContain('<title>The O House</title>');
+      // The node's own host and a stranger's host keep the plain shell.
+      expect((await t.get('/', { 'x-forwarded-host': 'node.example' })).text).toContain('<title>.seed — Example node, growing together</title>');
+      expect((await t.get('/', { 'x-forwarded-host': 'evil.example' })).text).toContain('<title>.seed — Example node, growing together</title>');
+      expect((await t.get('/', { host: 'api' })).text).toContain('<title>.seed — Example node, growing together</title>');
+    } finally { await t.close(); }
+  });
+});

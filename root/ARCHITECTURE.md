@@ -650,6 +650,17 @@ per feature) hold every statement the API speaks; the doors the HTTP edge calls 
 the organs reach the soil only through their repositories. The crossing alone keeps its own
 statements, being the owner's ceremony and not a door.
 
+THE FACES OF THE NODE (2026-11-03). The edge answers at every face host (`SEED_FACE_HOSTS`), and
+the front door — `/` and `/index.html` — is the API's: at a face host the shell wears the card of
+the community whose domain or alias is the host (`domain/facePage` `faceDoorCardOf`: the origin's
+words and picture rules, the host as home), where the origin bakes one per face at deploy; at the
+application host, or at a host the node does not serve, the plain shell; and the plain shell stands
+in whenever the API is silent. A face host is also a host the shell may sign in at: the realm's one
+client lists every origin (`domain/seedIdentity` takes a list), the build names them from the
+charter's hosts (`domain/seedBrowser` origins), and the shell returns to the face it stands at —
+the node's form of the origin's cross-host SSO: one realm, one session at the issuer, a silent
+second sign-in at the next host, no token minted by the node.
+
 THE LAST HANDS (migration 061, 2026-11-03). The thirteen hands that still refused by name are
 grown, and the parity count is zero. The origin's five provider hands are the realm's own doors
 reached by a redirect (`domain/issuerDoors`: an identity-provider hint, a login hint, the

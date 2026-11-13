@@ -19,7 +19,7 @@ import { lookup as dnsLookup } from 'node:dns/promises';
 import sharp from 'sharp';
 import { seedMediaPath } from '../../src/domain/seedMedia.mjs';
 import { lidOfDoor, publicCardOf, canonicalHostOf, faceSourceOf, isPublicAddress, shareCardOf, shellCardOf, sitemapXmlOf, SITEMAP_MAX_BEINGS,
-  facePreviewAttempts, facePreviewKeyOf, FACE_PREVIEW_MAX_BYTES, faceFeedOf, feedDomainOf, momentMsOf } from '../generated/chain.mjs';
+  facePreviewAttempts, facePreviewKeyOf, FACE_PREVIEW_MAX_BYTES, faceFeedOf, feedDomainOf, momentMsOf, faceDoorCardOf } from '../generated/chain.mjs';
 import { faceRepository } from './db/face.mjs';
 
 const FACE_SOURCE_MAX_BYTES = 40 * 1024 * 1024;
@@ -74,6 +74,24 @@ export function createFace({ withSession, mediaGet, media = null, shellDir = nul
       const { card: share, placeLd } = shareCardOf({ host, door, being: found.card, place, nodeName, ownHosts });
       res.writeHead(200); res.end(shellCardOf(html, share, placeLd));
     } catch (error) { fault('card', error); res.writeHead(200); res.end(html); } // never a broken page
+  }
+
+  // --- the front door of a face --------------------------------------------------------------------
+  // THE FRONT DOOR (ring 2026-11-03): `/` at a face host wears the community's own card (the origin bakes
+  // one per face at deploy; here the shell is dressed at request time); at the node's own host, or at a
+  // host the node does not serve, the plain shell — never a leaked name. The shell itself is never cached
+  // long: a new build is a new shell.
+  async function front(req, res) {
+    const host = hostOf(req);
+    const html = await shellHtml();
+    if (!html) { res.writeHead(503); res.end(JSON.stringify({ error: 'shell_unavailable' })); return; }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    try {
+      const community = host.split(':')[0] === nodeDomain ? null : await soil.placeAt(null, host.split(':')[0]);
+      if (!community) { res.writeHead(200); res.end(html); return; }
+      res.writeHead(200); res.end(shellCardOf(html, faceDoorCardOf({ host, community: community.doc, nodeName })));
+    } catch (error) { fault('front', error); res.writeHead(200); res.end(html); } // never a broken page
   }
 
   // --- the picture ---------------------------------------------------------------------------------
@@ -184,6 +202,7 @@ export function createFace({ withSession, mediaGet, media = null, shellDir = nul
     hosts: ownHosts,
     /** @param {{kind: string, door?: string, domain?: string|null}} request */
     async answer(request, req, res) {
+      if (request.kind === 'frontDoor') return front(req, res);
       if (request.kind === 'beingCard') return card(req, res, request.door);
       if (request.kind === 'facePicture') return picture(req, res, request.door);
       if (request.kind === 'sitemap') return sitemap(req, res);

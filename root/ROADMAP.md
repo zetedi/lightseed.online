@@ -92,8 +92,10 @@ permission to ship a reduced-feature node.
    refusing hands are grown (2026-11-03, migration 061: the issuer's doors driven through the
    realm, the one-time backfills as the keeper's own audits and repairs, the first-keeper claim
    answered by the installation's appointment) — the parity count is zero. The API has its
-   layers (HTTP → services → repositories → domain), the pictures and repairs organs in that
-   shape; `database.mjs` and the other organs follow, ring by ring.
+   layers (HTTP → services → repositories → domain) everywhere: twenty repositories under
+   `seed/api/db/`, the doors in `node.mjs`, no statement in a service. The faces stand: the
+   edge answers at every face host, the front door wears the community's card, and the shell
+   signs in at the face it stands at (one realm, every origin a redirect URI).
 6. Bootstrap authority and the first keeper without a public first-visitor claim —
    `seed:keeper` appoints the keeper from the installation (2026-11-02).
    Verify a clean Compose installation, persistence, complete backup/restore and

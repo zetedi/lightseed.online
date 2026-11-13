@@ -28,6 +28,13 @@ export function seedRequest(method, target, authorization, authenticated = false
   // THE FACE OF THE NODE (ring 2026-11-03): the public doors a stranger or a crawler opens — the being card
   // (/b/<door>), its small picture (/face/<door>.jpg), the living sitemap and the face feed. GET alone; a
   // bearer is neither required nor read (the same doors the origin serves from hosting rewrites).
+  // THE FRONT DOOR OF A FACE (ring 2026-11-03): `/` and `/index.html` at a face host wear the community's card
+  // (at the node's own host, the plain shell). GET alone; a bearer is neither required nor read.
+  if(typeof target==='string' && /^\/(?:index\.html)?(?:$|\?)/.test(target)) {
+    if(method!=='GET' && method!=='HEAD')return {error:'method_not_allowed',status:405};
+    if(target.length>4096)return {error:'invalid_request',status:400};
+    return {kind:'frontDoor'};
+  }
   if(typeof target==='string' && /^\/(?:b\/|face\/|sitemap\.xml(?:$|\?)|faceEvents(?:$|\?))/.test(target)) {
     if(method!=='GET' && method!=='HEAD')return {error:'method_not_allowed',status:405};
     if(target.length>4096)return {error:'invalid_request',status:400};

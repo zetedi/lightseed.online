@@ -1,10 +1,16 @@
 // Identity establishes a login, never a keeper/staff seat or a portable LID.
 // `smtp` (optional): the issuer's own courier for verification and password-recovery mail —
 // { host, port, from, user?, password?, ssl? } as the installation's secrets, never the API's.
+// THE FACES (ring 2026-11-03): `appOrigin` may be one origin or a list — the application origin and every
+// face host the node answers at; each becomes a redirect URI and a web origin of the one client.
 export function seedIdentityRealm(appOrigin, enrollment = 'closed', smtp = null) {
   if (!['open', 'closed'].includes(enrollment)) throw new Error('invalid_enrollment');
-  const url = new URL(appOrigin);
-  if (url.protocol !== 'https:' || url.origin !== appOrigin || url.username || url.password) throw new Error('invalid_app_origin');
+  const origins = [...new Set(Array.isArray(appOrigin) ? appOrigin : [appOrigin])];
+  if (origins.length === 0 || origins.length > 64) throw new Error('invalid_app_origin');
+  for (const origin of origins) {
+    const url = new URL(origin);
+    if (url.protocol !== 'https:' || url.origin !== origin || url.username || url.password) throw new Error('invalid_app_origin');
+  }
   const smtpServer = smtp === null ? {} : { smtpServer: seedIdentitySmtp(smtp) };
   return {
     ...smtpServer,
@@ -17,8 +23,8 @@ export function seedIdentityRealm(appOrigin, enrollment = 'closed', smtp = null)
     clients: [{ clientId: 'lightseed-web', protocol: 'openid-connect', enabled: true,
       publicClient: true, standardFlowEnabled: true, implicitFlowEnabled: false,
       directAccessGrantsEnabled: false, serviceAccountsEnabled: false,
-      redirectUris: [appOrigin + '/auth/callback'], webOrigins: [appOrigin],
-      attributes: { 'pkce.code.challenge.method': 'S256', 'post.logout.redirect.uris': appOrigin + '/' },
+      redirectUris: origins.map(origin => origin + '/auth/callback'), webOrigins: origins,
+      attributes: { 'pkce.code.challenge.method': 'S256', 'post.logout.redirect.uris': origins.map(origin => origin + '/').join('##') },
       defaultClientScopes: ['lightseed:api', 'lightseed:name', 'lightseed:email'], optionalClientScopes: [],
     }],
     clientScopes: [{ name: 'lightseed:api', protocol: 'openid-connect',
