@@ -100,8 +100,12 @@ export const anchorSound = anchor => !!anchor && typeof anchor.publicKeyB64 === 
   && sha256Hex(anchor.publicKeyB64) === anchor.fingerprint;
 export { verifyBundle, verifyBundleSeal, localUidCensus };
 
-// THE CROSSING ITSELF. One serializable transaction under the crossing's advisory lock: the
-// destination is read there (the plan's digest is the digest of what the transaction sees), the
+// THE CROSSING ITSELF. One serializable transaction under the crossing's advisory lock — the lock
+// taken on the SESSION before the transaction opens, so that a second hand arriving at the same
+// moment waits, and then reads what the first landed (ring 2026-11-14: a transaction-level lock taken
+// as the first statement had fixed the snapshot before the wait, and the late hand planned every
+// record again and failed on the first duplicate). The destination is read there (the plan's
+// digest is the digest of what the transaction sees), the
 // installation's explicit login bindings tell the law which identities are anchored (a person who has
 // not spoken here yet may arrive with the import once the installation bound their login by reviewed
 // configuration), and with `apply` every planned insert lands — or the whole crossing rolls back.
@@ -112,9 +116,17 @@ export { verifyBundle, verifyBundleSeal, localUidCensus };
 // manifest standing at the same path with other files is planned as a conflict (domain/mediaCrossing) first.
 export async function cross(client, { incoming, anchor, identities = [], apply = false, media = [] }) {
   if (!anchorSound(anchor)) throw Object.assign(new Error('The trusted anchor must carry a public key and its own fingerprint, obtained outside the bundle.'), { code: 'anchor_unsound' });
+  await client.query(`SELECT pg_advisory_lock(${CROSSING_LOCK})`);
+  try {
+    return await crossUnderLock(client, { incoming, anchor, identities, apply, media });
+  } finally {
+    await client.query(`SELECT pg_advisory_unlock(${CROSSING_LOCK})`).catch(() => undefined);
+  }
+}
+const CROSSING_LOCK = "hashtextextended('lightseed.crossing', 0)";
+async function crossUnderLock(client, { incoming, anchor, identities, apply, media }) {
   await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
   try {
-    await client.query("SELECT pg_advisory_xact_lock(hashtextextended('lightseed.crossing', 0))");
     const bound = new Set((await client.query("SELECT uid FROM seed.identity_bindings WHERE binding_kind='explicit'")).rows.map(r => r.uid));
     const anchored = identities.map(identity => ({ ...identity, loginBound: bound.has(identity.targetUid) }));
     const destination = await readSnapshot(client);

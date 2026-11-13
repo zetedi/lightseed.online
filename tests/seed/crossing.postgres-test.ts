@@ -106,4 +106,60 @@ describe('the crossing', () => {
       await expect(buildBundle({ snapshot: [], charter, exportCommit: 'main', charterHashes: hashes })).rejects.toMatchObject({ code: 'commit_unsound' });
     } finally { await src.end(); await source.db.close(); }
   });
+
+  it('two crossings overlapping on one soil: the second waits, finds the first landed, and lands nothing twice', async () => {
+    // OVERLAPPING IMPORTS (ring 2026-11-14): two hands apply at once — the same bundle from two
+    // terminals, or two different bundles. The crossing's lock must be taken BEFORE the transaction's
+    // snapshot, or the second hand reads an empty soil, plans every record again and fails on the
+    // first duplicate; here the second waits, sees the first crossing landed, and lands nothing twice.
+    const source = await cluster.fresh(1);
+    const other = await cluster.fresh(1);
+    const target = await cluster.fresh(1);
+    const src = ownerClient(source.connection); await src.connect();
+    const src2 = ownerClient(other.connection); await src2.connect();
+    const first = ownerClient(target.connection); await first.connect();
+    const second = ownerClient(target.connection); await second.connect();
+    try {
+      await src.query(`
+        INSERT INTO users VALUES ('alice','{"displayName":"Alice","lid":"${LID(1)}"}');
+        INSERT INTO persons VALUES ('alice','{"uid":"alice","lid":"${LID(1)}","displayName":"Alice"}');
+        INSERT INTO lifetrees VALUES ('t1','{"lid":"${LID(11)}","anchorUid":"alice","name":"Nur","treeType":"LIGHTTREE","visibility":"public","genesisHash":"g1","latestHash":"h1","blockHeight":1,"createdAt":"2026-01-01T00:00:00.000000Z"}');
+        INSERT INTO pulses VALUES ('p1','{"lid":"${LID(21)}","authorId":"alice","lifetreeId":"t1","type":"tree_growth","visibility":"public","hash":"h1","previousHash":"g1","createdAt":"2026-02-01T00:00:00.000000Z"}');
+        INSERT INTO links(from_id,rel,to_id,lid,doc,created_at) VALUES ('alice','keeper','t1','${LID(61)}','{"since":"birth"}','2026-01-01T00:00:00Z');`);
+      await src2.query(`
+        INSERT INTO users VALUES ('bob','{"displayName":"Bob","lid":"${LID(2)}"}');
+        INSERT INTO persons VALUES ('bob','{"uid":"bob","lid":"${LID(2)}","displayName":"Bob"}');
+        INSERT INTO lifetrees VALUES ('t2','{"lid":"${LID(12)}","anchorUid":"bob","name":"Oak","treeType":"LIGHTTREE","visibility":"public","genesisHash":"g2","latestHash":"h2","blockHeight":1,"createdAt":"2026-01-02T00:00:00.000000Z"}');
+        INSERT INTO links(from_id,rel,to_id,lid,doc,created_at) VALUES ('bob','keeper','t2','${LID(62)}','{"since":"birth"}','2026-01-02T00:00:00Z');`);
+      const custodian = custodianOf(pem());
+      const anchor = { fingerprint: custodian.fingerprint, publicKeyB64: custodian.publicKeyB64 };
+      const bundle = sealBundle(await buildBundle({ snapshot: await readSnapshot(src), charter, exportCommit: commit, charterHashes: hashes }), custodian);
+      const bundle2 = sealBundle(await buildBundle({ snapshot: await readSnapshot(src2), charter: { ...charter, nodeLid: LID(901) }, exportCommit: commit, charterHashes: hashes }), custodian);
+      await first.query("INSERT INTO seed.identity_bindings(issuer,subject,uid,binding_kind) VALUES ('https://issuer.example','sub-alice','alice','explicit'), ('https://issuer.example','sub-bob','bob','explicit')");
+      const identities = [{ sourceUid: 'alice', targetUid: 'alice', personLid: LID(1) }, { sourceUid: 'bob', targetUid: 'bob', personLid: LID(2) }];
+      const count = async (q: string) => (await first.query(q)).rows[0].count;
+
+      // The SAME bundle from two hands at once: exactly one lands it; the other finds every record unchanged.
+      const twice = await Promise.all([
+        cross(first, { incoming: bundle, anchor, identities, apply: true }),
+        cross(second, { incoming: bundle, anchor, identities, apply: true }),
+      ]);
+      expect(twice.map(c => c.applied)).toEqual([true, true]);
+      expect(twice.map(c => c.inserted).sort()).toEqual([0, 5]);
+      const late = twice.find(c => c.inserted === 0)!;
+      expect(late.plan.ready).toBe(true); expect(late.plan.unchanged).toHaveLength(5); expect(late.already).toBeTruthy();
+      expect(await count('SELECT count(*) FROM lifetrees')).toBe('1');
+      expect(await count('SELECT count(*) FROM seed.crossings')).toBe('1');
+
+      // Two DIFFERENT bundles at once: both land, each remembered once.
+      const both = await Promise.all([
+        cross(first, { incoming: bundle2, anchor, identities, apply: true }),
+        cross(second, { incoming: bundle, anchor, identities, apply: true }),
+      ]);
+      expect(both.map(c => c.applied)).toEqual([true, true]);
+      expect(both[0].inserted).toBe(4); expect(both[1].inserted).toBe(0);
+      expect(await count('SELECT count(*) FROM lifetrees')).toBe('2');
+      expect(await count('SELECT count(*) FROM seed.crossings')).toBe('2');
+    } finally { await src.end(); await src2.end(); await first.end(); await second.end(); await source.db.close(); await other.db.close(); await target.db.close(); }
+  });
 });
