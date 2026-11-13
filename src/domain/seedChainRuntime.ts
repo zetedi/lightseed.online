@@ -38,6 +38,8 @@ export {crossingCharterProblem} from './crossingCharter';
 export {portableValue,originSnapshot,originIdentities,pruneBrokenChains,ORIGIN_GROUPS} from './originBundle';
 // THE WORLD OF A COMMUNITY (ring 2026-11-03): one community leaves a node by the same bundle law.
 export {communityCrossing,placeResolverOf,CIRCLE_RELS} from './communityCrossing';
+// THE MEDIA CROSSES (ring 2026-11-03): the pictures the records name, beside the bundle, sealed into the head.
+export {mediaReferencedBy,mediaHashesOf,mediaSidecarOf,mediaDigestOf,mediaHeadOf,mediaSidecarIssues} from './mediaCrossing';
 // THE LAST HANDS (ring 2026-11-03): the alignment a legacy sync block names, for the keeper's match-id repair.
 export {alignmentForSyncBlock} from './alignmentMatch';
 // THE MAIL ORGAN (ring 2026-11-03): the voice, the letters, the audience and the sender's name, so the

@@ -124,7 +124,10 @@ replacement for document queries, live subscriptions, upload/download or server 
   `domain/communityCrossing`: the circle, everything a member anchors, everything placed, the edges whose
   both ends travel, the public record of everyone named). The binding ceremony stands (migration 062, the same
   evening): the trust file's bindings become durable rows when the API boots, a standing row is never relinked,
-  and a departed uid crosses as a name when the identities file vouches it. Still required: media in the bundle,
-  identity enrollment at scale (one login per person at the issuer), overlapping concurrent imports.
+  and a departed uid crosses as a name when the identities file vouches it. The pictures cross between nodes
+  (`--media`, `domain/mediaCrossing`: the sidecar's census sealed into the head, every file verified by name,
+  files before records, manifests in the records' transaction). Still required: the origin's pictures (URLs
+  into its storage — a storage migration), identity enrollment at scale (one login per person at the issuer),
+  overlapping concurrent imports.
 - Existing backend regression checks and a four-layer review: correctness, architecture,
   security/data integrity and meaning. Commit remains subject to explicit human approval.

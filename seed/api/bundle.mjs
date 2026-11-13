@@ -10,8 +10,9 @@
 import pg from 'pg';
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { constants as fsConstants } from 'node:fs';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { isAbsolute, join, resolve } from 'node:path';
 import { buildCensus, manifestHashOf, verifyBundle, verifyBundleSeal, expectedBeingsIndex, localUidCensus, planBundleMerge,
   BUNDLE_SEAL_TAG, BUNDLE_FORMAT_VERSION, signingPreimage, crossingCharterProblem } from '../generated/chain.mjs';
 import { SEED_BUNDLE_TABLES, bundleReadSql, bundleDocOf, bundleInsertOf } from '../../src/domain/seedBundle.mjs';
@@ -48,7 +49,9 @@ export const charterHashesOf = async root => ({
 // (they are local authority the far node never inherits — the planner would refuse them anyway).
 // Any node's charter may sign the head — the independent version 2, or the origin's version 1
 // (domain/crossingCharter): a node leaves by its travel plan whatever soil it grew in.
-export async function buildBundle({ snapshot, charter, exportCommit, charterHashes, exportedAtMs = Date.now(), withoutAuthority = false }) {
+// With `media` (domain/mediaCrossing mediaHeadOf), the sidecar's census rides in the head under the seal.
+/** @param {{ snapshot: *, charter: *, exportCommit: string, charterHashes: *, exportedAtMs?: number, withoutAuthority?: boolean, media?: { manifests: number, files: number, digest: string } | null }} options */
+export async function buildBundle({ snapshot, charter, exportCommit, charterHashes, exportedAtMs = Date.now(), withoutAuthority = false, media = null }) {
   const problem = crossingCharterProblem(charter);
   if (problem) throw Object.assign(new Error(`The charter is not a sound charter for a crossing: ${problem}.`), { code: 'charter_unsound' });
   if (typeof exportCommit !== 'string' || !/^[0-9a-f]{7,64}$/.test(exportCommit)) throw Object.assign(new Error('exportCommit must be a git commit hash.'), { code: 'commit_unsound' });
@@ -63,7 +66,8 @@ export async function buildBundle({ snapshot, charter, exportCommit, charterHash
   const genesisTree = g && typeof g.lid === 'string' && typeof g.genesisHash === 'string' && typeof g.latestHash === 'string'
     ? { docId: 'GENESIS_TREE', lid: g.lid, genesisHash: g.genesisHash, latestHash: g.latestHash, blockHeight: Number(g.blockHeight) || 0 } : null;
   const head = { formatVersion: BUNDLE_FORMAT_VERSION, nodeLid: charter.nodeLid, domain: charter.domain, exportedAtMs,
-    exportCommit, charterHashes: { genesisMd: charterHashes.genesisMd, linMd: charterHashes.linMd }, genesisTree, census: await buildCensus(docs) };
+    exportCommit, charterHashes: { genesisMd: charterHashes.genesisMd, linMd: charterHashes.linMd }, genesisTree, census: await buildCensus(docs),
+    ...(media ? { media: { manifests: media.manifests, files: media.files, digest: media.digest } } : {}) };
   return { head, manifestHash: await manifestHashOf(head), docs };
 }
 
@@ -102,8 +106,10 @@ export { verifyBundle, verifyBundleSeal, localUidCensus };
 // not spoken here yet may arrive with the import once the installation bound their login by reviewed
 // configuration), and with `apply` every planned insert lands — or the whole crossing rolls back.
 /** @param {import('pg').Client} client
- * @param {{ incoming: *, anchor: { fingerprint: string, publicKeyB64: string }, identities?: Array<{ sourceUid: string, targetUid: string, personLid?: string, departed?: boolean }>, apply?: boolean }} crossing */
-export async function cross(client, { incoming, anchor, identities = [], apply = false }) {
+ * @param {{ incoming: *, anchor: { fingerprint: string, publicKeyB64: string }, identities?: Array<{ sourceUid: string, targetUid: string, personLid?: string, departed?: boolean }>, apply?: boolean, media?: Array<{ path: string, doc: * }> }} crossing */
+// THE MEDIA CROSSES (ring 2026-11-03): the sidecar's manifests (verified by the caller against the sealed head
+// and the files' own names, the files already in the store) land in the same transaction as the records.
+export async function cross(client, { incoming, anchor, identities = [], apply = false, media = [] }) {
   if (!anchorSound(anchor)) throw Object.assign(new Error('The trusted anchor must carry a public key and its own fingerprint, obtained outside the bundle.'), { code: 'anchor_unsound' });
   await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
   try {
@@ -121,16 +127,61 @@ export async function cross(client, { incoming, anchor, identities = [], apply =
       await client.query(statement.text, statement.values);
       inserted++;
     }
+    let pictures = 0;
+    for (const manifest of media) {
+      const landed = await client.query('INSERT INTO seed.media_objects(path, doc) VALUES ($1, $2::jsonb) ON CONFLICT (path) DO NOTHING', [manifest.path, JSON.stringify(manifest.doc)]);
+      pictures += landed.rowCount ?? 0;
+    }
     if (!already) {
       await client.query('INSERT INTO seed.crossings(manifest_hash, doc) VALUES ($1, $2::jsonb)', [incoming.manifestHash, JSON.stringify({
         sourceNodeLid: incoming.head.nodeLid, sourceDomain: incoming.head.domain, exportedAtMs: incoming.head.exportedAtMs, exportCommit: incoming.head.exportCommit,
-        sealFingerprint: incoming.seal.fingerprint, destinationDigest: plan.destinationDigest, inserted, unchanged: plan.unchanged.length, rebuild: plan.rebuild.length,
+        sealFingerprint: incoming.seal.fingerprint, destinationDigest: plan.destinationDigest, inserted, unchanged: plan.unchanged.length, rebuild: plan.rebuild.length, pictures,
       })]);
     }
     await client.query('COMMIT');
-    return { plan, applied: true, inserted, already };
+    return { plan, applied: true, inserted, pictures, already };
   } catch (error) {
     await client.query('ROLLBACK').catch(() => undefined);
     throw error;
   }
+}
+
+// ── THE SIDECAR (ring 2026-11-03): the pictures beside the bundle ───────────────────────────────────
+// The manifests of the soil, as the owner reads them (the law chooses which travel: domain/mediaCrossing).
+export async function readMediaManifests(client) {
+  return (await client.query('SELECT path, doc FROM seed.media_objects ORDER BY path')).rows.map(r => ({ path: r.path, doc: r.doc }));
+}
+const sha256Bytes = bytes => createHash('sha256').update(bytes).digest('hex');
+const storeDirOf = storeDir => {
+  if (typeof storeDir !== 'string' || !isAbsolute(storeDir)) throw Object.assign(new Error('SEED_MEDIA_DIR must name the media store by an absolute path.'), { code: 'media_dir_unsound' });
+  return storeDir;
+};
+// The sidecar written beside the bundle: a new directory (never an existing one), one file per hash copied
+// from the store, and manifests.json — the head carries their census under the seal.
+export async function writeMediaSidecar(dir, sidecar, storeDir) {
+  const store = storeDirOf(storeDir);
+  await mkdir(dir, { mode: 0o700 });
+  for (const hash of sidecar.hashes) await copyFile(join(store, hash), join(dir, hash), fsConstants.COPYFILE_EXCL);
+  await writeFile(join(dir, 'manifests.json'), JSON.stringify({ manifests: sidecar.manifests }) + '\n', { flag: 'wx', mode: 0o600 });
+}
+export async function readMediaSidecar(dir) {
+  const parsed = JSON.parse(await readFile(join(dir, 'manifests.json'), 'utf8'));
+  if (!parsed || !Array.isArray(parsed.manifests)) throw Object.assign(new Error('The sidecar carries no manifests.json list.'), { code: 'media_sidecar_unsound' });
+  return parsed.manifests;
+}
+// A file beside the bundle stands only when its bytes answer to its name.
+export const mediaFilePresent = dir => async hash => {
+  if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash)) return false;
+  try { return sha256Bytes(await readFile(join(dir, hash))) === hash; } catch { return false; }
+};
+// The files into the store, by name; one already there is the same bytes (content-addressed) and stays.
+export async function landMediaFiles(dir, storeDir, hashes) {
+  const store = storeDirOf(storeDir);
+  await mkdir(store, { recursive: true, mode: 0o700 });
+  let copied = 0;
+  for (const hash of hashes) {
+    try { await copyFile(join(dir, hash), join(store, hash), fsConstants.COPYFILE_EXCL); copied++; }
+    catch (error) { if (error?.code !== 'EEXIST') throw error; }
+  }
+  return copied;
 }

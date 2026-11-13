@@ -209,6 +209,8 @@ export interface CharterHead {
   charterHashes: { genesisMd: string; linMd: string };
   genesisTree: { docId: string; lid: string; genesisHash: string; latestHash: string; blockHeight: number } | null;
   census: CollectionCensus[];
+  // THE MEDIA CROSSES (ring 2026-11-03): the sidecar's census, sealed with the head (domain/mediaCrossing).
+  media?: { manifests: number; files: number; digest: string };
 }
 
 export interface NodeBundle {

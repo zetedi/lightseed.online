@@ -6,6 +6,23 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-03 · The media crosses** — "Media and queues do not travel" was the crossing's last named
+hole between nodes. Now the pictures a bundle's records name travel in a SIDECAR beside the bundle
+(`domain/mediaCrossing`): the content-addressed files by hash and their manifests, the manifests'
+census sealed into the head — the custodian's one seal covers the pictures — and on the far shore
+each file held to its own name before anything lands, the files into the store first, the manifests
+in the records' transaction. REJECTED: carrying bytes inside the bundle JSON (a bundle of records
+must stay readable and small; the files are shared by hash and belong beside it); carrying the whole
+store (an unreferenced picture is an orphan on both shores — the records say what travels, as they
+say who); landing manifests before files (a manifest naming a missing file is the one failure the
+release ring was built to prevent); rewriting the origin's Firebase Storage URLs into node doors
+(`imageUrl` is sealed block content — the origin's pictures stay URLs, a storage migration is its own
+ring); trusting a file by its name alone (the name is a sha256; the bytes are checked against it).
+Plain contract — guaranteed: a bundle sealed with pictures cannot land with a swapped, missing or
+extra picture; files are in the store before the manifests name them; the same bundle lands nothing
+twice. Not guaranteed: the origin's pictures crossing, the previews cache, a store the import cannot
+write.
+
 **2026-11-03 · The faces of the node** — The edge served one host, and a face host's front door
 wore the node's card (the origin bakes one per face at deploy, `scripts/face-og.mjs`); the shell
 could sign in at the application origin alone. Now the one site answers at every face host

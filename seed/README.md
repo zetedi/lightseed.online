@@ -1626,9 +1626,23 @@ are idempotent; a differing record, a LID collision or an unbound identity block
 proposal; `admins` and `config` never merge (export `--without-authority`, or decide locally).
 An identity is anchored on the far side by a person record carrying the same LID, or by a
 login the installation bound to that uid by reviewed configuration (an explicit binding in the
-auth trust file) — then the person arrives with the import. Not carried: media files, queues,
-quotas, credentials, challenges (the travel plan's exclusions, said out loud in the plan).
+auth trust file) — then the person arrives with the import. Not carried: queues, quotas,
+credentials, challenges (the travel plan's exclusions, said out loud in the plan).
 `tests/seed/crossing.postgres-test.ts` exports from one database and lands it in another.
+
+THE MEDIA CROSSES (ring 2026-11-03, `domain/mediaCrossing`): with `--media <dir>` on
+`seed:export` (and `SEED_MEDIA_DIR` naming the store) the pictures the travelling records name —
+every `/v1/media?path=…` door in any record, raw or encoded — leave beside the bundle in a new
+directory: one file per hash, shared by every manifest naming the same bytes, and `manifests.json`;
+their census (manifests, files, one digest over the manifests) is sealed INTO THE HEAD, so the
+custodian's seal covers the pictures. An unreferenced picture stays (an orphan on both shores); a
+picture the records name but the store does not hold is named in `<bundle>.left.json`. On the far
+side `seed:import -- … --media <dir>` (with its own `SEED_MEDIA_DIR`) holds the sidecar to the sealed
+head and to every file's own name (sha256 = hash) before anything lands, copies the files into the
+store first, then lands the manifests in the records' transaction — a manifest never names a file
+that is not there; a swapped file refuses the whole crossing. The origin's pictures are URLs into
+its own storage and do not travel this way (a storage migration is its own ring).
+`tests/seed/media-crossing.postgres-test.ts`.
 
 ### The crossing from the origin (`seed:export:origin`)
 

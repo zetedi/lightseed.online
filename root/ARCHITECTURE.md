@@ -661,6 +661,15 @@ charter's hosts (`domain/seedBrowser` origins), and the shell returns to the fac
 the node's form of the origin's cross-host SSO: one realm, one session at the issuer, a silent
 second sign-in at the next host, no token minted by the node.
 
+THE MEDIA CROSSES (2026-11-03). Between nodes the pictures a bundle's records name travel in a
+sidecar beside it (`domain/mediaCrossing`, `--media` on `seed:export` and `seed:import`): the
+content-addressed files, one per hash, and their manifests, with the manifests' census sealed into
+the head so the custodian's seal covers them; on the far shore every file is held to its own name
+before anything lands, the files land in the store first, and the manifests land in the records'
+transaction — a manifest never names a file that is not there. What is named but not held is named
+as left; what is held but not named stays an orphan on both shores. The origin's pictures are URLs
+into its own storage and do not travel this way.
+
 THE LAST HANDS (migration 061, 2026-11-03). The thirteen hands that still refused by name are
 grown, and the parity count is zero. The origin's five provider hands are the realm's own doors
 reached by a redirect (`domain/issuerDoors`: an identity-provider hint, a login hint, the
