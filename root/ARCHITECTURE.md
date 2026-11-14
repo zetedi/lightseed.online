@@ -129,7 +129,9 @@ import transaction/workflow, not guarantees provided by a merge report.
   those boundaries and concurrent session isolation.
   `test:seed:docker` builds and starts the image against fresh PostgreSQL 16, verifies
   signed-token/private-seat isolation, private-route and owner-credential refusal, non-root/read-only execution, outage recovery, restart
-  persistence and data dump/restore, then removes its isolated containers and volume.
+  persistence and data dump/restore, drives the keeping's two hands on its own node (`seed:backup` held to
+  its manifest, `seed:restore` into an empty soil and store, refused where they stand; 2026-11-14), then
+  removes its isolated containers and volume.
 - `seed/identity/compose.yml` adds an optional self-hosted Keycloak OIDC issuer with
   a separate persistent PostgreSQL database. `seed:identity:configure` prepares a
   realm with exact HTTPS callbacks, code flow with S256 PKCE, five-minute access
@@ -708,6 +710,29 @@ person on either side, no login bound, else the vouch is a conflict. The ceremon
 one login per person at the issuer, the subjects named in the trust file, a restart, the identities
 file reviewed, the import.
 
+THE ENROLLMENT AT SCALE (2026-11-14). One login per person at the issuer, for a whole census, before
+the crossing: `seed:identity:enroll` reads the exporter's `identities.json`, the bundle's `users`
+records (the address and the name the origin knew) and the installation's trust file, and the law
+(`domain/seedEnrollment`) says which accounts the issuer must make (enabled, address unverified, a
+password to set at first sign-in), which standing accounts the trust file must bind (matched by
+address — the issuer keeps one account per address), and what stands in the way: a shared address, a
+subject or a uid the file already binds elsewhere (never re-pointed), a person without an address; the
+departed get no login. With `--apply` the accounts are made through the issuer's administration API
+and the trust file after the ceremony is written beside the given one (owner-only, never overwriting)
+for the keeper to review, move into place and restart — the boot then binds every row (THE BINDING
+CEREMONY). The issuer never learns a uid: the trust file is the one binding. Proven against a
+disposable issuer in `test:seed:identity`.
+
+WHO WEARS THE ORIGIN'S DOORS (2026-11-14). The origin's twin of `seed.wears_host`: `domain/communityDoor
+chooseCradle` over `domainVerification.hostWearingOf` ranks the communities claiming a host — a
+DNS-proven domain, then a steward-granted alias, then (at the origin still) the eldest bare claim,
+never the query's first hit — and answers in every place the origin asks: the face-og bake
+(`scripts/face-og.mjs`, reading the law from the generated domain and warning at each deploy when a
+face is worn by claim), the functions' `cradleAt` (the ray's home, the mail's place, the face feed;
+mirrored in `functions/src/cradle.ts`, held equal by the root test), the client's host lookup and the
+invite's host node. `claimsAnswer: false` is the node's strictness, one option away once the faces'
+proofs stand.
+
 THE MAIL ORGAN (migration 056, 2026-11-03). Letters leave the independent node through one
 organ (`seed/api/mail.mjs`): the hands (`POST /v1/mail/command` — a system letter the node
 composes from plain words in the voice of its place under a daily quota, the letter of a
@@ -728,13 +753,16 @@ plan's signatures to the soil's tables), builds the charter head and census, car
 beings index as a computed witness, and the custodian seals the manifest with an Ed25519
 key kept outside the node; the public anchor is written beside the bundle to travel by
 another road. `seed:import` verifies structure and seal, plans the additive merge with the
-shared planner inside one serializable transaction under the crossing's advisory lock, and
-with `--apply` lands every planned record in that transaction or nothing, remembering the
-crossing in `seed.crossings`. Local authority (`admins`, `config`) never merges. An identity
-is anchored on the far side by a person record carrying the same LID, or by a login the
-installation bound to that uid by reviewed configuration — the planner's `loginBound`, set
-by the executor from the node's own bindings, never by the operator's file. Not carried yet:
-media, identity enrollment at scale, overlapping concurrent imports.
+shared planner inside one serializable transaction under the crossing's advisory lock — the
+lock taken on the SESSION before the transaction opens (2026-11-14), so a second hand arriving at
+the same moment waits and then reads what the first landed, the same bundle landing once and two
+bundles both landing — and with `--apply` lands every planned record in that transaction or
+nothing, remembering the crossing in `seed.crossings`. Local authority (`admins`, `config`) never
+merges. An identity is anchored on the far side by a person record carrying the same LID, or by a
+login the installation bound to that uid by reviewed configuration — the planner's `loginBound`,
+set by the executor from the node's own bindings, never by the operator's file. The pictures
+travel beside the bundle (THE MEDIA CROSSES), the logins are made for a census (THE ENROLLMENT AT
+SCALE). Not carried: the origin's pictures (URLs into its storage — a storage migration).
 
 ## Layers: the dependency direction
 

@@ -88,7 +88,11 @@ permission to ship a reduced-feature node.
    with its circle, everything its members anchor and everything placed at it (`--community`,
    2026-11-03); the origin's fossils were swept the same day; the binding ceremony stands
    (migration 062: the trust file's bindings become rows at boot, departed uids cross as names
-   when vouched). Media transport and identity enrollment at scale remain. The last thirteen
+   when vouched); the pictures cross beside the bundle (`--media`, 2026-11-03); the logins are made
+   for a census (`seed:identity:enroll`, 2026-11-14: one login per person at the issuer, the trust
+   file after the ceremony written for review, proven against a disposable issuer); two crossings
+   overlapping on one soil wait for one another (the lock before the snapshot, 2026-11-14, proven
+   in the suite). The origin's pictures (URLs into its storage) remain a storage migration. The last thirteen
    refusing hands are grown (2026-11-03, migration 061: the issuer's doors driven through the
    realm, the one-time backfills as the keeper's own audits and repairs, the first-keeper claim
    answered by the installation's appointment) — the parity count is zero. The API has its
@@ -99,9 +103,11 @@ permission to ship a reduced-feature node.
 6. Bootstrap authority and the first keeper without a public first-visitor claim —
    `seed:keeper` appoints the keeper from the installation (2026-11-02). The keeping stands
    (2026-11-03): `seed:backup` and `seed:restore` carry the database, the media, the identity
-   and the configuration under one manifest, proven on the local node. Still to verify on a
-   long-running VPS: a clean Compose installation, persistence, overlapping imports. Walk all
-   supported features with Firebase access blocked.
+   and the configuration under one manifest, proven on the local node and, since 2026-11-14, by
+   the Docker proof on its disposable node. Still to verify on a
+   long-running VPS: a clean Compose installation, persistence, the clock across days. Walk all
+   supported features with Firebase access blocked (the anonymous surfaces walked 2026-11-14 on
+   the local node; the signed-in walk waits on a browser that trusts the local certificate).
 
 Database configuration, backup hardening and the initial API container are implemented
 and tested. Full PostgreSQL authorization and independent browser verification remain outstanding.

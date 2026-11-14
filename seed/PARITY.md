@@ -107,7 +107,11 @@ replacement for document queries, live subscriptions, upload/download or server 
 
 ## Release evidence still required
 
-- Original application features exercised with Firebase network access unavailable.
+- Original application features exercised with Firebase network access unavailable. The anonymous
+  surfaces were walked on 2026-11-14 on the local node (edge, API and issuer up; no request left for
+  Firebase); the signed-in walk waits on a browser that trusts the local certificate. The shell still
+  fetches its typeface from Google Fonts (`index.html`) — the one outward call the independent node
+  makes on its own, named here until it is brought home.
 - Full authentication/recovery/browser journeys, host-door enrollment and first-keeper bootstrap.
 - Secure VPS ingress/TLS, installation/upgrade and service health. Durable scheduled work now
   stands in the clock's ledger (migration 058: due moment, lease, outcome and report per job);
@@ -131,8 +135,11 @@ replacement for document queries, live subscriptions, upload/download or server 
   evening): the trust file's bindings become durable rows when the API boots, a standing row is never relinked,
   and a departed uid crosses as a name when the identities file vouches it. The pictures cross between nodes
   (`--media`, `domain/mediaCrossing`: the sidecar's census sealed into the head, every file verified by name,
-  files before records, manifests in the records' transaction). Still required: the origin's pictures (URLs
-  into its storage — a storage migration), identity enrollment at scale (one login per person at the issuer),
-  overlapping concurrent imports.
+  files before records, manifests in the records' transaction). Identity enrollment at scale stands
+  (`seed:identity:enroll`, `domain/seedEnrollment`, 2026-11-14: one login per person at the issuer for a whole
+  census, planned before written, the trust file after the ceremony written for review, proven against a
+  disposable issuer), and two crossings overlapping on one soil wait for one another (the lock on the session
+  before the transaction, 2026-11-14, proven in `tests/seed/crossing.postgres-test.ts`). Still required: the
+  origin's pictures (URLs into its storage — a storage migration).
 - Existing backend regression checks and a four-layer review: correctness, architecture,
   security/data integrity and meaning. Commit remains subject to explicit human approval.

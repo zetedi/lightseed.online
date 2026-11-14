@@ -568,6 +568,27 @@ email verification or password recovery. The realm import runs only when the rea
 does not exist; changing the generated JSON does not update an existing realm.
 Review later changes in the admin console or through a deliberate migration.
 
+THE ENROLLMENT AT SCALE (ring 2026-11-14, `domain/seedEnrollment`): when a whole census arrives by
+the crossing, every person who may still sign in needs one login at this issuer, bound to their uid
+in the trust file. `npm run seed:identity:enroll -- <identities.json> --people <bundle.json> --trust
+<auth.json> [--admin http://127.0.0.1:8082] [--realm lightseed] [--out <file>] [--apply] [--invite]`
+plans first and says the plan out loud: the accounts to make (a person with an address and no account
+at the issuer), the standing accounts to bind (an account already there under that address), the
+already bound, the departed (no login, by the exporter's census) and the issues (two people on one
+address, an address already bound to another uid, a binding that points elsewhere). Nothing is
+written without `--apply`, and nothing at all while an issue stands (exit 2). With `--apply` the
+accounts are made through the issuer's administrator API (its credentials from the environment —
+`SEED_IDENTITY_ADMIN`, `SEED_IDENTITY_ADMIN_PASSWORD` — never from the command line): enabled, the
+address unverified, a password to set at first sign-in, no password of ours; and the trust file
+AFTER the ceremony is written beside the old one (`--out`, `<trust>.enrolled.json` by default,
+owner-only, never over a standing file) for the keeper to review, move into place and restart the
+API — the binding ceremony of migration 062 then binds every row at boot. `--invite` asks the issuer
+to mail each new account its set-password link (seven days; the realm's courier must be configured).
+The trust file is the one binding: the account at the issuer carries no uid of ours (Keycloak 26
+drops attributes it does not manage). A second run finds everyone bound and writes nothing.
+`tests/seedEnrollment.test.ts` holds the plan law; `npm run test:seed:identity` performs the whole
+hand against a disposable issuer.
+
 To connect the API, use the authentication trust file described above with:
 
 - `issuer`: the exact HTTPS origin plus `/realms/lightseed`.
@@ -1654,8 +1675,11 @@ npm run seed:import -- bundle.json --anchor bundle.json.anchor.json --identities
 
 What the law guarantees: the bundle carries exactly the travelling collections (census and
 per-record hashes, the beings index as a witness computed from the body), sealed by the
-custodian over the manifest; the importer verifies structure and seal, plans inside one
-serializable transaction under the crossing's advisory lock, lands every planned record in
+custodian over the manifest; the importer verifies structure and seal, takes the crossing's
+advisory lock on the session BEFORE the transaction opens (2026-11-14: two crossings overlapping on
+one soil wait for one another — the second plans against what the first landed and lands nothing
+twice; a lock taken inside the transaction had fixed the snapshot before waiting, and the second
+failed to serialize), plans inside one serializable transaction, lands every planned record in
 that transaction or nothing, and records the crossing in `seed.crossings`. Identical records
 are idempotent; a differing record, a LID collision or an unbound identity blocks the whole
 proposal; `admins` and `config` never merge (export `--without-authority`, or decide locally).

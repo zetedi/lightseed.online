@@ -6,6 +6,91 @@ with new ones (this file is itself append-only in spirit).
 
 ---
 
+**2026-11-14 · The keeping's hands inside the proof** — The ring of the review (2026-11-03) left "the
+keeping's hands inside the Docker proof" not guaranteed: `test:seed:docker` drove only its own inline
+pg_dump/psql check, so the hands a keeper actually uses were proven by hand on the local node alone.
+Now the proof drives them on its own disposable node: `seed:backup --without-identity --without-config`
+on the running node, the manifest held to its files by the same law the restore applies
+(`backupManifestIssues`: the parts, every name, size and digest, the migration the soil stands at);
+`seed:restore` into a second empty database and an empty media directory; the same six facts asked of
+both landed soils (the counts, the first person's lid, the Willow tree, the two birth proofs, the
+binding) and the pictures compared byte for byte under their sha256 names; then the identical restore
+again, refused before anything is written (exit 2, as distinct from 1 = stopped halfway) in one report
+naming both the database and the directory that now stand. `seed:backup` gained `--without-config` so
+the proof never reads an installation's own files — the proof's first promise, until now kept only by
+the absence of such files on the machine that ran it. Found on the way: since the edge's required hosts
+entered the compose file (2026-11-02) the proof could not build from a bare shell at all; it names them
+itself now. Guaranteed: what the proof asserts, every run, from a clean checkout with Docker alone.
+Not guaranteed: the identity part and the configuration inside the proof (the local node proved them by
+hand, 2026-11-03); a backup taken while the API writes (the hand does not pause the node). Rejected:
+replacing the inline pg_dump/psql check — it stays as the cheaper first witness, and both soils answer
+the same questions.
+
+**2026-11-14 · One login per person: the enrollment at scale** — The binding ceremony had left "the
+logins themselves (one per person at the issuer, by the realm's own means)" not guaranteed: a hand at the
+console for every member, thirty-three at the origin. Now `seed:identity:enroll` plans and performs that
+hand for a whole census. From the exporter's `identities.json`, the bundle's `users` records (the address
+and the name the origin knew — they travel verbatim) and the installation's trust file, the law
+(`domain/seedEnrollment`) says which accounts the issuer must make (enabled, the address unverified, a
+password to set at first sign-in), which standing accounts the trust file must bind, and what stands in
+the way: a shared address (one login per person, never one per two), a subject or a uid the file already
+binds elsewhere (a binding is never re-pointed — 062's law); the departed get no login. With `--apply` the
+accounts are made through the issuer's administration API and the trust file AFTER the ceremony is
+written beside the given one, owner-only, never overwriting: the keeper reviews it, moves it into place
+and restarts, and the boot binds every row. With `--invite` the issuer's own courier mails each new
+account its link. The disposable-issuer proof (`test:seed:identity`) now runs the ceremony: a standing
+account bound by its address, a missing one made, the departed skipped, a second run finding nothing to
+do. REJECTED: writing the trust file in place (it is reviewed configuration; a hand that overwrites it is
+a hand that can bind the wrong login); passwords set by the script (the issuer's mail and the first
+sign-in set them; the script never holds one); the uid as an account attribute (the issuer's user profile
+drops what it does not manage — and the issuer authenticates a login, never an identity: the trust file is
+the one binding); matching by name (names repeat; the address is what the issuer keeps one of). Plain
+contract — guaranteed: after `--apply` every person in the census with an address has one account and
+one binding in the written file, or is named as an issue; nothing is made twice; the issuer never learns
+a uid. Not guaranteed: the mail itself (the realm's courier is the installation's), a person whose origin
+address is no longer theirs, the walk from the mailed link to a first sign-in in a browser.
+
+**2026-11-14 · Who wears the origin's doors** — "What the review found" left the origin's own face
+resolution not guaranteed: `scripts/face-og.mjs` dressed a face with the first community Firestore
+returned for `domain ==`, then for an alias; the ray's home and the mail's place (`communityIdOfDomain`,
+`placeOfDomain`) and the face feed did the same, each its own copy; only the client's
+`getCommunityByDomain` chose by a law (DNS-proven first, else the eldest). Now ONE law answers in all
+five places — `domain/communityDoor chooseCradle` over `domainVerification.hostWearingOf`, the origin's
+twin of the node's `seed.wears_host` (063): a DNS-proven domain, then a steward-granted alias, then — at
+the origin still — the eldest bare claim, never the query's first hit. The face-og bake reads it from the
+generated domain and WARNS at every deploy when a face is worn by claim and not by proof; the functions
+carry it as `cradleAt` over a mirror (`functions/src/cradle.ts`, held equal by the root test); the
+client's host lookup and the invite's host node call the same. And the Firebase backend's own copy of
+the alignment-match law, left "as it was" by The last hands, now calls `domain/alignmentMatch` too.
+REJECTED: the node's strictness at the origin today (a bare claim wears nothing) — the five faces'
+communities may hold no DNS proof yet and the production soil cannot be read from here, and a living face
+undressed in silence would be the worse failure, so the claim still answers last and the deploy says so;
+mending face-og alone (four hands shared the hole); a `communityId` per face in the charter (the strictest
+grant, by hand — the next step if a face's proof cannot be made). Plain contract — guaranteed: wherever
+the origin asks which community answers at a host, the same ranking answers, a proven or granted wearer
+always before a claim; the mirror equals the law; every bake names the faces worn by claim. Not
+guaranteed: a face whose community holds neither proof nor alias is still worn by the eldest claim, so an
+OLDER record writing the same domain would take it — the proof (DNS) or the grant (alias) closes it, and
+`claimsAnswer: false` is the node's strictness, one option away.
+
+**2026-11-14 · Two crossings wait for one another** — Asked to continue to the completion of the second
+node, the release contract's "overlapping concurrent imports" was proven first, and the proof found the
+lock standing in the wrong place: the crossing took its advisory lock as the FIRST STATEMENT of a
+serializable transaction, so the snapshot was fixed before the wait — a second hand applying the same
+bundle at the same moment waited, then read an empty soil, planned every record again and failed on the
+first duplicate ("could not serialize access"). Now the lock is taken on the session before the
+transaction opens and released after it ends, so the late hand reads what the first landed: the same
+bundle from two terminals lands once, the second finding every record unchanged and the ledger's memory;
+two different bundles both land. REJECTED: catching the serialization failure and retrying inside the
+crossing (a retry hides a law; the lock IS the law, taken where the snapshot can see its result); a
+promise in the README instead of a proof ("do not import twice at once" — the contract asked for the
+proof); a lock per bundle (two bundles may name the same records; the soil is one). Plain contract —
+guaranteed: concurrent imports on one soil serialize before they read; nothing lands twice; the suite
+holds it. Not guaranteed: two hands placing the same picture at the same moment when one of them does
+not land — the files land before the lock, a standing file is kept by the second hand, and the first
+hand's withdrawal is its own (a sidecar landed twice, one crossing refused, could withdraw a file the
+other's manifests name; the nightly sweep frees orphans, it does not restore).
+
 **2026-11-03 · What the review found** — The five rings below were reviewed on four layers before
 any of them was committed, and seven defects and three gaps between word and code came back; this
 ring records what each became. WHO WEARS A HOST (migration 063, `seed.wears_host`): a face's front
