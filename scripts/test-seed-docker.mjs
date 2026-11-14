@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Disposable Docker proof. Never mounts seed/data or reads installation credentials.
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +8,7 @@ import { randomBytes, generateKeyPairSync, createHash, sign } from 'node:crypto'
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
 import {seedRotationPreimage,seedRecoveryPreimage,seedRecoveryWitnessPreimage} from '../src/domain/seedSigning.mjs';
+import { backupManifestIssues } from '../src/domain/seedBackup.mjs';
 import {buildSeedDomain} from '../seed/build-domain.mjs';
 import { authFixture } from '../tests/seed/auth-fixture.mjs';
 
@@ -23,7 +24,9 @@ fixture.config.bindings.push({subject:'issuer-carol',uid:'carol'},{subject:'issu
 const authConfig = join(directory, 'auth.json');
 const env = { ...process.env, COMPOSE_PROJECT_NAME: project, COMPOSE_PROFILES: '',
   COMPOSE_FILE: [join(root, 'seed/docker-compose.yml'), override].join(delimiter),
-  SEED_NODE_ORIGIN: 'https://app.example.test', SEED_DB_PASSWORD: randomBytes(32).toString('base64url') };
+  SEED_NODE_ORIGIN: 'https://app.example.test', SEED_DB_PASSWORD: randomBytes(32).toString('base64url'),
+  // The edge is never started here, but Compose interpolates the whole file: its two required hosts get the proof's own names.
+  SEED_APP_HOST: 'app.example.test', SEED_IDENTITY_HOST: 'identity.example.test' };
 const run = (command, args, input, extraEnv = {}) => new Promise((accept, reject) => {
   const child = spawn(command, args, { cwd: root, env: { ...env, ...extraEnv }, stdio: ['pipe', 'pipe', 'pipe'] });
   let stdout = '', stderr = '';
@@ -368,28 +371,59 @@ volumes:
   assert.deepEqual((await get('/v1/communities?id=garden')).body, { community });
   assert.deepEqual((await get('/v1/me', enrolledToken)).body, enrolled.body);
   assert.deepEqual((await get('/v1/trees?id=' + planted.id,alice)).body.tree,picturedTree);
+  // What every landed soil must carry — asked of the inline check's database and of the keeping's alike.
+  const soilCarries = async db => {
+    const ask = query => compose(['exec', '-T', 'db', 'psql', '-X', '-qAt', '-U', 'lightseed', '-d', db, '-c', query]);
+    assert.equal((await ask('SELECT (SELECT count(*) FROM links), (SELECT count(*) FROM secret_links), (SELECT count(*) FROM communities);')).trim(), '6|1|3');
+    assert.equal((await ask("SELECT doc->>'lid' FROM persons WHERE id='alice';")).trim(), savedProfile.lid);
+    assert.equal((await ask(`SELECT count(*) FROM lifetrees WHERE id='${planted.id}' AND doc->>'name'='Willow';`)).trim(), '1');
+    assert.equal((await ask(`SELECT hash=encode(digest(convert_to(preimage,'UTF8'),'sha256'),'hex') FROM seed.offering_birth_proofs WHERE offering_id='${createdOffering.id}';`)).trim(), 't');
+    assert.equal((await ask(`SELECT hash=encode(digest(convert_to(preimage,'UTF8'),'sha256'),'hex') FROM seed.event_birth_proofs WHERE event_id='${copiedEvent.id}';`)).trim(), 't');
+    assert.equal((await ask("SELECT count(*) FROM seed.identity_bindings WHERE subject='new-independent-person';")).trim(), '1');
+  };
   const dump = await compose(['exec', '-T', 'db', 'pg_dump', '-U', 'lightseed', '--no-owner', '--no-acl', 'lightseed']);
   await sql('CREATE DATABASE restore_check;');
   await compose(['exec', '-T', 'db', 'psql', '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-U', 'lightseed', '-d', 'restore_check'], dump);
-  const restored = await compose(['exec', '-T', 'db', 'psql', '-X', '-qAt', '-U', 'lightseed', '-d', 'restore_check', '-c',
-    'SELECT (SELECT count(*) FROM links), (SELECT count(*) FROM secret_links), (SELECT count(*) FROM communities);']);
-  assert.equal(restored.trim(), '6|1|3');
-  const restoredProfile = await compose(['exec', '-T', 'db', 'psql', '-X', '-qAt', '-U', 'lightseed', '-d', 'restore_check', '-c',
-    "SELECT doc->>'lid' FROM persons WHERE id='alice';"]);
-  assert.equal(restoredProfile.trim(), savedProfile.lid);
-  const restoredTree = await compose(['exec','-T','db','psql','-X','-qAt','-U','lightseed','-d','restore_check','-c',
-    `SELECT count(*) FROM lifetrees WHERE id='${planted.id}' AND doc->>'name'='Willow';`]);
-  assert.equal(restoredTree.trim(),'1');
-  const restoredOfferingProof=await compose(['exec','-T','db','psql','-X','-qAt','-U','lightseed','-d','restore_check','-c',
-    `SELECT hash=encode(digest(convert_to(preimage,'UTF8'),'sha256'),'hex') FROM seed.offering_birth_proofs WHERE offering_id='${createdOffering.id}';`]);
-  assert.equal(restoredOfferingProof.trim(),'t');
-  const restoredEventProof=await compose(['exec','-T','db','psql','-X','-qAt','-U','lightseed','-d','restore_check','-c',
-    `SELECT hash=encode(digest(convert_to(preimage,'UTF8'),'sha256'),'hex') FROM seed.event_birth_proofs WHERE event_id='${copiedEvent.id}';`]);
-  assert.equal(restoredEventProof.trim(),'t');
-  const restoredBindings = await compose(['exec', '-T', 'db', 'psql', '-X', '-qAt', '-U', 'lightseed', '-d', 'restore_check', '-c',
-    "SELECT count(*) FROM seed.identity_bindings WHERE subject='new-independent-person';"]);
-  assert.equal(restoredBindings.trim(), '1');
-  console.log('Docker proof passed: fresh install, migrations, provisioning, HTTP authentication/private-seat isolation, non-root/read-only runtime, owner refusal, outage recovery, restart persistence and data restore.');
+  await soilCarries('restore_check');
+  // THE KEEPING's two hands (ring 2026-11-03), driven as a keeper drives them, in the proof's own Compose project:
+  // seed:backup keeps the running node (the identity stack is no part of this proof; the configuration is the
+  // installation's, which this proof never reads), the manifest is held to its files, seed:restore lands the soil
+  // into an empty database and the pictures into an empty directory — and the same hand is refused where both now stand.
+  console.log('Keeping the node with seed:backup and landing it again with seed:restore.');
+  const keep = join(directory, 'keep'), keptMedia = join(directory, 'media');
+  const kept = await checked(process.execPath, ['scripts/backup-seed.mjs', '--without-identity', '--without-config', keep]);
+  assert.match(kept, /: database, media — 2 files, \d+ bytes, soil at /);
+  assert.match(kept, /identity left out by the hand/); assert.match(kept, /configuration left out by the hand/);
+  const manifest = JSON.parse(await readFile(join(keep, 'manifest.json'), 'utf8'));
+  const held = new Map();
+  for (const file of manifest.files) { const bytes = await readFile(join(keep, file.name)); held.set(file.name, { bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') }); }
+  assert.deepEqual(backupManifestIssues(manifest, name => held.get(name) ?? null), []);
+  assert.deepEqual(manifest.parts, ['database', 'media']);
+  assert.deepEqual(manifest.files.map(f => [f.name, f.part]), [['database.sql', 'database'], ['media.tar', 'media']]);
+  assert.ok(manifest.files.every(f => f.bytes > 0));
+  assert.equal(manifest.migration, (await sql('SELECT max(name) FROM seed.schema_migrations;')).trim());
+  assert.deepEqual((await readdir(keep)).sort(), ['database.sql', 'manifest.json', 'media.tar']);
+  await sql('CREATE DATABASE restore_keep;');
+  const restoreArgs = ['scripts/restore-seed.mjs', keep, '--database', 'restore_keep', '--media-dir', keptMedia, '--without-identity', '--without-config'];
+  const landed = await checked(process.execPath, restoreArgs);
+  assert.match(landed, /every file answers to its name/); assert.match(landed, /Database restored into restore_keep/); assert.match(landed, /Media restored into /);
+  await soilCarries('restore_keep');
+  // The store is content-addressed: the landed directory holds exactly the proof's pictures, each under its own sha256.
+  const pictures = new Map([...mediaBeforeRestart.values()].map(bytes => [createHash('sha256').update(bytes).digest('hex'), bytes]));
+  const landedFiles = async () => (await readdir(keptMedia, { recursive: true })).sort();
+  assert.deepEqual(await landedFiles(), [...pictures.keys()].sort());
+  for (const [hash, bytes] of pictures) assert.deepEqual(await readFile(join(keptMedia, hash)), bytes);
+  // The refusal: the same hand again, where the soil and the pictures now stand — one report, nothing written.
+  const refused = await run(process.execPath, restoreArgs);
+  const report = refused.stderr.replaceAll(env.SEED_DB_PASSWORD, '[redacted]');
+  assert.equal(refused.code, 2, report.slice(-2000));
+  assert.match(report, /^Nothing restored: a part would land where something stands \(2\)\.$/m);
+  assert.match(report, /^  database: restore_keep already carries a seed schema/m);
+  assert.ok(report.includes(`  media: ${keptMedia} is not empty`), report.slice(-2000));
+  assert.doesNotMatch(refused.stdout, /restored/i);
+  await soilCarries('restore_keep');
+  assert.deepEqual(await landedFiles(), [...pictures.keys()].sort());
+  console.log('Docker proof passed: fresh install, migrations, provisioning, HTTP authentication/private-seat isolation, non-root/read-only runtime, owner refusal, outage recovery, restart persistence, data restore, and the keeping: seed:backup held to its manifest, seed:restore into an empty soil and store, refused where they stand.');
 } catch (error) {
   console.error(error instanceof Error ? error.message : 'Docker proof failed.');
   process.exitCode = 1;

@@ -83,8 +83,8 @@ hash, one tar from the API's store), the IDENTITY (pg_dump of the issuer's own d
 and every login) and the CONFIGURATION (the environment, the charter, the trust file, the runtime
 secrets — under `config/` with their own paths). A `manifest.json` names every file with its size
 and sha256, the migration the soil stands at and the commit the hand ran from; a part whose service
-is not running is left out and said so (`--without-media`, `--without-identity` leave one out on
-purpose). `seed:restore` holds the backup to its manifest first — every file present, its size and
+is not running is left out and said so (`--without-media`, `--without-identity`, `--without-config`
+leave one out on purpose). `seed:restore` holds the backup to its manifest first — every file present, its size and
 digest its own — and refuses otherwise; then it looks at EVERY place before anything is written and
 refuses as one report if any part would land where something stands; then it lands part by part:
 the database into an EMPTY database (`--database`, `lightseed` by default; it must exist and carry
@@ -97,7 +97,8 @@ that already stands is left out with its flag (`--without-database`, `--without-
 over itself. Afterwards provision the runtime role anew and restart the API. Proven on the local
 node: a backup restored into a scratch database and directory carried the same counts of records,
 pictures and bindings, and a restore over the standing node was refused in one report naming the
-soil, the store and the realm; `tests/seedKeeping.test.ts` holds the manifest law. Not in a backup by design: the custodian's Ed25519 key (it never enters the node),
+soil, the store and the realm; `tests/seedKeeping.test.ts` holds the manifest law, and the Docker proof
+(`npm run test:seed:docker`, below) drives both hands on its own disposable node since 2026-11-14. Not in a backup by design: the custodian's Ed25519 key (it never enters the node),
 the TLS certificates (ACME issues them anew) and the edge's own state.
 
 The node's **export ceremony** (in-app, staff admin card) remains the human-readable
@@ -721,14 +722,19 @@ tests signed-token authentication, own-seat isolation, HTTP pagination and refus
 of unported/private/write/forged-identity requests; verifies
 non-root, read-only and Firebase-free runtime; refuses an owner login; stops the
 database and verifies readiness failure without losing liveness; restarts both services
-and checks recovery/data survival; and restores a dump into a separate empty database.
+and checks recovery/data survival; restores a dump into a separate empty database; and
+drives the keeping's two hands on the running proof node — `seed:backup --without-identity
+--without-config` (the manifest held to its files), `seed:restore` into a second empty database
+and an empty media directory (the same counts, the same picture bytes under their sha256 names),
+and the same restore refused in one report where both now stand.
 Cleanup removes only the test project's containers, volume and local API image. If
 cleanup fails, the command reports the project and private temporary directory for
 inspection. Ordinary Docker base-image/build caches may remain.
 
-The restore check uses `--no-owner --no-acl` and verifies data, not full deployment
-recovery. Identity-provider state, roles/grants, media and credentials still need
-their own restore workflow. This test is an API milestone, not full feature parity.
+The restore checks use `--no-owner --no-acl` and verify data, not full deployment
+recovery. Identity-provider state, roles/grants and the configuration files stay outside
+this proof (the keeping carries them; the local node proved them by hand). This test is an
+API milestone, not full feature parity.
 
 ## What does not stand yet (named, not hidden)
 

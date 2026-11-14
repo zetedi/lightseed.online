@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // seed:backup — THE KEEPING (ring 2026-11-03): a whole independent node into one new directory, owner-only:
-//   npm run seed:backup -- [--local] [--without-identity] [--without-media] <dir>
+//   npm run seed:backup -- [--local] [--without-identity] [--without-media] [--without-config] <dir>
 // the database (pg_dump of the soil, --no-owner --no-acl, so it restores into any empty database), the
 // media (the pictures by hash, as one tar from the API's store), the identity (pg_dump of the issuer's own
 // database: the realm and every login), and the configuration (the environment, the charter, the trust
@@ -20,10 +20,10 @@ import { backupManifestOf } from '../src/domain/seedBackup.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const seed = join(root, 'seed');
 const args = process.argv.slice(2);
-const flags = ['--local', '--without-identity', '--without-media'];
+const flags = ['--local', '--without-identity', '--without-media', '--without-config'];
 const positional = args.filter(a => !a.startsWith('--'));
 if (positional.length !== 1 || args.some(a => a.startsWith('--') && !flags.includes(a))) {
-  console.error('Usage: npm run seed:backup -- [--local] [--without-identity] [--without-media] <new directory>');
+  console.error('Usage: npm run seed:backup -- [--local] [--without-identity] [--without-media] [--without-config] <new directory>');
   process.exit(1);
 }
 const local = args.includes('--local');
@@ -67,10 +67,13 @@ try {
   if (args.includes('--without-identity')) notes.push('identity left out by the hand');
   else if (!identityRunning()) notes.push('identity left out: the identity stack is not running');
   else { await capture([...identityCompose, 'exec', '-T', 'identity-db', 'pg_dump', '-U', 'keycloak', '--no-owner', '--no-acl', 'keycloak'], join(dir, 'identity.sql')); await take('identity.sql', 'identity'); }
-  // THE CONFIGURATION: what exists of the installation's files, under config/ with their own paths.
-  const candidates = local
-    ? ['local/.env', 'local/runtime.env', 'local/auth.json', 'local/identity.env', 'local/charter']
-    : ['.env', 'runtime.env', 'identity/.env', process.env.SEED_CHARTER_DIR ?? 'charter'];
+  // THE CONFIGURATION: what exists of the installation's files, under config/ with their own paths
+  // (--without-config leaves them out and says so: the Docker proof keeps a node without reading the installation's files).
+  if (args.includes('--without-config')) notes.push('configuration left out by the hand');
+  const candidates = args.includes('--without-config') ? []
+    : local
+      ? ['local/.env', 'local/runtime.env', 'local/auth.json', 'local/identity.env', 'local/charter']
+      : ['.env', 'runtime.env', 'identity/.env', process.env.SEED_CHARTER_DIR ?? 'charter'];
   for (const candidate of candidates) {
     const source = resolve(seed, candidate);
     let s; try { s = await stat(source); } catch { continue; }

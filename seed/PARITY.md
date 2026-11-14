@@ -116,7 +116,9 @@ replacement for document queries, live subscriptions, upload/download or server 
   keep and land the database, the media, the identity database and the configuration under one manifest
   (`domain/seedBackup`, 2026-11-03; proven on the local node), a restore refusing a backup that does not answer
   to its manifest and, in one report before anything is written, any part that would land where something stands. The custodian's key stays outside by design. The Docker
-  proof's own dump/restore check remains the automated one; the keeping's two hands are not yet in it.
+  proof drives both hands since 2026-11-14: a backup of its running node held to its manifest, landed into an empty
+  database and an empty directory with the same counts and picture bytes, and refused in one report where they stand;
+  the identity part and the configuration stay outside that proof.
 - Signed exports and transactional additive import now exist (`seed:export`, `seed:import`, migration 055;
   PostgreSQL tests cover the seal, tampering, identity anchoring, local authority, idempotence and conflicts),
   and the origin's Firestore soil leaves as the same bundle (`seed:export:origin`, 2026-11-03: one read-only
