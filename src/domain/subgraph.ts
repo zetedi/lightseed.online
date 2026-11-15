@@ -118,3 +118,30 @@ export function pathTo(walk: SubgraphWalk, beingId: string): { beingId: string; 
   }
   return path;
 }
+
+// WHAT A RELATION JOINS (the walk's map of the LIN): the kind of being at each end of a rel.
+// `keeper` names the tree first (a miss falls to the community), `participant` the vision first
+// (a miss falls to the event's pulse) — the backends resolve the miss, the map is one.
+export type WalkKind = 'person' | 'tree' | 'community' | 'vision' | 'lightHouse' | 'pulse';
+export const REL_ENDPOINTS: Readonly<Record<string, { from: WalkKind; to: WalkKind }>> = {
+  guardian: { from: 'person', to: 'tree' },
+  keeper: { from: 'person', to: 'tree' },
+  steward: { from: 'person', to: 'tree' },
+  observer: { from: 'person', to: 'tree' },
+  member: { from: 'person', to: 'community' },
+  joined: { from: 'person', to: 'vision' },
+  participant: { from: 'tree', to: 'vision' },
+  rooted: { from: 'lightHouse', to: 'tree' },
+  shelters: { from: 'lightHouse', to: 'community' },
+  grows_in: { from: 'tree', to: 'community' },
+  collaborates_with: { from: 'community', to: 'community' },
+  recognises: { from: 'community', to: 'community' },
+  shares_resources_with: { from: 'community', to: 'community' },
+  welcomed_by: { from: 'person', to: 'person' },
+  invited_by: { from: 'person', to: 'community' },
+};
+// Knocks and transients weave no meaning: they are pending questions, not connections.
+export const SKIP_RELS: ReadonlySet<string> = new Set(['join_request', 'keeper_request', 'party']);
+// The ends a walk may follow for this rel, or null when the rel weaves nothing.
+export const walkEndsOf = (rel: string): { from: WalkKind; to: WalkKind } | null =>
+  SKIP_RELS.has(rel) ? null : (Object.hasOwn(REL_ENDPOINTS, rel) ? REL_ENDPOINTS[rel] : null);

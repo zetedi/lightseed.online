@@ -1,36 +1,14 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './core';
 import { graphStore } from '../../services/store';
-import type { SubgraphEdge, SubgraphNode } from '../../domain/subgraph';
+import { walkEndsOf, type SubgraphEdge, type SubgraphNode, type WalkKind } from '../../domain/subgraph';
 
 // THE GRAPH LOADER (ring 2026-08-25) — gathers the neighborhood the longitudinal walk
 // (domain/subgraph) then measures. The RELS THEMSELVES name what stands at each end, so
 // an edge's endpoints resolve without guessing collections. Beings this viewer may not
 // read simply fail to resolve — and an unresolved being is OPAQUE to the walk: the rules'
 // refusals become the walk's walls with no extra law here.
-type BeingKind = 'person' | 'tree' | 'community' | 'vision' | 'lightHouse' | 'pulse';
-
-const REL_ENDPOINTS: Record<string, { from: BeingKind; to: BeingKind }> = {
-  guardian: { from: 'person', to: 'tree' },
-  // keeper: a tree's or a community's (one word, one meaning — ring 2026-09-29); the tree is
-  // tried first and a miss falls to the community below.
-  keeper: { from: 'person', to: 'tree' },
-  steward: { from: 'person', to: 'tree' },
-  observer: { from: 'person', to: 'tree' },
-  member: { from: 'person', to: 'community' },
-  joined: { from: 'person', to: 'vision' },
-  participant: { from: 'tree', to: 'vision' },   // (events too — the vision miss falls to pulse below)
-  rooted: { from: 'lightHouse', to: 'tree' },
-  shelters: { from: 'lightHouse', to: 'community' },
-  grows_in: { from: 'tree', to: 'community' },
-  collaborates_with: { from: 'community', to: 'community' },
-  recognises: { from: 'community', to: 'community' },
-  shares_resources_with: { from: 'community', to: 'community' },
-  welcomed_by: { from: 'person', to: 'person' },
-  invited_by: { from: 'person', to: 'community' },
-};
-// Knocks and transients weave no meaning: they are pending questions, not connections.
-const SKIP_RELS = new Set(['join_request', 'keeper_request', 'party']);
+type BeingKind = WalkKind;
 
 const COLLECTION: Record<BeingKind, string> = {
   person: 'persons', tree: 'lifetrees', community: 'communities',
@@ -86,8 +64,8 @@ export const loadSubgraphAround = async (
         graphStore.linksTo(id).catch(() => []),
       ]);
       for (const l of [...out, ...into]) {
-        const shape = REL_ENDPOINTS[l.rel];
-        if (!shape || SKIP_RELS.has(l.rel)) continue;
+        const shape = walkEndsOf(l.rel);
+        if (!shape) continue;
         edges.set(`${l.from}__${l.rel}__${l.to}`, { from: l.from, rel: l.rel, to: l.to });
         for (const [endId, endKind] of [[l.from, shape.from], [l.to, shape.to]] as const) {
           if (display.has(endId) || display.size >= cap) continue;

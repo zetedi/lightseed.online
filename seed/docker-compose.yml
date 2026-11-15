@@ -98,8 +98,11 @@ services:
 
 networks:
   default: {}
+  # The edge network's NAME is the installation's (SEED_EDGE_NETWORK, the same value in
+  # identity/.env): two nodes on one machine each keep their own, so each edge finds only
+  # its own issuer behind the name `identity`.
   edge:
-    name: lightseed_edge
+    name: ${SEED_EDGE_NETWORK:-lightseed_edge}
 
 volumes:
   media_data:

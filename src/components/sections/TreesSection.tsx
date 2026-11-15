@@ -94,7 +94,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
       <div className="mb-4 flex items-start justify-between gap-3">
         <SectionTitle title={title} sub={sub} />
         {currentUserId && (
-          <button onClick={() => { setInviteOpen(o => !o); setInviteCandidates(null); setInviteSearch(''); }} className="shrink-0 rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-teal-700 active:scale-95">
+          <button onClick={() => { setInviteOpen(o => !o); setInviteCandidates(null); setInviteSearch(''); }} className="shrink-0 rounded-full btn-theme px-4 py-2 text-xs font-bold text-white shadow-md transition-all active:scale-95">
             <span className="flex items-center gap-1.5"><Icons.Plus /> {t('invite_a_tree')}</span>
           </button>
         )}
@@ -105,7 +105,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
             <input dir="auto" value={inviteSearch} onChange={e => setInviteSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') searchInviteCandidates(); }}
               placeholder={t('search_trees_ph')}
               className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none focus:border-teal-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            <button onClick={searchInviteCandidates} className="shrink-0 rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-700">{t('search_btn')}</button>
+            <button onClick={searchInviteCandidates} className="shrink-0 rounded-full btn-theme px-4 py-2 text-xs font-bold text-white transition-colors">{t('search_btn')}</button>
           </div>
           {inviteCandidates !== null && (
             <div className="mt-3 space-y-2">

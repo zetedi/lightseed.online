@@ -724,6 +724,15 @@ or bypass the warning per host. Under Docker Desktop (macOS) give the database a
 in a local override instead of the `./data` bind mount, which breaks `initdb` on ownership. The
 API is reached by the browser only through the edge; its own port stays on loopback.
 
+**Two nodes on one machine.** Each node is its own Compose project with its own edge network, so
+neither edge can reach the other's issuer behind the name `identity`: give the second node its own
+`SEED_EDGE_NETWORK` (the same value in `seed/.env` and `seed/identity/.env`; `lightseed_edge` by
+default), its own project names (`docker compose -p node-b …` for the node and for its issuer),
+and its own ports (`SEED_DB_PORT`, `SEED_API_PORT`, `SEED_EDGE_HTTP_PORT`, `SEED_EDGE_HTTPS_PORT`,
+`SEED_IDENTITY_PORT`) and hosts. Volumes and the default network follow the project name. The two
+nodes then meet only by the crossing (`seed:export` → `seed:import`); there is no live protocol
+between nodes yet.
+
 ## Reproduce the Docker proof
 
 With Docker running and the repository's npm dependencies installed:

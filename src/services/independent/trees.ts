@@ -5,7 +5,7 @@
 // the document door (./docs), where seed.doc_write judges each write by the law firestore.rules
 // kept — a carer edits, the head never moves from a client, a secret stays secret.
 import type * as F from '../firebase/trees';
-import { session, readDoc, readAll, currentUid, requireUid, toMillis } from './core';
+import { session, readDoc, readAll, currentUid, requireUid, toMillis, newestFirst } from './core';
 import { docGet, docList, docAll, docCommand, serverTime } from './docs';
 import { graphStore } from './store';
 import { announce } from '../refreshBus';
@@ -31,7 +31,6 @@ const mediaPathOf = (url: unknown): string | null => {
     try { return new URL(url, window.location.origin).searchParams.get('path'); } catch { return null; }
 };
 const byBirth = <T extends { createdAt?: unknown }>(items: T[]) => items.sort((a, b) => toMillis(a.createdAt) - toMillis(b.createdAt));
-const newestFirst = <T extends { createdAt?: unknown }>(items: T[]) => items.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 
 export const MAHAMERU_IMAGE: typeof F.MAHAMERU_IMAGE = '/mahameru.svg';
 // THE GENESIS and the initiates' mirror are the origin node's own ceremonies (Mahameru, the git

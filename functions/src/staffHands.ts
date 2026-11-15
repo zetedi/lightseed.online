@@ -1,7 +1,4 @@
-// THE STAFF HANDS, server side — the switch read the way firestore.rules' staffHand reads it:
-// config/staffHands, absent = lent. MIRRORS src/domain/staffHands.staffHandOn for the hands
-// enforced in functions (door_grant). The record itself lives in src/domain/staffHands.
-export const staffHandOn = (switches: Record<string, unknown> | null | undefined, id: string, defaultOn = true): boolean => {
-    const v = switches?.[id];
-    return typeof v === 'boolean' ? v : defaultOn;
-};
+// THE ONE LAW (2026-11-14). This module was a hand-kept MIRROR of src/domain; the functions build now
+// compiles the shared domain itself (tsconfig rootDir '..'), so the server judges by the very source the
+// shell and the independent node judge by. Nothing is defined here: add law to src/domain.
+export { staffHandOn } from '../../src/domain/staffHands';

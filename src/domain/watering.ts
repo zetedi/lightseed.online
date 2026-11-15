@@ -146,3 +146,14 @@ export const standingAlertId = (tree: TreeLike): string | null => {
   // A watering after the ask answers it: the next thirst speaks anew.
   return toMs(w.lastWateredAt) > raised ? null : w.alertPulseId;
 };
+
+// THE WATERING REACHES EVERY LOADED COPY (ring 2026-09-20): a dotted update ('watering.x': v)
+// folded into the nested `watering` the shell reads, so a session's trees, an open thread's
+// quench and a tree's care tab all learn the tree drank — without a reload.
+export const wateringPatchOf = (
+  tree: Pick<Lifetree, 'watering'>, update: Record<string, unknown>,
+): { watering: Record<string, unknown> } => {
+  const watering: Record<string, unknown> = { ...(tree.watering || {}) };
+  for (const [k, v] of Object.entries(update)) if (k.startsWith('watering.')) watering[k.slice('watering.'.length)] = v;
+  return { watering };
+};

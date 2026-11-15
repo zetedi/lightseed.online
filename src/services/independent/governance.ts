@@ -5,7 +5,7 @@
 // them. Events and offerings have their own server commands for birth, duplication, acceptance
 // and the circle (migrations 040–048); their edits and flips go through the door.
 import type * as F from '../firebase/governance';
-import { session, requireUid, toMillis } from './core';
+import { session, requireUid, newestFirst } from './core';
 import { docGet, docAll, docCommand, serverTime } from './docs';
 import { graphStore } from './store';
 import { announce } from '../refreshBus';
@@ -19,7 +19,6 @@ import { ensureSigningKey, publishSigningKey, isKeyInLineage, getPublishedSignin
 export type { DecisionSignature, SignDecisionResult, EventLineage, OfferingAccepted } from '../firebase/governance';
 
 const normalizeDomain = (domain: string) => domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
-const newestFirst = <T extends { createdAt?: unknown }>(items: T[]) => [...items].sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 const readDecision = (id: string) => docGet<Decision>('pulses', id);
 const closed = (status: unknown) => ['passed', 'withdrawn', 'rejected', 'expired'].includes(String(status));
 const stamp = () => new Date().toISOString();

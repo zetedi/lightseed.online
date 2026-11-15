@@ -1,114 +1,19 @@
-// OFFERINGS, server side — the pure half, with no Firestore in reach.
-//
-// Functions is its own TS project and cannot import src/domain, so this module MIRRORS the
-// acceptance law of src/domain/offering.ts (judgeOfferingAccept and the status words it reads).
-// The mirror is held true by the ROOT test suite (tests/offering.test.ts imports BOTH and
-// compares), the mint.ts arrangement. index.ts owns only the plumbing: read the offering, the
-// receiver, the offerer's tree and the acceptor's standing; let this law judge; mint the twins.
+// THE ONE LAW (2026-11-14). THE OFFERING's law (the answer's judgment, the twins' source) is src/domain/offering's.
+// The functions build compiles the shared domain itself (tsconfig rootDir '..'): the server judges by the
+// very source the shell and the independent node judge by. Add law to src/domain, never here.
+import { offeringTwinRecords, type OfferingTwinSource as TwinSource } from '../../src/domain/offeringTwins';
+export { type OfferedToKind, type OfferingStatus, OFFERING_STATUSES, isOfferingStatus, isOfferedToKind, type OfferingAcceptFacts, type OfferingAcceptJudgment, judgeOfferingAccept } from '../../src/domain/offering';
 
-export type OfferedToKind = 'tree' | 'vision';
-export type OfferingStatus = 'open' | 'accepted' | 'withdrawn' | 'declined';
-export const OFFERING_STATUSES: readonly OfferingStatus[] = ['open', 'accepted', 'withdrawn', 'declined'];
-export const isOfferingStatus = (v: unknown): v is OfferingStatus =>
-    typeof v === 'string' && (OFFERING_STATUSES as readonly string[]).includes(v);
-export const isOfferedToKind = (v: unknown): v is OfferedToKind => v === 'tree' || v === 'vision';
-
-// ── Acceptance: the whole law, in the order the server applies it ────────────────────────
-
-export interface OfferingAcceptFacts {
-    acceptorUid: string;
-    offering: {
-        exists: boolean;
-        type?: unknown;          // must be 'offering'
-        status?: unknown;        // absent = open
-        active?: unknown;        // false = paused by its author
-        authorId: string;
-        toKind?: unknown;        // 'tree' | 'vision'
-        toId: string;
-        fromTreeId: string;
-    };
-    receiver: {
-        exists: boolean;
-        standing: boolean;       // the acceptor stands for the receiver (carer / author)
-        diedAtMs: number | null; // a tree that died accepts memory, not offerings
-    };
-    fromTree: { exists: boolean; standing: boolean }; // standing: the OFFERER cares for it (keeper / keeper / steward)
-}
-
-export type OfferingAcceptJudgment =
-    | { outcome: 'reject'; code: 'not-found' | 'failed-precondition' | 'permission-denied'; message: string }
-    | { outcome: 'accept' };
-
-export const judgeOfferingAccept = (f: OfferingAcceptFacts): OfferingAcceptJudgment => {
-    const reject = (code: 'not-found' | 'failed-precondition' | 'permission-denied', message: string): OfferingAcceptJudgment =>
-        ({ outcome: 'reject', code, message });
-    if (!f.offering.exists) return reject('not-found', 'That offering no longer exists.');
-    if (f.offering.type !== 'offering') return reject('failed-precondition', 'That is not an offering.');
-    if (!isOfferedToKind(f.offering.toKind)) return reject('failed-precondition', 'That offering is not made to a being.');
-    if (!f.offering.authorId || !f.offering.toId || !f.offering.fromTreeId) return reject('failed-precondition', 'That offering is malformed.');
-    const status = isOfferingStatus(f.offering.status) ? f.offering.status : 'open';
-    if (status !== 'open') return reject('failed-precondition', `That offering was already ${status}.`);
-    if (f.offering.active === false) return reject('failed-precondition', 'That offering is resting.');
-    if (f.acceptorUid === f.offering.authorId) return reject('failed-precondition', 'You cannot accept your own offering.');
-    if (!f.receiver.exists) return reject('not-found', 'The being this was offered to no longer exists.');
-    if (!f.receiver.standing) return reject('permission-denied', "Only the receiver's keeper, keepers or stewards may accept it.");
-    if (f.receiver.diedAtMs !== null) return reject('failed-precondition', 'A tree that has died keeps memory, not offerings.');
-    if (!f.fromTree.exists) return reject('not-found', "The offerer's tree no longer exists.");
-    // Lumo's review (2026-09-07): the twin block lands on the offerer's tree and moves its head,
-    // so the offerer must hold that tree — else two hands could rewrite a third being's chain.
-    if (!f.fromTree.standing) return reject('permission-denied', 'The offerer does not care for the tree this was offered from.');
-    // A tree cannot receive from itself: twin blocks on one chain from one head would fork it.
-    if (f.offering.toKind === 'tree' && f.offering.toId === f.offering.fromTreeId) return reject('failed-precondition', 'An offering cannot be made from a tree to itself.');
-    return { outcome: 'accept' };
-};
-
-// ── The twin blocks (server only: they carry English, which the domain never does) ────────
-// What the two chains record on acceptance — the offerer's tree and the receiver — each naming
-// the other and the offering, so either chain alone proves the agreement. Hash, previousHash,
-// lid, mintedAt and createdAt are added by the mint; visibility follows the offering's.
-export interface OfferingTwinSource {
-    id: string;
-    lid: string;
-    title: string;
-    authorId: string;
-    authorName: string;
-    domain: string;
-    visibility: string;
-    toKind: OfferedToKind;
-    toId: string;
-    toName: string;
-    fromTreeId: string;
-    fromTreeName: string;
-}
+// What the two chains record on acceptance. The SHAPE of the twins is the law's
+// (domain/offeringTwins: each names the other and the offering, so either chain alone proves the
+// agreement); the PROSE is this server's — the three names it needs ride on the source.
+export interface OfferingTwinSource extends TwinSource { title: string; toName: string; fromTreeName: string }
 
 export const offeringTwinBlocks = (o: OfferingTwinSource, acceptor: { uid: string; name: string }) => {
-    const shared = {
-        type: 'standard',
+    const { title, toName, fromTreeName, ...source } = o;
+    return offeringTwinRecords(source, acceptor, {
         title: 'Offering accepted',
-        offeringId: o.id,
-        offeringLid: o.lid,
-        domain: o.domain,
-        visibility: o.visibility,
-    };
-    const from = {
-        ...shared,
-        lifetreeId: o.fromTreeId,
-        body: `${o.title} — offered to ${o.toName}, accepted.`,
-        offeringRole: 'from',
-        offeringTwinOf: o.toId,
-        offeringTwinKind: o.toKind,
-        authorId: o.authorId,
-        authorName: o.authorName,
-    };
-    const to = {
-        ...shared,
-        ...(o.toKind === 'vision' ? { visionId: o.toId } : { lifetreeId: o.toId }),
-        body: `${o.title} — offered by ${o.fromTreeName}, accepted.`,
-        offeringRole: 'to',
-        offeringTwinOf: o.fromTreeId,
-        offeringTwinKind: 'tree',
-        authorId: acceptor.uid,
-        authorName: acceptor.name,
-    };
-    return { from, to };
+        fromBody: `${title} — offered to ${toName}, accepted.`,
+        toBody: `${title} — offered by ${fromTreeName}, accepted.`,
+    });
 };

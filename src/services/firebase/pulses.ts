@@ -7,7 +7,7 @@ import {
     type ChainBearerKind, type BlockSignatureClaim,
 } from '../../domain/chain';
 import { getPublishedSigningIdentity, sign as signWithKey, SigningKeyNeedsRestoreError, SigningKeyFrozenError } from './keys';
-import { normalizePulseType, type PulseVisibility } from '../../domain/pulse';
+import { normalizePulseType, NON_FEED_PULSE_TYPES, isReachType, type PulseVisibility } from '../../domain/pulse';
 import { mergeAuthored } from '../../domain/pulseVisibility';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
@@ -166,7 +166,6 @@ const fetchPulsesRaw = async (lastD?: PulsePageCursor, domainFilter?: string, le
 // The main Pulses feed shows offerings, dreams and other content pulses.
 // Reaches live in the Inspiration view, so they are excluded here.
 // Pulse types that have their own surfaces and must not bleed into the general pulse feed.
-const NON_FEED_PULSE_TYPES = new Set(['reach', 'tree_chat', 'event', 'decision', 'stay']);
 
 // The number of feed pulses a user has authored — server-side COUNTs instead of downloading every
 // doc just to measure length. Excludes the same non-feed types as getMyPulses; computed as
@@ -229,7 +228,7 @@ export const fetchOfferingPulses = async (lastD?: QueryDocumentSnapshot, domainF
 };
 
 // Reaches (and legacy 'tree_chat' pulses) power the Inspiration threads.
-const isReachPulse = (p: Pulse) => p.type === 'reach' || String(p.type) === 'tree_chat';
+const isReachPulse = (p: Pulse) => isReachType(p.type);
 
 // The open Inspiration feed. `levels` (public + node + the viewer's qualifying scopes) keeps
 // the query to docs the rules allow — without it the visibility-filter is dropped and a single

@@ -6,7 +6,7 @@
 // documents — founding with its words, editing, the collabs, a tree's invitation — goes through
 // the document door under the law. The DNS proofs and door grants wait for the domain organ.
 import type * as F from '../firebase/spaces';
-import { session, readDoc, readAll, toMillis } from './core';
+import { session, readDoc, readAll, toMillis, newestFirst } from './core';
 import { docGet, docList, docAll, docCommand, serverTime, deleteField } from './docs';
 import { graphStore } from './store';
 import { chooseDomainClaimant } from '../../domain/communityDoor';
@@ -21,7 +21,6 @@ export type { VisionFetchAccess, OrgCollab, CommunityTreeInvite, KeeperInvite, D
 const COMMUNITIES = '/v1/communities';
 const VISIONS = '/v1/visions';
 const createdMs = (c: { createdAt?: unknown }) => toMillis(c.createdAt);
-const newestFirst = <T extends { createdAt?: unknown }>(items: T[]) => [...items].sort((a, b) => createdMs(b) - createdMs(a));
 const normalizeDomain = (domain: string) => domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
 
 // Visions, newest first on the node (the policies filter), the author's own merged onto page one.

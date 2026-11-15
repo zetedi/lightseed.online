@@ -7,13 +7,12 @@ import type * as F from '../firebase/watering';
 import { stampOfMs, session } from './core';
 import { docCommand, serverTime } from './docs';
 import { uuidv7 } from '../../utils/id';
-import { daysOverdue, computeNextDueMillis, wateringAlertedToday, standingAlertId, type WateringSchedule } from '../../domain/watering';
+import { daysOverdue, computeNextDueMillis, wateringAlertedToday, standingAlertId, wateringPatchOf, type WateringSchedule } from '../../domain/watering';
 import { buildGroupThreadId } from '../../utils/reachPermissions';
 import { mintPulse, resolveCircleUids, sendThreadMessage, postGuardiansNotice } from './pulses';
 import { uploadImage } from './media';
 import { announce } from '../refreshBus';
 import { myNaming } from './accounts';
-import type { Lifetree } from '../../types';
 
 const iso = (ms: number) => new Date(ms).toISOString();
 export const setWateringSchedule: typeof F.setWateringSchedule = async (treeId, input) => {
@@ -30,11 +29,6 @@ export const setWateringSchedule: typeof F.setWateringSchedule = async (treeId, 
     }
     await docCommand({ action: 'update', collection: 'lifetrees', id: treeId, patch: { watering: watering as unknown as Record<string, unknown>, updatedAt: serverTime() } });
     return watering;
-};
-const wateringPatchOf = (tree: Lifetree, update: Record<string, unknown>): Record<string, unknown> => {
-    const watering: Record<string, unknown> = { ...(tree.watering || {}) };
-    for (const [k, v] of Object.entries(update)) if (k.startsWith('watering.')) watering[k.slice('watering.'.length)] = v;
-    return { watering };
 };
 export const markWateredOffChain: typeof F.markWateredOffChain = async (tree, sender) => {
     const now = Date.now();

@@ -362,7 +362,7 @@ export const PlantTreeModal: React.FC<PlantTreeModalProps> = ({
                   className={`text-xs px-4 py-2 rounded-lg font-bold uppercase tracking-wider transition-colors ${
                     isLocating 
                       ? 'bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-700' 
-                      : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                      : 'btn-theme text-white shadow-sm'
                   }`}
                 >
                   {isLocating ? t('locating') : t('locate')}

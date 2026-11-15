@@ -11,7 +11,7 @@ import { docGet, docList, docAll, docCommand, serverTime } from './docs';
 import { seedPublicWrite } from './public';
 import { publicNameOf } from '../../domain/publicName';
 import { excludeBedTrees } from '../../domain/bed';
-import { subscriptionIdOf, isSubscriberEmail, normalizeSubscriberEmail, normalizePlaceDomain } from '../../domain/newsletter';
+import { subscriptionIdOf, isSubscriberEmail, normalizeSubscriberEmail, normalizePlaceDomain, NEWSLETTER_DIGEST_SIZE } from '../../domain/newsletter';
 import { charter } from '../../config/charter';
 import type { Lifetree, Pulse, Vision } from '../../types';
 import { getCommunityByDomain } from './spaces';
@@ -276,7 +276,6 @@ export const setNewsletterSubscription: typeof F.setNewsletterSubscription = asy
             subscribe ? 'You are now subscribed to the lightseed newsletter.' : 'You have been unsubscribed from the lightseed newsletter.', uid);
     } catch { /* the letter organ is not grown; the subscription stands */ }
 };
-const NEWSLETTER_DIGEST_SIZE = 8;
 export const getNewsletterDraftData: typeof F.getNewsletterDraftData = async (place) => {
     let lastSentAt = (place?.newsletterLastSentAt as { toMillis?: () => number } | undefined) ?? null;
     if (!lastSentAt && (!place?.domain || place.domain === charter.domain)) {

@@ -2,6 +2,15 @@ import { suspendGift } from './gift';
 import { DEFAULT_GLOW_SHARE_DENOMINATOR } from './light';
 import type { DomainKey } from './words';
 
+// EVERY NAME THE GATE REFUSES BY — a closed list (each a DomainKey, so each has its words). The
+// judgments below speak only these, so a server's table from refusal to its answer code is held
+// complete by the compiler: a new refusal here fails the build there until it is given its code.
+export type SpendRefusal = Extract<DomainKey,
+  | 'gift_nothing' | 'gift_whole_units' | 'gift_needs_both' | 'gift_own_offering' | 'gift_resting' | 'gift_hold_less'
+  | 'appreciate_offering_gone' | 'appreciate_not_received' | 'appreciate_already' | 'appreciate_coin_refused'
+  | 'spend_no_decision' | 'spend_not_purchase' | 'spend_no_offering' | 'spend_nothing' | 'spend_no_standing'
+  | 'spend_not_passed' | 'spend_listening' | 'spend_unsigned' | 'spend_already' | 'spend_coin_refused' | 'spend_glow_short'>;
+
 // SPENDING IS A GATE, NOT A NUMBER (the season of roots, item 2; ring 2026-09-30).
 //
 // Light moves in exactly two ways beyond its kindling, and both are judged here, pure:
@@ -40,7 +49,7 @@ import type { DomainKey } from './words';
 export interface SpendIntent { offeringId: string; units: number }
 
 // A purchase decision must name what it spends before anyone signs it.
-export const spendIntentProblem = (d: { offeringId?: string | null; units?: unknown } | null | undefined): DomainKey | null => {
+export const spendIntentProblem = (d: { offeringId?: string | null; units?: unknown } | null | undefined): SpendRefusal | null => {
   if (!d || typeof d.offeringId !== 'string' || !d.offeringId.trim()) return 'spend_no_offering';
   const u = d.units;
   if (typeof u !== 'number' || !Number.isFinite(u) || u <= 0) return 'spend_nothing';
@@ -85,7 +94,7 @@ export interface AppreciationFacts {
 export interface RayTake { id: string; units: number }
 
 export type AppreciationJudgment =
-  | { outcome: 'reject'; refusal: DomainKey }
+  | { outcome: 'reject'; refusal: SpendRefusal }
   | { outcome: 'give'; take: RayTake[]; glow: number; suspended: number; glowHome: string | null };
 
 // Oldest light first: the rays that would dim first are the ones that travel. Only rays whose
@@ -112,7 +121,7 @@ export const pickRays = (
 };
 
 export const judgeAppreciation = (f: AppreciationFacts): AppreciationJudgment => {
-  const reject = (refusal: DomainKey): AppreciationJudgment => ({ outcome: 'reject', refusal });
+  const reject = (refusal: SpendRefusal): AppreciationJudgment => ({ outcome: 'reject', refusal });
   if (!f.offering.exists || f.offering.type !== 'offering') return reject('appreciate_offering_gone');
   if (!Number.isFinite(f.units) || f.units <= 0) return reject('gift_nothing');
   if (!Number.isInteger(f.units)) return reject('gift_whole_units');
@@ -157,14 +166,14 @@ export interface SpendFacts {
 }
 
 export type SpendJudgment =
-  | { outcome: 'reject'; refusal: DomainKey }
+  | { outcome: 'reject'; refusal: SpendRefusal }
   | { outcome: 'spend'; units: number; glow: number; suspended: number; glowHome: string | null };
 
 const isSpendIntent = (v: unknown): v is SpendIntent =>
   !!v && typeof v === 'object' && spendIntentProblem(v as SpendIntent) === null;
 
 export const judgeSpend = (f: SpendFacts): SpendJudgment => {
-  const reject = (refusal: DomainKey): SpendJudgment => ({ outcome: 'reject', refusal });
+  const reject = (refusal: SpendRefusal): SpendJudgment => ({ outcome: 'reject', refusal });
   if (!f.decision.exists || f.decision.type !== 'decision') return reject('spend_no_decision');
   if (f.decision.nature !== 'purchase') return reject('spend_not_purchase');
   if (!isSpendIntent(f.decision.spend)) return reject(spendIntentProblem(f.decision.spend as SpendIntent | null) ?? 'spend_no_offering');

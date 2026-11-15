@@ -30,6 +30,13 @@ export const normalizePulseType = (t?: string): PulseType => {
 // True for a tree growth pulse (tolerates the legacy 'GROWTH').
 export const isTreeGrowth = (t?: string): boolean => normalizePulseType(t) === 'tree_growth';
 
+// What the open feed never carries: a reach is addressed, an event, a decision and a stay each
+// live in their own room. One list for every backend — a feed, a count and "my pulses" agree.
+export const NON_FEED_PULSE_TYPES: ReadonlySet<string> = new Set(['reach', 'tree_chat', 'event', 'decision', 'stay']);
+export const isFeedPulseType = (t?: string): boolean => !NON_FEED_PULSE_TYPES.has(String(t));
+// A reach, under its present name or its legacy one ('tree_chat').
+export const isReachType = (t?: string): boolean => t === 'reach' || String(t) === 'tree_chat';
+
 // Who may see a pulse, relative to where it is rooted (its scope: tree / community / node).
 // 'public' = anyone; 'node' = any signed-in member; 'community' = members of its community;
 // 'circle' = guardians of its tree; 'private' = author (and staff) only. Absence = 'public'.

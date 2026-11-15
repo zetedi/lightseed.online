@@ -95,3 +95,6 @@ export const subscribeSeatOf = (f: { place: string; subscribed: boolean; account
 // address can name the subscription (the same address the one click would have used).
 export const canReleaseFromFooter = (f: { subscribed: boolean; accountEmail?: string | null }): boolean =>
   f.subscribed && !!f.accountEmail && isSubscriberEmail(f.accountEmail);
+
+// The digest names at most this many of each kind (trees, visions, pulses).
+export const NEWSLETTER_DIGEST_SIZE = 8;

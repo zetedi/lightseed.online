@@ -5,12 +5,12 @@
 // unsigned, said plainly. Every standalone record a client births (a person's reach, a tree's
 // nudge) and every overlay (seen, veto, retraction) goes through the document door under the law.
 import type * as F from '../firebase/pulses';
-import { session, readDoc, readAll, readPage, currentUid, toMillis } from './core';
+import { session, readDoc, readAll, readPage, currentUid, toMillis, newestFirst } from './core';
 import { docAll, docGet, docCommand, docList, arrayUnion, serverTime } from './docs';
 import { createSeedBlockMint } from './blockMint';
 import { announce } from '../refreshBus';
 import { blockBirthOf, type ChainBearerKind } from '../../domain/chain/birth';
-import { normalizePulseType } from '../../domain/pulse';
+import { normalizePulseType, NON_FEED_PULSE_TYPES, isReachType } from '../../domain/pulse';
 import { mergeAuthored } from '../../domain/pulseVisibility';
 import { isExplicitlyValidatedTree } from '../../utils/validation';
 import { buildThreadId, buildGroupThreadId, reachAudienceLabels } from '../../utils/reachPermissions';
@@ -22,9 +22,7 @@ import type { MintedBlock, PulsePageCursor } from '../firebase/pulses';
 export type { MintedBlock, PulsePageCursor } from '../firebase/pulses';
 
 const PULSES = '/v1/pulses';
-const NON_FEED_PULSE_TYPES = new Set(['reach', 'tree_chat', 'event', 'decision', 'stay']);
 const ms = (p: Pulse) => toMillis(p.createdAt);
-const newestFirst = (pulses: Pulse[]) => [...pulses].sort((a, b) => ms(b) - ms(a));
 const oldestFirst = (pulses: Pulse[]) => [...pulses].sort((a, b) => ms(a) - ms(b));
 const pulsesWhere = (params: Record<string, string>) => readAll<Pulse>(PULSES, 'pulses', params);
 const page = async (params: Record<string, string>, cursor: PulsePageCursor | undefined, size: number, keep: (p: Pulse) => boolean) => {
@@ -32,7 +30,7 @@ const page = async (params: Record<string, string>, cursor: PulsePageCursor | un
     const result = await readPage<Pulse>(PULSES, 'pulses', { ...params, ...(after ? { after } : {}) }, size);
     return { items: result.items.filter(keep), lastDoc: (result.next ?? null) as unknown as PulsePageCursor | null, hasMore: !!result.next };
 };
-const isReachPulse = (p: Pulse) => p.type === 'reach' || String(p.type) === 'tree_chat';
+const isReachPulse = (p: Pulse) => isReachType(p.type);
 const dedupe = (lists: Pulse[][]) => { const byId = new Map<string, Pulse>(); for (const l of lists) for (const p of l) byId.set(p.id, p); return [...byId.values()]; };
 
 // One minter per page; a mint is prepared (judged and signed on this device) and submitted once.

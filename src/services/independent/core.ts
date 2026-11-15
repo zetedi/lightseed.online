@@ -21,6 +21,9 @@ export const toMillis = (value: unknown): number => {
     const stamp = value as { toMillis?: () => number } | null | undefined;
     return typeof stamp?.toMillis === 'function' ? stamp.toMillis() : 0;
 };
+// Newest first by birth, on a copy: the one ordering every independent hand shares.
+export const newestFirst = <T extends { createdAt?: unknown }>(items: readonly T[]): T[] =>
+    [...items].sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 
 // STORED MOMENTS the shell makes itself: a plain Stamp (domain/time) — the API speaks ISO
 // strings, and the independent services turn them into Stamps at the boundary with these.

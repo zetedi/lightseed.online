@@ -399,7 +399,7 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
                         )}
                         {open && clerk && (
                           <div className="mt-0.5 flex items-center gap-2">
-                            <button onClick={() => handleDiscern(d.id, 'passed')} disabled={votingId === d.id || d.blocked} title={d.blocked ? t('council_adopt_blocked_title') : t('council_adopt_title')} className="rounded-full bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50">{t('council_adopt')}</button>
+                            <button onClick={() => handleDiscern(d.id, 'passed')} disabled={votingId === d.id || d.blocked} title={d.blocked ? t('council_adopt_blocked_title') : t('council_adopt_title')} className="rounded-full btn-theme px-3 py-1.5 text-[11px] font-bold text-white transition-colors disabled:opacity-50">{t('council_adopt')}</button>
                             <button onClick={() => handleDiscern(d.id, 'rejected')} disabled={votingId === d.id} className="rounded-full px-3 py-1 text-[11px] font-medium text-slate-400 transition-colors hover:text-red-500 disabled:opacity-50">{t('status_rejected')}</button>
                           </div>
                         )}

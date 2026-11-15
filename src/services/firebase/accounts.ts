@@ -6,7 +6,7 @@ import { excludeBedTrees } from '../../domain/bed';
 import { publicNameOf } from '../../domain/publicName';
 import type { Desires } from '../../domain/desires';
 import { charter } from '../../config/charter';
-import { subscriptionIdOf, isSubscriberEmail, normalizeSubscriberEmail, normalizePlaceDomain } from '../../domain/newsletter';
+import { subscriptionIdOf, isSubscriberEmail, normalizeSubscriberEmail, normalizePlaceDomain, NEWSLETTER_DIGEST_SIZE } from '../../domain/newsletter';
 import { uuidv7 } from '../../utils/id';
 import { getCommunityByDomain } from './spaces';
 import { auth, db, functions, googleProvider, mapDoc, lifetreesCollection, visionsCollection, pulsesCollection, networkInvitesCollection, newsletterConfigRef } from './core';
@@ -499,8 +499,6 @@ export const setNewsletterSubscription = async (uid: string, email: string, subs
     }
 };
 
-// The digest names at most this many of each kind.
-const NEWSLETTER_DIGEST_SIZE = 8;
 
 const fetchNewsletterChanges = async <T>(
     collectionRef: Query, lastSentAt: Timestamp | null, mapper: (doc: QueryDocumentSnapshot) => T,

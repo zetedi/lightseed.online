@@ -2,7 +2,7 @@
 // A decision's `status: 'passed'` is a client-flipped flag (the rules let the proposer, a keeper
 // or staff flip it); the SEAL is the signatures. Before the commons moves, the server counts the
 // signatures the way any reader can — the ONE counting rule of src/domain/decision.ts
-// (verifiedDecisionSigners), mirrored here because functions cannot import src/domain:
+// (verifiedDecisionSigners), counted here over the server's own facts:
 //   (1) at most one counted signature per signer; (2) in consensus mode only 'unite' counts;
 //   (3) the recorded key binds to the signer — the current published key, or a key in the
 //       signer's append-only lineage, judged at the signature's receipt time (keyEpoch);
@@ -13,18 +13,11 @@ import { signingPreimage } from "./birth";
 import { verifiesEd25519 } from "./ed25519";
 import { keyStandingAt, keyStandingCounts, type KeyEpoch, type KeyEvent } from "./keyEpoch";
 
-export const DECISION_DOMAIN = "lifeseed.decision.v2";
-export const DECISION_EPOCH_DOMAIN = "lifeseed.decision.v3";
-
-export type DecisionNature = "intention" | "purchase" | "use_grant" | "admission" | "stewardship" | "charter";
-export interface DecisionIdentity { lid: string; communityId: string; nature: DecisionNature; title: string; body: string; votesRequired: number }
-
-export const decisionIdentity = (d: { lid: string; communityId: string; nature: DecisionNature; title: string; body?: string; votesRequired: number }): DecisionIdentity =>
-    ({ lid: d.lid, communityId: d.communityId, nature: d.nature, title: d.title, body: d.body ?? "", votesRequired: d.votesRequired });
-
-export const decisionSignaturePayload = (identity: DecisionIdentity, signerUid: string) => ({ decision: identity, signer: signerUid });
-export const decisionEpochSignaturePayload = (identity: DecisionIdentity, signerUid: string, keyFingerprint: string, epochId: string) =>
-    ({ decision: identity, signer: signerUid, key: { fingerprint: keyFingerprint, epochId } });
+// WHAT IS SIGNED is the domain's own (2026-11-14, compiled into this build, no longer copied): the two
+// tags, the decision identity and the two payloads. Only the COUNTING below stays the server's — it reads
+// the signer's standing from documents the shell never holds (lineage, epochs, events, membership).
+import { DECISION_DOMAIN, DECISION_EPOCH_DOMAIN, decisionIdentity, decisionSignaturePayload, decisionEpochSignaturePayload, type DecisionIdentity, type DecisionNature } from '../../src/domain/decision';
+export { DECISION_DOMAIN, DECISION_EPOCH_DOMAIN, decisionIdentity, decisionSignaturePayload, decisionEpochSignaturePayload, type DecisionIdentity, type DecisionNature };
 
 // The fingerprint of a published key: sha256 hex of its base64 text (the shell's keyFingerprint).
 export const fingerprintOf = (pubkeyB64: string): string => createHash("sha256").update(pubkeyB64, "utf8").digest("hex");

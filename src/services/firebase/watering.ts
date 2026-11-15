@@ -2,7 +2,7 @@ import { addDoc, serverTimestamp, doc, updateDoc, Timestamp } from 'firebase/fir
 import { httpsCallable } from 'firebase/functions';
 import { type Lifetree } from '../../types';
 import { uuidv7 } from '../../utils/id';
-import { daysOverdue, computeNextDueMillis, wateringAlertedToday, standingAlertId, type TreeStage, type WateringSchedule, type WateringAnalysis } from '../../domain/watering';
+import { daysOverdue, computeNextDueMillis, wateringAlertedToday, standingAlertId, wateringPatchOf, type TreeStage, type WateringSchedule, type WateringAnalysis } from '../../domain/watering';
 import { buildGroupThreadId } from '../../utils/reachPermissions';
 import { db, functions, pulsesCollection } from './core';
 import { mintPulse, resolveCircleUids, sendThreadMessage, postGuardiansNotice } from './pulses';
@@ -69,15 +69,6 @@ const postWateredNotice = (
 // or storing a photo (no chain advance), for routine watering you don't want on the tree's
 // ledger. Still counts as caring (lastCaredAt keeps living validation lit) and still tells
 // the guardians' thread, which clears any standing 'water me' alert.
-// THE WATERING REACHES EVERY LOADED COPY (ring 2026-09-20): the dotted Firestore update,
-// folded into the nested `watering` the shell reads, so a session's trees, an open thread's
-// quench and a tree's care tab all learn the tree drank — without a reload.
-const wateringPatchOf = (tree: Lifetree, update: Record<string, unknown>): Record<string, unknown> => {
-    const watering: Record<string, unknown> = { ...(tree.watering || {}) };
-    for (const [k, v] of Object.entries(update)) if (k.startsWith('watering.')) watering[k.slice('watering.'.length)] = v;
-    return { watering };
-};
-
 export const markWateredOffChain = async (
     tree: Lifetree,
     sender: { uid: string; displayName?: string | null; photoURL?: string | null },

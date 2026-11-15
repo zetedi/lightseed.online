@@ -781,6 +781,28 @@ pages/      tab-level shells; App.tsx is the single conductor — composing hook
 New logic starts in `domain/` with a test. UI reads domain truths; services carry
 them; nothing in `domain/` imports upward.
 
+**The direction is held by the gate (2026-11-14).** `eslint.config.js` refuses: an import in
+`domain/` of anything outside it; a Firebase package named anywhere but `services/firebase`
+(and its two declared doors, `sso.ts` and `adapters/firestore.ts`); and a face (`components/`,
+`pages/`) importing a `@backend` value by its own hand — a face reaches the backend through a
+hook. The faces that still do are listed in `eslint.faces-ratchet.mjs` (77 on the day it was
+written): that list only shrinks. What both backends must know alike (`NON_FEED_PULSE_TYPES`,
+the walk's `REL_ENDPOINTS`, the digest size, `wateringPatchOf`) lives once in `domain/`;
+`tests/oneLawTwoBackends.test.ts` refuses a second copy in either service layer.
+
+**Functions compile the domain itself (2026-11-14).** `functions/tsconfig.json` has `rootDir: ".."`,
+so a server module imports `../../src/domain/...` and the build emits both under
+`functions/lib/` (`main` is `lib/functions/src/index.js`; `gcp-build` is empty so the cloud
+builder uses the uploaded `lib` and does not try to rebuild without the domain). The former
+hand-kept mirrors — birth, chain, light (`mint.ts`), spend, offering, charter, doors, event
+circle, face feed and preview, mail voice, key epochs, the LID index, the cradle and the rest —
+are now re-exports; where older text in this file or `BRIDGE.md` says "mirrored in
+`functions/src/…`", read "re-exported there". Still the server's own, by design: what needs a
+server secret or `node:crypto` (`ed25519.ts`, `credentialCipher.ts`), the counting of a
+decision's signers over server-read facts (`decisionSeal.ts`, which signs with the domain's
+payloads), `uuidv7` in `mint.ts`, and one remaining mirror, `publicName.ts` (its domain source
+reaches a `.mjs` module the functions compiler does not take).
+
 ## The collections (see /model in the app: the crystal)
 
 `persons` `users` `admins` `config`: identity & account. The public, server-owned
@@ -972,7 +994,10 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
 - Load-bearing contracts remain manually mirrored across domain code, Firestore
   rules and the isolated Functions package. The light mirror test is one good seam;
   visibility, signing preimages, field sets, caps and lifecycles need equivalent
-  conformance (first-sight ring, 2026-08-12).
+  conformance (first-sight ring, 2026-08-12). CLOSED 2026-11-14 for the Functions
+  package: it compiles `src/domain` itself (see Layers), so there is no second copy to hold
+  equal. The Firestore rules and the seed's SQL rule functions remain hand translations of the
+  same law, and the caps (193 / 132 / 144) are still written in each.
 - Pure-law and rules tests are stronger than the assembled experience: there is no
   automated component/end-to-end walk, and sparse event/offering feeds filter a
   bounded general-pulse sample, so real items can fall outside it as activity grows
