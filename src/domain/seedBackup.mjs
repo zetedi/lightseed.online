@@ -43,3 +43,47 @@ export function backupManifestIssues(manifest, present) {
   }
   return issues;
 }
+
+// WHERE A CONFIGURATION FILE IS KEPT (2026-11-15). A file inside the installation's own directory keeps
+// its path (`config/<path>`), so restore can place it back. A file the installation keeps OUTSIDE — a
+// charter at /private/…, the trust file a Compose override mounts — is kept under a fixed label
+// (`config/outside/<label>/<file>`): its name never comes from the raw path, so an absolute path can no
+// longer break the manifest, and restore names it to the keeper instead of guessing where it belongs.
+export const SEED_BACKUP_OUTSIDE = 'config/outside/';
+/** @param {{inside: string | null, label: string, file: string}} p  inside = the path relative to seed/, or null when the file lives outside it */
+export function backupConfigNameOf({ inside, label, file }) {
+  const name = inside !== null ? `config/${inside.split(/[\\/]+/).filter(s => s && s !== '.').join('/')}` : `${SEED_BACKUP_OUTSIDE}${label}/${file}`;
+  if (!soundName(name) || (inside !== null && name.startsWith(SEED_BACKUP_OUTSIDE))) throw Object.assign(new Error('backup_file_unsound'), { code: 'backup_file_unsound', name });
+  return name;
+}
+// One variable out of a Compose .env text: the last plain KEY=value line wins, quotes laid off; null when absent or empty.
+/** @param {string} text @param {string} key */
+export function envValueOf(text, key) {
+  let found = null;
+  for (const line of String(text).split(/\r?\n/)) {
+    const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
+    if (!m || m[1] !== key) continue;
+    const quoted = /^(['"])(.*)\1$/.exec(m[2]);
+    found = quoted ? quoted[2] : m[2].replace(/\s+#.*$/, '');
+  }
+  return found ? found : null;
+}
+
+// THE FUNCTION PRIVILEGES (2026-11-15). The soil is dumped --no-acl so it restores into a database whose
+// roles are not the old ones; but PostgreSQL gives EXECUTE on every new function to PUBLIC, and the
+// migrations withhold it one function at a time. Those withholdings are the only privileges a fresh
+// restore would silently lose, so the backup writes them after the dump — the catalog's own answer:
+export const SEED_BACKUP_PRIVILEGES_MARK = '-- lightseed: function privileges withheld from PUBLIC';
+export const WITHHELD_ROUTINES_SQL = `SELECT format('REVOKE ALL ON ROUTINE %s FROM PUBLIC;', p.oid::regprocedure)
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname NOT IN ('pg_catalog', 'information_schema') AND n.nspname !~ '^pg_'
+  AND p.proacl IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM aclexplode(p.proacl) a WHERE a.grantee = 0 AND a.privilege_type = 'EXECUTE')
+  AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
+ORDER BY 1`;
+/** @param {string} listing  the query's rows, one statement a line */
+export function withheldRoutinesSectionOf(listing) {
+  const lines = String(listing).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  for (const line of lines) if (!/^REVOKE ALL ON ROUTINE [^;]+ FROM PUBLIC;$/.test(line)) throw Object.assign(new Error('backup_privileges_unsound'), { code: 'backup_privileges_unsound' });
+  return { count: lines.length, sql: `\n${SEED_BACKUP_PRIVILEGES_MARK} (${lines.length})\n${lines.join('\n')}${lines.length ? '\n' : ''}` };
+}

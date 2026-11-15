@@ -9,8 +9,7 @@ import type * as F from '../firebase/spaces';
 import { session, readDoc, readAll, toMillis, newestFirst } from './core';
 import { docGet, docList, docAll, docCommand, serverTime, deleteField } from './docs';
 import { graphStore } from './store';
-import { chooseDomainClaimant } from '../../domain/communityDoor';
-import { isDomainVerified } from '../../domain/domainVerification';
+import { chooseCradle } from '../../domain/communityDoor';
 import { nodeCapacityGate, DEFAULT_NODE_LIMITS } from '../../domain/limits';
 import { createBlock } from '../../utils/crypto';
 import { uuidv7 } from '../../utils/id';
@@ -56,12 +55,15 @@ export const mendVisionDomain: typeof F.mendVisionDomain = async (visionId, doma
 export const fetchCommunities: typeof F.fetchCommunities = async () => newestFirst(await readAll<Community>(COMMUNITIES, 'communities'));
 export const getCommunityByDomain: typeof F.getCommunityByDomain = async (domain) => {
     const normalized = domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    const all = await fetchCommunities();
-    const facts = (c: Community) => ({ verified: isDomainVerified(c), createdAtMs: createdMs(c) || Number.MAX_SAFE_INTEGER });
-    const canonical = chooseDomainClaimant(all.filter(c => c.domain === normalized), facts);
-    if (canonical) return canonical;
-    return chooseDomainClaimant(all.filter(c => ((c as { domainAliases?: string[] }).domainAliases || []).includes(normalized)),
-        c => ({ verified: false, createdAtMs: createdMs(c) || Number.MAX_SAFE_INTEGER }));
+    // WHO WEARS THE HOST is one law on both backends (domain/communityDoor chooseCradle, ring 2026-11-14), read
+    // here with the node's strictness — the twin of seed.wears_host (migration 063): a DNS-proven domain, then a
+    // steward-granted alias; a BARE claim never answers, because any keeper may write `domain` on their own
+    // community and would otherwise take a host another community wears.
+    const claimants = (await fetchCommunities()).filter(c => c.domain === normalized || (c.domainAliases || []).includes(normalized));
+    return chooseCradle(claimants, normalized, c => ({
+        domain: c.domain, domainAliases: c.domainAliases, domainVerification: (c as { domainVerification?: { domain?: string } | null }).domainVerification,
+        createdAtMs: createdMs(c) || Number.MAX_SAFE_INTEGER,
+    }), { claimsAnswer: false });
 };
 export const getCommunityById: typeof F.getCommunityById = (id) => readDoc<Community>(COMMUNITIES + '?id=' + encodeURIComponent(id), 'community');
 export const getMyCommunities: typeof F.getMyCommunities = async (uid) => (await fetchCommunities()).filter(c => c.anchorUid === uid);

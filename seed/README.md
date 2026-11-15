@@ -78,10 +78,18 @@ npm run seed:restore -- [--local] /private/backups/lightseed-2026-11-03 [--datab
 ```
 
 `seed:backup` keeps what a whole node is made of (`domain/seedBackup`): the DATABASE (pg_dump of
-the soil, `--no-owner --no-acl`, so it restores into any empty database), the MEDIA (the pictures by
+the soil, `--no-owner --no-acl`, so it restores into any empty database — followed by the one
+privilege such a dump would lose: a `REVOKE … FROM PUBLIC` for every function the migrations
+withhold, read from the catalog, since PostgreSQL hands EXECUTE on a new function to PUBLIC; restore
+counts them and warns loudly on a backup taken before 2026-11-15, which carries none), the MEDIA (the pictures by
 hash, one tar from the API's store), the IDENTITY (pg_dump of the issuer's own database: the realm
 and every login) and the CONFIGURATION (the environment, the charter, the trust file, the runtime
-secrets — under `config/` with their own paths). A `manifest.json` names every file with its size
+secrets — under `config/` with their own paths; the charter directory is taken from `--charter`,
+the shell or `seed/.env` (`SEED_CHARTER_DIR`), the trust file from `--trust <file>` or
+`SEED_AUTH_CONFIG_FILE`, because only the keeper knows where their Compose override mounts it from;
+a file that lives OUTSIDE `seed/` is kept under `config/outside/<charter|trust>/` and restore names
+it instead of placing it; a charter or trust file that is not found is said in the summary, never
+passed over). Parts are hashed as streams, so a store larger than 2 GiB is kept. A `manifest.json` names every file with its size
 and sha256, the migration the soil stands at and the commit the hand ran from; a part whose service
 is not running is left out and said so (`--without-media`, `--without-identity`, `--without-config`
 leave one out on purpose). `seed:restore` holds the backup to its manifest first — every file present, its size and
@@ -584,6 +592,10 @@ AFTER the ceremony is written beside the old one (`--out`, `<trust>.enrolled.jso
 owner-only, never over a standing file) for the keeper to review, move into place and restart the
 API — the binding ceremony of migration 062 then binds every row at boot. `--invite` asks the issuer
 to mail each new account its set-password link (seven days; the realm's courier must be configured).
+`--invite-waiting` (2026-11-15) mails every person of the census who is bound and whose account still
+waits for its first password — the hand for a run that stopped before its invitations or a courier that
+refused; it mails again whoever has not answered, so it is asked for by name. A refused invitation
+exits 1. The administrator's token (60 seconds by default) is renewed as the hand goes.
 The trust file is the one binding: the account at the issuer carries no uid of ours (Keycloak 26
 drops attributes it does not manage). A second run finds everyone bound and writes nothing.
 `tests/seedEnrollment.test.ts` holds the plan law; `npm run test:seed:identity` performs the whole

@@ -3,14 +3,14 @@
  * THE ORPHAN SWEEP (ring 2026-09-08). Before the release of a picture existed, every replaced
  * logo, removed hero and dropped gallery image left its file, two variants and original copy
  * in the bucket. This hand walks the bucket ONCE with the same law the server releases by
- * (functions/lib/pictureRelease — the compiled mirror of domain/pictureRelease, held equal by
- * the tests): for every primary in a RELEASABLE seat it reads the holder's document and, when
+ * (functions/lib/src/domain/pictureRelease — domain/pictureRelease itself, compiled by the
+ * functions build): for every primary in a RELEASABLE seat it reads the holder's document and, when
  * no string in it names the picture (or the holder is gone), lists the primary with its
  * variants and original. It also lists derived objects (thumbs/, originals/) of a releasable
  * seat whose primary is already gone. Everything a chain binds is outside the law and is
  * never touched. Dry run by default; --apply deletes what was listed.
  *
- *   npm --prefix functions run build          # the law's compiled mirror must exist
+ *   npm --prefix functions run build          # the compiled law must exist
  *   node scripts/sweep-orphan-pictures.mjs                    # dry run
  *   node scripts/sweep-orphan-pictures.mjs --apply
  *   node scripts/sweep-orphan-pictures.mjs --prefix communities/ZRgx…   # one holder's folder
@@ -22,10 +22,10 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
 const require = createRequire(import.meta.url);
-const lawPath = new URL('../functions/lib/pictureRelease.js', import.meta.url);
-if (!existsSync(lawPath)) { console.error('the law\'s compiled mirror is missing — run: npm --prefix functions run build'); process.exit(1); }
+const lawPath = new URL('../functions/lib/src/domain/pictureRelease.js', import.meta.url);
+if (!existsSync(lawPath)) { console.error('the compiled law is missing — run: npm --prefix functions run build'); process.exit(1); }
 const { pictureReleaseOf, docReferencesPicture } = require(lawPath.pathname);
-const { isDerivedImagePath } = require(new URL('../functions/lib/imageVariant.js', import.meta.url).pathname);
+const { isDerivedImagePath } = require(new URL('../functions/lib/src/domain/imageVariant.js', import.meta.url).pathname);
 
 const charter = JSON.parse(readFileSync(new URL('../node.json', import.meta.url), 'utf8'));
 const APPLY = process.argv.includes('--apply');

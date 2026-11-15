@@ -11,7 +11,7 @@ import pg from 'pg';
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { constants as fsConstants } from 'node:fs';
-import { copyFile, link, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { copyFile, link, mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, resolve } from 'node:path';
 import { buildCensus, manifestHashOf, verifyBundle, verifyBundleSeal, expectedBeingsIndex, localUidCensus, planBundleMerge,
   BUNDLE_SEAL_TAG, BUNDLE_FORMAT_VERSION, signingPreimage, crossingCharterProblem, mediaConflictsOf } from '../generated/chain.mjs';
@@ -110,21 +110,28 @@ export { verifyBundle, verifyBundleSeal, localUidCensus };
 // not spoken here yet may arrive with the import once the installation bound their login by reviewed
 // configuration), and with `apply` every planned insert lands — or the whole crossing rolls back.
 /** @param {import('pg').Client} client
- * @param {{ incoming: *, anchor: { fingerprint: string, publicKeyB64: string }, identities?: Array<{ sourceUid: string, targetUid: string, personLid?: string, departed?: boolean }>, apply?: boolean, media?: Array<{ path: string, doc: * }> }} crossing */
+ * @param {{ incoming: *, anchor: { fingerprint: string, publicKeyB64: string }, identities?: Array<{ sourceUid: string, targetUid: string, personLid?: string, departed?: boolean }>, apply?: boolean, media?: Array<{ path: string, doc: * }>, mediaStands?: (hash: string) => Promise<boolean> }} crossing */
 // THE MEDIA CROSSES (ring 2026-11-03): the sidecar's manifests (verified by the caller against the sealed head
 // and the files' own names, the files already in the store) land in the same transaction as the records; a
 // manifest standing at the same path with other files is planned as a conflict (domain/mediaCrossing) first.
-export async function cross(client, { incoming, anchor, identities = [], apply = false, media = [] }) {
+// UNDER THE HASHES' LOCKS (2026-11-15): before a manifest lands, the crossing takes seed.media_lock on every
+// hash it names — the lock the publish and the orphan sweep take (migration 060) — and asks `mediaStands`
+// whether each file is still in the store. A sweep that freed a file while the crossing waited is seen
+// (media_swept: nothing lands, the hand runs again), and a sweep arriving later waits and finds the hash named.
+export async function cross(client, { incoming, anchor, identities = [], apply = false, media = [], mediaStands }) {
   if (!anchorSound(anchor)) throw Object.assign(new Error('The trusted anchor must carry a public key and its own fingerprint, obtained outside the bundle.'), { code: 'anchor_unsound' });
   await client.query(`SELECT pg_advisory_lock(${CROSSING_LOCK})`);
   try {
-    return await crossUnderLock(client, { incoming, anchor, identities, apply, media });
+    return await crossUnderLock(client, { incoming, anchor, identities, apply, media, mediaStands });
   } finally {
     await client.query(`SELECT pg_advisory_unlock(${CROSSING_LOCK})`).catch(() => undefined);
   }
 }
 const CROSSING_LOCK = "hashtextextended('lightseed.crossing', 0)";
-async function crossUnderLock(client, { incoming, anchor, identities, apply, media }) {
+// The hashes a set of manifests names, once each, in the one order every hand locks them by.
+const hashesOfManifests = media => [...new Set(media.flatMap(manifest => ['primary', 'small', 'large'].map(seat => manifest.doc?.[seat]?.hash).filter(hash => typeof hash === 'string')))].sort();
+const lockMediaHashes = async (client, hashes) => { for (let i = 0; i < hashes.length; i += 8) await client.query('SELECT seed.media_lock($1::text[])', [hashes.slice(i, i + 8)]); };
+async function crossUnderLock(client, { incoming, anchor, identities, apply, media, mediaStands }) {
   await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
   try {
     const bound = new Set((await client.query("SELECT uid FROM seed.identity_bindings WHERE binding_kind='explicit'")).rows.map(r => r.uid));
@@ -146,6 +153,13 @@ async function crossUnderLock(client, { incoming, anchor, identities, apply, med
       inserted++;
     }
     let pictures = 0;
+    if (media.length) {
+      const hashes = hashesOfManifests(media);
+      await lockMediaHashes(client, hashes);
+      if (mediaStands) for (const hash of hashes) {
+        if (!(await mediaStands(hash))) throw Object.assign(new Error(`A picture's file left the store while the crossing waited (${hash}): nothing landed — run the import again.`), { code: 'media_swept', hash });
+      }
+    }
     for (const manifest of media) {
       const landed = await client.query('INSERT INTO seed.media_objects(path, doc) VALUES ($1, $2::jsonb) ON CONFLICT (path) DO NOTHING', [manifest.path, JSON.stringify(manifest.doc)]);
       pictures += landed.rowCount ?? 0;
@@ -212,8 +226,24 @@ export async function landMediaFiles(dir, storeDir, hashes) {
   }
   return landed;
 }
-// The files a hand placed, taken back when its crossing did not land (nothing names them; the sweep frees only marked orphans).
-export async function withdrawMediaFiles(storeDir, hashes) {
+// Whether a hash's file stands in the store (asked by the crossing under the hash's lock).
+export const mediaFileStands = storeDir => { const store = storeDirOf(storeDir); return async hash => /^[a-f0-9]{64}$/.test(hash) && stat(join(store, hash)).then(s => s.isFile(), () => false); };
+// The files a hand placed, taken back when its crossing did not land — each UNDER ITS HASH'S LOCK and only while no
+// manifest names it (2026-11-15): a publish of the same bytes that found the file standing and committed meanwhile
+// keeps its picture. Returns what was withdrawn and what was left because it is named now. Without a soil to ask
+// (the connection is gone) nothing is taken: an unnamed file costs room, a named one taken costs a picture.
+export async function withdrawMediaFiles(client, storeDir, hashes) {
   const store = storeDirOf(storeDir);
-  for (const hash of hashes) if (/^[a-f0-9]{64}$/.test(hash)) await unlink(join(store, hash)).catch(() => undefined);
+  const withdrawn = [], named = [];
+  for (const hash of hashes) {
+    if (!/^[a-f0-9]{64}$/.test(hash)) continue;
+    await client.query('BEGIN');
+    try {
+      await client.query('SELECT seed.media_lock($1::text[])', [[hash]]);
+      if ((await client.query('SELECT seed.media_named($1) AS named', [hash])).rows[0].named === true) named.push(hash);
+      else { await unlink(join(store, hash)).catch(error => { if (error?.code !== 'ENOENT') throw error; }); withdrawn.push(hash); }
+      await client.query('COMMIT');
+    } catch (error) { await client.query('ROLLBACK').catch(() => undefined); throw error; }
+  }
+  return { withdrawn, named };
 }

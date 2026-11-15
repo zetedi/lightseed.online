@@ -69,4 +69,4 @@ export {faceFeedOf,feedDomainOf} from './faceEvents';
 // THE RELEASE OF A PICTURE (ring 2026-11-03): the seats that may be released and whether a holder still shows one.
 export {pictureReleaseOf,docReferencesPicture} from './pictureRelease';
 // THE ENROLLMENT AT SCALE (ring 2026-11-14): one login per person at the issuer, planned for a census (scripts/enroll-seed-identities.mjs).
-export {enrollmentPlanOf,issuerAccountRepresentationOf,bindingsAfterEnrollment,normalizeEnrollmentEmail} from './seedEnrollment';
+export {enrollmentPlanOf,issuerAccountRepresentationOf,bindingsAfterEnrollment,normalizeEnrollmentEmail,issuerAccountWaits,adminTokenFresh} from './seedEnrollment';

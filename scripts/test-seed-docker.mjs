@@ -8,7 +8,7 @@ import { randomBytes, generateKeyPairSync, createHash, sign } from 'node:crypto'
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
 import {seedRotationPreimage,seedRecoveryPreimage,seedRecoveryWitnessPreimage} from '../src/domain/seedSigning.mjs';
-import { backupManifestIssues } from '../src/domain/seedBackup.mjs';
+import { backupManifestIssues, WITHHELD_ROUTINES_SQL } from '../src/domain/seedBackup.mjs';
 import {buildSeedDomain} from '../seed/build-domain.mjs';
 import { authFixture } from '../tests/seed/auth-fixture.mjs';
 
@@ -408,6 +408,13 @@ volumes:
   const landed = await checked(process.execPath, restoreArgs);
   assert.match(landed, /every file answers to its name/); assert.match(landed, /Database restored into restore_keep/); assert.match(landed, /Media restored into /);
   await soilCarries('restore_keep');
+  // THE WITHHELD FUNCTIONS CROSS THE KEEPING (2026-11-15): the dump is --no-acl, and PostgreSQL would hand EXECUTE on
+  // every function back to PUBLIC — the restored soil withholds exactly what the living one does, and it is not nothing.
+  const withheldIn = async db => (await compose(['exec', '-T', 'db', 'psql', '-X', '-qAt', '-v', 'ON_ERROR_STOP=1', '-U', 'lightseed', '-d', db, '-c', "SET search_path TO ''", '-c', WITHHELD_ROUTINES_SQL])).trim().split('\n').filter(Boolean);
+  const withheldLiving = await withheldIn('lightseed');
+  assert.ok(withheldLiving.length > 50, `the living soil withholds its server-only functions (${withheldLiving.length})`);
+  assert.deepEqual(await withheldIn('restore_keep'), withheldLiving);
+  assert.match(landed, new RegExp(`^  ${withheldLiving.length} server-only functions stand withheld from PUBLIC`, 'm'));
   // The store is content-addressed: the landed directory holds exactly the proof's pictures, each under its own sha256.
   const pictures = new Map([...mediaBeforeRestart.values()].map(bytes => [createHash('sha256').update(bytes).digest('hex'), bytes]));
   const landedFiles = async () => (await readdir(keptMedia, { recursive: true })).sort();

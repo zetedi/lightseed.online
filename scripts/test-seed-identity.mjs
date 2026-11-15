@@ -119,6 +119,14 @@ try {
   const again = await enroll(trustAfter, join(census, 'auth.again.json'), '--apply');
   assert.equal(again.code, 0); assert.match(again.stdout, /0 accounts to make, 0 standing accounts to bind, 2 already bound/); assert.match(again.stdout, /nothing to do/);
   await assert.rejects(() => readFile(join(census, 'auth.again.json')), 'Nothing to do writes nothing');
+  // WHO STILL WAITS (2026-11-15): a run that stopped before its invitations is finished by name. Everyone is bound,
+  // so nothing is made or written; the issuer's own record says bob still waits for his first password (alice set
+  // hers long ago), and this disposable issuer has no courier — the refusal is said per person and the hand exits 1.
+  const waiting = await enroll(trustAfter, join(census, 'auth.waiting.json'), '--apply', '--invite-waiting');
+  assert.match(waiting.stdout, /nothing to do/);
+  assert.match(waiting.stdout, /^Invitations: 0 sent by the issuer's courier; 1 not sent — bob \(/m, waiting.stdout + waiting.stderr);
+  assert.equal(waiting.code, 1);
+  await assert.rejects(() => readFile(join(census, 'auth.waiting.json')), 'Inviting writes no trust file');
   // The authenticator the API builds from the file after the ceremony binds alice's account to her uid.
   console.log('Checking authorization-code sign-in with S256 PKCE.');
   const verifier = randomBytes(32).toString('base64url');

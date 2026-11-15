@@ -8,7 +8,7 @@ import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 import { startCluster, type Cluster } from './harness';
 import { createMediaStore } from '../../seed/api/media.mjs';
-import { ownerClient, readSnapshot, readMediaManifests, buildBundle, custodianOf, sealBundle, cross, writeMediaSidecar, readMediaSidecar, mediaFilePresent, landMediaFiles } from '../../seed/api/bundle.mjs';
+import { ownerClient, readSnapshot, readMediaManifests, buildBundle, custodianOf, sealBundle, cross, writeMediaSidecar, readMediaSidecar, mediaFilePresent, landMediaFiles, withdrawMediaFiles, mediaFileStands } from '../../seed/api/bundle.mjs';
 import { mediaReferencedBy, mediaSidecarOf, mediaHeadOf, mediaSidecarIssues, mediaHashesOf } from '../../src/domain/mediaCrossing';
 
 let cluster: Cluster;
@@ -74,7 +74,17 @@ describe('the media crossing', () => {
       expect(blocked.applied).toBe(false);
       expect(blocked.plan.issues).toEqual([{ code: 'media_conflict', path: 'users/alice/photo_1.png', detail: 'A different picture already stands at this path on this node.' }]);
       await dst.query("DELETE FROM seed.media_objects WHERE path='users/alice/photo_1.png'");
-      const crossing = await cross(dst, { incoming: bundle, anchor, identities: [{ sourceUid: 'alice', targetUid: 'alice', personLid: LID(1) }], apply: true, media: manifests });
+      // UNDER THE HASHES' LOCKS (2026-11-15): a file the sweep freed while the crossing waited is seen under the lock —
+      // nothing lands, neither a record nor a manifest, and the hand runs again.
+      await expect(cross(dst, { incoming: bundle, anchor, identities: [{ sourceUid: 'alice', targetUid: 'alice', personLid: LID(1) }], apply: true, media: manifests, mediaStands: async () => false }))
+        .rejects.toMatchObject({ code: 'media_swept' });
+      expect((await dst.query('SELECT count(*)::int AS n FROM seed.media_objects')).rows[0].n).toBe(0);
+      expect((await dst.query('SELECT count(*)::int AS n FROM seed.crossings')).rows[0].n).toBe(0);
+      // A crossing that did not land takes back only what no manifest names: nothing names these yet.
+      expect(await withdrawMediaFiles(dst, targetStoreDir, sidecar.hashes)).toEqual({ withdrawn: sidecar.hashes, named: [] });
+      expect(await mediaFileStands(targetStoreDir)(sidecar.hashes[0])).toBe(false);
+      expect(await landMediaFiles(beside, targetStoreDir, sidecar.hashes)).toEqual(sidecar.hashes);
+      const crossing = await cross(dst, { incoming: bundle, anchor, identities: [{ sourceUid: 'alice', targetUid: 'alice', personLid: LID(1) }], apply: true, media: manifests, mediaStands: mediaFileStands(targetStoreDir) });
       expect(crossing.plan.issues).toEqual([]);
       expect(crossing.applied).toBe(true); expect(crossing.inserted).toBe(2); expect(crossing.pictures).toBe(1);
       expect((await dst.query('SELECT path FROM seed.media_objects ORDER BY path')).rows.map((r: { path: string }) => r.path)).toEqual(['users/alice/photo_1.png']);
@@ -88,6 +98,13 @@ describe('the media crossing', () => {
       // The same bundle again: nothing lands twice, the pictures neither.
       const again = await cross(dst, { incoming: bundle, anchor, identities: [{ sourceUid: 'alice', targetUid: 'alice', personLid: LID(1) }], apply: true, media: manifests });
       expect(again.inserted).toBe(0); expect(again.pictures).toBe(0); expect(again.already).toBeTruthy();
+      // Once a manifest names them, a withdrawing hand leaves the files where they are (a publish of the same bytes
+      // that committed meanwhile keeps its picture) — and still takes an unnamed one.
+      const stray = 'f'.repeat(64);
+      writeFileSync(join(targetStoreDir, stray), Buffer.from('named by no one'));
+      expect(await withdrawMediaFiles(dst, targetStoreDir, [...sidecar.hashes, stray])).toEqual({ withdrawn: [stray], named: sidecar.hashes });
+      expect(await targetStore.present(named)).toBe(true);
+      expect(await mediaFileStands(targetStoreDir)(stray)).toBe(false);
     } finally { await src.end(); await dst.end(); await source.db.close(); await target.db.close(); rmSync(root, { recursive: true, force: true }); }
   });
 });

@@ -88,3 +88,20 @@ describe('neither backend keeps its own copy', () => {
     expect(declaring).toEqual(['core.ts']);
   });
 });
+
+// WHO WEARS A HOST (2026-11-15): both backends ask the one law (chooseCradle); the superseded
+// chooseDomainClaimant ordering, where a bare claim beat a granted alias, answers in neither.
+describe('both backends resolve a host by chooseCradle', () => {
+  const root = resolve(__dirname, '..');
+  for (const backend of ['firebase', 'independent']) {
+    it(`services/${backend}/spaces.ts`, () => {
+      const source = readFileSync(resolve(root, 'src/services', backend, 'spaces.ts'), 'utf8');
+      expect(source).toMatch(/\bchooseCradle\(/);
+      expect(source).not.toMatch(/\bchooseDomainClaimant\b/);
+    });
+  }
+  it('the independent node refuses a bare claim (the twin of seed.wears_host)', () => {
+    const source = readFileSync(resolve(root, 'src/services/independent/spaces.ts'), 'utf8');
+    expect(source).toMatch(/claimsAnswer:\s*false/);
+  });
+});

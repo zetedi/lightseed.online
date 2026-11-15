@@ -18,7 +18,7 @@ import { copyFile, mkdir, readFile, readdir, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { backupManifestIssues } from '../src/domain/seedBackup.mjs';
+import { backupManifestIssues, SEED_BACKUP_OUTSIDE, WITHHELD_ROUTINES_SQL } from '../src/domain/seedBackup.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const seed = join(root, 'seed');
@@ -57,7 +57,12 @@ const emptyDirectory = async path => { try { return (await readdir(path)).length
 const dir = resolve(positional[0]);
 const restore = async () => {
   const manifest = JSON.parse(await readFile(join(dir, 'manifest.json'), 'utf8'));
-  const held = async name => { try { const s = await stat(join(dir, name)); return { bytes: s.size, sha256: createHash('sha256').update(await readFile(join(dir, name))).digest('hex') }; } catch { return null; } };
+  // Streamed (a part may be larger than one buffer holds); only a file that is NOT THERE reads as missing — any other failure is said as itself.
+  const sha256Of = file => new Promise((done, fail) => { const hash = createHash('sha256'); createReadStream(file).on('error', fail).on('data', chunk => hash.update(chunk)).on('end', () => done(hash.digest('hex'))); });
+  const held = async name => {
+    try { const s = await stat(join(dir, name)); return { bytes: s.size, sha256: await sha256Of(join(dir, name)) }; }
+    catch (error) { if (error?.code === 'ENOENT' || error?.code === 'ENOTDIR') return null; throw error; }
+  };
   const found = new Map();
   for (const file of Array.isArray(manifest?.files) ? manifest.files : []) found.set(file.name, await held(String(file.name)));
   const issues = backupManifestIssues(manifest, name => found.get(name) ?? null);
@@ -94,6 +99,10 @@ const restore = async () => {
   if (has('database')) {
     await feed([...compose, 'exec', '-T', 'db', 'psql', '-X', '-q', '-v', 'ON_ERROR_STOP=1', '--single-transaction', '-U', 'lightseed', '-d', database], join(dir, 'database.sql'));
     console.log(`Database restored into ${database}: soil at ${psql(compose, 'db', 'lightseed', database, 'SELECT max(name) FROM seed.schema_migrations')}.`);
+    // THE WITHHELD FUNCTIONS (2026-11-15): the dump is --no-acl, so they stand only when the backup wrote them after it.
+    const withheld = psql(compose, 'db', 'lightseed', database, `SELECT count(*) FROM (${WITHHELD_ROUTINES_SQL}) withheld`);
+    if (withheld === '0') console.warn('WARNING: no function is withheld from PUBLIC in the restored soil — this backup was taken before the keeping wrote them (2026-11-15). Do NOT provision or serve this database: PUBLIC may execute every server-only function. Take a new backup from the living node, or apply the migrations\' own revokes by hand first.');
+    else console.log(`  ${withheld} server-only functions stand withheld from PUBLIC, as the backup named them.`);
   }
   // THE MEDIA: into the empty store, or into a directory for a look first; a file standing is never replaced (-k).
   if (has('media')) {
@@ -113,14 +122,17 @@ const restore = async () => {
   }
   // THE CONFIGURATION: only where nothing stands.
   if (has('config')) {
-    const kept = [], skipped = [];
+    const kept = [], skipped = [], outside = [];
     for (const file of manifest.files.filter(f => f.part === 'config')) {
+      // Kept from outside the installation's directory: its place is the keeper's to name, never guessed.
+      if (file.name.startsWith(SEED_BACKUP_OUTSIDE)) { outside.push(file.name); continue; }
       const target = resolve(seed, file.name.replace(/^config\//, ''));
       await mkdir(dirname(target), { recursive: true, mode: 0o700 });
       try { await copyFile(join(dir, file.name), target, constants.COPYFILE_EXCL); kept.push(file.name); }
       catch (error) { if (error?.code === 'EEXIST') skipped.push(file.name); else throw error; }
     }
     console.log(`Configuration: ${kept.length} files placed${skipped.length ? `, ${skipped.length} already standing and left as they are (${skipped.join(', ')})` : ''}.`);
+    if (outside.length) console.log(`  ${outside.length} files were kept from outside the installation's directory and are NOT placed — copy them from ${dir} to where SEED_CHARTER_DIR and the trust file's mount point: ${outside.join(', ')}.`);
   }
   console.log('Restored. Provision the runtime role anew (seed:provision) if the restored soil is to be served, and restart the API.');
   return 0;

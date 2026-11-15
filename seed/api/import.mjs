@@ -11,11 +11,13 @@
 // vouch is this hand's, never the exporter's. With --media <dir>, THE PICTURES beside the bundle are
 // held to the sealed head and to each file's own name, a picture already standing here under another
 // bundle path is planned as a conflict, the files land in SEED_MEDIA_DIR before the records and are
-// withdrawn if the crossing does not land, and the manifests land in the records' transaction.
+// withdrawn if the crossing does not land (each under its hash's lock, and only while no manifest names
+// it), and the manifests land in the records' transaction under the same locks the publish and the
+// sweep take. Once the transaction has committed nothing is withdrawn, whatever fails afterwards.
 // Exit 0 = clear (or applied), 2 = blocked, 1 = error.
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { ownerClient, cross, localUidCensus, readMediaSidecar, mediaFilePresent, landMediaFiles, withdrawMediaFiles } from './bundle.mjs';
+import { ownerClient, cross, localUidCensus, readMediaSidecar, mediaFilePresent, landMediaFiles, withdrawMediaFiles, mediaFileStands } from './bundle.mjs';
 import { mediaSidecarIssues, mediaHashesOf } from '../generated/chain.mjs';
 
 const args = process.argv.slice(2);
@@ -33,6 +35,7 @@ const readJson = async path => {
 };
 const client = ownerClient();
 let landed = []; // the pictures this hand placed in the store — withdrawn unless the crossing lands
+let connected = false;
 try {
   const incoming = await readJson(positional[0]);
   const anchor = await readJson(option('--anchor'));
@@ -61,9 +64,14 @@ try {
   } else if (incoming.head?.media?.manifests > 0) console.warn(`The bundle names ${incoming.head.media.manifests} pictures; pass --media <dir> (with SEED_MEDIA_DIR) to carry them.`);
   const apply = args.includes('--apply');
   // The files first, by name, into the store — a manifest never names a file that is not there.
+  // The soil is reached first: a hand that cannot reach it places nothing it could not take back under the locks.
+  await client.connect(); connected = true;
   if (apply && mediaDir) landed = await landMediaFiles(mediaDir, process.env.SEED_MEDIA_DIR, mediaHashesOf(manifests));
-  await client.connect();
-  const { plan, applied, inserted, pictures, already } = await cross(client, { incoming, anchor, identities, apply, media: manifests });
+  const { plan, applied, inserted, pictures, already } = await cross(client, { incoming, anchor, identities, apply, media: manifests, mediaStands: apply && mediaDir ? mediaFileStands(process.env.SEED_MEDIA_DIR) : undefined });
+  // THE CROSSING LANDED: from here the files are the soil's (2026-11-15) — a report that cannot be written, or
+  // anything else that fails below, must never take back what committed manifests name.
+  const placed = landed.length;
+  if (applied) landed = [];
   if (option('--report')) await writeFile(resolve(option('--report')), JSON.stringify(plan, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
   const unbound = plan.issues.filter(i => i.code === 'identity_unbound').length;
   console.log(`Merge proposal ${plan.ready ? 'has no planning conflicts' : 'is blocked'}: ${plan.inserts.length} records to land, ${plan.unchanged.length} unchanged, ${plan.rebuild.length} witnesses, ${plan.issues.length} issues.`);
@@ -72,8 +80,7 @@ try {
   if (unbound) console.log(`Identities needing a binding (${unbound}): ${localUidCensus(incoming.docs).join(', ')}`);
   if (already) console.log(`This bundle already crossed here on ${already.exportedAtMs ? new Date(already.exportedAtMs).toISOString() : 'an earlier day'}.`);
   if (applied) {
-    console.log(`Applied: ${inserted} records landed in one transaction${mediaDir ? `, ${pictures} pictures with them (${landed.length} files new in the store)` : ''}.`);
-    landed = [];
+    console.log(`Applied: ${inserted} records landed in one transaction${mediaDir ? `, ${pictures} pictures with them (${placed} files new in the store)` : ''}.`);
   } else if (plan.ready) console.log('Nothing written: pass --apply to land the proposal.');
   process.exitCode = plan.ready ? 0 : 2;
 } catch (error) {
@@ -81,8 +88,13 @@ try {
   process.exitCode = error?.code === 'media_unsound' ? 2 : 1;
 } finally {
   if (landed.length) {
-    await withdrawMediaFiles(process.env.SEED_MEDIA_DIR, landed).catch(() => undefined);
-    console.log(`${landed.length} files this hand had placed in the store were withdrawn: the crossing did not land.`);
+    try {
+      if (!connected) throw new Error('no soil to ask');
+      const { withdrawn, named } = await withdrawMediaFiles(client, process.env.SEED_MEDIA_DIR, landed);
+      console.log(`The crossing did not land: ${withdrawn.length} files this hand had placed in the store were withdrawn${named.length ? `, ${named.length} stay because a picture published meanwhile names them` : ''}.`);
+    } catch {
+      console.error(`The crossing did not land, and the ${landed.length} files this hand had placed in the store could not be withdrawn under their locks: they stand unnamed in SEED_MEDIA_DIR (the next import of this bundle names them).`);
+    }
   }
   await client.end().catch(() => undefined);
 }

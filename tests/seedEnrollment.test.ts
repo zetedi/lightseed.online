@@ -78,3 +78,25 @@ describe('the account asked of the issuer, and the trust file after', () => {
     expect(after).toEqual([{ subject: 'sub-alice', uid: 'alice' }, { subject: 'sub-bob', uid: 'bob' }, { subject: 'sub-zed', uid: 'zed' }]);
   });
 });
+
+describe('who still waits, and how long a token lives (2026-11-15)', () => {
+  it('an account waits while its first password is still required', async () => {
+    const { issuerAccountWaits } = await import('../src/domain/seedEnrollment');
+    expect(issuerAccountWaits({ enabled: true, requiredActions: ['UPDATE_PASSWORD', 'VERIFY_EMAIL'] })).toBe(true);
+    expect(issuerAccountWaits({ enabled: true, requiredActions: ['VERIFY_EMAIL'] })).toBe(false);
+    expect(issuerAccountWaits({ enabled: true, requiredActions: [] })).toBe(false);
+    expect(issuerAccountWaits({ enabled: true })).toBe(false);
+    expect(issuerAccountWaits({ enabled: false, requiredActions: ['UPDATE_PASSWORD'] })).toBe(false); // a closed account is not written to
+    expect(issuerAccountWaits(null)).toBe(false);
+  });
+  it('the administrator token is renewed at half its life, never later than thirty seconds', async () => {
+    const { adminTokenFresh } = await import('../src/domain/seedEnrollment');
+    expect(adminTokenFresh(0, 60, 29_999)).toBe(true);
+    expect(adminTokenFresh(0, 60, 30_000)).toBe(false);
+    expect(adminTokenFresh(0, 10, 4_999)).toBe(true);
+    expect(adminTokenFresh(0, 10, 5_000)).toBe(false);
+    expect(adminTokenFresh(0, 3600, 30_000)).toBe(false);      // a long life is still renewed within thirty seconds
+    expect(adminTokenFresh(0, undefined, 29_000)).toBe(true);  // an unnamed life is the issuer's default
+    expect(adminTokenFresh(0, 'soon', 31_000)).toBe(false);
+  });
+});

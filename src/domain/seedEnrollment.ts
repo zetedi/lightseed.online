@@ -109,3 +109,18 @@ export const bindingsAfterEnrollment = (bindings: readonly TrustBinding[], added
   for (const b of added) if (!bySubject.has(b.subject)) bySubject.set(b.subject, { subject: b.subject, uid: b.uid });
   return [...bySubject.values()].sort((a, b) => a.uid.localeCompare(b.uid) || a.subject.localeCompare(b.subject));
 };
+
+// WHO STILL WAITS FOR THEIR FIRST PASSWORD (2026-11-15). An account this ceremony made carries the
+// required action UPDATE_PASSWORD until the person sets one; a run that stopped before its
+// invitations, or an invitation the courier refused, leaves accounts that are bound and were never
+// written to. The issuer's own record answers who they are — the hand keeps no list of its own.
+export const issuerAccountWaits = (account: { requiredActions?: unknown; enabled?: unknown } | null | undefined): boolean =>
+  !!account && account.enabled !== false && Array.isArray(account.requiredActions) && account.requiredActions.includes('UPDATE_PASSWORD');
+
+// THE ADMINISTRATOR'S TOKEN IS SHORT (Keycloak's master realm: 60 seconds by default). A census takes
+// longer, so the hand asks for a new one once half the life the issuer named has passed (never later
+// than 30 seconds; an unnamed life is taken as the default).
+export const adminTokenFresh = (issuedAtMs: number, expiresInSeconds: unknown, nowMs: number): boolean => {
+  const life = typeof expiresInSeconds === 'number' && Number.isFinite(expiresInSeconds) && expiresInSeconds > 0 ? expiresInSeconds : 60;
+  return nowMs - issuedAtMs < Math.min(life / 2, 30) * 1000;
+};
