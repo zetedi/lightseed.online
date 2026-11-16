@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { showAlert } from '../ui/Dialog';
+import { LocateTreeModal } from './LocateTreeModal';
+import { plantedPlaceOf } from '../../domain/exif';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { OutwardLink } from '../ui/OutwardLink';
@@ -92,7 +94,8 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
     const [editCreatedAt, setEditCreatedAt] = useState(() => initialCreatedAt(tree));
     const [editDomain, setEditDomain] = useState(tree.domain || '');
     const [editVisibility, setEditVisibility] = useState<'public' | 'node' | 'private'>(tree.visibility || 'public');
-    const [isLocating, setIsLocating] = useState(false);
+    // Locate me / locate picture are two hands in one modal (LocateTreeModal); the place enters the form only when used.
+    const [locating, setLocating] = useState(false);
     // The component instance can be reused across trees, so reset the editor when the tree
     // changes (useState initialisers only run on mount).
     useEffect(() => {
@@ -100,18 +103,6 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
         setEditVisibility(tree.visibility || 'public');
         // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed to the tree's identity on purpose: re-seeding on every `tree.visibility` change would clobber an in-progress edit.
     }, [tree.id]);
-
-    const handleLocateMe = () => {
-        setIsLocating(true);
-        navigator.geolocation.getCurrentPosition((pos) => {
-            setEditLat(pos.coords.latitude);
-            setEditLng(pos.coords.longitude);
-            setIsLocating(false);
-        }, (err) => {
-            showAlert(err?.message || 'err_location');
-            setIsLocating(false);
-        });
-    };
 
     const handleSaveClick = () => {
         // A site that is not an address is SAID, never silently dropped — losing what someone
@@ -226,10 +217,17 @@ export const TreeDetails: React.FC<TreeDetailsProps> = ({
                                         <input type="number" step="any" className={fieldClassName} value={editLat} onChange={e => setEditLat(e.target.value)} placeholder={t('lat')} aria-label={t('lat')} />
                                         <input type="number" step="any" className={fieldClassName} value={editLng} onChange={e => setEditLng(e.target.value)} placeholder={t('lng')} aria-label={t('lng')} />
                                     </div>
-                                    <button type="button" onClick={handleLocateMe} disabled={isLocating}
-                                        className="bg-emerald-100 text-emerald-600 p-2 rounded-xl hover:bg-emerald-200 disabled:opacity-50 dark:bg-emerald-950/60 dark:text-emerald-300" title={t('use_my_location')} aria-label={t('use_my_location')}>
-                                        {isLocating ? <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div> : <Icons.Loc />}
+                                    <button type="button" onClick={() => setLocating(true)}
+                                        className="bg-emerald-100 text-emerald-600 p-2 rounded-xl hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300" title={t('locate_tree')} aria-label={t('locate_tree')} aria-haspopup="dialog">
+                                        <Icons.Loc />
                                     </button>
+                                    {locating && (
+                                        <LocateTreeModal
+                                            plantedPlace={plantedPlaceOf(tree)}
+                                            onUse={(place) => { setEditLat(place.latitude); setEditLng(place.longitude); }}
+                                            onClose={() => setLocating(false)}
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </div>

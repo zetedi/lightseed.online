@@ -4,7 +4,7 @@ import {
 } from '../src/domain/exif';
 import { GENESIS_MOMENT_MS, GENESIS_PLACE } from '../src/domain/genesis';
 
-// exif-js hands back Number objects wearing numerator/denominator; mimic that exactly.
+// A reader may hand back Number objects wearing numerator/denominator (exif-js did); the law accepts them.
 const rational = (numerator: number, denominator = 1) => Object.assign(new Number(numerator / denominator), { numerator, denominator });
 const dms = (d: number, m: number, s: number) => [rational(d), rational(m), rational(s * 100, 100)];
 
@@ -108,5 +108,24 @@ describe('plantedProvenance — the fields a tree carries', () => {
     expect(plantedProvenance({ latitude: 1, longitude: 2 })).toEqual({ plantedLatitude: 1, plantedLongitude: 2 });
     expect(plantedProvenance({ latitude: 1, longitude: 2, altitudeM: 3, takenAtMs: 4 }))
       .toEqual({ plantedLatitude: 1, plantedLongitude: 2, plantedAltitudeM: 3, plantedAtMs: 4 });
+  });
+});
+
+describe('plantedPlaceOf — the planting photo\'s place on a standing tree', () => {
+  it('reads the place the tree carries', async () => {
+    const { plantedPlaceOf } = await import('../src/domain/exif');
+    expect(plantedPlaceOf({ plantedLatitude: 6.4135, plantedLongitude: 81.3326 })).toEqual({ latitude: 6.4135, longitude: 81.3326 });
+    expect(plantedPlaceOf({ plantedLatitude: -33.9, plantedLongitude: 0 })).toEqual({ latitude: -33.9, longitude: 0 }); // the meridian is a place
+  });
+  it('is null when the tree carries none, half of one, or one that is no place', async () => {
+    const { plantedPlaceOf } = await import('../src/domain/exif');
+    expect(plantedPlaceOf({})).toBeNull();
+    expect(plantedPlaceOf(null)).toBeNull();
+    expect(plantedPlaceOf({ plantedLatitude: 6.4 })).toBeNull();
+    expect(plantedPlaceOf({ plantedLatitude: '6.4', plantedLongitude: '81.3' })).toBeNull();
+    expect(plantedPlaceOf({ plantedLatitude: 0, plantedLongitude: 0 })).toBeNull();
+    expect(plantedPlaceOf({ plantedLatitude: 91, plantedLongitude: 10 })).toBeNull();
+    expect(plantedPlaceOf({ plantedLatitude: 10, plantedLongitude: -181 })).toBeNull();
+    expect(plantedPlaceOf({ plantedLatitude: NaN, plantedLongitude: 10 })).toBeNull();
   });
 });

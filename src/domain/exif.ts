@@ -1,12 +1,12 @@
 // PHOTO PROVENANCE — principle 10 ("real coordinates, real EXIF moments"): the pure arithmetic
-// that turns a photo's EXIF tags into a place and a moment. Reading the bytes needs a browser
-// and exif-js (utils/exif.ts, the port); everything AFTER the tags lives here, deterministic and
+// that turns a photo's EXIF tags into a place and a moment. The bytes are read by domain/exifRead
+// (the browser's File is the port's, utils/exif.ts); everything AFTER the tags lives here, deterministic and
 // tested. A tree planted from a geotagged photo is placed where the photo was taken, and its
 // `planted*` provenance (domain/lifetree) carries that moment — the same fields the Moment of
 // GENESIS was read from (ring 2026-07-14, "The Moment is the one").
 
-// exif-js hands rationals back as Number objects carrying numerator/denominator; a plain
-// number is accepted too, so a caller may pre-resolve.
+// A rational arrives as numerator/denominator (domain/exifRead hands them on undivided, so a zero
+// denominator is refused here); a plain number is accepted too, so a caller may pre-resolve.
 export interface ExifRational { numerator: number; denominator: number }
 export type ExifNumber = number | ExifRational | { valueOf(): number };
 
@@ -31,7 +31,7 @@ export interface ExifTags {
   subsecTimeOriginal?: string;  // fractional seconds as digits ('123' = .123)
 }
 
-// A wall clock → milliseconds port. EXIF's DateTimeOriginal names no zone (exif-js reads no
+// A wall clock → milliseconds port. EXIF's DateTimeOriginal names no zone (the reader takes no
 // OffsetTimeOriginal), so the caller chooses how to anchor it — the browser's own zone in the
 // app (the planter usually stands where the photo was taken). The default is UTC, so the law
 // stays deterministic under test.
@@ -130,3 +130,17 @@ export const plantedProvenance = (p: PhotoProvenance): {
   ...(p.altitudeM !== undefined ? { plantedAltitudeM: p.altitudeM } : {}),
   ...(p.takenAtMs !== undefined ? { plantedAtMs: p.takenAtMs } : {}),
 });
+
+// THE PLANTING PHOTO'S PLACE (2026-11-16). A tree planted from a geotagged photo carries that
+// place as `plantedLatitude/Longitude` (domain/lifetree); the stored picture itself was cropped
+// through a canvas and keeps no EXIF. So "locate by the picture" on a standing tree reads this
+// provenance first. Null when the tree carries none, when it leaves the Earth, or at 0,0 (a
+// camera's "no fix", as in photoProvenance).
+export const plantedPlaceOf = (tree: { plantedLatitude?: unknown; plantedLongitude?: unknown } | null | undefined): { latitude: number; longitude: number } | null => {
+  const latitude = tree?.plantedLatitude, longitude = tree?.plantedLongitude;
+  if (typeof latitude !== 'number' || typeof longitude !== 'number') return null;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
+  if (latitude === 0 && longitude === 0) return null;
+  return { latitude, longitude };
+};
