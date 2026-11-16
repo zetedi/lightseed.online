@@ -37,7 +37,9 @@ try {
     email: 'alice@example.test', emailVerified: true, firstName: 'Alice', lastName: 'Test',
     credentials: [{ type: 'password', value: password, temporary: false }] }];
   await writeFile(realmFile, JSON.stringify(realm), { mode: 0o644 }); // private parent, container-readable
-  await writeFile(override, "services:\n  identity:\n    ports: !override\n      - '127.0.0.1::8080'\n", { mode: 0o600 });
+  // The edge network is the installation's own (external) in the real stack; this proof brings a disposable one of
+  // its own, made and removed with the project — a machine that never ran the node (the CI runner) has none.
+  await writeFile(override, `services:\n  identity:\n    ports: !override\n      - '127.0.0.1::8080'\nnetworks:\n  edge: !override\n    name: ${project}_edge\n`, { mode: 0o600 });
   console.log('Starting an isolated identity server and its own database.');
   started = true;
   await run(['up', '-d']);

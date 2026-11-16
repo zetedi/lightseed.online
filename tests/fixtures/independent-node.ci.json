@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "nodeLid": "019a0000-0000-7000-8000-0000000000c1",
+  "name": "Example node",
+  "shortName": "Example",
+  "tagline": "Growing together",
+  "description": "An independent Lightseed node",
+  "domain": "app.example.test",
+  "aliases": [],
+  "repo": "https://code.example/node",
+  "keeper": { "email": "keeper@app.example.test" },
+  "mail": { "from": "Example <hello@app.example.test>" },
+  "push": { "subject": "mailto:keeper@app.example.test", "publicKey": "" },
+  "theme": { "color": "#123456", "background": "#ffffff" },
+  "backend": { "kind": "postgres" },
+  "faces": [{ "id": "home", "door": "app.example.test", "domains": [] }]
+}
