@@ -14,7 +14,7 @@ import { BED_DEFAULT_VISIBILITY, BED_TREE_TYPE, bedPlantingProblem, excludeBedTr
 import { uuidv7 } from '../../utils/id';
 import { GENESIS_MOMENT_MS, GENESIS_PLACE } from '../../domain/genesis';
 import { oldEmeraldEarthThemeValues } from '../../utils/theme';
-import { auth, db, functions, mapDoc, lifetreesCollection, visionsCollection, lightHousesCollection, pulsesCollection } from './core';
+import { auth, db, functions, mapDoc, lifetreesCollection, lightHousesCollection, pulsesCollection } from './core';
 import { myPublicName, myNaming } from './accounts';
 // getCommunityByDomain lives in ./spaces; trees ↔ spaces is a runtime-safe cycle (both use the
 // import only inside function bodies, so ESM resolves the binding lazily on call).
@@ -276,19 +276,10 @@ export const plantLifetree = async (data: Partial<Lifetree> & { anchorUid: strin
         validated: false, validatorId: null, status: 'HEALTHY'
         // Relations (guardian/keeper/…) live in the `links` collection — no legacy arrays.
     });
-    // A GUARDED (nature) tree has NO Root Vision — like a bed, it is stood-for, not dreamed
-    // forward; its welcome lives in `body`. A LIFETREE's Root Vision is its idea-twin, born the
-    // same moment WITH its own genesis chain (the 2026-07-17 twin ring), not mute.
-    // A SECRET tree has no Root Vision either: a vision reads as public, and would betray the tree.
-    if (plantingType === 'LIFETREE') {
-        const visionGenesis = await createBlock('0', { msg: 'Birth' }, Date.now());
-        await addDoc(visionsCollection, {
-            lid: uuidv7(),
-            lifetreeId: treeDoc.id, authorId: data.anchorUid, title: "Root Vision", body: data.body,
-            genesisHash: visionGenesis, latestHash: visionGenesis, blockHeight: 0,
-            createdAt: serverTimestamp(), domain,
-        });
-    }
+    // NO VISION IS BORN WITH A TREE ANY MORE (ring 2026-11-17). Until then a LIFETREE's planting
+    // also wrote a "Root Vision" tied by the `lifetreeId` field. A vision now stands on its own:
+    // a carer grows one from the tree afterwards (the tree's page, off the planting flow), and
+    // it is grounded there by a link (domain/grounding). The tree's own words stay in `body`.
     // A guarded (nature) tree is GUARDED, not worn: its planter is its first guardian —
     // the edge lives in the LIN, and the session lists it under guarded trees, not avatars.
     if (plantingType === 'GUARDED') {

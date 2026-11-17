@@ -16,7 +16,8 @@ import { LoveButton } from './ui/LoveButton';
 import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse, getLifetreeById, exportTree, getPersonPresence } from '@backend';
 import { showsPersonName } from '../domain/publicName';
 import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../domain/unmint';
-import { Pulse, type Lifetree } from '../types';
+import { Pulse, type Lifetree, type Vision } from '../types';
+import { isSecretTree } from '../domain/secretTree';
 import { canToggleValidation, isExplicitlyValidatedTree } from '../utils/validation';
 import { canReachTree, type ReachTargetProfile } from '../utils/reachPermissions';
 import { treeCircle } from '../domain/views/circle';
@@ -35,6 +36,7 @@ import { FullViewButton } from './ui/FullView';
 import { EditableName } from './ui/EditableName';
 import { TREE_NAME_MAX, normalizeTreeName, treeNameProblem } from '../domain/treeName';
 import { OfferingsTo } from './offerings/OfferingsTo';
+import { TreeVisions } from './lifetree/TreeVisions';
 interface LifetreeDetailProps {
     tree: Lifetree;
     onClose: () => void;
@@ -45,6 +47,9 @@ interface LifetreeDetailProps {
     // The place being viewed — the gardens search honours its scope.
     host?: GardenHost;
     onCreatePulse: () => void;
+    // The ground (ring 2026-11-17): grow a vision from this tree, and open one that stands here.
+    onGrowVision?: () => void;
+    onViewVision?: (vision: Vision) => void;
     onReachTree?: (tree: Lifetree) => void;
     onViewPulse: (pulse: Pulse) => void;
     onAlertGuardians?: () => void;
@@ -69,7 +74,7 @@ const ActionBtn = ({ onClick, disabled, title, color, icon, label }: { onClick?:
     </button>
 );
 
-export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection, carrying, onCarry, host }: LifetreeDetailProps) => {
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onGrowVision, onViewVision, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection, carrying, onCarry, host }: LifetreeDetailProps) => {
    const { t } = useLanguage();
    // Session-derived values from context (were prop-drilled from App).
    const { lightseed, activeTree, isAdmin, isSuperAdmin, isInitiate, nameAs } = useSession();
@@ -352,6 +357,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
        ...(isSuperAdmin && (isAnchor || isCarer) && onCarry && !isEditing
            ? [{ key: 'carry', label: carrying ? t('carrying_label') : t('carry_a_pulse'), icon: <Icons.Intelligence />, title: carrying ? t('carry_stop_title') : t('carry_start_title'), active: !!carrying, onClick: () => onCarry(carrying ? null : tree) }]
            : []),
+       // Off the main flow: a carer grows a vision from this tree (the form, then one yes).
+       ...((isAnchor || isCarer) && !isEditing && onGrowVision && !isSecretTree(tree) && tree.visibility !== 'private'
+           ? [{ key: 'grow_vision', label: t('ground_grow_here'), icon: <Icons.Sprout />, onClick: onGrowVision }] : []),
        ...(canEdit ? [{ key: 'edit', label: t('edit'), icon: <Icons.Pencil />, onClick: () => { setIsEditing(true); setSection('details'); } }] : []),
        // THE UNMINT DOOR (domain/unmint, ring 2026-08-15) lives here now (Zoltán, 2026-09-27):
        // the newest link, named in the title, live while the word is only its author's, disabled
@@ -513,6 +521,9 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                {/* The gardens this tree also stands in (grows_in) — the circle is its people,
                    the gardens its places. */}
                <TreeGardens tree={tree} canManage={canEdit} host={host} />
+               {/* The visions grounded in this tree, and the two ways a vision comes to stand here
+                   (domain/grounding): the circle is its people, the gardens its places, these its dreams. */}
+               <TreeVisions tree={tree} currentUserId={currentUserId} caresForTree={isAnchor || isCarer} onViewVision={onViewVision} onGrowVision={onGrowVision} />
                {/* The longitudinal walk (ring 2026-08-25) — SUPERADMIN-ONLY for now (it is
                    for later); loads lazily, only when opened. */}
                {isSuperAdmin && <div className="mt-4 mb-6"><TreeConnections tree={tree} /></div>}

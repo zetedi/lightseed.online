@@ -131,6 +131,7 @@ export const REL_ENDPOINTS: Readonly<Record<string, { from: WalkKind; to: WalkKi
   member: { from: 'person', to: 'community' },
   joined: { from: 'person', to: 'vision' },
   participant: { from: 'tree', to: 'vision' },
+  grounded_in: { from: 'vision', to: 'tree' },   // a consented ground (domain/grounding)
   rooted: { from: 'lightHouse', to: 'tree' },
   shelters: { from: 'lightHouse', to: 'community' },
   grows_in: { from: 'tree', to: 'community' },
@@ -141,7 +142,7 @@ export const REL_ENDPOINTS: Readonly<Record<string, { from: WalkKind; to: WalkKi
   invited_by: { from: 'person', to: 'community' },
 };
 // Knocks and transients weave no meaning: they are pending questions, not connections.
-export const SKIP_RELS: ReadonlySet<string> = new Set(['join_request', 'keeper_request', 'party']);
+export const SKIP_RELS: ReadonlySet<string> = new Set(['join_request', 'keeper_request', 'party', 'ground_request']);
 // The ends a walk may follow for this rel, or null when the rel weaves nothing.
 export const walkEndsOf = (rel: string): { from: WalkKind; to: WalkKind } | null =>
   SKIP_RELS.has(rel) ? null : (Object.hasOwn(REL_ENDPOINTS, rel) ? REL_ENDPOINTS[rel] : null);

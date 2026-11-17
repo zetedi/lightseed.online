@@ -2910,3 +2910,53 @@ describe('a tree is kept, not owned — every keeper is equal, and the anchor is
     await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', `${ALICE}__keeper__keptTree`)));
   });
 });
+
+// THE GROUND (domain/grounding, 2026-11-17): the knock and the ground are both the server's to
+// make. ALICE authors vision1; BOB anchors treeB; MALLORY is no one to either.
+describe('THE GROUND: no client hand makes a knock or a ground; a knock may be withdrawn or declined', () => {
+  const ask = (by: string, over: Record<string, unknown> = {}) =>
+    ({ lid: 'x', type: 'link', rel: 'ground_request', from: 'vision1', to: 'treeB', requestedBy: by, createdAt: 1, ...over });
+  const ground = { lid: 'x', type: 'link', rel: 'grounded_in', from: 'vision1', to: 'treeB', createdAt: 1 };
+  const seedLink = (id: string, data: Record<string, unknown>) => env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'links', id), data);
+  });
+
+  it('NO client makes a knock: not the author, not the keeper, not a stranger, not staff', async () => {
+    for (const uid of [ALICE, BOB, MALLORY, STAFF]) {
+      await assertFails(setDoc(doc(db(uid), 'links', 'vision1__ground_request__treeB'), ask(uid)));
+    }
+    await assertFails(setDoc(doc(db(), 'links', 'vision1__ground_request__treeB'), ask(ALICE)));
+  });
+  it('NO client makes a ground: not the author, not the keeper, not staff', async () => {
+    await seedLink('vision1__ground_request__treeB', ask(ALICE));
+    for (const uid of [ALICE, BOB, STAFF]) {
+      await assertFails(setDoc(doc(db(uid), 'links', 'vision1__grounded_in__treeB'), ground));
+    }
+  });
+  it('the author withdraws the knock; a carer of the tree declines it; a stranger does neither', async () => {
+    await seedLink('vision1__ground_request__treeB', ask(ALICE));
+    await assertFails(deleteDoc(doc(db(MALLORY), 'links', 'vision1__ground_request__treeB')));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'links', 'vision1__ground_request__treeB')));
+    await seedLink('vision1__ground_request__treeB', ask(ALICE));
+    await assertSucceeds(deleteDoc(doc(db(BOB), 'links', 'vision1__ground_request__treeB')));
+  });
+  it('a standing ground is let go only through the server: neither side deletes the link, and no one edits it', async () => {
+    await seedLink('vision1__grounded_in__treeB', ground);
+    for (const uid of [ALICE, BOB, MALLORY]) {
+      await assertFails(deleteDoc(doc(db(uid), 'links', 'vision1__grounded_in__treeB')));
+    }
+    await assertFails(updateDoc(doc(db(BOB), 'links', 'vision1__grounded_in__treeB'), { birth: true }));
+  });
+  it('a vision named after its own author does not make its ground deletable (the from == uid clause)', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'visions', MALLORY), { authorId: MALLORY, title: 'Mine', visibility: 'public', loveCount: 0 });
+      await setDoc(doc(ctx.firestore(), 'links', `${MALLORY}__grounded_in__treeB`), { ...ground, from: MALLORY });
+    });
+    await assertFails(deleteDoc(doc(db(MALLORY), 'links', `${MALLORY}__grounded_in__treeB`)));
+  });
+  it('a vision is not handed to another: its author cannot rewrite authorId; staff may mend it', async () => {
+    await assertFails(updateDoc(doc(db(ALICE), 'visions', 'vision1'), { authorId: BOB }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'visions', 'vision1'), { title: 'A wider clearing' }));
+    await assertSucceeds(updateDoc(doc(db(STAFF), 'visions', 'vision1'), { authorId: BOB }));
+  });
+});

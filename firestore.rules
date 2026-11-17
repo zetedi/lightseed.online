@@ -999,6 +999,10 @@ service cloud.firestore {
         (
           (resource.data.authorId == request.auth.uid || isStaff())
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lid', 'loveCount'])
+          // A VISION IS NOT HANDED TO ANOTHER (2026-11-17): its author may not rewrite `authorId` —
+          // that would put words, a chain and a ground's consent under a name that never gave it.
+          // Staff keep the mend.
+          && (isStaff() || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authorId']))
           && (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['latestHash', 'blockHeight', 'genesisHash'])
             || (
@@ -1843,7 +1847,13 @@ service cloud.firestore {
         // its own hand below so the garden switch can bite on its own.
         // …and except descends_from (ring 2026-09-27): a gathering's lineage is minted only by
         // the server's duplicate hand, so a lineage can never be claimed, only made.
-        && ((staffHand('link_mint') && request.resource.data.rel != 'grows_in' && request.resource.data.rel != 'descends_from')
+        // …and except grounded_in and ground_request (domain/grounding, 2026-11-17): a ground is
+        // two consents, each judged by a law the rules cannot count — the knock is made only by
+        // the server's askGround, the ground only by acceptGround. No clause below names either
+        // rel, so no client hand creates one; a ground is removed by none but staff's mend
+        // (releaseGround is the hand that lets it go and marks both chains).
+        && ((staffHand('link_mint') && request.resource.data.rel != 'grows_in' && request.resource.data.rel != 'descends_from'
+             && request.resource.data.rel != 'grounded_in' && request.resource.data.rel != 'ground_request')
         || (isSignedIn() && request.resource.data.from == request.auth.uid
             && request.resource.data.rel == 'joined')
         || (isSignedIn() && request.resource.data.from == request.auth.uid
@@ -1961,7 +1971,10 @@ service cloud.firestore {
           && resource.data.get('rel', '') != 'recognises'
           && resource.data.get('rel', '') != 'shares_resources_with'
           && resource.data.get('rel', '') != 'accepts_coin_of'
-          && resource.data.get('rel', '') != 'descends_from')
+          && resource.data.get('rel', '') != 'descends_from'
+          // A ground's `from` is a VISION's id, and a vision's id is its author's to choose: one
+          // named after its own author must not make the ground deletable by this clause.
+          && resource.data.get('rel', '') != 'grounded_in')
         || isStaff()
         || (resource.data.get('rel', '') == 'participant' && isTreeKeeper(resource.data.from))
         // A KEEPER RELEASES A GUARDIAN (the mend of 2026-10-02). Since 2026-10-01 a guardian link
@@ -1984,6 +1997,12 @@ service cloud.firestore {
         // A door-keeper (owner or steward) can decline requests and remove members.
         || (resource.data.get('rel', '') in ['member', 'join_request']
             && isCommunityKeeper(resource.data.to))
+        // A vision's ask for ground: its author withdraws it, a carer of the tree declines it.
+        // (`from` is the vision, so the from == uid clause above never reaches it.)
+        || (resource.data.get('rel', '') == 'ground_request'
+            && (isTreeCarer(resource.data.to)
+                || (exists(/databases/$(database)/documents/visions/$(resource.data.from))
+                    && get(/databases/$(database)/documents/visions/$(resource.data.from)).data.authorId == request.auth.uid)))
         // A keepership knock is declined by the target's keeper (community or tree).
         // (Its author withdraws it via the from == uid clause above.) NOTE: `keeper` links
         // themselves are NOT listed here — a peer cannot remove a peer; a keeper leaves only

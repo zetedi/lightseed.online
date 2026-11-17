@@ -279,10 +279,9 @@ export const AppOverlays: React.FC<{
       {doors.showVisionModal && (
         <CreateVisionModal
           lightseed={lightseed}
-          activeTree={activeTree}
-          trees={myTrees}
+          groundIn={doors.visionGroundTree}
           onClose={() => doors.setShowVisionModal(false)}
-          onCreate={async (data: Parameters<typeof createVision>[0]) => { await createVision(data); }}
+          onCreate={async (data: Parameters<typeof createVision>[0]) => (await createVision(data)).id}
           uploading={uploading}
           handleImageUpload={handleImageUpload}
           uploadBase64Image={uploadBase64Image}

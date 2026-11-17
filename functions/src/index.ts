@@ -15,6 +15,7 @@ export { listUsersAsAdmin, deleteUserAsAdmin, deleteMyAccount, mintSsoToken } fr
 export { beingPreview, facePreview, sitemap, faceEvents } from "./preview";
 export { deriveImageVariants, releasePicture } from "./pictures";
 export { acceptOffering } from "./offeringCalls";
+export { askGround, acceptGround, releaseGround } from "./grounding";
 export { mintBlock, unmintBlock, acceptAlignment } from "./blocks";
 export { formCircleFromEvent, duplicateEvent } from "./circles";
 export { indexPersonLid, indexTreeLid, indexVisionLid, indexLightHouseLid, indexCommunityLid, indexPulseLid, backfillLidIndex } from "./lidIndex";

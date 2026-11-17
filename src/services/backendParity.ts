@@ -25,6 +25,7 @@ same<typeof import('./firebase/media')>({} as typeof import('./independent/media
 same<typeof import('./firebase/trees')>({} as typeof import('./independent/trees'));
 same<typeof import('./firebase/exportBeing')>({} as typeof import('./independent/exportBeing'));
 same<typeof import('./firebase/spaces')>({} as typeof import('./independent/spaces'));
+same<typeof import('./firebase/grounding')>({} as typeof import('./independent/grounding'));
 same<typeof import('./firebase/governance')>({} as typeof import('./independent/governance'));
 same<typeof import('./firebase/pulses')>({} as typeof import('./independent/pulses'));
 same<typeof import('./firebase/watering')>({} as typeof import('./independent/watering'));

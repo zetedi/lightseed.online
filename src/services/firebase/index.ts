@@ -10,6 +10,7 @@ export * from './media';
 export * from './trees';
 export * from './exportBeing';
 export * from './spaces';
+export * from './grounding';
 export * from './governance';
 export * from './pulses';
 export * from './watering';

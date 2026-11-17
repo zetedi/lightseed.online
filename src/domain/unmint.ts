@@ -30,6 +30,7 @@ export interface UnmintPulseFacts {
   matchId?: string;           // alignment sync-blocks are CO-MINTED across two chains
   matchedLifetreeId?: string;
   offeringId?: string;        // an accepted offering's twin (ring 2026-09-06): co-minted, co-held
+  groundAct?: string;         // a ground's block (domain/grounding): written on two chains, co-held
 }
 
 export type UnmintRefusal = Extract<DomainKey,
@@ -45,7 +46,8 @@ export const isCoHeld = (pulse: UnmintPulseFacts, authorUid: string): boolean =>
   || (pulse.vetoes || []).length > 0
   || !!pulse.matchId
   || !!pulse.matchedLifetreeId
-  || !!pulse.offeringId;
+  || !!pulse.offeringId
+  || !!pulse.groundAct;
 
 // Which refusals the STAFF HAND may pass through (worn with the amber SuperDot — power by
 // role, not authorship): co-holding and authorship are social guards a steward may override

@@ -44,7 +44,11 @@ import type { Being } from './being';
 // proposal; the matching reverse edge is the other community's own attestation. Reciprocity is
 // derived, never stored as status and never read for authority. The first vocabulary is limited
 // to mutual meanings so reversing an edge cannot silently change the statement.
-export type LinkRel = 'guardian' | 'keeper' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request' | 'grows_in' | 'collaborates_with' | 'recognises' | 'shares_resources_with' | 'accepts_coin_of' | 'descends_from';
+export type LinkRel = 'guardian' | 'keeper' | 'steward' | 'observer' | 'member' | 'joined' | 'participant' | 'join_request' | 'rooted' | 'shelters' | 'invited_by' | 'welcomed_by' | 'party' | 'keeper' | 'keeper_request' | 'grows_in' | 'collaborates_with' | 'recognises' | 'shares_resources_with' | 'accepts_coin_of' | 'descends_from' | 'grounded_in' | 'ground_request';
+// 'grounded_in' / 'ground_request' (domain/grounding, 2026-11-17): a VISION stands in a tree — from =
+// the vision's id, to = the tree's. The request is the author's knock; the ground is minted only by
+// the server (functions/acceptGround) after a carer of the tree says yes, and let go only by
+// releaseGround; the rules let the author write the knock and nothing else. Neither grants anything.
 // 'descends_from' (ring 2026-09-27): a duplicated EVENT names the occurrence it was copied from —
 // from = the copy, to = the original; minted only by the server's duplicate hand, append-only.
 // A lineage is a TREE of these edges (one root, many stems), never a hash chain: an event is a

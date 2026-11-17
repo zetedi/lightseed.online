@@ -6215,3 +6215,71 @@ now starts the Storage emulator. theohouse.org reads its plan with its own SSO s
 shows the viewer a `blob:` address. Guaranteed: no anonymous fetch reaches a plan. Not
 guaranteed: any membership or keeper boundary (any account can read), and the independent
 API does not mirror this shelf yet.
+
+### 2026-11-17 — A vision stands on its own; ground is where it meets a tree
+
+The 2026-07-17 ring made tree and vision twins and gave the vision its own chain, choosing
+separation over collapse ("that separation is what grants freedom"). This ring completes it. The
+twin was still tied by a field (`vision.lifetreeId`) that could only name the author's own tree,
+so a visionary without land and a gardener without words had no place to meet, and a Root Vision
+was recognised by its title. Zoltán: "separate the visions from the trees and have the option to
+ground a vision in a tree, so gardeners and visionaries can meet there."
+
+Decided: a vision needs no tree, and any signed-in being may voice one. Grounding is a link
+(`vision__grounded_in__tree`): the author knocks (`ground_request`), a keeper or steward of the
+tree answers, and the server mints the ground and writes one block on each chain; either side
+lets go alone and the letting go is a second pair of blocks. Many to many, at most twelve grounds
+to a vision (standing asks counted with them) and twelve visions to a tree. Lifetrees and guarded
+trees may ground; a secret tree and a bed never; a tree grounds nothing seen further than itself.
+Grounding one's own vision in one's own tree is allowed and marked. The twin at planting becomes
+the planter's choice, and a Root Vision is known by its birth ground. The `participant` link is
+left as it is. **Only a grounded vision receives light** (Zoltán: "that makes the system
+regenerative"), and only through ground that is cared for now: a living tree, cared for within
+the year, validated if it is a lifetree (a guarded tree needs no validation of its own: Aspen's
+reading, open to correction).
+
+Built in this ring: the law (`src/domain/grounding.ts`), three server hands
+(`functions/askGround`, `acceptGround`, `releaseGround`), the link rules (no client hand makes a
+knock or a ground, staff's link mint is closed to both; a knock is withdrawn by its author or
+declined by a carer of the tree), the five `ground*` fields sealed into a block's hash, ground
+blocks co-held so they cannot be unminted.
+
+The review before commit changed the design in five places, kept here because they are the
+knots: (1) NOTHING PRIVATE TAKES GROUND. The first draft let a private tree ground a private
+vision; but the knock and the ground are links and the LIN is world-readable, so either would
+have published a hidden being's id, its author and where it stands. Private twins therefore
+cannot be migrated into `links`; they wait for a quiet room, as a secret tree's seats have. (2)
+The knock became the server's: a client-written knock could not be held to the caps or the kind
+of tree, and told anyone whether a tree id existed. (3) The yes stands only on a knock made by
+the one who is the vision's author now; and a vision's author may no longer rewrite `authorId`
+(a hole older than this ring: a vision could be put under another being's name). (4) A vision
+whose id is its author's uid would have made its ground deletable by the general "my own link"
+clause; that clause now excludes `grounded_in`. (5) Both blocks are authored by the hand that
+acted; the first draft attributed one to a tree's anchor who had done nothing, and an anonymous
+author's name could have carried a hidden vision's title onto a tree's chain.
+
+The faces (same ring, after Zoltán: "make it possible to add a vision to the tree, but not on the
+main flow; grow a vision from a tree on one side, ground a vision from the other"): planting a
+tree no longer births a vision. On a tree's page (its Circle tab, and "Grow a vision from this
+tree" in its actions) a carer grows a vision from the tree: the create form, then one yes, since
+author and carer are one hand and no knock is needed. Any signed-in being may ground one of their
+own visions there: at once if they care for the tree, otherwise as an ask its carers accept or
+decline. On a vision's page its author grounds it in one of their own trees, releases a ground,
+withdraws an ask; a vision with no ground and no old field says "Seeking ground". The create
+form no longer asks for a tree. Server refusals are dictionary keys, said in the reader's tongue.
+
+Guaranteed: both consents (one, when both hands are the same being), both chains, neither being
+private, no privilege. Not built, and said so: existing visions still carry `lifetreeId` and have
+no ground until the migration, which runs only on the guardian's word, and their pages show the
+old root card until a ground stands; a Root Vision is still recognised by its title, and no ground
+is yet marked `birth`; the sealed words of a ground's two blocks are English, as an offering's
+twins are; deleting a vision does not release its grounds (a carer of the tree can, so a tree's
+twelve places are not held for ever); the independent node does not know the law and still births
+a Root Vision at planting (seed/PARITY.md); a standing ground is not re-judged when a tree or
+vision changes who may see it; nothing limits how many visions knock at one tree; the ids of
+node-only beings still appear in the world-readable LIN; no light reaches a vision today, so the
+light rule binds the hand that will one day move it. The three server hands are type-checked,
+their law and the rules are tested (unit and emulator), and an independent review read them; the
+hands and the faces have not been run against a live backend.
+
+Corrects, does not rewrite, the 2026-07-17 ring.

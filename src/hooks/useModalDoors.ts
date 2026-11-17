@@ -40,7 +40,13 @@ export function useModalDoors() {
   const closeOffer = () => { setShowOfferModal(false); setOfferTo(null); };
   // The offering being retold (its own modal layer, nested on the offering profile).
   const [editingOffering, setEditingOffering] = useState<Pulse | null>(null);
-  const [showVisionModal, setShowVisionModal] = useState(false);
+  const [showVisionModal, setShowVisionModalRaw] = useState(false);
+  // GROWN FROM A TREE (ring 2026-11-17): the tree the create-vision form was opened from, when it
+  // was — the newborn vision is grounded there. Closing the form, or opening it anywhere else,
+  // forgets the tree.
+  const [visionGroundTree, setVisionGroundTree] = useState<Lifetree | null>(null);
+  const setShowVisionModal = (open: boolean) => { setVisionGroundTree(null); setShowVisionModalRaw(open); };
+  const openVisionFromTree = (tree: Lifetree) => { setVisionGroundTree(tree); setShowVisionModalRaw(true); };
   const [showGrowthPlayer, setShowGrowthPlayer] = useState<string | null>(null);
   const [matchCandidate, setMatchCandidate] = useState<Pulse | null>(null);
   const [editingEvent, setEditingEvent] = useState<Pulse | null>(null);
@@ -70,7 +76,7 @@ export function useModalDoors() {
     showEventModal, setShowEventModal,
     showOfferModal, setShowOfferModal, offerTo, openOffer, closeOffer,
     editingOffering, setEditingOffering,
-    showVisionModal, setShowVisionModal,
+    showVisionModal, setShowVisionModal, visionGroundTree, openVisionFromTree,
     showGrowthPlayer, setShowGrowthPlayer,
     matchCandidate, setMatchCandidate,
     editingEvent, setEditingEvent,

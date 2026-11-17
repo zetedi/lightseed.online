@@ -74,6 +74,10 @@ export const DOMAIN_KEYS = [
   'appreciate_offering_gone', 'appreciate_not_received', 'appreciate_already', 'appreciate_coin_refused',
   'spend_no_decision', 'spend_not_purchase', 'spend_no_offering', 'spend_nothing', 'spend_no_standing',
   'spend_not_passed', 'spend_listening', 'spend_unsigned', 'spend_already', 'spend_coin_refused', 'spend_glow_short',
+  // grounding — a vision asks a tree, a carer answers (domain/grounding, 2026-11-17)
+  'ground_secret_tree', 'ground_bed', 'ground_tree_gone', 'ground_tree_hidden', 'ground_vision_hidden', 'ground_ask_author_only',
+  'ground_already', 'ground_already_asked', 'ground_vision_full', 'ground_tree_full', 'ground_no_request',
+  'ground_accept_carer_only', 'ground_not_standing', 'ground_release_not_yours',
   // doors — a keeper claims a door by proof; a face door is granted (domain/doors)
   'door_not_hostname', 'door_is_node', 'door_is_domain', 'door_already', 'door_taken', 'hand_door_grant',
 ] as const;

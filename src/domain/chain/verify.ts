@@ -31,6 +31,9 @@ export const BLOCK_CONTENT_FIELDS = [
   // An accepted offering's twin blocks (ring 2026-09-06): each names the offering and the other
   // chain, so the agreement is sealed on both sides.
   'offeringId', 'offeringLid', 'offeringRole', 'offeringTwinOf', 'offeringTwinKind',
+  // A ground's two blocks (domain/grounding, 2026-11-17): each names the act, its side and the
+  // other chain, so the consent is sealed on both sides.
+  'groundAct', 'groundRole', 'groundTwinOf', 'groundTwinKind', 'groundSelf',
   'authorId', 'authorName', 'authorPersonName', 'authorPhoto', 'growthCategory', 'visionTitle',
   // The author's own signature (ring 2026-09-23, signed blocks): sealed INTO the hash, so a
   // signature can no more be swapped than a body. Absent on unsigned and server-hand blocks.

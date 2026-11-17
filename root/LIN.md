@@ -32,6 +32,8 @@ additionally grow a **Council**, the organ by which many become one voice.
    are rules-ACL denormalisations (e.g. `participantUids` on private reaches).
    The LIN is world-readable, with one quiet room: a secret tree's keeper seats
    are the same links under the same ids in `secretLinks`, read by its circle alone.
+   A field that names another being is an array of one: where two beings must both
+   consent, the relation is a link.
 3. **The chain is append-only.** Nothing on a chain is ever rewritten or deleted;
    wrong things are *marked* (the guardian veto), never erased.
 4. **Private by default, sensitive to light.** Opening something to the world is
@@ -98,10 +100,17 @@ a point of orientation on the map, rooted in a mother tree) ·
 stars at a coordinate; each stay a leaf on its chain, each tender a guardian. Home is soft and
 optional: a loose bed that gathers can **graduate**, its tree becoming the mother tree a Light
 House roots into. Seed → bed → gathering → Light House) ·
-*vision* (a being, the **idea-twin of a tree**: when a tree is planted its Root Vision is born the
-*same moment*; matter and idea, they diverge, each growing its own chain: the tree's of tending,
-the vision's of **contributions**. A vision keeps its tree as a **shadow** (`lifetreeId`), so the two
-growths can be laid side by side and compared) · *the Light Path* (the onboarding
+*vision* (a being: an idea a being voices, growing its own chain of **contributions**. It needs
+no tree to exist. A vision with no ground is **seeking ground** and says so on its face) ·
+*ground* (the relation where idea meets matter: a vision's author asks a tree, a carer of the
+tree says yes, and the yes is sealed once on both chains: `vision__grounded_in__tree`. One
+vision may stand in several trees, one tree may ground several visions. It records consent and
+grants nothing. A secret tree and a bed ground no one, and nothing private takes ground: the
+LIN is world-readable and a link would tell. Where a ground stands, the two chains can
+be laid side by side and compared. **Only a grounded vision receives light**, and only through
+soil that is cared for now) · *Root Vision* (the vision born the same moment as a tree, when its
+planter chooses to voice one: its first ground is its birth tree, and it is known by that birth
+ground, never by its title) · *the Light Path* (the onboarding
 trail, ultimately each community's own ruleset) · *reach* (one being speaking
 to another) · *carry* (lending hands to a being's voice, always disclosed) ·
 *consecrate* (create a Light House) · *release* (delete one) · *step in* (a

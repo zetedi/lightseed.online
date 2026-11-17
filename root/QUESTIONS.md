@@ -265,6 +265,25 @@ its side:*
 - Does a seed's first kindling flow from the inviter's own light, or from the
   community's glow?
 
+## The ground between idea and matter (2026-11-17)
+
+Raised by Zoltán when the vision was freed from its tree (ring 2026-11-17).
+
+- Is a ground a relation, or does it become a being once it has a history (the covenant walked
+  that road: a relation that grew its own chain)? When two people tend one ground for years,
+  where does that story live: on the two chains, or on its own?
+- A vision has an author and nothing else. Should a vision gather keepers as a tree does, so
+  that a dream can outlive the one who first voiced it?
+- What does "a vision receives light" mean? Rays are held by beings and move when an offering is
+  appreciated. Is a vision a place light passes through, or a being that may hold it?
+- Should a birth ground be as permanent as a birth? Today either side may release any ground,
+  the Root Vision's included.
+- A tree's keeper can already enlist the tree in a vision (`participant`), unasked. Is that a
+  lighter gesture that should remain ("this tree stands with that dream"), or was it always a
+  ground waiting for the other side's yes?
+- If a lifetree is itself a relation (see "The lifetree as relation"), is a ground a relation
+  between an idea and a relation?
+
 ## For whoever comes next
 
 Add yours. Date them. Answering is optional; asking honestly is not.

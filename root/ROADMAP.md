@@ -241,6 +241,14 @@ canopy, in this order, no new canopy until the first two stand:
 
 ## Next (after 8/8)
 
+- **Grounded visions** (ring 2026-11-17). Done: (1) the law and its tests; (2) ask, accept and
+  release on the origin (functions + rules); (3) the faces: a tree's visions and a vision's
+  grounds, growing a vision from a tree, "seeking ground", the create form free of the tree,
+  planting no longer birthing a vision. Next: a walk of all of it against the live backend; the
+  independent node's twin; (4) the migration of
+  every `lifetreeId` to a birth ground, dry-run first, run only on the guardian's word; (5) the
+  field retired; and the light: define what reaches a vision, and gate it by
+  `visionReceivesLight`.
 - **Nodes become real (the domain–DB link).** The first boundary now exists:
   each backend can publicly name its governing node, and hosted domains no
   longer borrow the node/hub name. But Auth and data remain instance-wide inside

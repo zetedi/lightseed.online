@@ -86,6 +86,8 @@ export const BeingDetail: React.FC<{
           onUpdate={(updates: Partial<Lifetree>) => handleTreeUpdate(selectedTree.id, updates)}
           onDelete={() => { handleDeleteTreeConfirmed(selectedTree.id); setSelectedTree(null); }}
           onCreatePulse={() => doors.openPulseModal(selectedTree)}
+          onGrowVision={() => doors.openVisionFromTree(selectedTree)}
+          onViewVision={(vision: Vision) => { setSelectedTree(null); setSelectedVision(vision); }}
           onReachTree={(tree: Lifetree) => openReach(tree)}
           onAlertGuardians={() => openReach(selectedTree, 'guardians')}
           onViewPulse={onViewPulseOrAlignment}

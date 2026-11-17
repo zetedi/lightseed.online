@@ -10,15 +10,18 @@ import { picturesToStore } from '../../domain/pictures';
 import { AutocompleteInput } from '../ui/AutocompleteInput';
 import { Lightseed, Lifetree } from '../../types';
 import { generateVisionImage } from '@backend/gemini';
-import { checkAndIncrementAiUsage } from '@backend';
+import { checkAndIncrementAiUsage, acceptGround } from '@backend';
 import { speak } from '../../utils/translations';
 
 interface CreateVisionModalProps {
   lightseed: Lightseed | null;
-  activeTree: Lifetree | null;
-  trees?: Lifetree[]; // the author's trees — to ground the vision in one
+  // GROWN FROM A TREE (ring 2026-11-17): when the form was opened from a tree's page by one of
+  // its carers, the newborn vision is grounded there in the same breath. Opened anywhere else, a
+  // vision is born with no tree, seeking ground.
+  groundIn?: Lifetree | null;
   onClose: () => void;
-  onCreate: (data: any) => Promise<void>;
+  // Returns the newborn vision's id, so it can be grounded.
+  onCreate: (data: any) => Promise<string>;
   uploading: boolean;
   handleImageUpload: (file: File, path: string) => Promise<string>;
   uploadBase64Image: (base64: string, path: string) => Promise<string>;
@@ -26,8 +29,7 @@ interface CreateVisionModalProps {
 
 export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   lightseed,
-  activeTree,
-  trees = [],
+  groundIn = null,
   onClose,
   onCreate,
   uploading,
@@ -41,9 +43,8 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   // The vision's pictures, in the author's order (domain/pictures): the first is its face.
   const [visionImages, setVisionImages] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<'public' | 'node' | 'private'>('public');
-  // Grounding — the tree this vision is rooted in, and the community/site domain it links to.
-  const groundOptions = trees.length ? trees : (activeTree ? [activeTree] : []);
-  const [groundTreeId, setGroundTreeId] = useState<string>(activeTree?.id || groundOptions[0]?.id || '');
+  // The community/site domain this vision links to. (Its tree, if any, is a ground: a link the
+  // server mints — domain/grounding — never a field on the vision.)
   const [visionDomain, setVisionDomain] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localUploading, setLocalUploading] = useState(false);
@@ -70,7 +71,6 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!lightseed || isSubmitting) return;
-    if (!groundTreeId) { showAlert('vision_need_tree'); return; }
     setIsSubmitting(true);
 
     try {
@@ -82,8 +82,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
         // scheme here, once, rather than every screen guessing later.
         const linkProblem = webLinkProblem(visionLink);
         if (linkProblem) { showAlert(linkProblem); setIsSubmitting(false); return; }
-        await onCreate({
-            lifetreeId: groundTreeId,
+        const visionId = await onCreate({
             authorId: lightseed.uid,
             title: visionTitle,
             body: visionBody,
@@ -93,6 +92,13 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
             visibility,
             domain: visionDomain.trim() || undefined,
         });
+        // Grown from a tree: the author is a carer of it, so one yes grounds the newborn vision.
+        // Should the ground be refused (the tree turned private meanwhile, a cap), the vision
+        // still stands — seeking ground — and the reason is said.
+        if (groundIn && visionId) {
+            try { await acceptGround(visionId, groundIn.id); }
+            catch (e) { showAlert((e instanceof Error && e.message) || 'err_action'); }
+        }
         onClose();
     } catch(e:any) { 
         showAlert(e.message); 
@@ -159,13 +165,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
         {/* Ground the vision — the tree it's rooted in + the community/site it links to. */}
         <div className="space-y-2 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 dark:border-emerald-900 dark:bg-emerald-950/40">
             <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300"><Icons.Tree /> {t('ground_vision')}</p>
-            <label className="block">
-                <span className="mb-1 block text-[11px] font-semibold text-slate-500">{t('vision_rooted_in_tree')}</span>
-                <select value={groundTreeId} onChange={e => setGroundTreeId(e.target.value)} className="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">
-                    {groundOptions.length === 0 && <option value="">{t('no_tree_plant_first')}</option>}
-                    {groundOptions.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
-                </select>
-            </label>
+            <p className="text-xs leading-relaxed text-slate-500">{groundIn ? t('ground_grows_from').replace('{name}', groundIn.name) : t('ground_seeking_sub')}</p>
             <AutocompleteInput
                 value={visionDomain}
                 onChange={setVisionDomain}

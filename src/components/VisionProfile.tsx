@@ -26,6 +26,7 @@ import { TreeParticipants } from './TreeParticipants';
 import { Lifetree } from '../types';
 
 import { Picture } from './ui/Picture';
+import { VisionGrounds } from './vision/VisionGrounds';
 import { PictureGallery } from './ui/PictureGallery';
 import { picturesOf } from '../domain/pictures';
 import { tabTone } from '../utils/tabTheme';
@@ -62,6 +63,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     const { t } = useLanguage();
     const { isAdmin, isSuperAdmin } = useSession();
     const isAuthor = currentUserId === vision.authorId;
+    const [groundCount, setGroundCount] = useState(0);
     const isRoot = vision.title.toLowerCase() === 'root vision';
     // A Root Vision on a GUARDED tree is a mistake (a guarded tree is stood-for, not dreamed
     // forward — it should never have had one), so its author may delete it. The Root Vision of a
@@ -300,7 +302,11 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         <SectionTitle title={t('vision')} sub={t('vision_calling_sub')} />
                         {/* Where this vision sits relative to a tree: the tree's OWN root vision is its
                             anchor; any other vision merely roots INTO a tree, connecting to that root. */}
-                        {rootTree && (
+                        {/* THE GROUND (ring 2026-11-17): the trees this vision stands in by consent, and
+                            its author's way to ground it. The card below is the OLD tie (the
+                            `lifetreeId` field), shown only while no ground stands. */}
+                        <VisionGrounds vision={vision} currentUserId={currentUserId} myTrees={myTrees} onViewTree={onViewTree} onCount={setGroundCount} />
+                        {rootTree && groundCount === 0 && (
                             <button
                                 onClick={() => onViewTree?.(rootTree)}
                                 className="mb-6 flex w-full items-center gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 text-left transition-colors hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/60"

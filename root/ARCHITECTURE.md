@@ -936,8 +936,29 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   = emulator suite. Deploy: `npm run build && firebase deploy --only
   hosting[,firestore:rules,functions]`. The firebase CLI is Homebrew-owned.
 
+- **A vision and its ground** (ring 2026-11-17): a vision is a top-level being (`visions`,
+  `authorId` frozen to every hand but staff's, its own chain). Its tie to matter is the LIN:
+  `visionId__grounded_in__treeId`, law in `domain/grounding.ts`, every step the server's
+  (`functions/src/grounding.ts`). `askGround` (the author) writes the `ground_request` knock after
+  judging kind, life, visibility and the cap; `acceptGround` (a keeper or steward of the tree)
+  re-reads both beings, the knock, the hand's standing and both counts in one transaction, refuses
+  a knock not made by the present author, mints the link (`self`, `birth`, `requestedBy`,
+  `acceptedBy`), deletes the knock and stages one block per chain through `blocks.stageBlock`
+  (`groundAct`, `groundRole`, `groundTwinOf`, `groundTwinKind`, `groundSelf`, all sealed, both
+  authored by the acting hand, seen as far as the more hidden being); `releaseGround` is either
+  side's hand and writes the second pair, on whichever chains still exist. The rules give clients
+  only the withdrawal or decline of a knock. Nothing private takes ground.
+
 ## Known debts (kept honestly)
 
+- Grounded visions are half-grown (ring 2026-11-17): the law, the server hands, the rules and
+  the two faces (`lifetree/TreeVisions`, `vision/VisionGrounds`, through `hooks/useGrounds`) exist
+  and planting no longer births a vision; but every older vision still carries `lifetreeId` and no
+  ground (its page, resonance, the community crossing and the independent node's schema still
+  read the field), a Root Vision is still known by its title, the independent node has no twin of
+  the law and still births a Root Vision, `groundKeepsFaith` is asked by no one when visibility
+  changes, deleting a vision leaves its grounds standing, and `visionReceivesLight` gates nothing
+  because no light reaches a vision yet.
 - Backend custody is now explicit, but backend division is not: hosted domains
   still share their authority node's instance-wide Auth and database. The next
   boundary is a self-describing export/import and independent backend bootstrap;
