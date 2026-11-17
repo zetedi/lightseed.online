@@ -604,7 +604,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                     <div className="min-w-0 flex-1">
                         {isEditing ? (
                             <div className="max-w-md space-y-2">
-                                <h1 dir="auto" className="break-words text-2xl font-light tracking-wide md:text-3xl">
+                                <h1 dir="auto" className="min-w-0 max-w-full break-words text-2xl font-light tracking-wide md:text-3xl">
                                     <EditableName name={tree.name} canEdit={canEdit} placeholderKey="tree_name_ph" savedKey="tree_name_saved" max={TREE_NAME_MAX} normalize={normalizeTreeName} problemOf={treeNameProblem} onSave={renameTree} />
                                 </h1>
                                 <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-xs font-bold uppercase tracking-widest text-white focus:outline-none dark:bg-slate-900/10" value={editShortTitle} onChange={e => setEditShortTitle(e.target.value)} placeholder={t('short_title')} />
@@ -615,7 +615,7 @@ export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpda
                                     right — the header stays one compact block, no extra rows. The
                                     name itself carries its pencil (EditableName), as a person's does. */}
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                    <h1 dir="auto" className="break-words text-2xl font-light tracking-wide md:text-3xl">
+                                    <h1 dir="auto" className="min-w-0 max-w-full break-words text-2xl font-light tracking-wide md:text-3xl">
                                         <EditableName name={tree.name} canEdit={canEdit} placeholderKey="tree_name_ph" savedKey="tree_name_saved" max={TREE_NAME_MAX} normalize={normalizeTreeName} problemOf={treeNameProblem} onSave={renameTree} />
                                     </h1>
                                     <button onClick={handleShare} title={t('share_this_tree')} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25 dark:bg-slate-900/15">

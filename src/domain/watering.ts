@@ -96,6 +96,13 @@ export const nextDueMillis = (tree: TreeLike): number => {
 export const isWateringOverdue = (tree: TreeLike, now: number = Date.now()): boolean =>
   isOnWateringSchedule(tree) && now >= nextDueMillis(tree);
 
+// THE DROPLET A TREE WEARS IN A LIST (2026-11-17): a tree on a watering schedule always carries
+// one — quiet while the next watering is still ahead, thirsty once it is due. A tree with no
+// schedule carries none: there is nothing to say about its water.
+export type WateringSign = 'none' | 'quiet' | 'thirsty';
+export const wateringSignOf = (tree: TreeLike, now: number = Date.now()): WateringSign =>
+  !isOnWateringSchedule(tree) ? 'none' : isWateringOverdue(tree, now) ? 'thirsty' : 'quiet';
+
 // Days until the next watering (negative once overdue). 0 when not scheduled.
 export const daysUntilWatering = (tree: TreeLike, now: number = Date.now()): number => {
   if (!isOnWateringSchedule(tree)) return 0;

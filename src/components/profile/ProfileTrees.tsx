@@ -8,11 +8,35 @@ import { ValidationBadge } from '../ValidationBadge';
 import { graphStore } from '../../services/store';
 import type { TendedTree } from '@backend';
 import { roleLabelKey } from '../../domain/treeCircle';
-import { isWateringOverdue } from '../../domain/watering';
+import { wateringSignOf, daysUntilWatering } from '../../domain/watering';
 import { sustainingSeven, SUSTAINING_SEVEN, type GuardianEdge } from '../../domain/sustainingSeven';
 import { isExplicitlyValidatedTree, daysUntilLapse } from '../../utils/validation';
 
 import { Picture } from '../ui/Picture';
+// THE DROPLET (2026-11-17): every tree on a watering schedule carries one in these lists, and it
+// always opens that tree's Care. Thirsty, it is the solid theme button it has been; while the next
+// watering is still ahead it is a quiet outline that says in how many days. No schedule, no droplet.
+const WaterDroplet: React.FC<{ tree: Lifetree; onOpenCare: () => void }> = ({ tree, onOpenCare }) => {
+  const { t } = useLanguage();
+  const sign = wateringSignOf(tree);
+  if (sign === 'none') return null;
+  const thirsty = sign === 'thirsty';
+  const label = thirsty ? t('needs_water_open_care') : t('water_next').replace('{n}', String(daysUntilWatering(tree)));
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onClick={(e) => { e.stopPropagation(); onOpenCare(); }}
+      className={`relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95 ${thirsty
+        ? 'btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30'
+        : 'border border-sky-200 bg-white text-sky-400 hover:text-sky-600 dark:border-sky-900 dark:bg-slate-900 dark:text-sky-500'}`}
+    >
+      <Icons.Droplet size={18} />
+    </button>
+  );
+};
+
 // The caring/validation state lives in the shell — the hero badge derives from the same
 // `caredIds`, so re-caring a tree here must re-light the badge up there immediately.
 interface ProfileTreesProps {
@@ -185,7 +209,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                     {isExplicitlyValidatedTree(tree) ? (
                       <div className="mt-1 flex items-center gap-2">
                         <ValidationBadge compact lapsed={lapsedValidated(tree)} />
-                        {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                        <WaterDroplet tree={tree} onOpenCare={() => onViewTree(tree, 'care')} />
                         {(lapsedValidated(tree) || fadingValidated(tree)) && (
                           <button onClick={(e) => { e.stopPropagation(); onCare(tree); }} disabled={caringId === tree.id} className="rounded-full btn-theme px-3 py-1 text-[10px] font-bold text-white disabled:opacity-50">
                             {caringId === tree.id ? '…' : t('care')}
@@ -196,7 +220,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                         )}
                       </div>
                     ) : (
-                      <span className="inline-flex items-center gap-2"><span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full dark:bg-slate-800">{t('pending')}</span>{isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}</span>
+                      <span className="inline-flex items-center gap-2"><span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full dark:bg-slate-800">{t('pending')}</span><WaterDroplet tree={tree} onOpenCare={() => onViewTree(tree, 'care')} /></span>
                     )}
                   </div>
                 </div>
@@ -240,7 +264,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                     <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span title={t('secret_tree_visibility')} className="inline-flex items-center gap-1 text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5 dark:bg-violet-950/40 dark:text-violet-300"><Icons.Key /> {t('type_secret')}</span>
-                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                      <WaterDroplet tree={tree} onOpenCare={() => onViewTree(tree, 'care')} />
                     </div>
                   </div>
                 </div>
@@ -272,7 +296,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                     <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold [&>svg]:h-3.5 [&>svg]:w-3.5 dark:bg-emerald-950/40 dark:text-emerald-300"><Icons.Venn /> {t(roleLabelKey(role))}</span>
-                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                      <WaterDroplet tree={tree} onOpenCare={() => onViewTree(tree, 'care')} />
                     </div>
                   </div>
                 </div>
@@ -305,7 +329,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
                     <p className="text-xs text-slate-500">{t('chain_block_height')}: {tree.blockHeight}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold dark:bg-sky-950/40 dark:text-sky-300"><Icons.Shield /> {t('role_guardian')}</span>
-                      {isWateringOverdue(tree) && <button type="button" title={t('needs_water_open_care')} aria-label={t('needs_water_open_care')} onClick={(e) => { e.stopPropagation(); onViewTree(tree, 'care'); }} className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full btn-theme text-white ring-2 ring-white/70 shadow-lg shadow-sky-900/30 transition-transform hover:scale-110 active:scale-95"><Icons.Droplet size={18} /></button>}
+                      <WaterDroplet tree={tree} onOpenCare={() => onViewTree(tree, 'care')} />
                     </div>
                   </div>
                 </div>

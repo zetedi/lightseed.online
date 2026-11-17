@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { standingAlertId, wateringAlertedToday, shouldAlertForWatering } from '../src/domain/watering';
+import { standingAlertId, wateringAlertedToday, shouldAlertForWatering, wateringSignOf } from '../src/domain/watering';
 
 // ONE STANDING ASK (ring 2026-09-11): a thirsty tree asks once, and the ask keeps saying today's count.
 describe('standingAlertId — which ask is rewritten, and which is left as said', () => {
@@ -33,5 +33,25 @@ describe('the daily gate still holds', () => {
   it('an overdue tree not yet asked today asks', () => {
     const overdue = { watering: { mode: 'scheduled', intervalDays: 1, lastWateredAt: now - 5 * 24 * 3600_000 } } as never;
     expect(shouldAlertForWatering(overdue, now)).toBe(true);
+  });
+});
+
+// THE DROPLET IN A LIST (2026-11-17): a scheduled tree always wears one; only its voice changes.
+describe('wateringSignOf — the droplet a tree wears in a list', () => {
+  const DAY = 86_400_000;
+  const now = 100 * DAY;
+  const tree = (w?: Record<string, unknown>) => ({ watering: w }) as never;
+
+  it('a tree with no schedule wears none', () => {
+    expect(wateringSignOf(tree(), now)).toBe('none');
+    expect(wateringSignOf(tree({ mode: 'none', intervalDays: 3, lastWateredAt: now - 30 * DAY }), now)).toBe('none');
+    expect(wateringSignOf(tree({ mode: 'scheduled', intervalDays: 0 }), now)).toBe('none');
+  });
+  it('is quiet while the next watering is still ahead', () => {
+    expect(wateringSignOf(tree({ mode: 'scheduled', intervalDays: 3, lastWateredAt: now - DAY }), now)).toBe('quiet');
+  });
+  it('is thirsty from the moment the watering is due', () => {
+    expect(wateringSignOf(tree({ mode: 'scheduled', intervalDays: 3, lastWateredAt: now - 3 * DAY }), now)).toBe('thirsty');
+    expect(wateringSignOf(tree({ mode: 'scheduled', intervalDays: 3, lastWateredAt: now - 9 * DAY }), now)).toBe('thirsty');
   });
 });
