@@ -70,3 +70,5 @@ export {faceFeedOf,feedDomainOf} from './faceEvents';
 export {pictureReleaseOf,docReferencesPicture} from './pictureRelease';
 // THE ENROLLMENT AT SCALE (ring 2026-11-14): one login per person at the issuer, planned for a census (scripts/enroll-seed-identities.mjs).
 export {enrollmentPlanOf,issuerAccountRepresentationOf,bindingsAfterEnrollment,normalizeEnrollmentEmail,issuerAccountWaits,adminTokenFresh} from './seedEnrollment';
+// THE GROUND (ring 2026-11-17): the law the origin's functions compile, asked here by seed/api/grounding.mjs.
+export {groundAskRefusal,groundAcceptRefusal,groundReleaseRefusal,groundBlocksOf,groundRefusal} from './grounding';

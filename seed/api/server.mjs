@@ -15,14 +15,15 @@ import { seedProfileInput } from '../../src/domain/seedProfile.mjs';
 import { createServer } from 'node:http';
 import { seedRequest } from '../../src/domain/seedRequest.mjs';
 import { seedDocCommand } from '../../src/domain/seedDocs.mjs';
-import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedInviteRequest, seedAiCommand, seedRepairCommand } from '../../src/domain/seedOrgans.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedInviteRequest, seedAiCommand, seedRepairCommand, seedGroundCommand } from '../../src/domain/seedOrgans.mjs';
 import { resolveTxt } from 'node:dns/promises';
 
 // The organs' own refusals (seed/schema/054), by weight.
 const ORGAN_ERRORS={LS003:[404,'community_missing'],LS050:[409,'not_watering'],LS051:[409,'already_witnessed'],LS052:[409,'appreciate_already'],
   LS053:[409,'ray_moved'],LS054:[409,'spend_already'],LS055:[409,'spend_glow_short'],LS056:[404,'unmint_not_mint'],LS057:[409,'unmint_not_last'],
   LS058:[404,'person_missing'],LS059:[409,'keeper_stands'],LS060:[409,'no_domain'],LS061:[409,'door_taken'],LS062:[409,'door_is_domain'],
-  LS063:[409,'door_already'],LS064:[409,'no_challenge'],LS065:[409,'challenge_expired'],LS066:[409,'domain_changed'],LS067:[429,'mail_quota'],LS068:[429,'ai_quota']};
+  LS063:[409,'door_already'],LS064:[409,'no_challenge'],LS065:[409,'challenge_expired'],LS066:[409,'domain_changed'],LS067:[429,'mail_quota'],LS068:[429,'ai_quota'],
+  LS070:[409,'ground_refused']}; // the ground's last guard (seed/schema/064): the soil refused what the law should already have
 const escapeHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /** @param {*} database @param {(authorization: string) => Promise<string | null>} [authenticate]
  * @param {{nodeDomain: string | null, media?: *, faceDoors?: string[], resolveTxt?: (name: string) => Promise<string[][]>, mail?: * | null, ai?: * | null, face?: * | null}} [options] */
@@ -50,14 +51,14 @@ export function createApi(database, authenticate = async () => null, options = {
         send(200,await database.docCommand(uid,command));
       }
       // THE ORGANS (ring 2026-11-02): light, staff, the account's departure, domain proofs and doors.
-      else if(['lightCommand','staffCommand','accountCommand','domainCommand','mailCommand','aiCommand','repairCommand'].includes(request.kind)) {
+      else if(['lightCommand','staffCommand','accountCommand','domainCommand','mailCommand','aiCommand','repairCommand','groundCommand'].includes(request.kind)) {
         if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(req.headers['content-type']??'')){send(415,{error:'json_required'});return;}
         const body=await readJsonBody(req,request.kind==='aiCommand'?4194304:request.kind==='mailCommand'?524288:4096);
         if(body.error){res.setHeader('Connection','close');send(body.status,{error:body.error});return;}
-        const command=request.kind==='lightCommand'?seedLightCommand(body.value):request.kind==='staffCommand'?seedStaffCommand(body.value):request.kind==='accountCommand'?seedAccountCommand(body.value):request.kind==='repairCommand'?seedRepairCommand(body.value)
+        const command=request.kind==='lightCommand'?seedLightCommand(body.value):request.kind==='staffCommand'?seedStaffCommand(body.value):request.kind==='accountCommand'?seedAccountCommand(body.value):request.kind==='repairCommand'?seedRepairCommand(body.value):request.kind==='groundCommand'?seedGroundCommand(body.value)
           :request.kind==='mailCommand'?seedMailCommand(body.value):request.kind==='aiCommand'?seedAiCommand(body.value):seedDomainCommand(body.value);
         if(!command){send(400,{error:'invalid_command'});return;}
-        send(200,request.kind==='lightCommand'?await database.lightCommand(uid,command):request.kind==='staffCommand'?await database.staffCommand(uid,command):request.kind==='repairCommand'?await database.repairCommand(uid,command)
+        send(200,request.kind==='lightCommand'?await database.lightCommand(uid,command):request.kind==='staffCommand'?await database.staffCommand(uid,command):request.kind==='repairCommand'?await database.repairCommand(uid,command):request.kind==='groundCommand'?await database.groundCommand(uid,command,options.nodeDomain)
           :request.kind==='accountCommand'?await database.accountCommand(uid,command)
           :request.kind==='mailCommand'?await database.mailCommand(uid,command,options.mail??null)
           :request.kind==='aiCommand'?await database.aiCommand(uid,command,options.ai??null)

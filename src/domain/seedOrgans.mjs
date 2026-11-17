@@ -21,6 +21,15 @@ export function seedStaffCommand(value) {
     || Object.keys(value).some(k => !['action', 'uid'].includes(k)) || !identifier(value.uid, 128)) return null;
   return { action: value.action, uid: value.uid };
 }
+// /v1/grounding/command (ring 2026-11-17) — THE GROUND: a vision's author asks a tree, withdraws
+// the ask (or a carer declines it), a carer accepts, either side releases. Two ids and nothing
+// else: who the hand is, what it stands over and whether the law allows it are the node's to read.
+export function seedGroundCommand(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !['ask', 'drop', 'accept', 'release'].includes(value.action)
+    || Object.keys(value).some(k => !['action', 'visionId', 'treeId'].includes(k))) return null;
+  for (const key of ['visionId', 'treeId']) if (!identifier(value[key]) || value[key].includes('/') || value[key].includes('__')) return null;
+  return { action: value.action, visionId: value.visionId, treeId: value.treeId };
+}
 // /v1/repairs/command (ring 2026-11-03) — THE LAST HANDS: the keeper asks the node for one of its own
 // audits and repairs, by the origin's names; `apply` rides only on the index audit, as the origin's did.
 export const SEED_REPAIR_KINDS = ['pulse_visibility', 'pulse_type_casing', 'tree_visibility', 'vision_chains', 'lids', 'match_ids', 'lid_index'];

@@ -14,7 +14,7 @@ export async function buildSeedDomain(output=resolve(root,'seed/generated')) {
     || Object.values(result.metafile.outputs).some(file=>file.imports.length))throw new Error('independent_domain_boundary_violation');
   const exports=Object.values(result.metafile.outputs).flatMap(file=>file.exports);
   if(['judgeBlockBirth','blockRecordOf','wateringResetOf','judgeBlockSignature','blockSignaturePayload','blockSignaturePreimage',
-    'judgeEventCircle','eventCircleDraft','eventCircleMemberUids','rootsABeing','eventDraftContent','eventDuplicationPayload','judgeAlignmentAcceptance','alignmentTwinContent','beingPath','offeringProblem','createBlock','judgeOfferingAccept','offeringTwinRecords','publicNameOf','isBlockSignatureClaim','touchMemoryOf','computeCanonicalHash','BLOCK_HASH_VERSION','blockContent','chooseCradle','wearsHost'].some(name=>!exports.includes(name)))throw new Error('independent_domain_export_missing');
+    'judgeEventCircle','eventCircleDraft','eventCircleMemberUids','rootsABeing','eventDraftContent','eventDuplicationPayload','judgeAlignmentAcceptance','alignmentTwinContent','beingPath','offeringProblem','createBlock','judgeOfferingAccept','offeringTwinRecords','publicNameOf','isBlockSignatureClaim','touchMemoryOf','computeCanonicalHash','BLOCK_HASH_VERSION','blockContent','chooseCradle','wearsHost','groundAskRefusal','groundAcceptRefusal','groundReleaseRefusal','groundBlocksOf'].some(name=>!exports.includes(name)))throw new Error('independent_domain_export_missing');
   await mkdir(output,{recursive:true});
   const path=resolve(output,'chain.mjs');
   const temporary=resolve(output,'chain-'+randomUUID()+'.tmp');

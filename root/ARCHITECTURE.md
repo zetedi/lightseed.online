@@ -766,6 +766,16 @@ SCALE). Not carried: the origin's pictures (URLs into its storage — a storage 
 
 ## Layers: the dependency direction
 
+**The two soils keep step (ring 2026-11-17).** The origin (Firebase) and the independent node
+(`seed/`) offer the same functionality. A feature is not finished until it stands on both: the
+law once in `src/domain` (compiled by the functions, bundled into `seed/generated`), the origin's
+hand in `functions/src` and its rules, the node's hand as a migration in `seed/schema`, a
+service and repository in `seed/api` and a command the shell speaks through
+`src/services/independent`, with the same names in `@backend` (`services/backendParity.ts`
+holds the two surfaces to each other at compile time), the same refusal keys, and tests on both
+(`tests/rules`, `tests/seed`). `unported()` and a "not ported" row in `seed/PARITY.md` are debts
+to burn down, never a resting state for new work.
+
 ```
 domain/     pure rules, no backend, no React: ALWAYS testable (tests/ mirrors it)
 adapters/   implementations of the graph Store port (Firestore today)
@@ -948,6 +958,12 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   authored by the acting hand, seen as far as the more hidden being); `releaseGround` is either
   side's hand and writes the second pair, on whichever chains still exist. The rules give clients
   only the withdrawal or decline of a knock. Nothing private takes ground.
+  ON THE INDEPENDENT NODE the same law runs behind `POST /v1/grounding/command`
+  (`{action: ask | drop | accept | release, visionId, treeId}`; `seed/api/grounding.mjs`,
+  migration 064): facts under locks, the shared law, an apply that proves the invariants again,
+  the same two blocks, the same refusal keys. The shell reaches either soil through
+  `@backend`'s `askGround`, `acceptGround`, `releaseGround`, `dropGroundAsk` and the four
+  readings (`hooks/useGrounds`), so the faces are one.
 
 ## Known debts (kept honestly)
 
@@ -955,8 +971,7 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   the two faces (`lifetree/TreeVisions`, `vision/VisionGrounds`, through `hooks/useGrounds`) exist
   and planting no longer births a vision; but every older vision still carries `lifetreeId` and no
   ground (its page, resonance, the community crossing and the independent node's schema still
-  read the field), a Root Vision is still known by its title, the independent node has no twin of
-  the law and still births a Root Vision, `groundKeepsFaith` is asked by no one when visibility
+  read the field), a Root Vision is still known by its title, `groundKeepsFaith` is asked by no one when visibility
   changes, deleting a vision leaves its grounds standing, and `visionReceivesLight` gates nothing
   because no light reaches a vision yet.
 - Backend custody is now explicit, but backend division is not: hosted domains

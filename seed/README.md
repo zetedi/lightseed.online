@@ -435,9 +435,23 @@ listed. Secret trees stay private even if an imported record claims public visib
 Planting requires a saved profile and configured `SEED_NODE_ORIGIN`. The server creates
 identities, timestamps, genesis hashes and domain. Per-anchor quotas are transactional;
 ordinary lifetrees and guarded trees use configured limits (193/132 defaults), secrets
-use 12. The Root Vision shares its lifetree's birth moment and visibility with a distinct
-genesis, while guarded trees receive the planter's guardian link. Secrets create no
-Root Vision, public link or community. Failure rolls back the entire birth.
+use 12. No vision is born with a tree (migration 064, ring 2026-11-17: until then a lifetree's
+birth also wrote a "Root Vision"); a vision is grown from the tree afterwards and grounded
+there. Guarded trees receive the planter's guardian link. Secrets create no public link or
+community. Failure rolls back the entire birth.
+
+THE GROUND (`seed/schema/064_grounding.sql`, `POST /v1/grounding/command`, the service
+`seed/api/grounding.mjs` over the repository `seed/api/db/grounding.mjs`): the origin's
+`askGround`, `acceptGround` and `releaseGround`, and the knock's withdrawal. A command is
+`{action: 'ask' | 'drop' | 'accept' | 'release', visionId, treeId}`. The node reads both beings,
+the knock, the standing ground, the hand's standing over the tree and the counts under locks
+(`seed.ground_context`), asks the shared law (`src/domain/grounding.ts`, the same source the
+origin's functions compile) and applies what it allowed (`seed.apply_ground_ask`,
+`seed.ground_ask_drop`, `seed.apply_ground`, `seed.apply_ground_release`), each apply proving
+the invariants again. A ground writes one block on each chain; refusals leave by the law's own
+keys. No other door writes `ground_request` or `grounded_in` (`/v1/links/command` names
+neither), and a vision's `authorId` is frozen to every hand but staff's.
+`tests/seed/grounding.postgres-test.ts`.
 The preview exposes these flows; bed planting, photos/media, tree invitations, visibility
 changes and chain appends are still being ported.
 

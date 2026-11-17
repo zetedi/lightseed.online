@@ -403,6 +403,7 @@ const en = {
   ground_tree_hidden: "This tree is more hidden than the vision. A ground would reveal it.",
   ground_vision_hidden: "A private vision takes no ground: the ground would tell the world it exists.",
   ground_signin: "Sign in to ground a vision.",
+  ground_refused: "The ground could not be made: something changed while it was being asked. Please try again.",
   ground_ask_author_only: "Only the one who voiced a vision may ask a tree to ground it.",
   ground_already: "This vision already stands in this tree.",
   ground_already_asked: "This vision has already asked this tree.",

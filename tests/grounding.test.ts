@@ -11,6 +11,10 @@ import { DOMAIN_KEYS } from '../src/domain/words';
 import { BLOCK_CONTENT_FIELDS } from '../src/domain/chain/verify';
 import { isCoHeld } from '../src/domain/unmint';
 import { VALIDATION_WINDOW_MS } from '../src/domain/guardianship';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { seedGroundCommand } from '../src/domain/seedOrgans.mjs';
+import { seedRequest } from '../src/domain/seedRequest.mjs';
 
 // THE GROUND (2026-11-17): a vision needs no tree; a ground is two sides agreeing, and grants nothing.
 
@@ -284,5 +288,30 @@ describe('the two rels in the walk\'s map', () => {
       'ground_already', 'ground_already_asked', 'ground_vision_full', 'ground_tree_full', 'ground_no_request',
       'ground_accept_carer_only', 'ground_not_standing', 'ground_release_not_yours'];
     for (const key of spoken) expect(DOMAIN_KEYS as readonly string[]).toContain(key);
+  });
+});
+
+// THE TWO SOILS KEEP STEP (Zoltán, 2026-11-17): the independent node offers the same ground.
+describe('the ground on the independent node — the command and the door', () => {
+  it('a command is an action and two ids, and nothing else', () => {
+    for (const action of ['ask', 'drop', 'accept', 'release']) {
+      expect(seedGroundCommand({ action, visionId: 'v1', treeId: 't1' })).toEqual({ action, visionId: 'v1', treeId: 't1' });
+    }
+    expect(seedGroundCommand({ action: 'mint', visionId: 'v1', treeId: 't1' })).toBeNull();
+    expect(seedGroundCommand({ action: 'ask', visionId: 'v1' })).toBeNull();
+    expect(seedGroundCommand({ action: 'ask', visionId: 'v1', treeId: 't1', self: true })).toBeNull();
+    expect(seedGroundCommand({ action: 'ask', visionId: 'a__grounded_in__b', treeId: 't1' })).toBeNull();
+    expect(seedGroundCommand({ action: 'ask', visionId: 'v1', treeId: 'x/y' })).toBeNull();
+    expect(seedGroundCommand(null)).toBeNull();
+  });
+  it('the door is signed-in POST only', () => {
+    expect(seedRequest('POST', '/v1/grounding/command', 'Bearer x', true)).toEqual({ kind: 'groundCommand' });
+    expect(seedRequest('POST', '/v1/grounding/command', null, false)).toMatchObject({ status: 401 });
+    expect(seedRequest('GET', '/v1/grounding/command', 'Bearer x', true)).toMatchObject({ status: 405 });
+  });
+  it('the independent backend speaks to its own node: no grounding hand is left unported', () => {
+    const source = readFileSync(resolve(__dirname, '../src/services/independent/grounding.ts'), 'utf8');
+    expect(source).not.toMatch(/unported\(/);
+    expect(source).toMatch(/session\.groundCommand\(/);
   });
 });

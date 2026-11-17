@@ -13,7 +13,7 @@ import { seedInviteCommand } from '../../domain/seedInvite.mjs';
 import { seedCommunityCommand } from '../../domain/seedCommunity.mjs';
 import { seedSessionIdentity } from '../../domain/seedBrowser';
 import { seedDocCommand } from '../../domain/seedDocs.mjs';
-import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedAiCommand, seedRepairCommand } from '../../domain/seedOrgans.mjs';
+import { seedLightCommand, seedStaffCommand, seedAccountCommand, seedDomainCommand, seedMailCommand, seedAiCommand, seedRepairCommand, seedGroundCommand } from '../../domain/seedOrgans.mjs';
 import type { IssuerDoor } from '../../domain/issuerDoors';
 
 // The issuer's own claims ride beside the token: a first sign-in may take its name from them
@@ -177,6 +177,12 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
       const command=seedRepairCommand(value);
       if(!command)return Promise.reject(new Error('invalid_command'));
       return request('/v1/repairs/command',command);
+    },
+    // THE GROUND (ring 2026-11-17): ask, drop, accept, release — two ids; the node judges.
+    groundCommand(value: unknown) {
+      const command=seedGroundCommand(value);
+      if(!command)return Promise.reject(new Error('invalid_command'));
+      return request('/v1/grounding/command',command);
     },
     treeInviteCommand(value: unknown) {
       const command=seedTreeInviteCommand(value);

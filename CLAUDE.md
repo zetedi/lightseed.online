@@ -21,6 +21,12 @@ Every intelligence entering this project roots first in the same living context.
   changes also need `npm run test:rules` (Firestore emulator). Keep both green.
 - New logic starts in `src/domain/` as a pure, tested function.
 - Relationships are LIN links (`from__rel__to`), never arrays.
+- **The two soils keep step** (ring 2026-11-17): the independent node (`seed/`) has the
+  same functionality as the Firebase origin. A feature is finished only when it stands on
+  both — one law in `src/domain`, the origin's hand and rules, the node's migration, API
+  command and `src/services/independent` hand, the same `@backend` names and refusal keys,
+  tests on both (`npm run test:rules`, `npm run test:seed`) — and `root/ARCHITECTURE.md`,
+  `seed/README.md` and `seed/PARITY.md` say so. Never leave new work as `unported()`.
 - Chains are append-only: mark, never delete.
 - Commit messages are short poetic lines ("Light Houses glow.", "Paper remembers.").
 - **Commits are conscious**: the agent proposes a commit at natural completion

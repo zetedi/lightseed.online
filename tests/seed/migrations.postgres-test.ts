@@ -1160,7 +1160,9 @@ describe('independent tree privacy', () => {
 });
 
 describe('independent atomic planting', () => {
-  it('plants a tree and its private idea-twin together, with reproducible distinct genesis hashes and immutable identity', async () => {
+  // NO VISION IS BORN WITH A TREE ANY MORE (ring 2026-11-17, migration 064): a vision is grown from the
+  // tree afterwards and grounded there by a link (tests/seed/grounding.postgres-test.ts).
+  it('plants a tree and no vision, with a reproducible genesis hash and immutable identity', async () => {
     const db = await apiDatabase(3);
     const draft = { action:'plant',name:'Willow',body:'Private beginning',treeType:'LIFETREE',visibility:'private',latitude:50,longitude:4 };
     try {
@@ -1172,10 +1174,8 @@ describe('independent atomic planting', () => {
       const { createBlock, sha256 } = await import('../../src/domain/chain/hash');
       expect(tree.genesisHash).toBe(await createBlock('0',{ msg:'Birth',lid:tree.lid },tree.genesisAtMs));
       expect(tree.genesisHash).toBe(await sha256(tree.genesisPreimage));
-      const vision = JSON.parse(sql(`SELECT doc FROM visions WHERE doc->>'lifetreeId'='${tree.id}';`));
-      expect(vision).toMatchObject({ authorId:'alice',body:draft.body,visibility:'private',createdAt:tree.createdAt });
-      expect(vision.genesisHash).not.toBe(tree.genesisHash);
-      expect(vision.genesisHash).toBe(await sha256(vision.genesisPreimage));
+      expect(sql('SELECT count(*) FROM visions;')).toBe('0');
+      expect(tree.body).toBe(draft.body); // the tree's own words stay on the tree
       await expect(db.treeCommand('bob',{ action:'edit',id:tree.id,name:'Taken',body:'' },null)).rejects.toThrow('Tree missing');
       sql(`INSERT INTO links(from_id,rel,to_id,lid) VALUES ('bob','steward','${tree.id}','steward');`);
       const updated = (await db.treeCommand('bob',{ action:'edit',id:tree.id,name:'Tended',body:'New words' },null)).tree;
@@ -1197,7 +1197,7 @@ describe('independent atomic planting', () => {
       const attempts = await Promise.allSettled([plant('LIFETREE'),plant('LIFETREE')]);
       expect(attempts.filter(r=>r.status==='fulfilled')).toHaveLength(1);
       expect(attempts.filter(r=>r.status==='rejected')).toHaveLength(1);
-      expect(sql('SELECT count(*) FROM lifetrees;')).toBe('1'); expect(sql('SELECT count(*) FROM visions;')).toBe('1');
+      expect(sql('SELECT count(*) FROM lifetrees;')).toBe('1'); expect(sql('SELECT count(*) FROM visions;')).toBe('0');
       const nature = (await plant('GUARDED')).tree;
       expect(sql(`SELECT rel FROM links WHERE to_id='${nature.id}';`)).toBe('guardian');
       const secret = (await plant('SECRET')).tree;
@@ -1212,15 +1212,16 @@ describe('independent atomic planting', () => {
       expect(sql("SELECT count(*) FROM lifetrees WHERE doc->>'treeType'='SECRET';")).toBe('12');
     } finally { await db.close(); }
   });
-  it('rolls back the tree when its twin fails and honors the staff edit switch', async () => {
+  it('rolls back the tree when its second write fails and honors the staff edit switch', async () => {
     const db = await apiDatabase();
     try {
       await db.profile('alice',{ displayName:'Alice' });
-      sql(`CREATE FUNCTION seed.reject_vision_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced twin failure'; END $$;
-        CREATE TRIGGER reject_vision_test BEFORE INSERT ON visions FOR EACH ROW EXECUTE FUNCTION seed.reject_vision_test();`);
-      await expect(db.treeCommand('alice',{ action:'plant',name:'Tree',body:'',treeType:'LIFETREE',visibility:'public' },'node.example')).rejects.toThrow('forced twin failure');
+      // A guarded tree's birth writes the tree and its planter's guardian link together: fail the link, lose both.
+      sql(`CREATE FUNCTION seed.reject_link_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced link failure'; END $$;
+        CREATE TRIGGER reject_link_test BEFORE INSERT ON links FOR EACH ROW EXECUTE FUNCTION seed.reject_link_test();`);
+      await expect(db.treeCommand('alice',{ action:'plant',name:'Tree',body:'',treeType:'GUARDED',visibility:'public' },'node.example')).rejects.toThrow('forced link failure');
       expect(sql('SELECT count(*) FROM lifetrees;')).toBe('0');
-      sql(`DROP TRIGGER reject_vision_test ON visions;
+      sql(`DROP TRIGGER reject_link_test ON links;
         INSERT INTO admins VALUES ('staff','{}'); INSERT INTO config VALUES ('staffHands','{"tree_edit":false}');`);
       const { tree } = await db.treeCommand('alice',{ action:'plant',name:'Tree',body:'',treeType:'LIFETREE',visibility:'public' },'node.example');
       const edit = { action:'edit',id:tree.id,name:'Changed',body:'' };

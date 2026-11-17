@@ -1,6 +1,6 @@
 import { linkId, type Link, type LinkRel } from './link';
 const relations: readonly LinkRel[] = ['guardian','keeper','steward','observer','member','joined','participant','join_request','rooted','shelters',
-  'invited_by','welcomed_by','party','keeper_request','grows_in','collaborates_with','recognises','shares_resources_with','accepts_coin_of','descends_from'];
+  'invited_by','welcomed_by','party','keeper_request','grows_in','collaborates_with','recognises','shares_resources_with','accepts_coin_of','descends_from','grounded_in','ground_request'];
 const identifier=(value:unknown):value is string=>typeof value==='string' && value.length>0 && value.length<=2048 && !/[\u0000-\u001f\u007f]/.test(value);
 
 // HTTP timestamps become the backend-neutral Stamp expected by existing graph consumers.

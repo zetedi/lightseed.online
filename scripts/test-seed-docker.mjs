@@ -282,9 +282,15 @@ volumes:
   assert.deepEqual((await get('/v1/beings?lid='+planted.lid,alice)).body,{being:{kind:'tree',id:planted.id,lid:planted.lid}});
   assert.equal(planted.anchorUid,'alice');
   assert.deepEqual((await get('/v1/visions?tree='+planted.id)).body.visions,[]);
-  const rootVisions=(await get('/v1/visions?tree='+planted.id,alice)).body.visions;
-  assert.equal(rootVisions.length,1);assert.equal(rootVisions[0].authorId,'alice');
-  assert.equal((await get('/v1/visions?id='+rootVisions[0].id)).status,404);
+  // THE GROUND (ring 2026-11-17, migration 064): no vision is born with a tree; a vision stands
+  // in a tree by consent. Here one being is both author and carer, so one yes grounds it.
+  assert.deepEqual((await get('/v1/visions?tree='+planted.id,alice)).body.visions,[]);
+  const soil=(await post('/v1/trees/command',{action:'plant',name:'Oak',body:'',treeType:'LIFETREE',visibility:'public'})).tree;
+  assert.equal((await post('/v1/grounding/command',{action:'accept',visionId:vision.id,treeId:soil.id})).self,true);
+  const grounds=(await get('/v1/links?to='+soil.id+'&rel=grounded_in')).body.links;
+  assert.equal(grounds.length,1);assert.equal(grounds[0].from,vision.id);assert.equal(grounds[0].self,true);
+  assert.equal(typeof (await post('/v1/grounding/command',{action:'release',visionId:vision.id,treeId:soil.id})).treePulseId,'string');
+  assert.deepEqual((await get('/v1/links?to='+soil.id+'&rel=grounded_in')).body.links,[]);
   assert.equal((await get('/v1/trees?id=' + planted.id)).status,404);
   assert.equal((await get('/v1/trees?id=' + planted.id,alice)).body.access.editable,true);
   const picturedTree = (await post('/v1/trees/command', { action:'set_pictures',id:planted.id,paths:['users/alice/docker.png'] })).tree;

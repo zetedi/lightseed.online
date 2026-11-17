@@ -16,6 +16,7 @@ import {prepareAlignmentAcceptance} from './alignments.mjs';
 import {prepareBlock} from './blocks.mjs';
 import * as organs from './organs.mjs';
 import * as pictures from './pictures.mjs';
+import * as grounding from './grounding.mjs';
 import * as repairs from './repairs.mjs';
 import {seedBlockCommand} from '../../src/domain/seedBlock.mjs';
 import {verifiesRotation,verifiesRecoveryCandidate,verifiesRecoveryWitness} from './signing.mjs';
@@ -37,6 +38,7 @@ import {alignmentsRepository} from './db/alignments.mjs';
 import {signingRepository} from './db/signing.mjs';
 import {mailRepository} from './db/mail.mjs';
 import {picturesRepository} from './db/pictures.mjs';
+import {groundingRepository} from './db/grounding.mjs';
 import {repairsRepository} from './db/repairs.mjs';
 
 const token=()=>randomBytes(24).toString('hex');
@@ -56,7 +58,7 @@ export function createNode(config) {
     communities:communitiesRepository(withSession),trees:treesRepository(withSession),media:mediaRepository(withSession),
     chains:chainsRepository(withSession),offerings:offeringsRepository(withSession),events:eventsRepository(withSession),
     alignments:alignmentsRepository(withSession),signing:signingRepository(withSession),mail:mailRepository(withSession),
-    pictures:picturesRepository(withSession),repairs:repairsRepository(withSession),
+    pictures:picturesRepository(withSession),repairs:repairsRepository(withSession),grounding:groundingRepository(withSession),
   };
   return {
     withSession,
@@ -343,6 +345,8 @@ export function createNode(config) {
     lightCommand:(uid,command)=>organs.lightCommand(withSession,uid,command),
     staffCommand:(uid,command)=>organs.staffCommand(withSession,uid,command),
     repairCommand:(uid,command)=>repairs.repairCommand({repository:db.repairs,uid,command}),
+    // THE GROUND (ring 2026-11-17): the origin's askGround / acceptGround / releaseGround, and the knock let go.
+    groundCommand:(uid,command,nodeDomain)=>grounding.groundCommand({repository:db.grounding,uid,command,nodeDomain}),
     accountCommand:(uid,command)=>organs.accountCommand(withSession,uid,command),
     domainCommand:(uid,command,context)=>organs.domainCommand(withSession,uid,command,context),
     close,

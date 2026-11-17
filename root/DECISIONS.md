@@ -6283,3 +6283,27 @@ their law and the rules are tested (unit and emulator), and an independent revie
 hands and the faces have not been run against a live backend.
 
 Corrects, does not rewrite, the 2026-07-17 ring.
+
+### 2026-11-17 — The two soils keep step
+
+The ground was built on the origin first and reached the independent node as stubs that refused
+by name and a "not ported" row. Zoltán, the same day: "make sure the independent node has all the
+changes. And important, from now on I would like the independent node to have the same
+functionality as the firebase one, and the architecture / api to reflect this."
+
+So it is now a working rule (CLAUDE.md) and a paragraph of the architecture: a feature is finished
+only when it stands on both soils, from one law in `src/domain`, under the same `@backend` names
+and the same refusal keys, tested on both. `unported()` and a "not ported" row are debts to burn
+down, never where new work comes to rest.
+
+The ground crossed in this ring: migration 064 (`seed.ground_context` and four applies, each
+re-proving consent, kind, life, visibility, the caps and both heads; `seed.rule_visions` freezing
+`authorId`; the plant command birthing no vision), `POST /v1/grounding/command`
+(`seed/api/grounding.mjs` over its repository), the shell's hand
+(`src/services/independent/grounding.ts`), `tests/seed/grounding.postgres-test.ts`. The soil
+keeps its own copy of "may this tree ground this vision" (`seed.ground_lawful`) beside the shared
+law, on purpose: an apply must refuse what the law forbids even if the API were wrong. One small
+difference is recorded, not hidden: the origin lets a knock be withdrawn or declined by a plain
+link delete under its rules; the node has a `drop` action, because its link command names
+neither rel. Not done: the node's separate preview (`seed/web`) shows no ground; the older gaps
+listed in `seed/PARITY.md` stand as they were, and this ring does not claim them closed.
