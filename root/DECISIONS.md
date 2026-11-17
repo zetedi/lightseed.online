@@ -6307,3 +6307,23 @@ difference is recorded, not hidden: the origin lets a knock be withdrawn or decl
 link delete under its rules; the node has a `drop` action, because its link command names
 neither rel. Not done: the node's separate preview (`seed/web`) shows no ground; the older gaps
 listed in `seed/PARITY.md` stand as they were, and this ring does not claim them closed.
+
+### 2026-11-17 — The audit of the two soils
+
+Zoltán: "close the gaps." The independent backend had no refusing stub left, so the gaps were not
+where the inventory said: `seed/PARITY.md` was partly stale in both directions. An audit read
+code against code. Its largest finding was in no list at all: joining a community and asking to
+keep a tree were refused on the independent node before leaving the browser, because the shell
+writes those relations through one port and the node's store sent every relation to a link
+command that names none of them, while the commands that do the work already stood unused.
+
+Closed, each with a test: the community door and the keeping knock (`domain/seedLinkRoute`); the
+plans shelf's sign-in gate at the media door; a picture name both soils accept; the commons'
+starting vocabulary moved to the domain and seeded on both; the initiates' mirror; the genesis
+hash; a Light House found by its true name; real upload progress; the farewell letter (migration
+065). `seed/PARITY.md` now says what the code says, and names what remains.
+
+Left open because each is a decision and not a repair: a departed account's login surviving at
+the issuer; polling where the origin listens; a session that lasts one tab; and the typeface
+still fetched from Google. `exportNode` stays thinner and says so. Not verified: refusal-by-refusal
+equivalence of the older hands, and the rule functions collection by collection.

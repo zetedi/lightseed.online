@@ -47,11 +47,12 @@ const serve = async () => {
     return { status: r.status, body: await r.json() as Json };
   };
   const read = async (path: string) => (await fetch(base + '/v1/media?path=' + encodeURIComponent(path))).status;
+  const readAs = async (who: string, path: string) => { const r = await fetch(base + '/v1/media?path=' + encodeURIComponent(path), { headers: { authorization: 'Bearer ' + tokens[who] } }); return { status: r.status, cache: r.headers.get('cache-control') }; };
   const files = () => readdirSync(directory).filter(n => /^[a-f0-9]{64}$/.test(n)).sort();
   const manifest = (path: string): Json | null => { const row = cluster.sql(`SELECT doc FROM seed.media_objects WHERE path='${path}'`); return row ? JSON.parse(row) as Json : null; };
   const orphans = () => cluster.sql(`SELECT coalesce(string_agg(hash, ',' ORDER BY hash), '') FROM seed.media_orphans`);
   const close = async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await db.close(); rmSync(directory, { recursive: true, force: true }); };
-  return { db, media, upload, release, read, files, manifest, orphans, close, sql: cluster.sql };
+  return { db, media, upload, release, read, readAs, files, manifest, orphans, close, sql: cluster.sql };
 };
 
 const people = (sql: (q: string) => string) => sql(`
@@ -208,6 +209,23 @@ describe('the release of a picture', () => {
       // The lock is the soil's: a malformed ask is refused, and a stranger's publish still needs standing.
       await expect(t.db.withSession('alice', (c: any) => c.query('SELECT seed.media_lock($1::text[])', [['nope']]))).rejects.toMatchObject({ code: '22023' });
       await expect(t.db.mediaPublish('bob', 'communities/c1/pages/3.png', manifest, t.media.present)).rejects.toMatchObject({ code: '42501' });
+    } finally { await t.close(); }
+  });
+});
+
+// THE PLANS SHELF (the origin's storage.rules, ring 2026-10-27; mirrored 2026-11-17).
+describe('the plans shelf is for signed-in beings', () => {
+  it('an anonymous fetch is refused, a signed-in being reads, and no shared cache keeps it; every other picture stays public', async () => {
+    const t = await serve();
+    try {
+      people(t.sql);
+      expect((await t.upload('alice', 'plans/house/draft.png', await picture(7))).status).toBe(403); // staff alone write there
+      expect((await t.upload('staff', 'plans/house/draft.png', await picture(7))).status).toBe(201);
+      expect((await t.upload('alice', 'users/alice/open.png', await picture(8))).status).toBe(201);
+      expect(await t.read('plans/house/draft.png')).toBe(401);
+      expect(await t.readAs('alice', 'plans/house/draft.png')).toEqual({ status: 200, cache: 'private, no-store' });
+      expect(await t.read('users/alice/open.png')).toBe(200);
+      expect(await t.read('plans/house/nothing.png')).toBe(401); // refused before the shelf says what it holds
     } finally { await t.close(); }
   });
 });

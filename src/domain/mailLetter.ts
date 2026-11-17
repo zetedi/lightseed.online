@@ -127,6 +127,13 @@ export const welcomeLetterOf = (f: { displayName: string; nodeName: string }): {
   text: `Welcome to ${f.nodeName}${f.displayName ? ', ' + f.displayName : ''}. You have planted your intention. Now you may plant your tree.`,
 });
 
+// ── THE FAREWELL: the last letter, when a being erases its own account (functions/accounts.ts) ──
+// The origin's words, kept whole. Sent only for one's own departure, never when staff remove an account.
+export const farewellLetterOf = (f: { nodeName: string }): { subject: string; text: string } => ({
+  subject: `Goodbye from ${f.nodeName}`,
+  text: 'It was wonderful to have you. See you!',
+});
+
 // ── THE LETTER OF A PLACE: its footer, one per subscriber (functions letters.ts) ──────────────
 export const newsletterFooterOf = (f: { placeName: string; unsubscribeUrl: string }, voice: MailVoice): string =>
   `<hr style="border:0;border-top:1px solid #eee;margin:28px 0;"/>`

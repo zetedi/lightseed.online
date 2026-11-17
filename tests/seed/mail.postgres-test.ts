@@ -286,6 +286,15 @@ describe('the effects of a write', () => {
       t.sql(`INSERT INTO persons VALUES ('bob','{"uid":"bob","lid":"${LID(2)}","displayName":"Bob"}');
         INSERT INTO pulses VALUES ('p9','{"lid":"${LID(29)}","type":"reach","authorId":"bob","recipientUid":"alice","visibility":"private"}');`);
       expect(t.rows(`SELECT count(*) AS n FROM seed.outbox`)[0].n).toBe(1);
+      // THE FAREWELL (ring 2026-11-17): a being that erases its own account is told goodbye at the
+      // address the node held — the origin's words — and the account is gone before the letter leaves.
+      expect((await t.post('/v1/account/command', { action: 'delete_mine' }, undefined, verified)).body).toMatchObject({ deleted: true });
+      expect(t.rows(`SELECT kind, ref FROM seed.outbox WHERE kind='farewell'`)).toEqual([{ kind: 'farewell', ref: 'alice@x.y' }]);
+      expect(t.rows(`SELECT count(*) AS n FROM users WHERE id='alice'`)[0].n).toBe(0);
+      const before = t.sent.length;
+      expect(await t.tick()).toMatchObject({ letters: 1, delivered: 1 });
+      expect(t.sent[before]).toMatchObject({ to: ['alice@x.y'], subject: 'Goodbye from Example node' });
+      expect(t.sent[before].text).toBe('It was wonderful to have you. See you!');
     } finally { await t.close(); }
   });
 });

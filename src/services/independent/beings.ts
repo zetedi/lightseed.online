@@ -22,9 +22,12 @@ export const findBeingByLid: typeof F.findBeingByLid = async (lid) => {
             default: return null; // a person, or a kind this door does not open
         }
     }
-    // Light Houses are not in the being lookup; their true name is asked of the houses the reader may see.
-    const houses = await docList<LightHouse>('light_houses', { limit: 100 }).catch(() => ({ items: [] as (LightHouse & { id: string })[] }));
-    const house = houses.items.find(h => h.lid === lid);
+    // Light Houses are not in the being lookup: the house is asked for by its true name (the document
+    // door's `f.lid` filter over an index the soil already had — before 2026-11-17 only the first
+    // hundred readable houses were searched),
+    // and the row policy still decides whether this reader may see it.
+    const houses = await docList<LightHouse>('light_houses', { where: { lid }, limit: 1 }).catch(() => ({ items: [] as (LightHouse & { id: string })[] }));
+    const house = houses.items[0];
     return house ? { kind: 'lightHouse', lightHouse: house } : null;
 };
 // The lid index is a Firestore finding aid; this node resolves true names from the records themselves.

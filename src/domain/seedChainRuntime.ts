@@ -47,7 +47,7 @@ export {alignmentForSyncBlock} from './alignmentMatch';
 // THE MAIL ORGAN (ring 2026-11-03): the voice, the letters, the audience and the sender's name, so the
 // courier (seed/api/mail.mjs) writes the same letters the functions write for the origin node.
 export {mailVoiceOf,dressMailText} from './mailVoice';
-export {systemMailOf,systemLetterOf,reachRecipientsOf,reachThrottleIdOf,reachMayWrite,reachLetterOf,knockLetterOf,knockRecipientsOf,welcomeLetterOf,
+export {systemMailOf,systemLetterOf,reachRecipientsOf,reachThrottleIdOf,reachMayWrite,reachLetterOf,knockLetterOf,knockRecipientsOf,welcomeLetterOf,farewellLetterOf,
   newsletterFooterOf,unsubscribeUrlOf,newsletterHeadersOf,mailSettlementOf,outboxIsStale,MAIL_DAILY_LIMIT,MAIL_MAX_ATTEMPTS} from './mailLetter';
 export {audienceOf,newsletterSendRefusal,normalizePlaceDomain} from './newsletter';
 export {notificationOf} from './push';

@@ -284,6 +284,24 @@ Raised by Zoltán when the vision was freed from its tree (ring 2026-11-17).
 - If a lifetree is itself a relation (see "The lifetree as relation"), is a ground a relation
   between an idea and a relation?
 
+## Where the two soils still differ (2026-11-17)
+
+Left open by Zoltán after the audit of the two soils (ring 2026-11-17), to be decided, not
+forgotten. `seed/PARITY.md` carries the same list beside the code.
+
+- **A departed account's login.** On the independent node a being who erases their account is
+  forgotten by the node, but the identity provider still holds their address and credentials.
+  Should the API be trusted with an admin credential for the issuer so it can remove the login
+  itself, or should removal be an operator's ceremony? What does a node owe a being who leaves?
+- **Listening or asking.** The origin hears changes as they happen; the node asks every few
+  seconds. Is a live channel (server-sent events) worth its weight on a small node?
+- **How long a session lasts.** On the node a session lives in one tab. Keeping it longer means
+  keeping tokens where a script could reach them. Which matters more here, ease or caution?
+- **The typeface.** The shell still fetches Montserrat from Google: the one call an independent
+  node makes outward on its own. Bring the font home as a package, as files, or leave it?
+- Smaller, and accepted for now: the whole-node export is thinner on the independent node; the
+  independent node plants no Mahameru of its own; the preview (`seed/web`) shows no ground.
+
 ## For whoever comes next
 
 Add yours. Date them. Answering is optional; asking honestly is not.

@@ -33,12 +33,42 @@ const mediaPathOf = (url: unknown): string | null => {
 const byBirth = <T extends { createdAt?: unknown }>(items: T[]) => items.sort((a, b) => toMillis(a.createdAt) - toMillis(b.createdAt));
 
 export const MAHAMERU_IMAGE: typeof F.MAHAMERU_IMAGE = '/mahameru.svg';
-// THE GENESIS and the initiates' mirror are the origin node's own ceremonies (Mahameru, the git
-// ledger): an independent node has neither until its own first-keeper bootstrap, so at boot these
-// have nothing to ensure and say so by doing nothing.
+// THE GENESIS CEREMONY is each node's own: the origin's `ensureGenesis` plants Mahameru and its
+// first communities; an independent node is founded by its first-keeper bootstrap (`seed:keeper`)
+// and whatever crossed into it, so at boot there is nothing for the shell to plant here. That one
+// difference is deliberate and recorded (seed/PARITY.md). The other two hands do here what they do
+// on the origin (ring 2026-11-17, the parity audit — until then both did nothing, so a node's
+// initiates were empty and its About page showed no founding hash).
 export const ensureGenesis: typeof F.ensureGenesis = async () => {};
-export const syncInitiatesMirror: typeof F.syncInitiatesMirror = async () => {};
-export const getGenesisHash: typeof F.getGenesisHash = async () => null;
+// The initiates' mirror: the git-committed ledger this build ships (/initiates.json) written into
+// `initiates`, stale rows removed. Superadmin only, as on the origin — the document rule lets
+// staff alone write there — and best-effort.
+export const syncInitiatesMirror: typeof F.syncInitiatesMirror = async () => {
+    const uid = currentUid();
+    if (!uid || !(await checkIsSuperAdmin(uid).catch(() => false))) return;
+    try {
+        const { loadInitiates } = await import('../../domain/initiation');
+        const ledger = (await loadInitiates()).filter(i => i.uid);
+        const wanted = new Map(ledger.map(i => [i.uid as string, i]));
+        for (const row of await docAll<{ id: string }>('initiates')) {
+            if (!wanted.has(row.id)) await docCommand({ action: 'delete', collection: 'initiates', id: row.id });
+        }
+        for (const i of ledger) {
+            await docCommand({ action: 'set', collection: 'initiates', id: i.uid as string, data: {
+                handle: i.handle, name: i.name, lid: i.lid, pubkey: i.pubkey,
+                ...(i.domain ? { domain: i.domain } : {}),
+                ...(i.genesis ? { genesis: true } : {}),
+                initiatedAt: i.initiatedAt, syncedAt: serverTime(),
+            } });
+        }
+    } catch (e) { console.warn('Initiates mirror sync skipped', e); }
+};
+// The founding hash, read from the genesis tree when this node carries it (it crosses with the
+// origin's soil); null when it does not, and the About page falls back as on the origin.
+export const getGenesisHash: typeof F.getGenesisHash = async () => {
+    try { return (await docGet<Lifetree>('lifetrees', 'GENESIS_TREE'))?.genesisHash ?? null; }
+    catch { return null; }
+};
 export const getNetworkStats: typeof F.getNetworkStats = async (domain) => {
     const d = domain?.replace(/^www\./, '');
     const scope: Record<string, string> = d ? { domain: d } : {};

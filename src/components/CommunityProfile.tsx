@@ -9,6 +9,7 @@ import { OutwardLink } from './ui/OutwardLink';
 import { MahameruAvatar } from './ui/MahameruAvatar';
 import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../types';
 import { doorOf, checkInvite } from '../domain/communityDoor';
+import { uploadFileName } from '../domain/imageBytes';
 import { updateCommunity, uploadImage, releasePicture, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, getPersonName, joinCommunityOpen, joinCommunityWithInvite, requestKeepership, withdrawKeeperRequest, formCommunityFromCircle } from '@backend';
 import { formCircleRefusal, isTreeCircle } from '../domain/treeCircle';
 import { isDomainVerified } from '../domain/domainVerification';
@@ -683,7 +684,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             announce('lightHouses');
             notify(t('lh_consecrated_toast'));
           }}
-          onUploadImage={(file) => uploadImage(file, `communities/${community.id}/lightHouses/${file.name}`)}
+          onUploadImage={(file) => uploadImage(file, `communities/${community.id}/lightHouses/${uploadFileName(file.name, Date.now())}`)}
           onOpen={onViewLightHouse}
           adoptable={adoptable}
           onAdopt={async (s) => {

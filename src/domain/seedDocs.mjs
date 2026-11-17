@@ -22,7 +22,7 @@ export const SEED_DOC_COLLECTIONS = Object.freeze({
   pulses: { filters: ['authorId', 'lifetreeId', 'treeId', 'visionId', 'communityId', 'type', 'visibility', 'domain', 'threadId', 'reachTreeId',
     'chatTreeId', 'recipientUid', 'hash', 'lightHouseId', 'care', 'offeredToKind', 'offeredToId', 'isMatch', 'careAlert', 'offeringId', 'stayId', 'matchId'],
   arrays: ['participantUids'] },
-  light_houses: { filters: ['anchorUid', 'domain', 'communityId', 'visibility'] },
+  light_houses: { filters: ['anchorUid', 'domain', 'communityId', 'visibility', 'lid'] },
   communities: { filters: ['anchorUid', 'domain', 'formation', 'rootLifetreeId'], arrays: ['domainAliases'] },
   alignments: { filters: ['initiatorUid', 'targetUid', 'initiatorTreeId', 'targetTreeId', 'status'] },
   covenants: { filters: ['proposedBy', 'alignmentId', 'status'] },

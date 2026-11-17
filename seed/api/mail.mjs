@@ -13,7 +13,7 @@
 import {randomBytes} from 'node:crypto';
 import {uuidv7} from '../../src/domain/uuidv7.mjs';
 import {mailVoiceOf,systemMailOf,systemLetterOf,reachRecipientsOf,reachThrottleIdOf,reachMayWrite,reachLetterOf,knockLetterOf,knockRecipientsOf,
-  welcomeLetterOf,newsletterFooterOf,unsubscribeUrlOf,newsletterHeadersOf,mailSettlementOf,outboxIsStale,MAIL_DAILY_LIMIT,MAIL_MAX_ATTEMPTS,
+  welcomeLetterOf,farewellLetterOf,newsletterFooterOf,unsubscribeUrlOf,newsletterHeadersOf,mailSettlementOf,outboxIsStale,MAIL_DAILY_LIMIT,MAIL_MAX_ATTEMPTS,
   audienceOf,newsletterSendRefusal,normalizePlaceDomain,notificationOf,mailFromOf,charterOwnDomains,charterOrigin,publicNameOf,independentCharterProblem} from '../generated/chain.mjs';
 import {refuse} from './organs.mjs';
 import {mailRepository} from './db/mail.mjs';
@@ -132,6 +132,14 @@ export function createMailOrgan({charter,nodeOrigin=null,postal=null,transport=n
       const words=welcomeLetterOf({displayName:text(context.displayName),nodeName:charter.name});
       const letter=systemLetterOf(words.text,'','Open',voiceOf(null));
       return {letters:[letterOf({to:[context.email],uid:effect.ref,subject:words.subject,html:letter.html,text:letter.text})],throttles:[],knocks:[]};
+    }
+    // THE FAREWELL (ring 2026-11-17, migration 065): the account is already gone, so the effect
+    // carries the address itself — the last thing the node knew of it — and nothing else is read.
+    if(effect.kind==='farewell') {
+      if(!transport || typeof effect.ref!=='string' || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(effect.ref))return nothing;
+      const words=farewellLetterOf({nodeName:charter.name});
+      const letter=systemLetterOf(words.text,'','Open',voiceOf(null));
+      return {letters:[letterOf({to:[effect.ref],subject:words.subject,html:letter.html,text:letter.text})],throttles:[],knocks:[]};
     }
     return nothing;
   }

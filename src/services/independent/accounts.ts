@@ -274,7 +274,7 @@ export const setNewsletterSubscription: typeof F.setNewsletterSubscription = asy
     try {
         await triggerSystemEmail(email, subscribe ? 'Newsletter subscription confirmed' : 'Newsletter unsubscribed',
             subscribe ? 'You are now subscribed to the lightseed newsletter.' : 'You have been unsubscribed from the lightseed newsletter.', uid);
-    } catch { /* the letter organ is not grown; the subscription stands */ }
+    } catch { /* the letter could not be queued (no mail transport on this installation); the subscription stands */ }
 };
 export const getNewsletterDraftData: typeof F.getNewsletterDraftData = async (place) => {
     let lastSentAt = (place?.newsletterLastSentAt as { toMillis?: () => number } | undefined) ?? null;

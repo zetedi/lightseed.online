@@ -17,6 +17,7 @@ import { AI_DAILY_TEXT_LIMIT, providerLabel } from '../../domain/aiAccess';
 import { openingOnUser, type AiTurn, type AiRailProvider, type AiCredentialScope } from '../../domain/aiRequest';
 import { NODE_CLAUDE_MODEL } from '../../domain/aiPrompts';
 import { composeSystemPrompt, getActiveIntelligenceId, DEFAULT_INTELLIGENCE_ID } from '../intelligenceVoice';
+import { defaultPersonas, defaultIntelligences } from '../../domain/intelligenceCommons';
 export { composeSystemPrompt, setActiveIntelligenceId, setActiveIntelligenceDuties, getActiveIntelligenceId, DEFAULT_INTELLIGENCE_ID } from '../intelligenceVoice';
 export type { CredentialScope } from '../firebase/intelligence';
 
@@ -124,5 +125,20 @@ export const promoteToDefaultVoice: typeof F.promoteToDefaultVoice = async (inte
         connected: intel.connected ?? true, keyHint: intel.keyHint, enabled: true, public: true } as Partial<Intelligence>);
     if (intel.id !== DEFAULT_INTELLIGENCE_ID) await updateIntelligence(intel.id, { public: true } as Partial<Intelligence>);
 };
-// The commons' starting vocabulary is seeded by the installation (seed:commons), a staff hand's work.
-export const ensureIntelligenceCommons: typeof F.ensureIntelligenceCommons = async () => {};
+// The commons' starting vocabulary (domain/intelligenceCommons), written where it is missing —
+// the origin's hand, on this soil: staff alone may write personas and GENESIS voices (the
+// document rules), and the console calls this only for the superadmin. Best-effort, as there.
+export const ensureIntelligenceCommons: typeof F.ensureIntelligenceCommons = async (authorId) => {
+    try {
+        for (const persona of defaultPersonas()) {
+            if (!(await docGet('personas', persona.id))) await docCommand({ action: 'create', collection: 'personas', id: persona.id, data: { ...persona, createdAt: serverTime() } });
+        }
+        for (const intelligence of defaultIntelligences(DEFAULT_MODEL)) {
+            if (await docGet('intelligences', intelligence.id)) continue;
+            const { id, ...rest } = intelligence;
+            await docCommand({ action: 'create', collection: 'intelligences', id, data: { ...rest, lid: uuidv7(), authorId: authorId || 'GENESIS_SYSTEM', createdAt: serverTime() } });
+        }
+    } catch (e) {
+        console.warn('ensureIntelligenceCommons skip', e);
+    }
+};

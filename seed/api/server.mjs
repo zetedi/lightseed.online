@@ -5,7 +5,7 @@ import {seedBlockCommand} from '../../src/domain/seedBlock.mjs';
 import {blockRefusalStatus} from './blocks.mjs';
 import {seedSigningCommand} from '../../src/domain/seedSigning.mjs';
 import {seedVisionCommand} from '../../src/domain/seedVision.mjs';
-import { seedMediaUploadPath, seedMediaReleaseInput, SEED_MEDIA_MAX_BYTES } from '../../src/domain/seedMedia.mjs';
+import { seedMediaUploadPath, seedMediaReleaseInput, seedMediaNeedsSignIn, SEED_MEDIA_MAX_BYTES } from '../../src/domain/seedMedia.mjs';
 import { seedLinkCommand } from '../../src/domain/seedLink.mjs';
 import { seedTreeInviteCommand } from '../../src/domain/seedTreeInvite.mjs';
 import { seedTreeCommand } from '../../src/domain/seedTree.mjs';
@@ -116,11 +116,15 @@ export function createApi(database, authenticate = async () => null, options = {
       }
       else if(request.kind === 'mediaRead') {
         if(!options.media){send(503,{error:'media_unavailable'});return;}
+        // The plans shelf is for signed-in beings (domain/seedMedia): refused before anything is read,
+        // and never kept by a shared cache.
+        const shelved=seedMediaNeedsSignIn(request.path);
+        if(shelved && uid===null){send(401,{error:'authentication_required'});return;}
         const manifest=await database.mediaGet(request.path);
         if(!manifest){send(404,{error:'media_missing'});return;}
         const descriptor=manifest[request.variant],bytes=await options.media.read(descriptor);
         res.setHeader('Content-Type',descriptor.type);res.setHeader('Content-Length',bytes.length);
-        res.setHeader('Cache-Control','public, max-age=31536000, immutable');res.setHeader('ETag','"'+descriptor.hash+'"');
+        res.setHeader('Cache-Control',shelved?'private, no-store':'public, max-age=31536000, immutable');res.setHeader('ETag','"'+descriptor.hash+'"');
         res.setHeader('Content-Security-Policy',"default-src 'none'; sandbox");res.writeHead(200);res.end(bytes);
       }
       else if(request.kind === 'mediaUpload') {

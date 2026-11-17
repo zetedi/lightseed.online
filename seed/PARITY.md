@@ -2,12 +2,17 @@
 
 The release contract is [Architecture → Independent node](../root/ARCHITECTURE.md#independent-node).
 This inventory is implementation tracking, not permission to release a subset. A green
-API test does not prove the original application's corresponding feature works without
-Firebase. The original React app still uses Firebase; `seed/web` is a separate preview.
+API test does not prove a feature works in a browser against a live node.
 
-Inspected sources: `functions/src/index.ts`, `src/services/firebase/`, the independent
-API and migrations 000–058. Updated 2026-11-03. Recheck the source exports before
-claiming parity: this table must not silently freeze the existing application's scope.
+**The rule (ring 2026-11-17): the two soils keep step.** The independent node has the same
+functionality as the origin; a feature is finished only when it stands on both. The one shell
+is built for either soil (`npm run build` → Firebase, `npm run build:independent` → this node)
+through `@backend`; `seed/web` is a separate, smaller preview and is not the measure.
+
+Inspected sources: `functions/src/index.ts`, `src/services/firebase/`, `firestore.rules`,
+`storage.rules`, the independent API and migrations 000–065. Audited 2026-11-17 (code read
+against code, not this file against itself); the audit's findings and what was closed are in
+"The audit of 2026-11-17" below. Recheck the source exports before claiming parity.
 
 ## Server responsibilities
 
@@ -40,18 +45,54 @@ claiming parity: this table must not silently freeze the existing application's 
 
 ## Client data and subscriptions
 
-All eighteen existing Firebase service modules still require full-call-site review and
-backend-neutral integration. This is in addition to the server exports above.
+Every export of every Firebase service module has a twin in `src/services/independent`
+(`src/services/backendParity.ts` holds the two surfaces to each other at compile time) and none
+is an `unported()` stub (recount: `grep -rn "unported(" src/services/independent`). Document
+reads and writes go through the document door (migrations 050–053), server hands through the
+organs and commands named in the table above, relations through the graph port — where since
+2026-11-17 the consent-bearing ones are routed to their own commands (`domain/seedLinkRoute`).
 
-| Modules | Independent coverage |
+## The audit of 2026-11-17
+
+Closed in that ring (each with a test):
+
+| Gap found | Closed by |
 | --- | --- |
-| `core`, `accounts`, `authority`, `staffHands`, `governance` | Separate OIDC/session, own-name profile, personal logo/banner settings and public name search support; full original app sessions, profile/settings, authority management and subscriptions remain. |
-| `trees`, `beings`, `spaces` | Tree reads/plant/basic edits/resignation; community reads/founding/basic edits/membership/invitations/keepership. Vision reads now cover visibility, author/root/joined filters and precise newest-first pagination; standalone vision creation and author/staff prose/visibility edits and ordered local pictures are available. Release preserves contribution records and removes only authorized incoming links. Remaining vision appearance, contributions, houses, complete settings and the rest of each module remain. |
-| `media`, `exportBeing`, `subgraph` | Local binary upload/download transport and browser session upload exist; original media call sites and complete signed export/import execution remain. An offline signed additive-merge planner exists; it does not import data. |
-| `pulses`, `engagement`, `covenants`, `holds`, `stays`, `watering`, `light` | Pulse reads and tree/vision chain append now have independent endpoints, with a separate visible-history preview. Standalone writes, original-app services/subscriptions and the remaining modules are unported. |
+| Joining a community (ask, accept, decline, remove, leave, stewards) and a tree's keeping knock were refused before leaving the browser: the shell writes them through `graphStore.link/unlink`, and the node's store sent every relation to the link command, which names none of them. | `src/domain/seedLinkRoute.ts` maps each write to the community or tree command the node already had; `src/services/independent/store.ts` uses it. `tests/seedLinkRoute.test.ts`. |
+| The `plans/…` shelf (signed-in readers only in `storage.rules`) was world-readable through `/v1/media`. | `seedMediaNeedsSignIn`; the media door answers 401 to an anonymous read and never lets a shared cache keep it. `tests/seed/pictures.postgres-test.ts`. |
+| A Light House picture was filed under the file's own name: refused by the node's path law for spaces or non-ASCII letters, and for a repeated name. | `uploadFileName` (`domain/imageBytes`) at the one call site; both soils now file it the same way. |
+| The commons' starting personas and voices were seeded only on the origin (the list lived inside the Firebase service). | The list is `domain/intelligenceCommons`; `ensureIntelligenceCommons` writes what is missing on this node too. |
+| The initiates' mirror was never written here, though `seed.ai_gate`, the initiates rule and the recovery witnesses read it. | `syncInitiatesMirror` mirrors the build's ledger for the superadmin, as on the origin. |
+| `getGenesisHash` always answered null. | Reads the genesis tree when this node carries it. |
+| A Light House was found by its true name only among the first hundred readable houses. | The document door's `f.lid` filter (the index was already in 059). |
+| An upload reported 0 then 100 and showed no badge. | Real percentages (XMLHttpRequest where the browser offers it) and the shared network badge. |
+| No farewell letter when a being erased its own account. | Migration 065 (`users_farewell` trigger → outbox `farewell`), the courier's branch, the origin's words in `domain/mailLetter`. `tests/seed/mail.postgres-test.ts`. |
 
-The graph abstraction in `services/store.ts` and `services/graph.ts` is a start, not a
-replacement for document queries, live subscriptions, upload/download or server calls.
+Differences that REMAIN, named so no one mistakes them for parity:
+
+- **A departed account's login survives at the issuer.** The node removes the identity binding,
+  so the account is gone here; the issuer (Keycloak) still holds the person's address and
+  credentials. The origin deletes the Auth user. Closing it means either giving the API an
+  issuer-admin credential or an operator ceremony that removes departed logins: a keeper's decision.
+- **No live channel.** Where the origin listens (profile, mail status, staff hands, the reach
+  inbox) the node polls every 4–60 seconds. Closing it is a server-sent-events door.
+- **A session lasts one tab.** Tokens are kept per tab; a new tab or a browser restart goes back
+  through the issuer (silently if its own session cookie still stands). The origin's sign-in
+  persists. Closing it is a choice about where tokens may be kept: a keeper's decision.
+- **`exportNode` is thinner**: member links only, no secret seats, no collection outside the
+  document door; its manifest says so.
+- **`ensureGenesis` does nothing here, on purpose**: the origin plants Mahameru and its first
+  communities; an independent node is founded by its first-keeper bootstrap and what crosses in.
+- **A knock for ground** is withdrawn or declined through the `drop` action here and by a link
+  delete under the rules on the origin.
+- **The typeface** is still fetched from Google Fonts by the shared `index.html`.
+- `seed/web` (the preview) has no ground screen.
+
+Not verified by the audit: line-by-line equivalence of every refusal in `mintBlock`,
+`unmintBlock`, `acceptAlignment`, the key callables, `acceptOffering`, the event and circle hands,
+the domain proofs and the face functions (counterparts exist and are tested; they were not
+compared refusal by refusal), and the 051/052 rule functions against `firestore.rules`
+collection by collection beyond the changes made since the translation.
 
 ### Main application integration (the seam, 2026-11-01)
 
@@ -65,10 +106,8 @@ replacement for document queries, live subscriptions, upload/download or server 
   service module exists in the independent module with a compatible type. A hand the node has
   not grown is `unported('module.name')`: it refuses by name when called (toast key
   `backend_unported`) and never falls back to Firebase.
-- `hooks/useLifeseed.ts` still derives the superadmin flag from the charter email for the
-  Firebase backend; the independent backend answers every staff check false until standing is
-  readable through the API. Independent authority must come from governed local database
-  records, never from UI flags.
+- Staff standing on the independent backend is read from the node's own records (`admins`,
+  `config/superadmin`), never from a UI flag or the charter email.
 - Independent hands grown so far (the rest answer unported; recount with
   `grep -c "unported('" src/services/independent/*.ts`):
 
@@ -84,11 +123,8 @@ replacement for document queries, live subscriptions, upload/download or server 
   Total on 2026-11-03 (evening): 0 hands still refusing (recount with `grep -c "unported('" src/services/independent/*.ts`); the
   refusal `unported` stays in `src/services/independent/unported.ts` for the next hand the origin grows before this node does.
 - Walked on 2026-11-01 against a local Compose installation (edge + API + issuer, headless Chrome):
-  boot, sign-in through the issuer, profile, planting a lifetree (tree, Root Vision and person
-  minted by the node). Rooms that still refuse: Forest (getMyPrivateTreesAt), Visions
-  (fetchVisions), Offerings (fetchOfferingPulses), Cocreate (generateOracleQuote,
-  getPublicIntelligences, getOrgCollabs), Wallet (placesOfRays), Messages (fetchMyReaches).
-  A reload forgets the session (tokens in memory): silent re-authentication is the next step.
+  boot, sign-in through the issuer, profile, planting a lifetree. The rooms that refused that day
+  have since been grown; a full signed-in walk of the present build is release evidence still owed.
 - `adapters/firestore.ts` supplies graph reads/writes to the Firebase backend's
   `store.ts`; `adapters/independent.ts` supplies reads to the independent `store.ts`, whose
   writes go through the link command. Migration
@@ -102,10 +138,6 @@ replacement for document queries, live subscriptions, upload/download or server 
   and capacity lifecycle are not implemented by this graph operation. All five read
   shapes now have an independent adapter, including pagination, circle authorization
   and timestamp conversion; the shared graph service composes with it.
-- Personal appearance pictures now work in the preview, while
-  `components/profile/ProfileAppearance.tsx` still calls Firebase upload, account
-  writes and picture release. Palettes/inheritance and release must be ported too.
-
 ## Release evidence still required
 
 - Original application features exercised with Firebase network access unavailable. The anonymous

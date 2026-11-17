@@ -41,3 +41,13 @@ export const honestImageMime = (bytes: Uint8Array): string | null => {
 // A path's file name re-suffixed for the kind it really is (`a/b/1.webp` → `a/b/1.jpg`).
 export const withImageExtension = (path: string, kind: ImageKind): string =>
   `${path.replace(/\.[^./]+$/, '')}.${IMAGE_EXT[kind]}`;
+
+
+// A NAME A PICTURE CAN BE FILED UNDER ON EITHER SOIL (ring 2026-11-17, the parity audit). A file's
+// own name may hold spaces or letters a node's media path refuses, and the same name twice would
+// overwrite on the origin and be refused on the independent node (its pictures are immutable).
+// So a name is made of what every store accepts, with the moment in front.
+export const uploadFileName = (name: string, nowMs: number): string => {
+  const safe = name.normalize('NFKD').replace(/[^A-Za-z0-9_.~-]+/g, '_').replace(/^[._]+|[._]+$/g, '').slice(-80);
+  return `${nowMs}-${safe || 'picture'}`;
+};

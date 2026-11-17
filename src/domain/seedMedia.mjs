@@ -5,6 +5,11 @@ export function seedMediaPath(value) {
   if(parts.length<2 || parts.some(p=>!p || p==='.' || p==='..' || p.length>255))return null;
   return value;
 }
+// THE PLANS SHELF (ring 2026-10-27, mirrored here 2026-11-17): everything a node keeps is read by
+// the world, except `plans/…` — a house's drawings-in-progress, open to any signed-in being and
+// never to an anonymous fetch. The origin's storage.rules carve the shelf out by its first
+// segment; this is the same carve, asked by the node's media door before it reads a byte.
+export const seedMediaNeedsSignIn=path=>typeof path==='string' && path.split('/')[0]==='plans';
 export function seedMediaUploadPath(value) {
   const path=seedMediaPath(value);
   return path && !['thumbs','previews','originals'].includes(path.split('/')[0]) && /\.(?:jpg|jpeg|png|webp)$/.test(path) ? path : null;

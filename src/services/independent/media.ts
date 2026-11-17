@@ -8,6 +8,7 @@
 // <Picture> renders as any URL.
 import type * as F from '../firebase/media';
 import { session } from './core';
+import { beginNetwork, endNetwork, setUploadProgress } from '../network';
 import { withImageExtension } from '../../domain/imageBytes';
 import { pictureReleaseOf } from '../../domain/pictureRelease';
 import { seedMediaReferencePath } from '../../domain/seedMedia.mjs';
@@ -16,10 +17,18 @@ export { fileToWebpBase64 };
 
 export const uploadImage: typeof F.uploadImage = async (file, path, onProgress) => {
     const { blob, kind } = await encodePhoto(file);
-    onProgress?.(0);
-    const result = await session.uploadMedia(withImageExtension(path, kind), blob) as { url: string };
-    onProgress?.(100);
-    return result.url;
+    // The same badge and the same percentages as on the origin (services/network).
+    const say = (pct: number) => { setUploadProgress(pct); onProgress?.(pct); };
+    beginNetwork();
+    say(0);
+    try {
+        const result = await session.uploadMedia(withImageExtension(path, kind), blob, say) as { url: string };
+        say(100);
+        return result.url;
+    } finally {
+        setUploadProgress(null);
+        endNetwork();
+    }
 };
 export const uploadBase64Image: typeof F.uploadBase64Image = async (dataUrl, path) => uploadImage(await (await fetch(dataUrl)).blob(), path);
 

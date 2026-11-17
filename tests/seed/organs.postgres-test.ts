@@ -213,7 +213,10 @@ describe('the staff roster and the account', () => {
       expect(t.sql("SELECT count(*) FROM links WHERE from_id='bob'")).toBe('0');
       // The staff hand deletes an ordinary account: no heir, the light dissolves into its place.
       t.sql(`INSERT INTO rays VALUES ('t1__2026-09-02__carer','{"holderUid":"alice","role":"carer","units":10,"treeId":"t1","dayKey":"2026-09-02","sourceUid":"alice"}');`);
+      t.sql(`UPDATE users SET doc=doc || '{"email":"alice@example.org"}' WHERE id='alice'`);
       expect((await t.post('/v1/account/command', { action: 'delete_as_staff', uid: 'alice' }, 'staff')).body).toMatchObject({ deleted: true, unitsToHeir: 0 });
+      // No farewell when staff remove an account (the origin sends one only for one's own departure).
+      expect(t.sql("SELECT count(*) FROM seed.outbox WHERE kind='farewell'")).toBe('0');
       // Each ray dissolves into its own place: the inherited carer ray into c1, the placeless ones into the node.
       expect(t.doc('glow', 'c1')!.units).toBe(15 + 93);
       expect(t.doc('glow', 'NODE')!.units).toBe(15 + 10);

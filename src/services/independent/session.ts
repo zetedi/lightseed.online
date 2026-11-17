@@ -67,14 +67,30 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
     }
   };
   identity.changes(user => { if (acceptChanges) void bind(user); });
-  async function request(path: string, input?: object, image?: { path: string; bytes: Blob }, options?: { missing?: boolean; timeoutMs?: number }) {
+  // AN UPLOAD THAT SAYS HOW FAR IT IS (ring 2026-11-17, the parity audit): `fetch` cannot report
+  // the bytes it has sent, so where the browser offers XMLHttpRequest and the caller asked to hear
+  // progress, the picture goes that way and its answer is handed back as an ordinary Response;
+  // anywhere else (tests, a worker) the injected fetcher carries it and progress is 0 then 100.
+  const sendImage = (token: string, image: { path: string; bytes: Blob; onProgress?: (pct: number) => void }): Promise<Response> => {
+    const headers = { Authorization: 'Bearer ' + token, 'Content-Type': image.bytes.type, 'X-Lightseed-Media-Path': image.path };
+    if (!image.onProgress || typeof XMLHttpRequest === 'undefined' || fetcher !== fetch) {
+      return fetcher('/v1/media/upload', { method: 'POST', body: image.bytes, headers, credentials: 'omit', redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(60000) });
+    }
+    return new Promise<Response>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/v1/media/upload');
+      for (const [name, value] of Object.entries(headers)) xhr.setRequestHeader(name, value);
+      xhr.withCredentials = false; xhr.timeout = 60000; xhr.responseType = 'text';
+      xhr.upload.onprogress = event => { if (event.lengthComputable && event.total > 0) image.onProgress?.(Math.round((event.loaded / event.total) * 100)); };
+      xhr.onload = () => resolve(new Response(xhr.status === 204 ? null : xhr.responseText, { status: xhr.status }));
+      xhr.onerror = xhr.ontimeout = xhr.onabort = () => reject(new Error('api_unavailable'));
+      xhr.send(image.bytes);
+    });
+  };
+  async function request(path: string, input?: object, image?: { path: string; bytes: Blob; onProgress?: (pct: number) => void }, options?: { missing?: boolean; timeoutMs?: number }) {
     const token = accessToken, mine = generation;
     if (!token) throw new Error('authentication_required');
-    const result = image ? await fetcher('/v1/media/upload', {
-      method: 'POST', body: image.bytes,
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': image.bytes.type, 'X-Lightseed-Media-Path': image.path },
-      credentials: 'omit', redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(60000),
-    }) : await call(path, token, input, options?.timeoutMs);
+    const result = image ? await sendImage(token, image) : await call(path, token, input, options?.timeoutMs);
     if (mine !== generation) throw new Error('session_changed');
     if (result.status === 401) {
       ++generation; accessToken = null; publish({ status: 'anonymous' });
@@ -155,10 +171,10 @@ export function createSeedSession(identity: IdentityClient, fetcher: typeof fetc
       if(!command)return Promise.reject(new Error('invalid_command'));
       return request('/v1/links/command',command);
     },
-    uploadMedia(path: string, bytes: Blob) {
+    uploadMedia(path: string, bytes: Blob, onProgress?: (pct: number) => void) {
       if (!seedMediaUploadPath(path) || !['image/jpeg', 'image/png', 'image/webp'].includes(bytes.type)
         || bytes.size === 0 || bytes.size > SEED_MEDIA_MAX_BYTES) return Promise.reject(new Error('invalid_media'));
-      return request('/v1/media/upload', undefined, { path, bytes });
+      return request('/v1/media/upload', undefined, { path, bytes, onProgress });
     },
     // THE RELEASE OF A PICTURE (ring 2026-11-03): asked by the picture's door on this node.
     releaseMedia(url: string) {

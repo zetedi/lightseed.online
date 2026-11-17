@@ -2,7 +2,7 @@
 // 2026-11-01/02). The schedule and the off-chain tick are a carer's edits through the document
 // door; the photo path mints a growth block through the block command (the node composes the
 // cadence reset in the same transaction); the thirst ask and the thanks are the tree's own
-// nudges into its circle. Witnessing a watering kindles light — the light organ's hand, not yet grown.
+// nudges into its circle. Witnessing a watering kindles light — the light organ's hand (POST /v1/light/command).
 import type * as F from '../firebase/watering';
 import { stampOfMs, session } from './core';
 import { docCommand, serverTime } from './docs';
