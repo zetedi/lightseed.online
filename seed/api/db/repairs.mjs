@@ -31,5 +31,7 @@ export const repairsRepository=withSession=>({
   /** @param {string} uid @param {string} pulseId @param {string} alignmentId @returns {Promise<boolean>} */
   matchId:(uid,pulseId,alignmentId)=>withSession(uid,c=>run(c,'SELECT seed.repair_match_id($1,$2) AS result',[pulseId,alignmentId])),
   /** @param {string} uid @returns {Promise<{nameless: number, twins: Array<{lid: string, addresses: string[]}>}>} */
+  /** The facts the ground plan reads (migration 066): visions with their old field, trees with their carers, standing grounds. @param {string} uid @returns {Promise<{visions: *[], trees: *[], standing: *[]}>} */
+  visionGroundsFacts:uid=>withSession(uid,c=>run(c,'SELECT seed.repair_vision_grounds_facts() AS result',[])),
   lidIndex:uid=>withSession(uid,c=>run(c,'SELECT seed.repair_lid_index() AS result',[])),
 });

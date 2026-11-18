@@ -414,6 +414,7 @@ const zh = {
   ground_vision_hidden: "私密的愿景不扎根：扎根会让世界知道它的存在。",
   ground_signin: "请先登录，再让愿景扎根。",
   ground_refused: "无法完成扎根：请求期间情况有变，请再试一次。",
+  ground_plan_only: "这只是计划：在守护者同意之前不会迁移任何内容。",
   ground_ask_author_only: "只有说出愿景的人可以请求一棵树让它扎根。",
   ground_already: "这个愿景已经扎根于这棵树。",
   ground_already_asked: "这个愿景已经向这棵树请求过。",

@@ -245,8 +245,14 @@ canopy, in this order, no new canopy until the first two stand:
   release on the origin (functions + rules); (3) the faces: a tree's visions and a vision's
   grounds, growing a vision from a tree, "seeking ground", the create form free of the tree,
   planting no longer birthing a vision; the independent node's twin of all of it (migration
-  064, `POST /v1/grounding/command`). Next: a walk of all of it against the live backends;
-  (4) the migration of
+  064, `POST /v1/grounding/command`). (4a) the migration's PLAN, as a dry run on both soils
+  (`src/domain/groundMigration.ts`; the origin's `scripts/plan-vision-grounds.mjs`; the node's
+  repair `vision_grounds`). The origin's dry run of 2026-11-17: 39 visions, all naming a tree;
+  35 would be grounded (23 of them a tree's Root Vision), 4 name a tree that is gone, none is
+  refused by the law, none needs another being's yes. Nothing was written. Next: a walk of all of
+  it against the live backends; the keeper's decisions on the apply (the four orphans; whether
+  the migration writes blocks on the chains or links alone);
+  (4b) the migration of
   every `lifetreeId` to a birth ground, dry-run first, run only on the guardian's word; (5) the
   field retired; and the light: define what reaches a vision, and gate it by
   `visionReceivesLight`.

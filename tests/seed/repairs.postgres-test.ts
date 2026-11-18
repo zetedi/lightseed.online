@@ -60,6 +60,22 @@ describe('the last hands', () => {
       expect((await t.repair('bob', { kind: 'pulse_visibility' })).status).toBe(403);
       expect((await t.repair('alice', { kind: 'drop_everything' })).status).toBe(400);
 
+      // THE OLD TIE BECOMES A GROUND — the plan only (ring 2026-11-17): v1's author anchors t1, so it
+      // would be grounded there; v2 names a private tree, which grounds no one. Nothing is written,
+      // only the keeper may ask, and an apply is refused until it exists.
+      expect((await t.repair('bob', { kind: 'vision_grounds' })).status).toBe(403);
+      const plan = await t.repair('alice', { kind: 'vision_grounds' });
+      expect(plan.status).toBe(200);
+      expect(plan.body.apply).toBe(false);
+      expect(plan.body.counts).toMatchObject({ visions: 2, withoutField: 0, ground: 1, refused: 1, births: 0 });
+      expect(plan.body.refusals).toEqual({ ground_tree_hidden: 1 });
+      expect(plan.body.rows).toEqual([
+        { visionId: 'v1', treeId: 't1', verdict: 'ground', self: true, birth: false },   // eldest first; v2 carries no birth moment
+        { visionId: 'v2', treeId: 't2', verdict: 'refused', refusal: 'ground_tree_hidden', self: false, birth: false },
+      ]);
+      expect((await t.repair('alice', { kind: 'vision_grounds', apply: true })).body).toEqual({ error: 'ground_plan_only' });
+      expect(t.sql("SELECT count(*) FROM links WHERE rel in ('grounded_in','ground_request')")).toBe('0');
+
       // Visibility: p1 lacks it and is unsealed; p2 lacks it and is sealed — counted, kept.
       expect(await t.repair('alice', { kind: 'pulse_visibility' })).toEqual({ status: 200, body: { updated: 1, skippedSealed: 1 } });
       expect(t.sql("SELECT doc->>'visibility' FROM pulses WHERE id='p1'")).toBe('public');
