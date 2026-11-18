@@ -30,8 +30,12 @@ export const repairsRepository=withSession=>({
   alignmentsOfTree:(uid,treeId)=>withSession(uid,c=>run(c,'SELECT seed.repair_alignments_of_tree($1) AS result',[treeId])),
   /** @param {string} uid @param {string} pulseId @param {string} alignmentId @returns {Promise<boolean>} */
   matchId:(uid,pulseId,alignmentId)=>withSession(uid,c=>run(c,'SELECT seed.repair_match_id($1,$2) AS result',[pulseId,alignmentId])),
-  /** @param {string} uid @returns {Promise<{nameless: number, twins: Array<{lid: string, addresses: string[]}>}>} */
   /** The facts the ground plan reads (migration 066): visions with their old field, trees with their carers, standing grounds. @param {string} uid @returns {Promise<{visions: *[], trees: *[], standing: *[]}>} */
   visionGroundsFacts:uid=>withSession(uid,c=>run(c,'SELECT seed.repair_vision_grounds_facts() AS result',[])),
+  /** One migrated ground (migration 067): true when written, false when the soil no longer agrees with the plan. @param {string} uid @param {string} visionId @param {string} treeId @param {boolean} birth @param {string} lid @returns {Promise<boolean>} */
+  visionGround:(uid,visionId,treeId,birth,lid)=>withSession(uid,c=>run(c,'SELECT seed.repair_vision_ground($1,$2,$3,$4) AS result',[visionId,treeId,birth,lid])),
+  /** One orphan's field cleared (migration 067). @param {string} uid @param {string} visionId @param {string} treeId @returns {Promise<boolean>} */
+  visionGroundClear:(uid,visionId,treeId)=>withSession(uid,c=>run(c,'SELECT seed.repair_vision_ground_clear($1,$2) AS result',[visionId,treeId])),
+  /** @param {string} uid @returns {Promise<{nameless: number, twins: Array<{lid: string, addresses: string[]}>}>} */
   lidIndex:uid=>withSession(uid,c=>run(c,'SELECT seed.repair_lid_index() AS result',[])),
 });

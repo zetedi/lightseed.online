@@ -249,11 +249,12 @@ canopy, in this order, no new canopy until the first two stand:
   (`src/domain/groundMigration.ts`; the origin's `scripts/plan-vision-grounds.mjs`; the node's
   repair `vision_grounds`). The origin's dry run of 2026-11-17: 39 visions, all naming a tree;
   35 would be grounded (23 of them a tree's Root Vision), 4 name a tree that is gone, none is
-  refused by the law, none needs another being's yes. Nothing was written. Next: a walk of all of
-  it against the live backends; the keeper's decisions on the apply (the four orphans; whether
-  the migration writes blocks on the chains or links alone);
-  (4b) the migration of
-  every `lifetreeId` to a birth ground, dry-run first, run only on the guardian's word; (5) the
+  refused by the law, none needs another being's yes. Nothing was written. (4b) the APPLY, built on both soils and
+  NOT YET RUN (the origin's `scripts/apply-vision-grounds.mjs`, a dry run unless `--apply`; the
+  node's repair `vision_grounds` with `apply`, migration 067), by the keeper's words of
+  2026-11-18: links alone, no blocks; an orphan's field cleared; a grounded vision keeps its
+  field. Next: the crossing itself, run only on the guardian's word; a walk of all of it against
+  the live backends; (5) the
   field retired; and the light: define what reaches a vision, and gate it by
   `visionReceivesLight`.
 - **Nodes become real (the domain–DB link).** The first boundary now exists:

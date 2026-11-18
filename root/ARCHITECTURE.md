@@ -964,6 +964,13 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   the same two blocks, the same refusal keys. The shell reaches either soil through
   `@backend`'s `askGround`, `acceptGround`, `releaseGround`, `dropGroundAsk` and the four
   readings (`hooks/useGrounds`), so the faces are one.
+  THE OLD TIE (`vision.lifetreeId`) is carried across by one shared plan
+  (`domain/groundMigration`: `planGroundMigration`, `groundMigrationActs`), asked on the origin by
+  the keeper's scripts (`scripts/plan-vision-grounds.mjs`, `scripts/apply-vision-grounds.mjs`) and
+  on the node by the keeper's repair `vision_grounds` (migrations 066, 067). The apply writes the
+  link alone, marked `migrated` — no block, since nothing was asked and answered — only where the
+  vision's own author cares for the tree; clears the field where the tree is gone; and leaves the
+  field on a grounded vision. Built and tested on both soils; run on neither yet (2026-11-18).
 
 ## Known debts (kept honestly)
 

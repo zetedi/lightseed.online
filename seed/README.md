@@ -1874,6 +1874,13 @@ is never touched — its type, visibility, lid and matchId are canonical content
 skipped. What these hands mend is what arrived otherwise: the crossing's legacy records, a soil older
 than its rules. `claimSuperAdmin` answers no by the node's law: the keeper is appointed by the
 installation (`seed:keeper`). `tests/repairs.test.ts`, `tests/seed/repairs.postgres-test.ts`.
+THE OLD TIE BECOMES A GROUND (`vision_grounds`, migrations 066 and 067): the eighth repair reads
+what carrying every `vision.lifetreeId` across to a `grounded_in` link would do, by the plan both
+soils share (`src/domain/groundMigration.ts`), and writes nothing; with `apply: true` it carries
+out the plan's two kinds of act — a migrated ground where the vision's own author cares for the
+tree (the link alone, marked `self` and `migrated`, no block on either chain) and the field
+cleared where the tree is gone — each re-proved by the soil, the rest left as it is, a grounded
+vision keeping its field. It answers `{apply, grounded, cleared, skipped, counts, refusals, rows}`.
 
 ### The mail organ (migration 056)
 

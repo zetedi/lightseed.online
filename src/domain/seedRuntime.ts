@@ -129,7 +129,7 @@ GRANT EXECUTE ON FUNCTION seed.media_lock(text[]), seed.picture_context(text,tex
 GRANT EXECUTE ON FUNCTION seed.repair_pulse_visibility(), seed.repair_pulse_type_casing(), seed.repair_tree_visibility(),
   seed.repair_vision_chains_due(), seed.repair_vision_chain(text,text), seed.repair_lids_due(), seed.repair_lid(text,text,text),
   seed.repair_match_ids_due(), seed.repair_alignments_of_tree(text), seed.repair_match_id(text,text), seed.repair_lid_index(),
-  seed.repair_vision_grounds_facts() TO ${role};
+  seed.repair_vision_grounds_facts(), seed.repair_vision_ground(text,text,boolean,text), seed.repair_vision_ground_clear(text,text) TO ${role};
 -- THE GROUND (ring 2026-11-17, migration 064): the facts and the four applies the API drives for a hand; each proves the
 -- hand's standing and the law's invariants itself. The helpers they call stay the soil's.
 GRANT EXECUTE ON FUNCTION seed.ground_context(text,text), seed.apply_ground_ask(text,text,text), seed.ground_ask_drop(text,text),

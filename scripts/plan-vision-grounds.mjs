@@ -6,15 +6,14 @@
 // `grounded_in` link would do: which visions would be grounded (and which is each tree's Root
 // Vision), which need the tree's yes, which the law refuses today and why, which name a tree
 // that is gone. It WRITES NOTHING to the database and has no --apply: the apply is a separate
-// script, written and run only on the guardian's word after this report has been read.
+// script (scripts/apply-vision-grounds.mjs), run only on the guardian's word after this report has been read.
 //   --rows   also print one line per vision that carries the field
 //   --json   also save the whole plan (ids, verdicts, names) to a file of your choosing
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { planGroundMigration } from '../seed/generated/chain.mjs';
+import { openOrigin, readGroundFacts } from './vision-ground-facts.mjs';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const option = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
 const valued = ['--project', '--json'];
@@ -22,41 +21,8 @@ if (args.some(a => a.startsWith('--') && ![...valued, '--rows'].includes(a)) || 
   console.error('Usage: node scripts/plan-vision-grounds.mjs [--project <id>] [--rows] [--json <file>]');
   process.exit(1);
 }
-const app = await import('firebase-admin/app');
-const firestore = await import('firebase-admin/firestore');
-const projectId = option('--project') ?? JSON.parse(readFileSync(resolve(root, 'src/config/charter.json'), 'utf8')).firebase?.projectId;
-const localKey = resolve(root, 'serviceAccount.json');
-if (!process.env.GOOGLE_APPLICATION_CREDENTIALS && existsSync(localKey)) {
-  const account = JSON.parse(readFileSync(localKey, 'utf8'));
-  app.initializeApp({ credential: app.cert(account), projectId: account.project_id || projectId });
-} else app.initializeApp({ credential: app.applicationDefault(), projectId });
-const db = firestore.getFirestore();
-
-const ms = stamp => (stamp && typeof stamp.toMillis === 'function' ? stamp.toMillis() : typeof stamp === 'number' ? stamp : null);
-const text = value => (typeof value === 'string' ? value : null);
-
-const [visionSnap, treeSnap, keeperSnap, stewardSnap, groundSnap] = await Promise.all([
-  db.collection('visions').get(), db.collection('lifetrees').get(),
-  db.collection('links').where('rel', '==', 'keeper').get(), db.collection('links').where('rel', '==', 'steward').get(),
-  db.collection('links').where('rel', '==', 'grounded_in').get(),
-]);
-const carers = new Map();
-for (const snap of [keeperSnap, stewardSnap]) for (const d of snap.docs) {
-  const { from, to } = d.data();
-  if (typeof from === 'string' && typeof to === 'string') carers.set(to, [...(carers.get(to) ?? []), from]);
-}
-const treeName = new Map(), visionTitle = new Map();
-const trees = treeSnap.docs.map(d => {
-  const t = d.data(); treeName.set(d.id, text(t.name) ?? '');
-  return { id: d.id, anchorUid: text(t.anchorUid) ?? '', treeType: text(t.treeType), visibility: t.visibility === undefined ? null : text(t.visibility) ?? 'unreadable',
-    diedAtMs: t.diedAt ? (ms(t.diedAt) ?? 1) : null, carerUids: carers.get(d.id) ?? [] };
-});
-const visions = visionSnap.docs.map(d => {
-  const v = d.data(); visionTitle.set(d.id, text(v.title) ?? '');
-  return { id: d.id, authorId: text(v.authorId) ?? '', title: text(v.title), visibility: v.visibility === undefined ? null : text(v.visibility) ?? 'unreadable',
-    lifetreeId: text(v.lifetreeId), createdAtMs: ms(v.createdAt) };
-});
-const standing = groundSnap.docs.map(d => ({ visionId: String(d.data().from ?? ''), treeId: String(d.data().to ?? '') }));
+const { db, projectId } = await openOrigin(option('--project'));
+const { visions, trees, standing, treeName, visionTitle } = await readGroundFacts(db);
 
 const plan = planGroundMigration(visions, trees, standing);
 const c = plan.counts;

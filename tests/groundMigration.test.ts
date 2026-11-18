@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planGroundMigration, type MigrationTree, type MigrationVision } from '../src/domain/groundMigration';
+import { planGroundMigration, groundMigrationActs, migratedGroundFields, type MigrationTree, type MigrationVision } from '../src/domain/groundMigration';
 
 // THE OLD TIE BECOMES A GROUND (step 4, the plan): what would be written, and what would not, and why.
 const tree = (over: Partial<MigrationTree> = {}): MigrationTree => ({ id: 't1', anchorUid: 'u-anchor', treeType: 'LIFETREE', visibility: 'public', diedAtMs: null, carerUids: [], ...over });
@@ -73,5 +73,27 @@ describe('the caps and the count', () => {
     const before = JSON.stringify([visions, trees]);
     planGroundMigration(visions, trees, []);
     expect(JSON.stringify([visions, trees])).toBe(before);
+  });
+});
+
+describe('the apply writes two kinds of act and nothing else (keeper, 2026-11-18)', () => {
+  it('a ground for each vision its own author can ground, the field cleared where the tree is gone', () => {
+    const plan = planGroundMigration([
+      vision({ id: 'v-root', title: 'Root Vision', createdAtMs: 1 }),
+      vision({ id: 'v-own', createdAtMs: 2 }),
+      vision({ id: 'v-orphan', lifetreeId: 't-gone', createdAtMs: 3 }),
+      vision({ id: 'v-stranger', authorId: 'u-stranger', createdAtMs: 4 }),
+      vision({ id: 'v-hidden', visibility: 'private', createdAtMs: 5 }),
+      vision({ id: 'v-stands', createdAtMs: 6 }),
+      vision({ id: 'v-free', lifetreeId: null, createdAtMs: 7 }),
+    ], [tree()], [{ visionId: 'v-stands', treeId: 't1' }]);
+    expect(groundMigrationActs(plan)).toEqual({
+      grounds: [{ visionId: 'v-root', treeId: 't1', birth: true }, { visionId: 'v-own', treeId: 't1', birth: false }],
+      cleared: [{ visionId: 'v-orphan', treeId: 't-gone' }],
+    });
+  });
+  it('a migrated ground says it was carried across, and names no blocks', () => {
+    expect(migratedGroundFields('u-anchor', true)).toEqual({ self: true, birth: true, requestedBy: 'u-anchor', acceptedBy: 'u-anchor', migrated: true });
+    expect(migratedGroundFields('u-anchor', false)).not.toHaveProperty('groundedPulseIds');
   });
 });

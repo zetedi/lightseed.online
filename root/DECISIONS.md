@@ -6327,3 +6327,32 @@ Left open because each is a decision and not a repair: a departed account's logi
 the issuer; polling where the origin listens; a session that lasts one tab; and the typeface
 still fetched from Google. `exportNode` stays thinner and says so. Not verified: refusal-by-refusal
 equivalence of the older hands, and the rule functions collection by collection.
+
+### 2026-11-18 — The old tie crosses as a link, and says so
+
+The plan was read first (`scripts/plan-vision-grounds.mjs`, the origin, read-only): 39 visions,
+all naming a tree; 35 whose own author cares for that tree, 23 of them the tree's Root Vision;
+4 Root Visions naming a tree that is gone; none refused by the law, none needing another's yes.
+
+Zoltán decided the three things the apply could not decide for itself:
+
+1. A vision whose tree is gone has its field cleared. It stands on its own, seeking ground: it
+   is still someone's words.
+2. Links alone. A grounding made by the hands writes one block on each chain, because someone
+   asked and someone answered. These grounds were never asked and answered; a block saying so
+   would overstate what happened. The link carries `migrated` and names no blocks.
+3. A grounded vision keeps `lifetreeId` until every reader has moved to the link (step 5).
+
+Plain contract. Guaranteed by the apply on both soils: a ground is written only where the
+vision's author is the tree's anchor, keeper or steward, and the law allows the pair; each act is
+re-proved against the records as they are when it lands; a second run writes nothing. Not
+guaranteed: that a migrated ground was ever consented to by anyone but its author (it was not
+asked; `self` and `migrated` say this); that the chains show the ground (they do not, by decision
+2 — the link is the only record, and a release later writes its pair of blocks with no matching
+`grounded` pair before it). Enforced by `src/domain/groundMigration.ts` (`groundMigrationActs`,
+`migratedGroundFields`), `seed.repair_vision_ground` and `seed.repair_vision_ground_clear`
+(migration 067), the per-act transactions of `scripts/apply-vision-grounds.mjs`,
+`tests/groundMigration.test.ts`, `tests/seed/repairs.postgres-test.ts`. The origin's script has
+no automated test: it was exercised only as a dry run against the origin.
+
+Built on both soils; run on neither. The crossing waits for the guardian's word.

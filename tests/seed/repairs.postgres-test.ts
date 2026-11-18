@@ -37,7 +37,8 @@ const serve = async () => {
       ('t2','{"lid":"${LID(12)}","anchorUid":"bob","name":"Ash","treeType":"LIFETREE","visibility":"private","genesisHash":"g2","latestHash":"g2","blockHeight":0}'),
       ('t3','{"anchorUid":"alice","name":"Nameless","treeType":"GUARDED","visibility":"","createdAt":"2025-06-01T00:00:00.000000Z"}');
     INSERT INTO visions VALUES ('v1','{"lid":"${LID(21)}","authorId":"alice","lifetreeId":"t1","createdAt":"2026-02-01T00:00:00.000000Z"}'),
-      ('v2','{"lid":"${LID(12)}","authorId":"bob","lifetreeId":"t2","genesisHash":"gv2","latestHash":"gv2","blockHeight":0}');
+      ('v2','{"lid":"${LID(12)}","authorId":"bob","lifetreeId":"t2","genesisHash":"gv2","latestHash":"gv2","blockHeight":0}'),
+      ('v3','{"lid":"${LID(23)}","authorId":"bob","title":"Root Vision","lifetreeId":"t-gone","genesisHash":"gv3","latestHash":"gv3","blockHeight":0,"createdAt":"2026-05-01T00:00:00.000000Z"}');
     INSERT INTO pulses VALUES ('p1','{"lid":"${LID(31)}","authorId":"alice","lifetreeId":"t1","type":"GROWTH","hash":"h1","previousHash":"g1","createdAt":"2026-01-02T00:00:00.000000Z"}'),
       ('p2','{"lid":"${LID(32)}","authorId":"alice","lifetreeId":"t1","type":"growth","hash":"h2","previousHash":"h1","hashVersion":1,"createdAt":"2026-01-03T00:00:00.000000Z"}'),
       ('p3','{"authorId":"alice","lifetreeId":"t1","type":"standard","visibility":"public","isMatch":true,"hash":"h3","previousHash":"h2","createdAt":"2026-03-01T00:00:00.000000Z"}'),
@@ -60,21 +61,49 @@ describe('the last hands', () => {
       expect((await t.repair('bob', { kind: 'pulse_visibility' })).status).toBe(403);
       expect((await t.repair('alice', { kind: 'drop_everything' })).status).toBe(400);
 
-      // THE OLD TIE BECOMES A GROUND — the plan only (ring 2026-11-17): v1's author anchors t1, so it
-      // would be grounded there; v2 names a private tree, which grounds no one. Nothing is written,
-      // only the keeper may ask, and an apply is refused until it exists.
+      // THE OLD TIE BECOMES A GROUND (rings 2026-11-17 and -18). The plan: v1's author anchors t1, so
+      // it would be grounded there; v3 names a tree that is gone; v2 names a private tree, which
+      // grounds no one. Only the keeper may ask, and without `apply` nothing is written.
       expect((await t.repair('bob', { kind: 'vision_grounds' })).status).toBe(403);
+      expect((await t.repair('bob', { kind: 'vision_grounds', apply: true })).status).toBe(403);
+      const rows = [
+        { visionId: 'v1', treeId: 't1', verdict: 'ground', self: true, birth: false },   // eldest first; v2 carries no birth moment
+        { visionId: 'v3', treeId: 't-gone', verdict: 'tree_gone', self: false, birth: false },
+        { visionId: 'v2', treeId: 't2', verdict: 'refused', refusal: 'ground_tree_hidden', self: false, birth: false },
+      ];
       const plan = await t.repair('alice', { kind: 'vision_grounds' });
       expect(plan.status).toBe(200);
       expect(plan.body.apply).toBe(false);
-      expect(plan.body.counts).toMatchObject({ visions: 2, withoutField: 0, ground: 1, refused: 1, births: 0 });
+      expect(plan.body.counts).toMatchObject({ visions: 3, withoutField: 0, ground: 1, refused: 1, tree_gone: 1, births: 0 });
       expect(plan.body.refusals).toEqual({ ground_tree_hidden: 1 });
-      expect(plan.body.rows).toEqual([
-        { visionId: 'v1', treeId: 't1', verdict: 'ground', self: true, birth: false },   // eldest first; v2 carries no birth moment
-        { visionId: 'v2', treeId: 't2', verdict: 'refused', refusal: 'ground_tree_hidden', self: false, birth: false },
-      ]);
-      expect((await t.repair('alice', { kind: 'vision_grounds', apply: true })).body).toEqual({ error: 'ground_plan_only' });
+      expect(plan.body.rows).toEqual(rows);
       expect(t.sql("SELECT count(*) FROM links WHERE rel in ('grounded_in','ground_request')")).toBe('0');
+      expect(t.sql("SELECT doc->>'lifetreeId' FROM visions WHERE id='v3'")).toBe('t-gone');
+
+      // The apply, by the keeper's three words: LINKS ALONE (no block on either chain, both heads
+      // unmoved), the grounded vision KEEPS its field, the orphan's field is CLEARED, and what the
+      // law refuses is left exactly as it was.
+      const pulsesBefore = t.sql('SELECT count(*) FROM pulses');
+      const crossed = await t.repair('alice', { kind: 'vision_grounds', apply: true });
+      expect(crossed.status).toBe(200);
+      expect(crossed.body).toMatchObject({ apply: true, grounded: 1, cleared: 1, skipped: 0, rows });
+      expect(JSON.parse(t.sql("SELECT doc FROM links WHERE from_id='v1' AND rel='grounded_in' AND to_id='t1'"))).toEqual({ self: true, birth: false, requestedBy: 'alice', acceptedBy: 'alice', migrated: true });
+      expect(t.sql("SELECT lid FROM links WHERE from_id='v1' AND rel='grounded_in'")).toMatch(V7);
+      expect(t.sql("SELECT count(*) FROM links WHERE rel='grounded_in'")).toBe('1');
+      expect(t.sql('SELECT count(*) FROM pulses')).toBe(pulsesBefore);
+      expect(t.sql("SELECT (doc->>'latestHash')||' '||(doc->>'blockHeight') FROM lifetrees WHERE id='t1'")).toBe('g1 0');
+      expect(t.sql("SELECT doc->>'lifetreeId' FROM visions WHERE id='v1'")).toBe('t1');
+      expect(t.sql("SELECT (doc ? 'lifetreeId')::text||' '||(doc->>'title')||' '||(doc->>'authorId') FROM visions WHERE id='v3'")).toBe('false Root Vision bob');
+      expect(t.sql("SELECT doc->>'lifetreeId' FROM visions WHERE id='v2'")).toBe('t2');
+      // Said twice, it writes nothing more: the ground stands, the orphan carries no field.
+      const again = await t.repair('alice', { kind: 'vision_grounds', apply: true });
+      expect(again.body).toMatchObject({ apply: true, grounded: 0, cleared: 0, skipped: 0 });
+      expect(again.body.counts).toMatchObject({ already: 1, withoutField: 1, refused: 1, ground: 0, tree_gone: 0 });
+      // The soil re-proves each act whatever the plan believed: the keeper's own hand cannot ground
+      // what the law forbids, nor a vision whose field names another tree, nor clear a living tree's field.
+      expect(t.sql("SET seed.uid='alice'; SELECT seed.repair_vision_ground('v2','t2',false,'" + LID(90) + "')").trim().endsWith('f')).toBe(true);
+      expect(t.sql("SET seed.uid='alice'; SELECT seed.repair_vision_ground('v2','t1',false,'" + LID(91) + "')").trim().endsWith('f')).toBe(true);
+      expect(t.sql("SET seed.uid='alice'; SELECT seed.repair_vision_ground_clear('v2','t2')").trim().endsWith('f')).toBe(true);
 
       // Visibility: p1 lacks it and is unsealed; p2 lacks it and is sealed — counted, kept.
       expect(await t.repair('alice', { kind: 'pulse_visibility' })).toEqual({ status: 200, body: { updated: 1, skippedSealed: 1 } });
@@ -92,10 +121,10 @@ describe('the last hands', () => {
       expect(t.sql("SELECT string_agg(id||':'||(doc->>'visibility'), ',' ORDER BY id) FROM lifetrees")).toBe('t1:public,t2:private,t3:public');
 
       // The twin awakens: v1 gains a genesis sealed from its own birth; v2 was chained.
-      expect(await t.repair('alice', { kind: 'vision_chains' })).toEqual({ status: 200, body: { updated: 1, skipped: 1 } });
+      expect(await t.repair('alice', { kind: 'vision_chains' })).toEqual({ status: 200, body: { updated: 1, skipped: 2 } });
       const genesis = await createBlock('0', { msg: 'Birth' }, Date.parse('2026-02-01T00:00:00.000000Z'));
       expect(t.sql("SELECT (doc->>'genesisHash')||' '||(doc->>'latestHash')||' '||(doc->>'blockHeight') FROM visions WHERE id='v1'")).toBe(`${genesis} ${genesis} 0`);
-      expect(await t.repair('alice', { kind: 'vision_chains' })).toEqual({ status: 200, body: { updated: 0, skipped: 2 } });
+      expect(await t.repair('alice', { kind: 'vision_chains' })).toEqual({ status: 200, body: { updated: 0, skipped: 3 } });
 
       // Lids: t3, c1, h1, persons/bob and p3 (unsealed) are named from their birth; a sealed block without a lid would be counted.
       const lids = await t.repair('alice', { kind: 'lids' });

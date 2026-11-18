@@ -6,7 +6,7 @@
 // moment; the alignment a sync block names), and the apply goes back through the repository, each
 // statement judged by the soil as the keeper. Sealed blocks are never touched — their type,
 // visibility, lid and matchId are canonical content — and are reported as skipped, as the origin did.
-import {createBlock,alignmentForSyncBlock,planGroundMigration} from '../generated/chain.mjs';
+import {createBlock,alignmentForSyncBlock,planGroundMigration,groundMigrationActs} from '../generated/chain.mjs';
 import {uuidv7} from '../../src/domain/uuidv7.mjs';
 
 /** @typedef {import('./db/repairs.mjs').RepairsRepository} RepairsRepository */
@@ -54,10 +54,12 @@ export async function repairCommand({repository,uid,command}) {
       return {stamped,unresolved,skippedSealed};
     }
     case 'vision_grounds': {
-      // THE OLD TIE BECOMES A GROUND — the plan only (ring 2026-11-17, step 4): what carrying every
-      // vision's `lifetreeId` across to a `grounded_in` link would do here, by the shared plan the
-      // origin's dry run asks. Nothing is written; `apply` is refused until the apply exists.
-      if(command.apply===true)throw Object.assign(new Error('Organ refused'),{code:'ORGAN_REFUSED',refusal:'ground_plan_only',status:409});
+      // THE OLD TIE BECOMES A GROUND (ring 2026-11-17, step 4): what carrying every vision's
+      // `lifetreeId` across to a `grounded_in` link does here, by the shared plan the origin asks.
+      // Without `apply` nothing is written. With it (the keeper's word, 2026-11-18) the plan's two
+      // kinds of act are carried out — a migrated ground, LINKS ALONE, and an orphan's field
+      // cleared — each re-proved by the soil (migration 067); what the soil no longer agrees with
+      // is counted as skipped. Grounded visions keep their field.
       const facts=await repository.visionGroundsFacts(uid);
       const visibilityOf=value=>value===undefined||value===null?null:typeof value==='string'?value:'unreadable';
       const stamp=value=>{const ms=typeof value==='string'?Date.parse(value):Number.NaN;return Number.isFinite(ms)?ms:null;};
@@ -65,7 +67,12 @@ export async function repairCommand({repository,uid,command}) {
         facts.visions.map(v=>({id:v.id,authorId:v.authorId??'',title:v.title??null,visibility:visibilityOf(v.visibility),lifetreeId:v.lifetreeId??null,createdAtMs:stamp(v.createdAt)})),
         facts.trees.map(t=>({id:t.id,anchorUid:t.anchorUid??'',treeType:t.treeType??null,visibility:visibilityOf(t.visibility),diedAtMs:t.died?1:null,carerUids:t.carerUids??[]})),
         facts.standing);
-      return {apply:false,counts:plan.counts,refusals:plan.refusals,rows:plan.rows};
+      if(command.apply!==true)return {apply:false,counts:plan.counts,refusals:plan.refusals,rows:plan.rows};
+      const acts=groundMigrationActs(plan);
+      let grounded=0,cleared=0,skipped=0;
+      for(const act of acts.grounds){if(await repository.visionGround(uid,act.visionId,act.treeId,act.birth,uuidv7(Date.now())))grounded++;else skipped++;}
+      for(const act of acts.cleared){if(await repository.visionGroundClear(uid,act.visionId,act.treeId))cleared++;else skipped++;}
+      return {apply:true,grounded,cleared,skipped,counts:plan.counts,refusals:plan.refusals,rows:plan.rows};
     }
     case 'lid_index': {
       // On this soil the index is the records themselves: nothing to write, nothing to disagree; a name on two beings is the collision.

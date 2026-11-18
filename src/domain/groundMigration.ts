@@ -8,6 +8,14 @@ import { groundRefusal, MAX_VISIONS_PER_TREE } from './grounding';
 // nothing and it decides nothing irreversible: the apply is a separate act, taken on the
 // guardian's word after this plan has been read.
 //
+// THE APPLY, as the keeper decided it on 2026-11-18 (`groundMigrationActs`):
+//   - LINKS ALONE. A grounding done today writes one block on each chain; these grounds were never
+//     asked and answered, so no block is written saying they were. The link carries `migrated`.
+//   - A vision whose field names a tree that is gone has the field CLEARED: it stands on its own,
+//     seeking ground, still its author's words.
+//   - A grounded vision KEEPS its field until every reader has moved to the link (step 5).
+//   - needs_yes, refused, tree_full and already are left exactly as they are.
+//
 // What the plan will and will not do for each vision that carries the field:
 //   ground      the tree may ground it AND its author cares for the tree (anchor, keeper or
 //               steward) — one being standing on both sides, so the consent the law asks for is
@@ -98,3 +106,20 @@ export function planGroundMigration(
   }
   return { rows, counts, refusals };
 }
+
+// What the apply writes, and nothing else: a ground for every `ground` row, the field cleared for
+// every `tree_gone` row. Both soils carry out exactly this list, each act re-proved where it lands.
+export interface GroundMigrationActs {
+  grounds: { visionId: string; treeId: string; birth: boolean }[];
+  cleared: { visionId: string; treeId: string }[];
+}
+export const groundMigrationActs = (plan: Pick<GroundMigrationPlan, 'rows'>): GroundMigrationActs => ({
+  grounds: plan.rows.filter(r => r.verdict === 'ground').map(r => ({ visionId: r.visionId, treeId: r.treeId, birth: r.birth })),
+  cleared: plan.rows.filter(r => r.verdict === 'tree_gone').map(r => ({ visionId: r.visionId, treeId: r.treeId })),
+});
+
+// The fields a migrated ground carries beside from/rel/to. `self`: one being stood on both sides.
+// `migrated`: this ground was carried across from the old field, not asked and answered — which is
+// why it names no pair of blocks (a ground made by the hands names its two, `groundedPulseIds`).
+export const migratedGroundFields = (authorId: string, birth: boolean) =>
+  ({ self: true, birth, requestedBy: authorId, acceptedBy: authorId, migrated: true }) as const;
