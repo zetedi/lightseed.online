@@ -1,0 +1,290 @@
+{
+  "projectId": "lifeseed-75dfe",
+  "applied": true,
+  "at": "2026-11-18T11:26:35.326Z",
+  "counts": {
+    "ground": 35,
+    "needs_yes": 0,
+    "refused": 0,
+    "tree_gone": 4,
+    "tree_full": 0,
+    "already": 0,
+    "visions": 39,
+    "withoutField": 0,
+    "births": 23
+  },
+  "grounded": [
+    {
+      "visionId": "GENESIS_VISION",
+      "treeId": "GENESIS_TREE",
+      "birth": false,
+      "visionTitle": "Mahameru",
+      "treeName": "Mahameru"
+    },
+    {
+      "visionId": "fg15FswQvLc8woCMFQJC",
+      "treeId": "29VJTNaxUiHE4sQ8irhJ",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Zoltán Etédi"
+    },
+    {
+      "visionId": "eqdr9QBRX4XXTbJjkeJD",
+      "treeId": "29VJTNaxUiHE4sQ8irhJ",
+      "birth": false,
+      "visionTitle": "Light Dance",
+      "treeName": "Zoltán Etédi"
+    },
+    {
+      "visionId": "iORIjqNoA0Jkp11eavkp",
+      "treeId": "29VJTNaxUiHE4sQ8irhJ",
+      "birth": false,
+      "visionTitle": "Atlantic Sailing",
+      "treeName": "Zoltán Etédi"
+    },
+    {
+      "visionId": "dSpQih7SmweeR9wbPnYr",
+      "treeId": "29VJTNaxUiHE4sQ8irhJ",
+      "birth": false,
+      "visionTitle": "Reflection",
+      "treeName": "Zoltán Etédi"
+    },
+    {
+      "visionId": "bRIXj5vzr3U9TbQOuyI0",
+      "treeId": "29VJTNaxUiHE4sQ8irhJ",
+      "birth": false,
+      "visionTitle": "The Way.",
+      "treeName": "Zoltán Etédi"
+    },
+    {
+      "visionId": "hrlQr5xVhIGsJDPgEFGg",
+      "treeId": "IymzBBtqbwLiQRKkoycN",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Ovito Squash tree"
+    },
+    {
+      "visionId": "6Lhmd3QT0ywTXiFFiw1Z",
+      "treeId": "IymzBBtqbwLiQRKkoycN",
+      "birth": false,
+      "visionTitle": "Create new ways to connect with your body within the city",
+      "treeName": "Ovito Squash tree"
+    },
+    {
+      "visionId": "3JpFNF9hOgRJkmyVPxH0",
+      "treeId": "3KsZrDwk3JMqREVjUmUr",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Pisonay"
+    },
+    {
+      "visionId": "eMEwIpaA4HMBu8Sp0G5y",
+      "treeId": "29VJTNaxUiHE4sQ8irhJ",
+      "birth": false,
+      "visionTitle": "Coffee",
+      "treeName": "Zoltán Etédi"
+    },
+    {
+      "visionId": "OlOvcJVo6tRvz1r719tx",
+      "treeId": "5IckRmPxIp3753ARMxQ3",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Beyond Being Human"
+    },
+    {
+      "visionId": "qGTQQMeW2vBv5q21CuFo",
+      "treeId": "B3cp0ioqYrOSy6ltanQo",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Frau der Freude - Women of Joy"
+    },
+    {
+      "visionId": "3g45MdbD9sLOcTPPEyhT",
+      "treeId": "rzhNUguFvuD4wgDAgMjQ",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Uncanny Labs"
+    },
+    {
+      "visionId": "8UyeYHklo1E4Ea3YVtZQ",
+      "treeId": "uzqWBxxiojdZkuJQmScG",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Sami"
+    },
+    {
+      "visionId": "dco9JM7AAaQPY4nE16F7",
+      "treeId": "2TKwjJC35FaSf5juXOhZ",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Prunus"
+    },
+    {
+      "visionId": "v3YrxAOrGMQVHVb7jSjP",
+      "treeId": "Zrn7nCWqil9UFDXgDw16",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "MEGA"
+    },
+    {
+      "visionId": "7nqcZm7kCUoX84dxxlhI",
+      "treeId": "YKSxFWmi57NNyOiRLx9s",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Test"
+    },
+    {
+      "visionId": "NEXqVDCgJgHdY309aTmB",
+      "treeId": "aadMu7HTWcmW3Lw5alNr",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Test Tree"
+    },
+    {
+      "visionId": "p9NJOHsfeybVgYOeMoI0",
+      "treeId": "YKSxFWmi57NNyOiRLx9s",
+      "birth": false,
+      "visionTitle": "Beauty in nature",
+      "treeName": "Test"
+    },
+    {
+      "visionId": "bq34i19aycW42qhei8Id",
+      "treeId": "ZlZ2eKA6KWfnD9WGejVC",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Nūr"
+    },
+    {
+      "visionId": "VDnbIJoo9GhWBc8u5bfF",
+      "treeId": "bLwl6seBJXcQSW3yFRzN",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Rock Blossom guava"
+    },
+    {
+      "visionId": "Ab52fJ2OX8DZCPY1lKU4",
+      "treeId": "bLwl6seBJXcQSW3yFRzN",
+      "birth": false,
+      "visionTitle": "Rooted Fighter",
+      "treeName": "Rock Blossom guava"
+    },
+    {
+      "visionId": "PwTmvfzcgNWA4tTAMxG3",
+      "treeId": "ZlZ2eKA6KWfnD9WGejVC",
+      "birth": false,
+      "visionTitle": "Granite Altar",
+      "treeName": "Nūr"
+    },
+    {
+      "visionId": "RTZYD9OADGkYn9APfFt8",
+      "treeId": "the-aspen",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "The Aspen"
+    },
+    {
+      "visionId": "listening-root-root-vision",
+      "treeId": "listening-root",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Listening Root"
+    },
+    {
+      "visionId": "BzrFukIncYBz5t9NL1oC",
+      "treeId": "ZlZ2eKA6KWfnD9WGejVC",
+      "birth": false,
+      "visionTitle": "Groud Light into Matter",
+      "treeName": "Nūr"
+    },
+    {
+      "visionId": "SGaaWQw1MAV5htzEdVta",
+      "treeId": "69IAMLQWO0EDY0tyonUa",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Tree of Life"
+    },
+    {
+      "visionId": "aWXZbS6LdPmGv30FMXSo",
+      "treeId": "62XYQnKqHSwV0CJMzpiW",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Wiccian ✧ Spruce Tree"
+    },
+    {
+      "visionId": "f926J5v0r3oMVKbKrQFS",
+      "treeId": "62XYQnKqHSwV0CJMzpiW",
+      "birth": false,
+      "visionTitle": "The Light Paradigm",
+      "treeName": "Wiccian ✧ Spruce Tree"
+    },
+    {
+      "visionId": "8wwvllU3HVsxuCLYVq3n",
+      "treeId": "IKuUuv8UOBa1Xnmp8unI",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "The Gardens"
+    },
+    {
+      "visionId": "URLtDPSAL8qy7xlxNOcv",
+      "treeId": "dyIeLHF5FKSaTkdo6EnU",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Pachita"
+    },
+    {
+      "visionId": "LhbKr5xvpDxRxucuMYD3",
+      "treeId": "U2k7SvPNbPLZ8X1klhNg",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Aqua"
+    },
+    {
+      "visionId": "OnKNYtmFjXopxwlQphU6",
+      "treeId": "jd6RaruLpcb1jdido3bB",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Amar"
+    },
+    {
+      "visionId": "u2FE0KcehRYyfmJfdn4L",
+      "treeId": "hKOMV8Kw7cCl70fnz6P2",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Joy"
+    },
+    {
+      "visionId": "KjfrD947SmMVW1lry6PM",
+      "treeId": "JijtDMDSnIpCtSNNXxUc",
+      "birth": true,
+      "visionTitle": "Root Vision",
+      "treeName": "Alhaiz"
+    }
+  ],
+  "cleared": [
+    {
+      "visionId": "VzytpkTrLp0vkkKpo1oC",
+      "treeId": "MzVyQttYTa2TMQSBa7mS",
+      "visionTitle": "Root Vision",
+      "treeName": ""
+    },
+    {
+      "visionId": "1FYl5GITQihpOqWechHe",
+      "treeId": "VdXdR3w9vrBWi1GeOBMX",
+      "visionTitle": "Root Vision",
+      "treeName": ""
+    },
+    {
+      "visionId": "kldtXwWoyDiQLhx52Vuz",
+      "treeId": "gtpiYDsndW33ygC5LZw0",
+      "visionTitle": "Root Vision",
+      "treeName": ""
+    },
+    {
+      "visionId": "DNN5EOJUkKUbHEZWsppu",
+      "treeId": "vZZt60PekoVvA3t9EYmo",
+      "visionTitle": "Root Vision",
+      "treeName": ""
+    }
+  ],
+  "skipped": []
+}
