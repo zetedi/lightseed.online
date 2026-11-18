@@ -34,6 +34,8 @@ export const repairsRepository=withSession=>({
   visionGroundsFacts:uid=>withSession(uid,c=>run(c,'SELECT seed.repair_vision_grounds_facts() AS result',[])),
   /** One migrated ground (migration 067): true when written, false when the soil no longer agrees with the plan. @param {string} uid @param {string} visionId @param {string} treeId @param {boolean} birth @param {string} lid @returns {Promise<boolean>} */
   visionGround:(uid,visionId,treeId,birth,lid)=>withSession(uid,c=>run(c,'SELECT seed.repair_vision_ground($1,$2,$3,$4) AS result',[visionId,treeId,birth,lid])),
+  /** The retired field removed from one grounded vision (migration 068). @param {string} uid @param {string} visionId @param {string} treeId @returns {Promise<boolean>} */
+  visionFieldRetire:(uid,visionId,treeId)=>withSession(uid,c=>run(c,'SELECT seed.repair_vision_field_retire($1,$2) AS result',[visionId,treeId])),
   /** One orphan's field cleared (migration 067). @param {string} uid @param {string} visionId @param {string} treeId @returns {Promise<boolean>} */
   visionGroundClear:(uid,visionId,treeId)=>withSession(uid,c=>run(c,'SELECT seed.repair_vision_ground_clear($1,$2) AS result',[visionId,treeId])),
   /** @param {string} uid @returns {Promise<{nameless: number, twins: Array<{lid: string, addresses: string[]}>}>} */

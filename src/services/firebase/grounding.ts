@@ -2,6 +2,7 @@ import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firesto
 import { httpsCallable } from 'firebase/functions';
 import type { Lifetree, Vision, Link } from '../../types';
 import { GROUNDED_IN, GROUND_REQUEST } from '../../domain/grounding';
+import { msOf } from '../../domain/time';
 import { db, functions, mapDoc } from './core';
 import { graphStore } from '../../services/store';
 
@@ -25,7 +26,9 @@ export const dropGroundAsk = (visionId: string, treeId: string): Promise<void> =
 
 // What a face needs of one ground: the being at the other end (null when it is gone, or hidden
 // from this reader) and how the ground was made.
-export interface GroundOf<T> { id: string; being: T | null; self: boolean; birth: boolean }
+// `createdAtMs` is when the ground was made (null when the link carries no moment): the eldest
+// ground is a vision's home when none is a birth ground (domain/grounding homeGroundOf).
+export interface GroundOf<T> { id: string; being: T | null; self: boolean; birth: boolean; createdAtMs: number | null }
 
 const linksAt = async (end: 'from' | 'to', id: string, rel: string) =>
     (await getDocs(query(collection(db, 'links'), where(end, '==', id), where('rel', '==', rel)))).docs.map(d => d.data() as Partial<Link> & { self?: boolean; birth?: boolean });
@@ -41,7 +44,7 @@ const ends = async <T>(end: 'from' | 'to', id: string, rel: string, col: 'lifetr
     const links = await linksAt(end, id, rel);
     return Promise.all(links.map(async l => {
         const other = String((end === 'from' ? l.to : l.from) || '');
-        return { id: other, being: await beingAt<T>(col, other), self: !!l.self, birth: !!l.birth };
+        return { id: other, being: await beingAt<T>(col, other), self: !!l.self, birth: !!l.birth, createdAtMs: msOf(l.createdAt) || null };
     }));
 };
 

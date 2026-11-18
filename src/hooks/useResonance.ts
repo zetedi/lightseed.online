@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Lifetree, ReachAudience, VisionSynergy } from '../types';
-import { fetchVisions, getLifetreeById } from '@backend';
+import { fetchVisions, getLifetreeById, getGroundsOfVision } from '@backend';
+import { homeGroundOf } from '../domain/grounding';
 import { showAlert } from '../components/ui/Dialog';
 import { resonanceId } from '../components/ResonancePanel';
 import { spokenLine } from '../utils/translations';
@@ -71,23 +72,27 @@ export function useResonance(params: {
     try {
       const visions = await getVisions();
       if (visions.length < 2) { showAlert('resonance_two_visions'); setIsAnalyzingSynergy(false); return; }
-      // Label each vision by its TREE name (visions are often auto-titled "Root Vision"),
-      // so resonances read tree-to-tree rather than "Root Vision + Root Vision".
-      const treeIds = Array.from(new Set(visions.map((v: any) => v.lifetreeId).filter(Boolean)));
-      const treeInfo = new Map<string, { name?: string; place?: string }>();
-      await Promise.all(treeIds.map(async (tid: string) => {
-        try { const tr = await getLifetreeById(tid); if (tr) treeInfo.set(tid, { name: tr.name, place: (tr as any).locationName }); } catch {}
+      // Label each vision by its HOME TREE's name (the birth ground, else the eldest ground —
+      // domain/grounding homeGroundOf), so resonances read tree-to-tree; a vision that stands in
+      // no tree keeps its own title.
+      const homes = new Map<string, { id: string; name?: string; place?: string }>();
+      await Promise.all(visions.map(async (v: any) => {
+        try {
+          const grounds = await getGroundsOfVision(v.id);
+          const homeId = homeGroundOf(grounds.map(g => ({ treeId: g.id, birth: g.birth, createdAtMs: g.createdAtMs })));
+          const tree = grounds.find(g => g.id === homeId)?.being;
+          if (homeId) homes.set(v.id, { id: homeId, name: tree?.name, place: (tree as any)?.locationName });
+        } catch {}
       }));
       const labeled = visions.map((v: any) => {
-        const tid = v.lifetreeId;
-        const info = tid ? treeInfo.get(tid) : undefined;
+        const home = homes.get(v.id);
         const generic = !v.title || v.title.trim().toLowerCase() === 'root vision';
         // place + vision are the two bases of the resonance analysis.
-        return { ...v, title: info?.name || (generic ? 'A vision' : v.title), place: info?.place || '' };
+        return { ...v, title: home?.name || (generic ? 'A vision' : v.title), place: home?.place || '' };
       });
       // Map the labels back to tree ids so a conversation can be started from a resonance.
       const treeIdByName = new Map<string, string>();
-      labeled.forEach((v: any) => { const tid = v.lifetreeId; if (tid && v.title) treeIdByName.set(v.title.trim().toLowerCase(), tid); });
+      labeled.forEach((v: any) => { const tid = homes.get(v.id)?.id; if (tid && v.title) treeIdByName.set(v.title.trim().toLowerCase(), tid); });
       // The oracle's service is fetched on the first ask; App mounts this hook on every load.
       const { findVisionSynergies } = await import('@backend/gemini');
       const results = (await findVisionSynergies(labeled, preferredIntelligenceId)).map(r => ({

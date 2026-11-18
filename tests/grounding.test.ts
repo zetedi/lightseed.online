@@ -315,3 +315,21 @@ describe('the ground on the independent node — the command and the door', () =
     expect(source).toMatch(/session\.groundCommand\(/);
   });
 });
+
+// The home ground replaces the old `vision.lifetreeId` wherever one tree must answer.
+describe('the home ground of a vision', () => {
+  it('is the birth ground, else the eldest ground, else none', async () => {
+    const { homeGroundOf, isRootVision } = await import('../src/domain/grounding');
+    expect(homeGroundOf([])).toBeNull();
+    const grounds = [{ treeId: 't-new', createdAtMs: 300 }, { treeId: 't-old', createdAtMs: 100 }, { treeId: 't-birth', birth: true, createdAtMs: 200 }];
+    expect(homeGroundOf(grounds)).toBe('t-birth');
+    expect(homeGroundOf([...grounds].reverse())).toBe('t-birth');
+    expect(homeGroundOf(grounds.slice(0, 2))).toBe('t-old');
+    // a ground without a moment is younger than any dated one; ties fall to the smaller id
+    expect(homeGroundOf([{ treeId: 't-b' }, { treeId: 't-a' }, { treeId: 't-dated', createdAtMs: 5 }])).toBe('t-dated');
+    expect(homeGroundOf([{ treeId: 't-b' }, { treeId: 't-a' }])).toBe('t-a');
+    expect(isRootVision(grounds)).toBe(true);
+    expect(isRootVision(grounds.slice(0, 2))).toBe(false);
+    expect(isRootVision([])).toBe(false);
+  });
+});

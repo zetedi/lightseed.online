@@ -137,12 +137,13 @@ export const TRAVEL_PLAN: readonly TravelRule[] = [
   { path: 'organisations', mode: 'excluded', reason: 'the organisation-per-domain of 2025, before communities became the circle — two fossil records nothing has read since (found by the origin census, 2026-11-03); a fossil is not a being' },
 ];
 
-// The rels whose link.from is NOT a person uid: tree, Light House, and community edges.
+// The rels whose link.from is NOT a person uid: tree, Light House, community and vision edges
+// (a ground and its knock start at a VISION — domain/grounding).
 export const linkFromIsUid = (rel: string): boolean =>
   ![
     'participant', 'rooted', 'shelters', 'grows_in',
     'collaborates_with', 'recognises', 'shares_resources_with',
-    'descends_from',
+    'descends_from', 'grounded_in', 'ground_request',
   ].includes(rel);
 
 // ── Path matching ───────────────────────────────────────────────────────────────────────

@@ -12,27 +12,25 @@ import { useVisionGrounds, groundActs, type GroundOf } from '../../hooks/useGrou
 // trees it stands in, the trees it is still asking, and — for its author — "Ground this vision"
 // in one of their own trees (one act: author and carer are the same hand). Asking ANOTHER
 // being's tree is done from that tree's page, where the tree can be seen first.
-// A vision with no ground says it is seeking ground. A vision still carrying the old
-// `lifetreeId` and no ground is a legacy twin: the page keeps showing its old root card, and
-// this component stays silent about seeking.
-export const VisionGrounds = ({ vision, currentUserId, myTrees = [], onViewTree, onCount }: {
+// A vision with no ground says it is seeking ground.
+export const VisionGrounds = ({ vision, currentUserId, myTrees = [], onViewTree, onGrounds }: {
     vision: Vision;
     currentUserId?: string;
     myTrees?: Lifetree[];
     onViewTree?: (tree: Lifetree) => void;
-    // How many grounds stand, told to the page (it hides the legacy card once a ground exists).
-    onCount?: (n: number) => void;
+    // The standing grounds, told to the page once read (its home tree, its Shadow, whether it is
+    // a tree's Root Vision all come from them).
+    onGrounds?: (grounds: GroundOf<Lifetree>[]) => void;
 }) => {
     const { t } = useLanguage();
     const isAuthor = !!currentUserId && currentUserId === vision.authorId;
     const { standing: grounds, asks, reload } = useVisionGrounds(vision.id);
     const [picking, setPicking] = useState(false);
     const [busy, setBusy] = useState<string | null>(null);
-    const groundCount = grounds?.length;
     useEffect(() => {
-        if (groundCount !== undefined) onCount?.(groundCount);
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- onCount is a setter, stable by contract
-    }, [groundCount]);
+        if (grounds) onGrounds?.(grounds);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- onGrounds is a setter, stable by contract
+    }, [grounds]);
 
     const act = async (key: string, work: () => Promise<void>, done: string) => {
         if (busy) return;
@@ -49,7 +47,7 @@ export const VisionGrounds = ({ vision, currentUserId, myTrees = [], onViewTree,
         tree: tr,
         refusal: groundRefusal({ treeType: tr.treeType, visibility: tr.visibility, diedAtMs: (tr as { diedAt?: unknown }).diedAt ? 1 : null }, { visibility: vision.visibility }),
     }));
-    const seeking = isSeekingGround(grounds.length) && !vision.lifetreeId;
+    const seeking = isSeekingGround(grounds.length);
     const quiet = 'rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800';
     if (!seeking && grounds.length === 0 && asks.length === 0 && !isAuthor) return null;
 
@@ -84,7 +82,7 @@ export const VisionGrounds = ({ vision, currentUserId, myTrees = [], onViewTree,
                     onClick={async () => { if (await showConfirm('ground_release_confirm', { confirmText: 'ground_release' })) act(`r:${g.id}`, () => groundActs.release(vision.id, g.id), 'ground_released'); }}>
                     {t('ground_release')}
                 </button>
-            ), g.self ? `${t('grounded_in_trees')} · ${t('ground_self_chip')}` : t('grounded_in_trees')))}
+            ), g.birth ? t('root_vision_of') : g.self ? `${t('grounded_in_trees')} · ${t('ground_self_chip')}` : t('grounded_in_trees')))}
             {asks.map(g => row(g, isAuthor && (
                 <button type="button" disabled={!!busy} className={quiet} onClick={() => act(`w:${g.id}`, () => groundActs.dropAsk(vision.id, g.id), 'ground_withdrawn')}>{t('ground_withdraw')}</button>
             ), t('ground_waiting')))}

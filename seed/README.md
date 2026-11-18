@@ -1881,6 +1881,11 @@ out the plan's two kinds of act — a migrated ground where the vision's own aut
 tree (the link alone, marked `self` and `migrated`, no block on either chain) and the field
 cleared where the tree is gone — each re-proved by the soil, the rest left as it is, a grounded
 vision keeping its field. It answers `{apply, grounded, cleared, skipped, counts, refusals, rows}`.
+THE FIELD RETIRED (`vision_tree_field`, migration 068): the ninth repair, run after the eighth,
+removes the old `lifetreeId` from every vision whose ground in that very tree stands
+(`planFieldRetirement`), and names every vision that keeps the field because no such ground
+stands. Without `apply` it writes nothing. `/v1/documents` no longer filters visions by
+`lifetreeId`: a vision's trees are its `grounded_in` links (`/v1/links?from=…&rel=grounded_in`).
 
 ### The mail organ (migration 056)
 

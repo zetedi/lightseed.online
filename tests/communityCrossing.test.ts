@@ -57,6 +57,11 @@ const soil: Record<string, Record<string, unknown>> = Object.fromEntries([
   ['covenants/align_a2', { lid: LID(82), alignmentId: 'a2' }],
   ['config/superadmin', { uid: 'ann' }], ['admins/ann', {}],
   ['intelligences/i1', { lid: LID(91), anchorUid: 'kim', name: 'Oracle' }],
+  // Visions of outsiders: one stands in a tree of the circle by a ground, one in a tree outside,
+  // one only names a circle tree in the retired `lifetreeId` field (no ground).
+  ['visions/v-grounded', { lid: LID(95), authorId: 'far', title: 'Canopy' }], link('v-grounded', 'grounded_in', 'oak', 96),
+  ['visions/v-outside', { lid: LID(97), authorId: 'oda', title: 'Elsewhere' }], link('v-outside', 'grounded_in', 't-oda', 98),
+  ['visions/v-field', { lid: LID(99), authorId: 'oda', title: 'Old tie', lifetreeId: 'oak' }],
 ]);
 const docs: BundleDoc[] = Object.entries(soil).map(([path, data]) => ({ path, data }));
 const faces = [{ door: 'circle.example', domains: ['circle.example', 'circle.web.app'] }];
@@ -80,6 +85,10 @@ describe('the world of a community', () => {
     for (const path of ['lifetrees/t-oda', 'pulses/b5', 'lifetrees/t-oda/loves/ann', 'alignments/a2', 'covenants/align_a2', 'stays/s2', 'communities/other', 'config/superadmin', 'admins/ann']) expect(paths).not.toContain(path);
   });
 
+  it('carries a vision that stands in one of its trees by a ground, with the ground; never by the retired field', () => {
+    expect(paths).toEqual(expect.arrayContaining(['visions/v-grounded', 'links/v-grounded__grounded_in__oak']));
+    for (const path of ['visions/v-outside', 'links/v-outside__grounded_in__t-oda', 'visions/v-field']) expect(paths).not.toContain(path);
+  });
   it('takes what belongs by field — events and decisions by id or place, offerings by hand, rays of its trees, its glow, its doors, its subscribers', () => {
     expect(paths).toEqual(expect.arrayContaining(['pulses/e1', 'pulses/e2', 'pulses/o1', 'pulses/e1/loves/guest', 'gifts/o1__ann', 'rays/t-ann__2026-02-01__carer', 'glow/circle', 'communityInvites/inv1', 'treeKeepingInvites/tk1', 'subscriptions/circle.example__x']));
     for (const path of ['pulses/e3', 'rays/t-oda__2026-02-01__carer', 'glow/NODE', 'communityInvites/inv2', 'subscriptions/other.example__y']) expect(paths).not.toContain(path);

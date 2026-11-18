@@ -5,6 +5,7 @@
 // hydrate each end through the ordinary reads, so a being this reader may not see comes back null,
 // as on the origin.
 import type * as F from '../firebase/grounding';
+import { msOf } from '../../domain/time';
 import type { Lifetree, Vision, Link } from '../../types';
 import { GROUNDED_IN, GROUND_REQUEST } from '../../domain/grounding';
 import { session } from './core';
@@ -26,7 +27,7 @@ type GroundLink = Link & { self?: boolean; birth?: boolean };
 const ends = async <T>(links: Link[], end: 'from' | 'to', read: (id: string) => Promise<T | null>): Promise<F.GroundOf<T>[]> =>
     Promise.all((links as GroundLink[]).map(async l => {
         const id = String(l[end] || '');
-        return { id, being: await read(id).catch(() => null), self: !!l.self, birth: !!l.birth };
+        return { id, being: await read(id).catch(() => null), self: !!l.self, birth: !!l.birth, createdAtMs: msOf(l.createdAt) || null };
     }));
 
 export const getGroundsOfVision: typeof F.getGroundsOfVision = async (visionId) =>

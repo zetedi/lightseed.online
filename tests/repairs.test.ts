@@ -37,7 +37,7 @@ describe('the alignment a sync block names', () => {
 
 describe('the repair command', () => {
   it('admits the seven names and the index audit\'s apply, nothing else', () => {
-    expect(SEED_REPAIR_KINDS).toEqual(['pulse_visibility', 'pulse_type_casing', 'tree_visibility', 'vision_chains', 'lids', 'match_ids', 'lid_index', 'vision_grounds']);
+    expect(SEED_REPAIR_KINDS).toEqual(['pulse_visibility', 'pulse_type_casing', 'tree_visibility', 'vision_chains', 'lids', 'match_ids', 'lid_index', 'vision_grounds', 'vision_tree_field']);
     for (const kind of SEED_REPAIR_KINDS) expect(seedRepairCommand({ kind })).toEqual({ kind });
     expect(seedRepairCommand({ kind: 'lid_index', apply: true })).toEqual({ kind: 'lid_index', apply: true });
     for (const value of [null, 'lids', [], {}, { kind: 'drop_everything' }, { kind: 'lids', extra: 1 }, { kind: 'lids', apply: 'yes' }]) expect(seedRepairCommand(value)).toBeNull();

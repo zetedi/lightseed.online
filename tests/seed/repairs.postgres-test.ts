@@ -99,6 +99,18 @@ describe('the last hands', () => {
       const again = await t.repair('alice', { kind: 'vision_grounds', apply: true });
       expect(again.body).toMatchObject({ apply: true, grounded: 0, cleared: 0, skipped: 0 });
       expect(again.body.counts).toMatchObject({ already: 1, withoutField: 1, refused: 1, ground: 0, tree_gone: 0 });
+      // THE FIELD RETIRED (step 5): only the keeper; without `apply` nothing is written; v1's ground
+      // in t1 stands, so its field goes; v2 has a field and no ground, so it keeps it and is named.
+      expect((await t.repair('bob', { kind: 'vision_tree_field', apply: true })).status).toBe(403);
+      expect((await t.repair('alice', { kind: 'vision_tree_field' })).body).toEqual({ apply: false, retire: 1, keep: [{ visionId: 'v2', treeId: 't2' }] });
+      expect(t.sql("SELECT doc->>'lifetreeId' FROM visions WHERE id='v1'")).toBe('t1');
+      expect(t.sql("SET seed.uid='alice'; SELECT seed.repair_vision_field_retire('v2','t2')").trim().endsWith('f')).toBe(true);
+      expect((await t.repair('alice', { kind: 'vision_tree_field', apply: true })).body).toEqual({ apply: true, retired: 1, skipped: 0, keep: [{ visionId: 'v2', treeId: 't2' }] });
+      expect(t.sql("SELECT (doc ? 'lifetreeId')::text||' '||(doc->>'authorId') FROM visions WHERE id='v1'")).toBe('false alice');
+      expect(t.sql("SELECT doc->>'lifetreeId' FROM visions WHERE id='v2'")).toBe('t2');
+      expect(t.sql("SELECT count(*) FROM links WHERE from_id='v1' AND rel='grounded_in' AND to_id='t1'")).toBe('1');
+      expect((await t.repair('alice', { kind: 'vision_tree_field', apply: true })).body).toMatchObject({ retired: 0, skipped: 0 });
+
       // The soil re-proves each act whatever the plan believed: the keeper's own hand cannot ground
       // what the law forbids, nor a vision whose field names another tree, nor clear a living tree's field.
       expect(t.sql("SET seed.uid='alice'; SELECT seed.repair_vision_ground('v2','t2',false,'" + LID(90) + "')").trim().endsWith('f')).toBe(true);

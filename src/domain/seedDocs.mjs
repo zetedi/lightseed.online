@@ -18,7 +18,7 @@ export const SEED_DOC_COLLECTIONS = Object.freeze({
   config: { filters: [] },
   initiates: { filters: [] },
   lifetrees: { filters: ['anchorUid', 'domain', 'treeType', 'visibility', 'lightHouseId', 'validated'] },
-  visions: { filters: ['authorId', 'domain', 'lifetreeId', 'communityId', 'visibility'] },
+  visions: { filters: ['authorId', 'domain', 'communityId', 'visibility'] },
   pulses: { filters: ['authorId', 'lifetreeId', 'treeId', 'visionId', 'communityId', 'type', 'visibility', 'domain', 'threadId', 'reachTreeId',
     'chatTreeId', 'recipientUid', 'hash', 'lightHouseId', 'care', 'offeredToKind', 'offeredToId', 'isMatch', 'careAlert', 'offeringId', 'stayId', 'matchId'],
   arrays: ['participantUids'] },

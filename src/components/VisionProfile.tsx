@@ -14,7 +14,9 @@ import { OutwardLink } from './ui/OutwardLink';
 import { linkLabel } from '../domain/webLink';
 import { showsPlaceOfRecord } from '../domain/communityDoor';
 import { PlaceOfRecord } from './ui/PlaceOfRecord';
-import { getLifetreeById, getPulsesByVisionId, getPulsesByTreeId, mendVisionDomain } from '@backend';
+import { getPulsesByVisionId, getPulsesByTreeId, mendVisionDomain } from '@backend';
+import { homeGroundOf, isRootVision } from '../domain/grounding';
+import type { GroundOf } from '../hooks/useGrounds';
 import { graphStore } from '../services/store';
 import { participants, isParticipant } from '../domain/views/participation';
 import { ProfileHero } from './ui/ProfileHero';
@@ -50,8 +52,10 @@ interface VisionProfileProps {
     onViewTree?: (tree: Lifetree) => void;
     // View a single contribution/leaf.
     onViewPulse?: (pulse: Pulse) => void;
-    // Care with an OFFERING (ring 2026-09-06): open the offer form pointed at this vision.
-    onOffer?: (vision: Vision) => void;
+    // Care with an OFFERING (ring 2026-09-06): open the offer form pointed at this vision. The
+    // second word is the vision's HOME tree (domain/grounding homeGroundOf), whose thread the
+    // author's notice lands in; absent when the vision stands in no tree.
+    onOffer?: (vision: Vision, homeTreeId?: string) => void;
     // The host's scoping — a strict-scoped host shows one place by definition, so the
     // place-of-record stamp (staff sight, staff mend) is hidden there entirely.
     hostStrictScope?: boolean | null;
@@ -63,14 +67,24 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     const { t } = useLanguage();
     const { isAdmin, isSuperAdmin } = useSession();
     const isAuthor = currentUserId === vision.authorId;
-    const [groundCount, setGroundCount] = useState(0);
-    const isRoot = vision.title.toLowerCase() === 'root vision';
+    // THE GROUNDS (ring 2026-11-17), read by <VisionGrounds> below and told here. Everything this
+    // page once read from the old `lifetreeId` field comes from them: whether this is a tree's
+    // Root Vision (a BIRTH ground, never the title), its home tree, the Shadow's tree. Null until
+    // the reading for THIS vision lands.
+    const [groundsRead, setGroundsRead] = useState<{ id: string; list: GroundOf<Lifetree>[] } | null>(null);
+    const grounds = groundsRead?.id === vision.id ? groundsRead.list : null;
+    const isRoot = isRootVision(grounds ?? []);
+    const birthTree = grounds?.find(g => g.birth)?.being ?? null;
     // A Root Vision on a GUARDED tree is a mistake (a guarded tree is stood-for, not dreamed
     // forward — it should never have had one), so its author may delete it. The Root Vision of a
     // personal LIFETREE stays its protected foundation and cannot be removed.
-    const rootOnGuarded = isRoot && !!myTrees?.find(tr => tr.id === vision.lifetreeId && (tr.treeType === 'GUARDED' || tr.isNature));
+    const rootOnGuarded = isRoot && !!birthTree && (birthTree.treeType === 'GUARDED' || !!birthTree.isNature);
+    // The home tree: the birth ground, else the eldest ground (null when it is hidden from this reader).
+    const homeTreeId = homeGroundOf((grounds ?? []).map(g => ({ treeId: g.id, birth: g.birth, createdAtMs: g.createdAtMs })));
+    const rootTree = grounds?.find(g => g.id === homeTreeId)?.being ?? null;
     // The author may delete their own vision (a Root Vision only when it's the stray guarded kind).
-    const canDeleteAsAuthor = isAuthor && (!isRoot || rootOnGuarded);
+    // Not before the grounds are read: until then a Root Vision cannot be told from any other.
+    const canDeleteAsAuthor = isAuthor && grounds !== null && (!isRoot || rootOnGuarded);
     // A superadmin may release ANY vision — the rules already grant staff the delete; the button
     // wears the amber SuperDot when it's this staff capability rather than the author's own hand.
     const canDeleteAsStaff = !!isSuperAdmin && !canDeleteAsAuthor;
@@ -79,19 +93,6 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     const [isJoined, setIsJoined] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [participantCount, setParticipantCount] = useState(0);
-    // The tree this vision is rooted in (vision.lifetreeId). Prefer the local copy; otherwise fetch
-    // (the root tree may belong to someone else and not be in myTrees).
-    const [rootTree, setRootTree] = useState<Lifetree | null>(null);
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears/short-circuits from the local cache before the async tree fetch below
-        if (!vision.lifetreeId) { setRootTree(null); return; }
-        const local = myTrees?.find(tr => tr.id === vision.lifetreeId);
-        if (local) { setRootTree(local); return; }
-        let alive = true;
-        getLifetreeById(vision.lifetreeId).then(tr => { if (alive) setRootTree(tr); }).catch(() => {});
-        return () => { alive = false; };
-    }, [vision.lifetreeId, myTrees]);
-
     // Growing a vision seals a CONTRIBUTION onto the vision's OWN chain — no rooted tree required
     // now (the idea-twin grows independently). The vision belongs to its author, exactly as the
     // tree belongs to its owner (the twins each care their own chain); the Firestore rules gate
@@ -116,23 +117,28 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async chain fetch kickoff
     useEffect(() => { loadContributions(); }, [loadContributions]);
 
-    // The shadow TREE's chain (tree↔vision compare) — fetched only when this vision is rooted.
+    // The shadow TREE's chain (tree↔vision compare). A vision may stand in several trees: the
+    // Shadow opens on its home tree and the reader may turn it to any other ground they can see.
+    const shadowTrees = (grounds ?? []).flatMap(g => (g.being ? [g.being] : []));
+    const [shadowPick, setShadowPick] = useState<string | null>(null);
+    const shadowTree = shadowTrees.find(tr => tr.id === shadowPick) ?? rootTree ?? shadowTrees[0] ?? null;
+    const shadowTreeId = shadowTree?.id ?? null;
     const [shadowGenesis, setShadowGenesis] = useState<Pulse | null>(null);
     const [shadowBlocks, setShadowBlocks] = useState<Pulse[]>([]);
     const [loadingShadow, setLoadingShadow] = useState(false);
     const [shadowSide, setShadowSide] = useState<'vision' | 'tree'>('vision');
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the shadow when the vision has no tree; the async fetch follows
-        if (!vision.lifetreeId) { setShadowGenesis(null); setShadowBlocks([]); return; }
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the shadow when the vision stands in no tree; the async fetch follows
+        if (!shadowTreeId) { setShadowGenesis(null); setShadowBlocks([]); return; }
         let alive = true;
         setLoadingShadow(true);
-        getPulsesByTreeId(vision.lifetreeId).then(pulses => {
+        getPulsesByTreeId(shadowTreeId).then(pulses => {
             if (!alive) return;
             setShadowGenesis(pulses.find(isGenesisPulse) || null);
             setShadowBlocks(pulses.filter(p => !isGenesisPulse(p)));
         }).catch(() => {}).finally(() => { if (alive) setLoadingShadow(false); });
         return () => { alive = false; };
-    }, [vision.lifetreeId]);
+    }, [shadowTreeId]);
 
     // The chain's ROOT card + stats, drawn from the vision itself (its genesis is a sealed block).
     const visionChainRoot = {
@@ -177,8 +183,8 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
     const sections: SectionItem[] = [
         { key: 'about', label: t('about'), icon: <Icons.Eye /> },
         { key: 'contributions', label: t('contributions'), icon: <Icons.Drop /> },
-        // The shadow-compare only appears when the vision keeps a tree twin.
-        ...(vision.lifetreeId ? [{ key: 'shadow', label: t('shadow'), icon: <Icons.Tree /> }] as SectionItem[] : []),
+        // The shadow-compare only appears when the vision stands in a tree this reader can see.
+        ...(shadowTree ? [{ key: 'shadow', label: t('shadow'), icon: <Icons.Tree /> }] as SectionItem[] : []),
         { key: 'participants', label: t('participants'), icon: <Icons.Users /> },
     ];
 
@@ -203,7 +209,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         )}
                         {currentUserId && !isAuthor && onOffer && (
                             <button
-                                onClick={() => onOffer(vision)}
+                                onClick={() => onOffer(vision, homeTreeId ?? undefined)}
                                 title={t('care_offer')}
                                 className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-95"
                                 style={{ backgroundColor: tabTone('offerings') }}
@@ -303,27 +309,9 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                         {/* Where this vision sits relative to a tree: the tree's OWN root vision is its
                             anchor; any other vision merely roots INTO a tree, connecting to that root. */}
                         {/* THE GROUND (ring 2026-11-17): the trees this vision stands in by consent, and
-                            its author's way to ground it. The card below is the OLD tie (the
-                            `lifetreeId` field), shown only while no ground stands. */}
-                        <VisionGrounds vision={vision} currentUserId={currentUserId} myTrees={myTrees} onViewTree={onViewTree} onCount={setGroundCount} />
-                        {rootTree && groundCount === 0 && (
-                            <button
-                                onClick={() => onViewTree?.(rootTree)}
-                                className="mb-6 flex w-full items-center gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 text-left transition-colors hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/60"
-                            >
-                                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white bg-emerald-100 shadow dark:bg-emerald-950/40">
-                                    {rootTree.latestGrowthUrl || rootTree.imageUrl
-                                        ? <Picture size={480} src={rootTree.latestGrowthUrl || rootTree.imageUrl} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
-                                        : <span className="flex h-full w-full items-center justify-center text-emerald-500"><Icons.Tree /></span>}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-300">{isRoot ? t('root_vision_of') : t('rooted_in')}</p>
-                                    <p className="truncate text-lg font-light tracking-wide text-slate-800 dark:text-slate-100">{rootTree.name}</p>
-                                    <p className="truncate text-xs text-slate-500">{isRoot ? t('vision_is_foundation') : t('vision_connects_root')}</p>
-                                </div>
-                                <span className="shrink-0 text-emerald-600 dark:text-emerald-300"><Icons.ArrowRight /></span>
-                            </button>
-                        )}
+                            its author's way to ground it. */}
+                        <VisionGrounds vision={vision} currentUserId={currentUserId} myTrees={myTrees} onViewTree={onViewTree}
+                            onGrounds={(list) => setGroundsRead({ id: vision.id, list })} />
                         {/* The vision's pictures, the first its face (domain/pictures; ui/PictureGallery). */}
                         <PictureGallery images={picturesOf(vision)} alt={vision.title} className="mb-6 h-64" />
                         <p dir="auto" className="whitespace-pre-wrap font-serif text-xl leading-relaxed text-slate-700 dark:text-slate-200">
@@ -370,7 +358,7 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                     </div>
                 )}
 
-                {section === 'shadow' && vision.lifetreeId && (
+                {section === 'shadow' && shadowTree && (
                     <div className="space-y-6">
                         <SectionTitle title={t('shadow')} sub={t('shadow_sub')} />
                         {/* One birth, two chains: a labelled toggle lays the twins side by side so the
@@ -387,9 +375,20 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 onClick={() => setShadowSide('tree')}
                                 className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors ${shadowSide === 'tree' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}
                             >
-                                <Icons.Tree /> {rootTree?.name || t('tree')}
+                                <Icons.Tree /> {shadowTree.name || t('tree')}
                             </button>
                         </div>
+                        {/* Several grounds: the reader chooses which tree stands beside the vision. */}
+                        {shadowTrees.length > 1 && (
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                                {shadowTrees.map(tr => (
+                                    <button key={tr.id} type="button" onClick={() => { setShadowPick(tr.id); setShadowSide('tree'); }}
+                                        className={`max-w-[12rem] truncate rounded-full border px-3 py-1 text-xs font-medium transition-colors ${tr.id === shadowTree.id ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200' : 'border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800'}`}>
+                                        {tr.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         {shadowSide === 'vision' ? (
                             <ChainTree
                                 genesisBlock={contribGenesis}
@@ -410,14 +409,14 @@ export const VisionProfile = ({ vision, onClose, currentUserId, onDelete, myTree
                                 onViewPulse={onViewPulse ?? (() => {})}
                                 canCare={false}
                                 onCare={() => {}}
-                                root={rootTree ? {
-                                    imageUrl: rootTree.latestGrowthUrl || rootTree.imageUrl,
-                                    name: rootTree.name,
-                                    body: rootTree.body,
-                                    plantedLabel: rootTree.createdAt?.toDate ? rootTree.createdAt.toDate().toLocaleDateString() : '',
-                                    hash: rootTree.genesisHash,
-                                } : null}
-                                stats={rootTree ? { blockHeight: rootTree.blockHeight, genesisHash: rootTree.genesisHash, latestHash: rootTree.latestHash } : null}
+                                root={{
+                                    imageUrl: shadowTree.latestGrowthUrl || shadowTree.imageUrl,
+                                    name: shadowTree.name,
+                                    body: shadowTree.body,
+                                    plantedLabel: shadowTree.createdAt?.toDate ? shadowTree.createdAt.toDate().toLocaleDateString() : '',
+                                    hash: shadowTree.genesisHash,
+                                }}
+                                stats={{ blockHeight: shadowTree.blockHeight, genesisHash: shadowTree.genesisHash, latestHash: shadowTree.latestHash }}
                             />
                         )}
                     </div>

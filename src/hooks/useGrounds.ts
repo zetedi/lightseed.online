@@ -21,19 +21,24 @@ export const groundActs = {
   myVisions: getMyVisions,
 };
 
+const NO_ASKS: GroundOf<unknown>[] = [];
 const useBothLists = <T,>(id: string, readStanding: (id: string) => Promise<GroundOf<T>[]>, readAsks: (id: string) => Promise<GroundOf<T>[]>) => {
-  const [standing, setStanding] = useState<GroundOf<T>[] | null>(null);
-  const [asks, setAsks] = useState<GroundOf<T>[]>([]);
+  // The reading remembers whose it is: when the face turns to another being, the last being's
+  // grounds are never shown (or reported upward) under the new one's name.
+  const [read, setRead] = useState<{ id: string; standing: GroundOf<T>[]; asks: GroundOf<T>[] } | null>(null);
   const [nonce, setNonce] = useState(0);
   useEffect(() => {
     let alive = true;
     Promise.all([readStanding(id), readAsks(id)])
-      .then(([g, a]) => { if (alive) { setStanding(g); setAsks(a); } })
-      .catch(() => { if (alive) setStanding(prev => prev ?? []); });
+      .then(([standing, asks]) => { if (alive) setRead({ id, standing, asks }); })
+      // A reading that failed stays unread (null): a face must not say "seeking ground", nor a page
+      // take a Root Vision for an ordinary one, on the strength of a read that never landed.
+      .catch(() => {});
     return () => { alive = false; };
   }, [id, nonce, readStanding, readAsks]);
   const reload = useCallback(() => setNonce(n => n + 1), []);
-  return { standing, asks, reload };
+  const mine = read?.id === id ? read : null;
+  return { standing: mine ? mine.standing : null, asks: mine ? mine.asks : NO_ASKS as GroundOf<T>[], reload };
 };
 
 // A tree's side: the visions grounded in it, and the visions knocking.

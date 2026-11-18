@@ -100,7 +100,6 @@ export const DATA_MODEL: ModelEntity[] = [
     fields: [
       { name: 'id', type: 'string', pk: true },
       { name: 'lid', type: 'uuidv7' },
-      { name: 'lifetreeId', type: 'string?', ref: 'Lifetree' },
       { name: 'authorId', type: 'uid', ref: 'Person' },
       { name: 'communityId', type: 'string?', ref: 'Community' },
       { name: 'title', type: 'string' },

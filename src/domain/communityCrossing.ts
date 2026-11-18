@@ -92,7 +92,14 @@ export function communityCrossing(docs: BundleDoc[], communityId: string, option
 
   // Everything a member anchors, and every being placed here.
   const trees = new Set(top('lifetrees').filter(doc => ofMember(doc.data, 'anchorUid') || placedHere(doc.data)).map(doc => idOf(doc.path)));
-  const visions = new Set(top('visions').filter(doc => ofMember(doc.data, 'authorId') || trees.has(text(doc.data.lifetreeId) ?? '') || placedHere(doc.data)).map(doc => idOf(doc.path)));
+  // A vision travels with its author, with the place it was put, or with a tree it stands in: its
+  // grounds are `grounded_in` links (domain/grounding), no longer a field on the vision.
+  const grounded = new Set<string>();
+  for (const edge of edges) {
+    const from = text(edge.data.from);
+    if (edge.data.rel === 'grounded_in' && from && trees.has(text(edge.data.to) ?? '')) grounded.add(from);
+  }
+  const visions = new Set(top('visions').filter(doc => ofMember(doc.data, 'authorId') || grounded.has(idOf(doc.path)) || placedHere(doc.data)).map(doc => idOf(doc.path)));
   const houses = new Set(top('lightHouses').filter(doc => ofMember(doc.data, 'anchorUid') || placedHere(doc.data)).map(doc => idOf(doc.path)));
   const pulses = new Set<string>();
   for (const doc of top('pulses')) {

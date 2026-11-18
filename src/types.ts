@@ -28,7 +28,6 @@ export type VisionStatus = "seed" | "growing" | "flowering" | "dormant";
 // A direction of growth
 export interface Vision extends Being {
   id: string;
-  lifetreeId?: string; // canonical — the tree this vision belongs to
   authorId: string;    // canonical author — load-bearing (rules + query)
   title: string;
   body: string;        // the vision text (canonical)

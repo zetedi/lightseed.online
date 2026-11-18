@@ -123,3 +123,26 @@ export const groundMigrationActs = (plan: Pick<GroundMigrationPlan, 'rows'>): Gr
 // why it names no pair of blocks (a ground made by the hands names its two, `groundedPulseIds`).
 export const migratedGroundFields = (authorId: string, birth: boolean) =>
   ({ self: true, birth, requestedBy: authorId, acceptedBy: authorId, migrated: true }) as const;
+
+// THE FIELD RETIRED (step 5, ring 2026-11-18). Once every reader finds a vision's tree through its
+// grounds, the old `lifetreeId` says nothing the link does not. It is removed ONLY from a vision
+// whose ground in that very tree stands — the link has taken its place. Any other vision still
+// carrying the field (the law refused its ground, it needs a yes, its tree was full) KEEPS it: the
+// field is then the only record of where it once belonged, and a human decides.
+export interface FieldRetirement {
+  retire: { visionId: string; treeId: string }[];
+  keep: { visionId: string; treeId: string }[];
+}
+export function planFieldRetirement(
+  visions: readonly Pick<MigrationVision, 'id' | 'lifetreeId'>[],
+  standing: readonly { visionId: string; treeId: string }[],
+): FieldRetirement {
+  const stands = new Set(standing.map(g => `${g.visionId}\n${g.treeId}`));
+  const out: FieldRetirement = { retire: [], keep: [] };
+  for (const vision of [...visions].sort((a, b) => a.id.localeCompare(b.id))) {
+    const treeId = typeof vision.lifetreeId === 'string' ? vision.lifetreeId : '';
+    if (!treeId) continue;
+    (stands.has(`${vision.id}\n${treeId}`) ? out.retire : out.keep).push({ visionId: vision.id, treeId });
+  }
+  return out;
+}

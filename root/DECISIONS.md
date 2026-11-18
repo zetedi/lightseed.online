@@ -6355,4 +6355,32 @@ asked; `self` and `migrated` say this); that the chains show the ground (they do
 `tests/groundMigration.test.ts`, `tests/seed/repairs.postgres-test.ts`. The origin's script has
 no automated test: it was exercised only as a dry run against the origin.
 
-Built on both soils; run on neither. The crossing waits for the guardian's word.
+Run on the origin by Zoltán the same day: 35 grounded (23 birth grounds), 4 fields cleared, none
+skipped; a second reading found nothing left to do. Not yet run on any node.
+
+### 2026-11-18 — The field retired; a vision's tree is its home ground
+
+Zoltán: "I would like to get rid of legacy also." With the grounds standing, nothing needs
+`vision.lifetreeId`. Where one tree must answer for a vision that may stand in twelve, the answer
+is its HOME GROUND: the birth ground, else the eldest ground, else none (`homeGroundOf`). His
+three words: the Shadow opens on the home tree and the reader may turn it to any other ground;
+an offering's notice lands in the home tree's thread, else goes to the author alone; and the
+guardians' veto would have followed the birth ground — but on reading the code the veto never
+read a vision's field at all (it reads the `lifetreeId` of a growth BLOCK, which names its
+chain and stays), so nothing changed there.
+
+A Root Vision is now known by its birth ground, never by its title (`isRootVision`): the page's
+protection of a personal tree's Root Vision follows the mark the migration wrote.
+
+Found on the way, and mended: the bundle's census read the vision end of a ground as a person
+(`linkFromIsUid`), so an export after the migration would have listed 35 visions as people to
+re-anchor.
+
+Plain contract. Guaranteed now: no code on either soil reads the field. Not guaranteed: that
+the field is gone from the records (it is removed by `scripts/retire-vision-tree-field.mjs` and
+the node's repair `vision_tree_field`, only where the ground in that very tree stands, and only
+on the guardian's word, after the new shell is deployed — an older shell still reads it); that a
+client cannot write the dead field again (the rules do not refuse it; nothing reads it). The
+page's Root Vision protection is the page's alone, as it was before: no rule refuses the delete.
+Enforced by `tests/grounding.test.ts`, `tests/groundMigration.test.ts`,
+`tests/communityCrossing.test.ts`, `tests/bundle.test.ts`, `tests/seed/repairs.postgres-test.ts`.

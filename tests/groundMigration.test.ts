@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planGroundMigration, groundMigrationActs, migratedGroundFields, type MigrationTree, type MigrationVision } from '../src/domain/groundMigration';
+import { planGroundMigration, groundMigrationActs, migratedGroundFields, planFieldRetirement, type MigrationTree, type MigrationVision } from '../src/domain/groundMigration';
 
 // THE OLD TIE BECOMES A GROUND (step 4, the plan): what would be written, and what would not, and why.
 const tree = (over: Partial<MigrationTree> = {}): MigrationTree => ({ id: 't1', anchorUid: 'u-anchor', treeType: 'LIFETREE', visibility: 'public', diedAtMs: null, carerUids: [], ...over });
@@ -95,5 +95,17 @@ describe('the apply writes two kinds of act and nothing else (keeper, 2026-11-18
   it('a migrated ground says it was carried across, and names no blocks', () => {
     expect(migratedGroundFields('u-anchor', true)).toEqual({ self: true, birth: true, requestedBy: 'u-anchor', acceptedBy: 'u-anchor', migrated: true });
     expect(migratedGroundFields('u-anchor', false)).not.toHaveProperty('groundedPulseIds');
+  });
+});
+
+describe('the field is retired only where the link has taken its place (step 5)', () => {
+  it('a vision grounded in the tree its field names loses the field; every other keeps it', () => {
+    const plan = planFieldRetirement(
+      [{ id: 'v-b', lifetreeId: 't1' }, { id: 'v-a', lifetreeId: 't1' }, { id: 'v-elsewhere', lifetreeId: 't1' }, { id: 'v-unasked', lifetreeId: 't2' }, { id: 'v-free', lifetreeId: null }, { id: 'v-empty', lifetreeId: '' }],
+      [{ visionId: 'v-a', treeId: 't1' }, { visionId: 'v-b', treeId: 't1' }, { visionId: 'v-elsewhere', treeId: 't9' }]);
+    expect(plan).toEqual({
+      retire: [{ visionId: 'v-a', treeId: 't1' }, { visionId: 'v-b', treeId: 't1' }],
+      keep: [{ visionId: 'v-elsewhere', treeId: 't1' }, { visionId: 'v-unasked', treeId: 't2' }],
+    });
   });
 });

@@ -229,3 +229,18 @@ export const rootVisionOf = (treeId: string, grounds: readonly GroundLinkFacts[]
   return [...births].sort((a, b) =>
     (a.createdAtMs ?? Infinity) - (b.createdAtMs ?? Infinity) || a.visionId.localeCompare(b.visionId))[0].visionId;
 };
+
+// THE HOME GROUND OF A VISION: the one tree that answers when a single tree must (the thread a
+// keeper's notice lands in, the chain the Shadow compare opens on, the name a resonance wears).
+// A vision may stand in twelve trees; its home is its birth ground, else the eldest ground, else
+// none (keeper's word, 2026-11-18). Ties fall to the smaller id, so the answer never depends on
+// the order the links were read in. This replaces the old `vision.lifetreeId` field.
+export interface VisionGroundFacts { treeId: string; birth?: boolean | null; createdAtMs?: number | null }
+export const homeGroundOf = (grounds: readonly VisionGroundFacts[]): string | null => {
+  if (!grounds.length) return null;
+  return [...grounds].sort((a, b) =>
+    Number(b.birth === true) - Number(a.birth === true)
+    || (a.createdAtMs ?? Infinity) - (b.createdAtMs ?? Infinity) || a.treeId.localeCompare(b.treeId))[0].treeId;
+};
+// A vision is a tree's Root Vision when one of its grounds is a birth ground — never by its title.
+export const isRootVision = (grounds: readonly Pick<VisionGroundFacts, 'birth'>[]): boolean => grounds.some(g => g.birth === true);

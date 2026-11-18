@@ -114,7 +114,7 @@ export const BeingDetail: React.FC<{
         myTrees={myTrees}
         onGrow={(v: Vision) => doors.openVisionGrowth(v)}
         onViewPulse={(p) => setSelectedPulse(p)}
-        onOffer={(v: Vision) => doors.openOffer({ kind: 'vision', id: v.id, lid: v.lid, name: v.title, keeperUid: v.authorId, rootTreeId: v.lifetreeId })}
+        onOffer={(v: Vision, homeTreeId?: string) => doors.openOffer({ kind: 'vision', id: v.id, lid: v.lid, name: v.title, keeperUid: v.authorId, rootTreeId: homeTreeId })}
         onViewTree={(tree) => { setSelectedVision(null); setSelectedTree(tree); }}
         hostStrictScope={host?.strictScope}
       />

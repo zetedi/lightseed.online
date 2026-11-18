@@ -31,8 +31,9 @@ export function seedGroundCommand(value) {
   return { action: value.action, visionId: value.visionId, treeId: value.treeId };
 }
 // /v1/repairs/command (ring 2026-11-03) — THE LAST HANDS: the keeper asks the node for one of its own
-// audits and repairs, by the origin's names; `apply` rides only on the index audit, as the origin's did.
-export const SEED_REPAIR_KINDS = ['pulse_visibility', 'pulse_type_casing', 'tree_visibility', 'vision_chains', 'lids', 'match_ids', 'lid_index', 'vision_grounds'];
+// audits and repairs, by the origin's names; `apply` matters to the index audit and to the two ground
+// crossings (`vision_grounds`, `vision_tree_field`), which write nothing without it.
+export const SEED_REPAIR_KINDS = ['pulse_visibility', 'pulse_type_casing', 'tree_visibility', 'vision_chains', 'lids', 'match_ids', 'lid_index', 'vision_grounds', 'vision_tree_field'];
 export function seedRepairCommand(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !SEED_REPAIR_KINDS.includes(value.kind)
     || Object.keys(value).some(k => !['kind', 'apply'].includes(k)) || (value.apply !== undefined && typeof value.apply !== 'boolean')) return null;

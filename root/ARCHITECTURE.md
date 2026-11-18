@@ -970,17 +970,23 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   on the node by the keeper's repair `vision_grounds` (migrations 066, 067). The apply writes the
   link alone, marked `migrated` — no block, since nothing was asked and answered — only where the
   vision's own author cares for the tree; clears the field where the tree is gone; and leaves the
-  field on a grounded vision. Built and tested on both soils; run on neither yet (2026-11-18).
+  field on a grounded vision. Run on the origin on 2026-11-18; not yet on any node.
+  THE FIELD RETIRED (step 5): `planFieldRetirement` removes the field only where the ground in
+  that very tree stands (`scripts/retire-vision-tree-field.mjs`; the node's repair
+  `vision_tree_field`, migration 068), after the shell that no longer reads it is deployed.
 
 ## Known debts (kept honestly)
 
-- Grounded visions are half-grown (ring 2026-11-17): the law, the server hands, the rules and
-  the two faces (`lifetree/TreeVisions`, `vision/VisionGrounds`, through `hooks/useGrounds`) exist
-  and planting no longer births a vision; but every older vision still carries `lifetreeId` and no
-  ground (its page, resonance, the community crossing and the independent node's schema still
-  read the field), a Root Vision is still known by its title, `groundKeepsFaith` is asked by no one when visibility
-  changes, deleting a vision leaves its grounds standing, and `visionReceivesLight` gates nothing
-  because no light reaches a vision yet.
+- Grounded visions (rings 2026-11-17 and -18): no code reads `vision.lifetreeId` any more — a
+  vision's tree is its HOME GROUND (`domain/grounding` `homeGroundOf`: the birth ground, else the
+  eldest), a Root Vision is known by its birth ground (`isRootVision`), the community crossing
+  carries a vision by its grounds. Still unfinished: the field itself stays on the origin's
+  records until `scripts/retire-vision-tree-field.mjs` is run (and on a node until its repair
+  `vision_tree_field`); the rules do not refuse a client writing the dead field again;
+  `groundKeepsFaith` is asked by no one when visibility changes; deleting a vision leaves its
+  grounds standing; a migrated ground has no block on either chain, by decision;
+  `visionReceivesLight` gates nothing because no light reaches a vision yet; resonance reads each
+  vision's grounds one by one (a read per vision).
 - Backend custody is now explicit, but backend division is not: hosted domains
   still share their authority node's instance-wide Auth and database. The next
   boundary is a self-describing export/import and independent backend bootstrap;

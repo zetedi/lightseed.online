@@ -280,6 +280,9 @@ describe('the re-anchoring census — every mortal uid, none twice, no impostors
     expect(linkFromIsUid('keeper')).toBe(true);
     expect(linkFromIsUid('participant')).toBe(false);
     expect(linkFromIsUid('rooted')).toBe(false);
+    // a ground and its knock start at a vision, never a person (found 2026-11-18: 35 visions would have been counted as people to re-anchor)
+    expect(linkFromIsUid('grounded_in')).toBe(false);
+    expect(linkFromIsUid('ground_request')).toBe(false);
     expect(linkFromIsUid('shelters')).toBe(false);
     expect(linkFromIsUid('grows_in')).toBe(false);
     expect(linkFromIsUid('collaborates_with')).toBe(false);

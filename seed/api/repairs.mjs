@@ -6,7 +6,7 @@
 // moment; the alignment a sync block names), and the apply goes back through the repository, each
 // statement judged by the soil as the keeper. Sealed blocks are never touched — their type,
 // visibility, lid and matchId are canonical content — and are reported as skipped, as the origin did.
-import {createBlock,alignmentForSyncBlock,planGroundMigration,groundMigrationActs} from '../generated/chain.mjs';
+import {createBlock,alignmentForSyncBlock,planGroundMigration,groundMigrationActs,planFieldRetirement} from '../generated/chain.mjs';
 import {uuidv7} from '../../src/domain/uuidv7.mjs';
 
 /** @typedef {import('./db/repairs.mjs').RepairsRepository} RepairsRepository */
@@ -73,6 +73,17 @@ export async function repairCommand({repository,uid,command}) {
       for(const act of acts.grounds){if(await repository.visionGround(uid,act.visionId,act.treeId,act.birth,uuidv7(Date.now())))grounded++;else skipped++;}
       for(const act of acts.cleared){if(await repository.visionGroundClear(uid,act.visionId,act.treeId))cleared++;else skipped++;}
       return {apply:true,grounded,cleared,skipped,counts:plan.counts,refusals:plan.refusals,rows:plan.rows};
+    }
+    case 'vision_tree_field': {
+      // THE FIELD RETIRED (ring 2026-11-18, step 5): the old `lifetreeId` leaves every vision whose
+      // ground in that very tree stands; any other vision keeps it and is named. Without `apply`
+      // nothing is written. Run after `vision_grounds` has been applied.
+      const facts=await repository.visionGroundsFacts(uid);
+      const plan=planFieldRetirement(facts.visions.map(v=>({id:v.id,lifetreeId:v.lifetreeId??null})),facts.standing);
+      if(command.apply!==true)return {apply:false,retire:plan.retire.length,keep:plan.keep};
+      let retired=0,skipped=0;
+      for(const act of plan.retire){if(await repository.visionFieldRetire(uid,act.visionId,act.treeId))retired++;else skipped++;}
+      return {apply:true,retired,skipped,keep:plan.keep};
     }
     case 'lid_index': {
       // On this soil the index is the records themselves: nothing to write, nothing to disagree; a name on two beings is the collision.
