@@ -262,7 +262,7 @@ canopy, in this order, no new canopy until the first two stand:
   `vision_tree_field`. (6) the light around a vision gated by `visionReceivesLight` on both soils (appreciation and
   spend on an offering made to a vision). Next: a walk of all of it against the live backends; a path by which
   light ARRIVES at a vision (none exists), asking the same gate; the care the gate reads
-  (`root/QUESTIONS.md`); releasing a deleted vision's grounds.
+  (`root/QUESTIONS.md`). (7) a released vision's grounds end with it, on both soils.
 - **Nodes become real (the domain–DB link).** The first boundary now exists:
   each backend can publicly name its governing node, and hosted domains no
   longer borrow the node/hub name. But Auth and data remain instance-wide inside

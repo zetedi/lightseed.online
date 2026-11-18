@@ -22,7 +22,7 @@ export const chainsRepository=withSession=>repositoryOf(withSession,{
   visionsPage:(c,{domain,author,tree,joined,afterMoment,afterId,limit})=>rows(c,`SELECT id,doc,to_char(seed.vision_moment(doc) AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS moment
     FROM public.visions WHERE (doc->>'visibility' IN ('public','node') OR (jsonb_typeof(doc->'authorId')='string' AND doc->>'authorId'=seed.uid()) OR seed.is_staff() OR seed.offering_twin_party(id,doc) OR seed.offering_recipient(doc))
     AND ($1::text IS NULL OR doc->>'domain'=$1) AND ($2::text IS NULL OR doc->>'authorId'=$2)
-    AND ($3::text IS NULL OR doc->>'lifetreeId'=$3)
+    AND ($3::text IS NULL OR EXISTS(SELECT 1 FROM public.links WHERE from_id=visions.id AND rel='grounded_in' AND to_id=$3))
     AND ($4::text IS NULL OR EXISTS(SELECT 1 FROM public.links WHERE from_id=$4 AND rel='joined' AND to_id=visions.id))
     AND ($5::timestamptz IS NULL OR (seed.vision_moment(doc),id COLLATE "C")<($5::timestamptz,$6::text COLLATE "C"))
     ORDER BY seed.vision_moment(doc) DESC,id COLLATE "C" DESC LIMIT $7`,

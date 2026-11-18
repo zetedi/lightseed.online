@@ -133,7 +133,7 @@ GRANT EXECUTE ON FUNCTION seed.repair_pulse_visibility(), seed.repair_pulse_type
 -- THE GROUND (ring 2026-11-17, migration 064): the facts and the four applies the API drives for a hand; each proves the
 -- hand's standing and the law's invariants itself. The helpers they call stay the soil's.
 GRANT EXECUTE ON FUNCTION seed.ground_context(text,text), seed.apply_ground_ask(text,text,text), seed.ground_ask_drop(text,text),
-  seed.apply_ground(text,text,jsonb,jsonb,bigint,bigint,text), seed.apply_ground_release(text,text,jsonb,jsonb,bigint,bigint) TO ${role};
+  seed.vision_grounds_context(text), seed.apply_vision_grounds_end(text,jsonb), seed.apply_ground(text,text,jsonb,jsonb,bigint,bigint,text), seed.apply_ground_release(text,text,jsonb,jsonb,bigint,bigint) TO ${role};
 -- THE BINDING CEREMONY (ring 2026-11-03): the reviewed bindings become durable rows when the API boots.
 GRANT EXECUTE ON FUNCTION seed.bind_explicit(text,jsonb) TO ${role};
 COMMIT;

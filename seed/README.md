@@ -1891,6 +1891,10 @@ THE GROUND GATE ON LIGHT (migration 070): `POST /v1/light/command` refuses `appr
 in no tree that is alive, cared for within a year and validated (a guarded tree needs no
 validation); the contexts read those trees under the movement's locks, the shared law judges,
 the applies re-prove it (LS071).
+A VISION RELEASED ENDS ITS GROUNDS (migration 071): `POST /v1/visions/command` `release` removes
+every `grounded_in` link from the vision with one sealed block on each tree's chain, withdraws its
+knocks, and releases the vision, in one transaction. `/v1/visions?tree=` lists the visions
+grounded in that tree.
 
 ### The mail organ (migration 056)
 

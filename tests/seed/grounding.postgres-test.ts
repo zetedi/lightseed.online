@@ -210,6 +210,56 @@ describe('the ground on the independent node', () => {
     } finally { await t.close(); }
   });
 
+  it('a released vision ends its grounds: the tree is freed and its chain says so, in the one transaction of the release', async () => {
+    const t = await serve();
+    try {
+      world(t.sql);
+      // v1 stands in t1 (asked and answered) and in the author's own t2, and knocks nowhere else.
+      await t.ground('ask', 'alice'); await t.ground('accept', 'bob');
+      expect((await t.ground('accept', 'alice', 'v1', 't2')).status).toBe(200);
+      const before = t.pulsesOf('lifetreeId', 't1').length;
+      const oak = t.doc('lifetrees', 't1')!;
+      // A hand that may not release the vision ends nothing.
+      expect((await t.post('/v1/visions/command', { action: 'release', id: 'v1' }, 'bob')).status).toBe(403);
+      expect(t.link('grounded_in')).not.toBeNull();
+      expect(t.doc('lifetrees', 't1')).toMatchObject({ latestHash: oak.latestHash, blockHeight: oak.blockHeight });
+      // The author releases it.
+      const released = await t.post('/v1/visions/command', { action: 'release', id: 'v1' }, 'alice');
+      expect(released.status).toBe(200);
+      expect(t.doc('visions', 'v1')).toBeNull();
+      expect(t.sql("SELECT count(*) FROM links WHERE from_id='v1'")).toBe('0');
+      // One block on each tree's chain, none on the vision's; each head moved by exactly one.
+      const onOak = t.pulsesOf('lifetreeId', 't1');
+      expect(onOak.length).toBe(before + 1);
+      const last = onOak[onOak.length - 1];
+      expect(last).toMatchObject({ type: 'standard', groundAct: 'released', groundRole: 'tree', groundTwinOf: 'v1', groundTwinKind: 'vision', authorId: 'alice', authorName: 'Alice',
+        title: 'A ground ends with its vision', body: 'Alice released the vision "Clear water"; its ground in Oak ended with it.', previousHash: oak.latestHash, visibility: 'public' });
+      expect(t.doc('lifetrees', 't1')).toMatchObject({ latestHash: last.hash, blockHeight: Number(oak.blockHeight) + 1 });
+      expect(t.pulsesOf('lifetreeId', 't2').filter(p => p.groundAct === 'released').length).toBe(1);
+      expect(t.pulsesOf('lifetreeId', 't2').find(p => p.groundAct === 'released')).toMatchObject({ groundSelf: true });
+      expect(t.pulsesOf('visionId', 'v1').filter(p => p.groundAct === 'released').length).toBe(0);
+      // The tree's place is free again.
+      expect(t.sql("SELECT count(*) FROM links WHERE to_id='t1' AND rel='grounded_in'")).toBe('0');
+    } finally { await t.close(); }
+  });
+
+  it('staff releasing a vision end its grounds in their own name, and a knock is withdrawn without a block', async () => {
+    const t = await serve();
+    try {
+      world(t.sql);
+      await t.ground('ask', 'alice');
+      const height = t.doc('lifetrees', 't1')!.blockHeight;
+      expect((await t.post('/v1/visions/command', { action: 'release', id: 'v1' }, 'staff')).status).toBe(200);
+      expect(t.sql("SELECT count(*) FROM links WHERE from_id='v1'")).toBe('0');
+      expect(t.doc('lifetrees', 't1')!.blockHeight).toBe(height);
+      // and with a standing ground, the block wears the staff hand's name
+      t.sql(`INSERT INTO visions VALUES ('v9','{"lid":"${LID(29)}","authorId":"alice","title":"Second","visibility":"public","domain":"node.example","genesisHash":"v9gen","latestHash":"v9gen","blockHeight":0}')`);
+      expect((await t.ground('accept', 'alice', 'v9', 't2')).status).toBe(200);
+      expect((await t.post('/v1/visions/command', { action: 'release', id: 'v9' }, 'staff')).status).toBe(200);
+      expect(t.pulsesOf('lifetreeId', 't2').find(p => p.groundAct === 'released')).toMatchObject({ authorId: 'staff', authorName: 'Staff', groundTwinOf: 'v9' });
+    } finally { await t.close(); }
+  });
+
   it('planting a lifetree births no vision', async () => {
     const t = await serve();
     try {

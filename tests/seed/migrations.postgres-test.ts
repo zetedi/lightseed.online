@@ -43,7 +43,7 @@ it('reads visions through author privacy and paginates newest-first without losi
       ('node','{"visibility":"node","authorId":"alice","createdAt":"2026-10-25T13:00:00Z"}'),
       ('private','{"visibility":"private","authorId":"alice","lifetreeId":"tree","createdAt":"2026-10-25T14:00:00Z"}'),
       ('legacy','{"authorId":"alice"}'),('malformed','{"visibility":"public","createdAt":"bad"}');
-      INSERT INTO links(from_id,rel,to_id,lid) VALUES ('bob','keeper','tree','keeper'),('bob','joined','private','joined');
+      INSERT INTO links(from_id,rel,to_id,lid) VALUES ('bob','keeper','tree','keeper'),('bob','joined','private','joined'),('node','grounded_in','tree','ground');
       INSERT INTO admins VALUES ('staff','{}');`);
     const first=await db.visions(query({limit:'1'}));expect(first.visions.map((v:any)=>v.id)).toEqual(['public-a']);
     expect(first.next).toContain('.123456Z');
@@ -53,7 +53,8 @@ it('reads visions through author privacy and paginates newest-first without losi
     expect((await db.visions(query())).visions.map((v:any)=>v.id)).not.toContain('legacy');
     expect((await db.visions(query({id:'private'}),'bob')).vision).toBeNull();
     expect((await db.visions(query({joined:'bob'}),'bob')).visions).toEqual([]);
-    expect((await db.visions(query({tree:'tree'}),'alice')).visions[0].id).toBe('private');
+    // A tree's visions are the ones GROUNDED in it (ring 2026-11-18); the retired `lifetreeId` field answers nothing.
+    expect((await db.visions(query({tree:'tree'}),'alice')).visions.map((v:any)=>v.id)).toEqual(['node']);
     expect((await db.visions(query(),'staff')).visions.map((v:any)=>v.id)).toContain('private');
     expect((await db.visions(query(),'bob')).visions.map((v:any)=>v.id)).toContain('node');
     expect((await db.visions(query({domain:'garden.example'}))).visions.map((v:any)=>v.id)).toEqual(['public-a']);

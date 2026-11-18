@@ -18,8 +18,7 @@ import type { DomainKey } from './words';
 // no blocks), the independent node keeps the same law, and light moving around a vision obeys
 // visionReceivesLight (domain/spend's ground gate).
 // NOT GUARANTEED YET: that a ground is re-judged when a tree or vision later changes who may see it
-// (groundKeepsFaith is written and asked by no one); that a ground is released when its vision
-// is deleted; any limit on how many visions may knock at one tree; that the
+// (groundKeepsFaith is written and asked by no one); any limit on how many visions may knock at one tree; that the
 // ids of a node-only tree and vision, and the asker's uid, stay inside the node (the LIN is
 // world-readable — only private beings are kept out of it). NEVER GUARANTEED: that a vision is being realised on the land
 // that grounds it (a ground records consent, not work), or that author and carer are different
@@ -269,3 +268,17 @@ export const groundLightFactsOf = (tree: GroundTreeRecord): GroundLightFacts => 
 // (its `grounded_in` links, read by the server at the moment of movement).
 export const visionLightOf = (trees: readonly GroundTreeRecord[], nowMs: number): boolean =>
   visionReceivesLight(trees.map(groundLightFactsOf), nowMs);
+
+// ── A VISION IS GONE: ITS GROUNDS END WITH IT (ring 2026-11-18) ─────────────────────────────
+// A ground stands between two beings. When the vision is released (deleted), every ground it
+// stood in ends: the link is removed, so the tree's place among its twelve is free again, and ONE
+// block is written on the tree's chain — the vision has no chain left to write on. Its knocks are
+// withdrawn without a block (a knock was never an agreement). The tree is not otherwise touched.
+// The block is authored by the hand that released the vision; where the server cannot name that
+// hand (a system act, such as an account's departure) it is the vision's author, whose departure it is.
+// The words are sealed in English, as every ground block's are.
+export const visionGoneGroundProse = (actorName: string, visionTitle: string, treeName: string) => ({
+  title: 'A ground ends with its vision',
+  treeBody: `${actorName} released the vision "${visionTitle}"; its ground in ${treeName} ended with it.`,
+  visionBody: '',
+});

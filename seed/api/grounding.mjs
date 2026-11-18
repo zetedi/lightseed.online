@@ -9,7 +9,7 @@
 // This is a SERVICE: orchestration and refusals, no SQL (seed/api/db/grounding.mjs).
 import {randomBytes} from 'node:crypto';
 import {uuidv7} from '../../src/domain/uuidv7.mjs';
-import {groundAskRefusal,groundAcceptRefusal,groundReleaseRefusal,groundBlocksOf,publicNameOf,computeCanonicalHash,BLOCK_HASH_VERSION} from '../generated/chain.mjs';
+import {groundAskRefusal,groundAcceptRefusal,groundReleaseRefusal,groundBlocksOf,visionGoneGroundProse,publicNameOf,computeCanonicalHash,BLOCK_HASH_VERSION} from '../generated/chain.mjs';
 import {refuse} from './organs.mjs';
 
 /** @typedef {import('./db/grounding.mjs').GroundingRepository} GroundingRepository */
@@ -30,10 +30,13 @@ const nameOf=(profile,speaksFor)=>publicNameOf({displayName:text(profile?.displa
 
 // The blocks of one act — one for each chain that still exists — sealed canonically over the very
 // record that will be stored (blockRecordOf's shape: the origin's stageBlock, field for field).
-async function blocksOf({act,visionId,treeId,vision,tree,uid,name,self,nodeDomain,mintedAt}) {
-  const treeName=text(tree?.name)||'a tree',visionTitle=text(vision?.title)||'a vision',grounded=act==='grounded';
-  const blocks=groundBlocksOf({act,vision:{id:visionId,visibility:vision?visibilityOf(vision):null},tree:{id:treeId,visibility:tree?visibilityOf(tree):null},
-    actor:{uid,name},self},{title:grounded?'A vision takes ground':'A ground is released',
+// `goneVision` is the vision's last record when it is being released: it lends its title and its
+// visibility to the tree's block and takes none itself (`vision` is then null).
+async function blocksOf({act,visionId,treeId,vision,tree,uid,name,self,nodeDomain,mintedAt,goneVision=null}) {
+  const said=vision??goneVision;
+  const treeName=text(tree?.name)||'a tree',visionTitle=text(said?.title)||'a vision',grounded=act==='grounded';
+  const blocks=groundBlocksOf({act,vision:{id:visionId,visibility:said?visibilityOf(said):null},tree:{id:treeId,visibility:tree?visibilityOf(tree):null},
+    actor:{uid,name},self},goneVision?visionGoneGroundProse(name,visionTitle,treeName):{title:grounded?'A vision takes ground':'A ground is released',
     treeBody:grounded?`${name} grounded the vision "${visionTitle}" in ${treeName}.`:`${name} released the vision "${visionTitle}" from ${treeName}.`,
     visionBody:grounded?`${name} grounded this vision in the tree "${treeName}".`:`${name} released this vision from the tree "${treeName}".`});
   const seal=async(content,bearer,bearerKey,bearerId)=>{
@@ -88,5 +91,32 @@ export async function groundCommand({repository,uid,command,nodeDomain}) {
     const {onTree,onVision}=await blocksOf({act:'released',visionId,treeId,vision,tree,uid,
       name:nameOf(context.profile,cares?text(tree?.name):text(vision?.title)),self:ground.self===true,nodeDomain,mintedAt});
     return s.applyRelease(visionId,treeId,onTree.record,onVision.record,onTree.height,onVision.height);
+  });
+}
+
+// A VISION IS GONE: ITS GROUNDS END WITH IT (ring 2026-11-18; migration 071; the origin's
+// onVisionDeleted). One transaction: the facts of every ground the vision stands in, one sealed
+// block for each tree that still exists, the grounds and knocks removed, then the release itself
+// (seed.vision_release, which judges the hand: the author, or staff). If the release is refused,
+// nothing ended. The block is authored by the hand that released the vision.
+/** @param {{repository: GroundingRepository, uid: string, command: {action: string, id: string}, nodeDomain: string}} options */
+export async function releaseVision({repository,uid,command,nodeDomain}) {
+  return repository.session(uid,async s=>{
+    const visionId=command.id;
+    // An id the ground could never have carried has no grounds to end; the release judges it as before.
+    if(typeof visionId==='string' && visionId.length>0 && !/[\u0000-\u001f\u007f/]/.test(visionId) && !visionId.includes('__')) {
+      const context=await s.visionGroundsContext(visionId);
+      const vision=context.vision??null,grounds=Array.isArray(context.grounds)?context.grounds:[];
+      if(vision) {   // knocks are withdrawn even where no ground stands
+        const mintedAt=Date.now(),name=nameOf(context.profile,text(vision.title)),records=[];
+        for(const ground of grounds) {
+          if(!ground.tree)continue;
+          const {onTree}=await blocksOf({act:'released',visionId,treeId:ground.treeId,vision:null,tree:ground.tree,uid,name,self:ground.self===true,nodeDomain,mintedAt,goneVision:vision});
+          records.push({treeId:ground.treeId,record:onTree.record,height:onTree.height});
+        }
+        await s.applyVisionGroundsEnd(visionId,records);
+      }
+    }
+    return s.visionRelease(command);
   });
 }

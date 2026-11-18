@@ -13,6 +13,7 @@
 // over the tree (anchor, or a keeper / steward link — the rules' isTreeCarer), and the counts.
 // Nothing is taken from the request but the two ids.
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onDocumentDeletedWithAuthContext } from "firebase-functions/v2/firestore";
 import { FieldValue, type Transaction } from "firebase-admin/firestore";
 import { db, mintLid, tsToMs } from "./core";
 import { charter } from "./charter";
@@ -20,7 +21,7 @@ import { publicNameOf } from "./publicName";
 import { stageBlock } from "./blocks";
 import { chainHeadOf, heightAfter } from "./birth";
 import {
-    GROUNDED_IN, GROUND_REQUEST, groundAskRefusal, groundAcceptRefusal, groundReleaseRefusal, groundMarkOf, groundBlocksOf,
+    GROUNDED_IN, GROUND_REQUEST, groundAskRefusal, groundAcceptRefusal, groundReleaseRefusal, groundMarkOf, groundBlocksOf, visionGoneGroundProse,
     type GroundAct,
 } from "../../src/domain/grounding";
 import type { DomainKey } from "../../src/domain/words";
@@ -84,17 +85,21 @@ const nameOf = async (t: Transaction, uid: string, speaksFor: string): Promise<s
 const stageGroundBlocks = async (t: Transaction, p: {
     act: GroundAct; visionId: string; treeId: string; vision: Doc | null; tree: Doc | null;
     actorUid: string; actorName: string; self: boolean;
+    // The vision's last record when it has just been released: it lends its title and its
+    // visibility to the tree's block, and has no chain left to take one (`vision` is then null).
+    goneVision?: Doc;
 }) => {
     const treeName = String(p.tree?.name || "a tree");
-    const visionTitle = String(p.vision?.title || "a vision");
+    const said = p.vision ?? p.goneVision ?? null;
+    const visionTitle = String(said?.title || "a vision");
     const grounded = p.act === "grounded";
     const blocks = groundBlocksOf({
         act: p.act,
-        vision: { id: p.visionId, visibility: p.vision ? visibilityOf(p.vision) : null },
+        vision: { id: p.visionId, visibility: said ? visibilityOf(said) : null },
         tree: { id: p.treeId, visibility: p.tree ? visibilityOf(p.tree) : null },
         actor: { uid: p.actorUid, name: p.actorName },
         self: p.self,
-    }, {
+    }, p.goneVision ? visionGoneGroundProse(p.actorName, visionTitle, treeName) : {
         title: grounded ? "A vision takes ground" : "A ground is released",
         treeBody: grounded ? `${p.actorName} grounded the vision "${visionTitle}" in ${treeName}.` : `${p.actorName} released the vision "${visionTitle}" from ${treeName}.`,
         visionBody: grounded ? `${p.actorName} grounded this vision in the tree "${treeName}".` : `${p.actorName} released this vision from the tree "${treeName}".`,
@@ -219,4 +224,42 @@ export const releaseGround = onCall({ cors: true }, async (request) => {
         t.delete(linkRef(visionId, GROUNDED_IN, treeId));
         return pulses;
     });
+});
+
+// ── A VISION IS GONE: its grounds end with it (ring 2026-11-18; domain/grounding) ─────────────
+// A vision is deleted by a client hand under the rules (its author, or staff) or by the server
+// (an account's departure). Whichever hand it was, this trigger ends what the vision left
+// standing: every `grounded_in` link is removed with ONE block on the tree's chain, in one
+// transaction per tree, and every knock is withdrawn. Idempotent — a delivery repeated finds the
+// link gone and writes nothing. The block's author is the hand that deleted the vision when the
+// event names a signed-in user; otherwise the vision's own author.
+export const onVisionDeleted = onDocumentDeletedWithAuthContext("visions/{visionId}", async (event) => {
+    const gone = event.data?.data() as Doc | undefined;
+    const visionId = event.params.visionId;
+    if (!gone) return;
+    const authorId = typeof gone.authorId === "string" ? gone.authorId : "";
+    // The event names the principal that deleted the record. It is believed only when it is a
+    // person of this node (users/{authId} exists) and not a service account or the system; any
+    // other origin (the admin SDK, a TTL, an unreadable context) is no nameable hand, and the
+    // vision's author stands for it. How the platform labels a signed-in person's authType was
+    // not verified against a live delete (2026-11-18); the users/{authId} check is the guard.
+    const claimed = event.authType !== "service_account" && event.authType !== "system" && typeof event.authId === "string" ? event.authId : "";
+    const actorUid = claimed && !claimed.includes("/") && (await db.doc(`users/${claimed}`).get()).exists ? claimed : authorId;
+    const [grounds, knocks] = await Promise.all([linksOf("from", visionId, GROUNDED_IN).get(), linksOf("from", visionId, GROUND_REQUEST).get()]);
+    await Promise.all(knocks.docs.map((d) => d.ref.delete()));
+    for (const link of grounds.docs) {
+        const treeId = String(link.data().to || "");
+        if (!treeId) { await link.ref.delete(); continue; }
+        await db.runTransaction(async (t) => {
+            const [groundSnap, treeSnap] = await Promise.all([t.get(link.ref), t.get(db.doc(`lifetrees/${treeId}`))]);
+            if (!groundSnap.exists) return;
+            const tree = treeSnap.exists ? (treeSnap.data() as Doc) : null;
+            // Without a hand to name, the ground still ends; the chain simply carries no block for it.
+            if (tree && actorUid) {
+                const actorName = await nameOf(t, actorUid, String(gone.title || ""));
+                await stageGroundBlocks(t, { act: "released", visionId, treeId, vision: null, tree, actorUid, actorName, self: !!groundSnap.data()?.self, goneVision: gone });
+            }
+            t.delete(link.ref);
+        });
+    }
 });

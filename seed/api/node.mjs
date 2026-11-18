@@ -284,7 +284,8 @@ export function createNode(config) {
       return db.signing.anchor(uid,command);
     },
     async visionCommand(uid,command,nodeDomain) {
-      if(command.action==='release')return db.chains.visionRelease(uid,command);
+      // A vision released ends its grounds in the same transaction (migration 071).
+      if(command.action==='release')return grounding.releaseVision({repository:db.grounding,uid,command,nodeDomain});
       if(command.action==='set_pictures')return db.chains.visionPictures(uid,command);
       return db.chains.visionCommand(uid,command,uuidv7(),nodeDomain);
     },

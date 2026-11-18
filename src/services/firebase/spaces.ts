@@ -120,7 +120,8 @@ export const getVisionById = async (id: string): Promise<Vision | null> => {
 // RELEASE a vision: the being's record goes, its CHAIN STANDS (ring 2026-09-23). Contribution
 // blocks are links on the vision's chain — append-only, never erased by any client hand, the
 // rules refuse it — so they remain, each still naming the vision it grew. Only the links
-// pointing at the vision are let go, so no circle keeps a dangling edge.
+// pointing at the vision are let go, so no circle keeps a dangling edge. The grounds leading FROM
+// it are the server's to end (functions onVisionDeleted, ring 2026-11-18): no client hand removes a ground.
 export const deleteVision = async (id: string) => {
     try {
         const links = await getDocs(query(collection(db, 'links'), where('to', '==', id)));

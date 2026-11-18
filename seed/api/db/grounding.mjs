@@ -17,6 +17,10 @@ export const groundingRepository=withSession=>({
     applyGround:(visionId,treeId,treeRecord,visionRecord,treeHeight,visionHeight,linkLid)=>run(c,
       'SELECT seed.apply_ground($1,$2,$3::jsonb,$4::jsonb,$5,$6,$7) AS result',
       [visionId,treeId,JSON.stringify(treeRecord),JSON.stringify(visionRecord),treeHeight,visionHeight,linkLid]),
+    // A vision released (migration 071): its grounds' facts, their end, then the release itself (030) — one transaction.
+    visionGroundsContext:visionId=>run(c,'SELECT seed.vision_grounds_context($1) AS result',[visionId]),
+    applyVisionGroundsEnd:(visionId,records)=>run(c,'SELECT seed.apply_vision_grounds_end($1,$2::jsonb) AS result',[visionId,JSON.stringify(records)]),
+    visionRelease:command=>run(c,'SELECT seed.vision_release($1::jsonb) AS result',[JSON.stringify(command)]),
     applyRelease:(visionId,treeId,treeRecord,visionRecord,treeHeight,visionHeight)=>run(c,
       'SELECT seed.apply_ground_release($1,$2,$3::jsonb,$4::jsonb,$5,$6) AS result',
       [visionId,treeId,treeRecord?JSON.stringify(treeRecord):null,visionRecord?JSON.stringify(visionRecord):null,treeHeight,visionHeight]),

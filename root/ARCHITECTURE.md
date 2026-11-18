@@ -982,8 +982,9 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   eldest), a Root Vision is known by its birth ground (`isRootVision`), the community crossing
   carries a vision by its grounds. Still unfinished: the field left the origin's records on
   2026-11-18 but stays on a node until its repair `vision_tree_field` is run; the rules refuse any hand writing the dead field again (`firestore.rules`, migration 069);
-  `groundKeepsFaith` is asked by no one when visibility changes; deleting a vision leaves its
-  grounds standing; a migrated ground has no block on either chain, by decision;
+  `groundKeepsFaith` is asked by no one when visibility changes; a released vision's grounds end with it (the
+  origin by a trigger after the delete, so for a moment the link outlives the vision; the node in
+  the release's own transaction); a migrated ground has no block on either chain, by decision;
   light moving around a vision is gated (`light_vision_ungrounded`: appreciation and spend on an
   offering made to a vision, both soils), but no light ARRIVES at a vision by any path, and the
   gate reads `lastCaredAt` alone, which most older trees do not carry; resonance reads each

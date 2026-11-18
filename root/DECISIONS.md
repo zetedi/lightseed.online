@@ -6412,3 +6412,24 @@ vision existed, so nothing was refused that day. Whether the gate should fall ba
 last edit, as the validation badge does, is an open question (`root/QUESTIONS.md`).
 `tests/spend.test.ts`, `tests/grounding.test.ts`, `tests/seed/organs.postgres-test.ts`. The
 origin's callable path has no automated test.
+
+### 2026-11-18 — A vision gone ends its grounds; the tree stands
+
+Zoltán asked whether deleting a vision should leave the tree standing. It does, untouched. What
+was left behind was the link: a released vision kept a place among the tree's twelve and showed
+there as a being no one could name. He agreed it should go.
+
+Now every ground of a released vision ends with it: the link is removed and ONE block is written
+on the tree's chain ("A ground ends with its vision"), authored by the hand that released the
+vision; the vision has no chain left to write on. Its knocks are withdrawn without a block.
+
+Plain contract. Guaranteed on the node: in the one transaction of the release — a refused
+release ends nothing (migration 071, `seed/api/grounding.mjs` `releaseVision`,
+`tests/seed/grounding.postgres-test.ts`). Guaranteed on the origin only EVENTUALLY: a trigger
+(`functions/src/grounding.ts` `onVisionDeleted`) runs after the delete, one transaction per tree,
+idempotent; until it has run the link outlives the vision, and if it fails the platform retries
+or it does not — there is no sweep. Not guaranteed on the origin: whose name the block wears when
+staff delete another's vision — the trigger believes the event's principal only when it is a
+person of the node, and how the platform labels a signed-in delete was not verified against a
+live one; failing that it is the vision's author. The origin's trigger has no automated test.
+Also mended: the node's `/v1/visions?tree=` read a vision's retired field; it reads grounds.

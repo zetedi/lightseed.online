@@ -355,3 +355,11 @@ describe('may light move around this vision', () => {
     expect(groundLightFactsOf({ validated: 'true', validatorId: 'u' }).validated).toBe(false);
   });
 });
+
+describe('a vision is gone: the words its grounds end with', () => {
+  it('names the hand, the vision and the tree, and writes nothing for the vision', async () => {
+    const { visionGoneGroundProse } = await import('../src/domain/grounding');
+    expect(visionGoneGroundProse('Alice', 'Clear water', 'Oak')).toEqual({
+      title: 'A ground ends with its vision', treeBody: 'Alice released the vision "Clear water"; its ground in Oak ended with it.', visionBody: '' });
+  });
+});
