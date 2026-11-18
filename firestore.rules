@@ -984,6 +984,9 @@ service cloud.firestore {
       // plant Root Visions for beings they plant trees for, and the node genesis).
       allow create: if isSignedIn()
         && (isStaff() || request.resource.data.get('authorId', '') == request.auth.uid)
+        // THE OLD TIE IS RETIRED (ring 2026-11-18): a vision stands in a tree by a `grounded_in`
+        // link the server mints, never by a `lifetreeId` field. No hand, staff included, writes it.
+        && !('lifetreeId' in request.resource.data)
         // BORN AT ITS ROOT (ring 2026-09-23): head == genesis, height 0, from every hand.
         && (!('latestHash' in request.resource.data)
             || (request.resource.data.latestHash == request.resource.data.get('genesisHash', '')
@@ -1003,6 +1006,8 @@ service cloud.firestore {
           // that would put words, a chain and a ground's consent under a name that never gave it.
           // Staff keep the mend.
           && (isStaff() || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authorId']))
+          // The retired `lifetreeId` is never written again, by any hand (ring 2026-11-18).
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lifetreeId'])
           && (
             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['latestHash', 'blockHeight', 'genesisHash'])
             || (

@@ -202,6 +202,10 @@ describe('the ground on the independent node', () => {
       expect((await edit('alice', { title: 'Clearer water' })).status).toBe(200);
       expect((await edit('alice', { authorId: 'bob' })).status).toBe(403);
       expect(t.doc('visions', 'v1')).toMatchObject({ authorId: 'alice', title: 'Clearer water' });
+      // The retired tree field is written by no hand (ring 2026-11-18), staff included.
+      expect((await edit('alice', { lifetreeId: 't1' })).status).toBe(403);
+      expect((await edit('staff', { lifetreeId: 't1' })).status).toBe(403);
+      expect(t.doc('visions', 'v1')).not.toHaveProperty('lifetreeId');
       expect((await edit('staff', { authorId: 'bob' })).status).toBe(200);
     } finally { await t.close(); }
   });

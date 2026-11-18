@@ -1770,6 +1770,7 @@ const zh = {
   appreciate_not_received: "只有接受了这份供养的人才能感谢它。",
   appreciate_already: "你已经感谢过这份供养。",
   appreciate_coin_refused: "此处不接受你的光所点燃之处的币。",
+  light_vision_ungrounded: "这里还没有光流动：这个愿景尚未立于一棵活着、已被认证且在过去一年内得到照料的树中。",
   spend_no_decision: "那项决议已不在这里。",
   spend_not_purchase: "只有购置决议才能从辉光中支出。",
   spend_no_offering: "请指明辉光流向的供养。",

@@ -23,7 +23,7 @@ const ORGAN_ERRORS={LS003:[404,'community_missing'],LS050:[409,'not_watering'],L
   LS053:[409,'ray_moved'],LS054:[409,'spend_already'],LS055:[409,'spend_glow_short'],LS056:[404,'unmint_not_mint'],LS057:[409,'unmint_not_last'],
   LS058:[404,'person_missing'],LS059:[409,'keeper_stands'],LS060:[409,'no_domain'],LS061:[409,'door_taken'],LS062:[409,'door_is_domain'],
   LS063:[409,'door_already'],LS064:[409,'no_challenge'],LS065:[409,'challenge_expired'],LS066:[409,'domain_changed'],LS067:[429,'mail_quota'],LS068:[429,'ai_quota'],
-  LS070:[409,'ground_refused']}; // the ground's last guard (seed/schema/064): the soil refused what the law should already have
+  LS070:[409,'ground_refused'],LS071:[409,'light_vision_ungrounded']}; // the ground's last guard (seed/schema/064): the soil refused what the law should already have
 const escapeHtml=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /** @param {*} database @param {(authorization: string) => Promise<string | null>} [authenticate]
  * @param {{nodeDomain: string | null, media?: *, faceDoors?: string[], resolveTxt?: (name: string) => Promise<string[][]>, mail?: * | null, ai?: * | null, face?: * | null}} [options] */

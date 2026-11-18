@@ -333,3 +333,25 @@ describe('the home ground of a vision', () => {
     expect(isRootVision([])).toBe(false);
   });
 });
+
+// The stored tree record as the light law reads it (the hands on both soils pass these).
+describe('may light move around this vision', () => {
+  it('only through a ground that is alive, cared for within a year and explicitly validated (a guarded tree needs no validation)', async () => {
+    const { visionLightOf, groundLightFactsOf, GROUND_CARE_WINDOW_MS } = await import('../src/domain/grounding');
+    const now = 1_800_000_000_000, recent = now - 1000, stale = now - GROUND_CARE_WINDOW_MS;
+    const lit = { treeType: 'LIFETREE', validated: true, validatorId: 'u-guardian', lastCaredAtMs: recent };
+    expect(visionLightOf([], now)).toBe(false);
+    expect(visionLightOf([lit], now)).toBe(true);
+    expect(visionLightOf([{ ...lit, lastCaredAtMs: stale }], now)).toBe(false);
+    expect(visionLightOf([{ ...lit, lastCaredAtMs: null }], now)).toBe(false);
+    expect(visionLightOf([{ ...lit, diedAtMs: 5 }], now)).toBe(false);
+    expect(visionLightOf([{ ...lit, validated: false }], now)).toBe(false);
+    for (const validatorId of ['SYSTEM', 'GENESIS', '', undefined, 7]) expect(visionLightOf([{ ...lit, validatorId }], now)).toBe(false);
+    for (const treeType of ['SECRET', 'BED']) expect(visionLightOf([{ ...lit, treeType }], now)).toBe(false);
+    expect(visionLightOf([{ treeType: 'GUARDED', lastCaredAtMs: recent }], now)).toBe(true);
+    expect(visionLightOf([{ isNature: true, lastCaredAtMs: recent }], now)).toBe(true);
+    // one living ground among dead ones is enough
+    expect(visionLightOf([{ ...lit, diedAtMs: 5 }, { ...lit, validated: false }, lit], now)).toBe(true);
+    expect(groundLightFactsOf({ validated: 'true', validatorId: 'u' }).validated).toBe(false);
+  });
+});

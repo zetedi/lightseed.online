@@ -1888,6 +1888,15 @@ describe('visions — the idea-twin grows its own chain; the genesis is frozen',
     await assertSucceeds(updateDoc(doc(db(BOB), 'visions', 'v1'), { body: 'clearer now' }));
   });
 
+  it('the retired tree field is written by no hand: a vision stands in a tree by a ground (ring 2026-11-18)', async () => {
+    await seedVisions();
+    await assertFails(updateDoc(doc(db(BOB), 'visions', 'v1'), { lifetreeId: 't1' }));
+    await assertFails(updateDoc(doc(db(STAFF), 'visions', 'v1'), { lifetreeId: 't1' }));
+    await assertFails(setDoc(doc(db(BOB), 'visions', 'vNew'), { authorId: BOB, title: 'N', visibility: 'public', lifetreeId: 't1' }));
+    await assertFails(setDoc(doc(db(STAFF), 'visions', 'vStaff'), { authorId: BOB, title: 'N', visibility: 'public', lifetreeId: 't1' }));
+    await assertSucceeds(setDoc(doc(db(BOB), 'visions', 'vFree'), { authorId: BOB, title: 'N', visibility: 'public' }));
+  });
+
   it("a stranger cannot grow (advance) someone else's vision", async () => {
     await seedVisions();
     await assertFails(updateDoc(doc(db(MALLORY), 'visions', 'v1'), { latestHash: 'h1', blockHeight: 1 }));

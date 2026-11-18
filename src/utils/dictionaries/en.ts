@@ -1806,6 +1806,7 @@ const en = {
   appreciate_not_received: "Only the hand that received this offering may appreciate it.",
   appreciate_already: "You have already appreciated this offering.",
   appreciate_coin_refused: "This place does not accept the coin your light was kindled in.",
+  light_vision_ungrounded: "No light moves here yet: this vision stands in no tree that is alive, validated and cared for within the last year.",
   spend_no_decision: "That decision is no longer here.",
   spend_not_purchase: "Only a purchase decision spends from the glow.",
   spend_no_offering: "Name the offering the glow goes to.",

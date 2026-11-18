@@ -305,3 +305,10 @@ forgotten. `seed/PARITY.md` carries the same list beside the code.
 ## For whoever comes next
 
 Add yours. Date them. Answering is optional; asking honestly is not.
+
+## The care the light gate reads (2026-11-18)
+
+- The ground gate on light reads a tree's `lastCaredAt` and nothing else; the validation badge
+  falls back to the tree's last edit and its birth (`utils/validation` `lastCaredMillis`). Most
+  older trees carry no `lastCaredAt`. Should the gate fall back the same way, should the field be
+  backfilled from each tree's last growth block, or is "never recorded as cared for" rightly dark?

@@ -9,7 +9,7 @@
 // of that repository holds one organ's facts and apply in one transaction, the law between.
 import {createHash,createPublicKey,verify,randomBytes} from 'node:crypto';
 import {uuidv7} from '../../src/domain/uuidv7.mjs';
-import {judgeWitness,kindleDayKeyFromMs,judgeAppreciation,judgeSpend,unmintRefusal,STAFF_OVERRIDABLE_REFUSALS,touchRestoreOf,
+import {judgeWitness,kindleDayKeyFromMs,judgeAppreciation,judgeSpend,visionLightOf,unmintRefusal,STAFF_OVERRIDABLE_REFUSALS,touchRestoreOf,
   decisionIdentity,decisionSignaturePayload,decisionEpochSignaturePayload,DECISION_DOMAIN,DECISION_EPOCH_DOMAIN,
   keyStandingAt,keyStandingCounts,signingPreimage,normalizeDoor,isDoorName,doorClaimRefusal,
   challengeRecordName,challengeRecordValue,txtProvesChallenge,challengeIsLive,DOMAIN_CHALLENGE_TTL_MS} from '../generated/chain.mjs';
@@ -22,7 +22,7 @@ const LIGHT_STATUS={gift_nothing:400,gift_whole_units:400,gift_needs_both:400,sp
   gift_own_offering:409,gift_resting:409,gift_hold_less:409,appreciate_coin_refused:409,appreciate_already:409,
   spend_not_purchase:409,spend_not_passed:409,spend_listening:409,spend_unsigned:409,spend_already:409,spend_coin_refused:409,spend_glow_short:409,
   appreciate_offering_gone:404,spend_no_decision:404,spend_no_offering:404,
-  appreciate_not_received:403,spend_no_standing:403};
+  appreciate_not_received:403,spend_no_standing:403,light_vision_ungrounded:409};
 const lid=()=>uuidv7(Date.now(),randomBytes(10));
 const msOf=value=>{
   if(typeof value==='number')return Number.isFinite(value)?value:null;
@@ -30,6 +30,16 @@ const msOf=value=>{
   const ms=Date.parse(value);return Number.isFinite(ms)?ms:null;
 };
 const text=value=>typeof value==='string'?value:'';
+
+// THE GROUND GATE (ring 2026-11-18; domain/grounding): the offering's kind, and — for an offering
+// made to a vision — whether light may move around that vision now, by the shared law over the
+// tree records the context read (migration 070). The judge reads `visionLight` only for a vision.
+const groundGateOf=(offering,context)=>{
+  if(offering.offeredToKind!=='vision')return {toKind:offering.offeredToKind};
+  const trees=(Array.isArray(context.groundTrees)?context.groundTrees:[]).map(t=>({treeType:t.treeType,isNature:t.isNature,validated:t.validated,validatorId:t.validatorId,
+    diedAtMs:t.diedAt===undefined||t.diedAt===null?null:(msOf(t.diedAt)??1),lastCaredAtMs:msOf(t.lastCaredAt)}));
+  return {toKind:'vision',visionLight:visionLightOf(trees,Date.now())};
+};
 
 // ── LIGHT ────────────────────────────────────────────────────────────────────────────────────
 // The circle witnesses a watering: the facts are the node's (standing, day, rays), the judgment the
@@ -58,7 +68,8 @@ export function prepareAppreciation({uid,context,offeringId,units}) {
   const rays=(Array.isArray(context.rays)?context.rays:[]).map(r=>({id:text(r.id),units:typeof r.units==='number'?r.units:0,place:typeof r.place==='string' && r.place?r.place:null,dayKey:text(r.dayKey)}));
   const judgment=judgeAppreciation({giverUid:uid,units,
     offering:{exists:!!context.exists,type:o.type,status:o.offeringStatus,active:o.offeringActive,authorId:text(o.authorId),answeredBy:o.offeringAnsweredBy,
-      place:typeof context.place==='string' && context.place?context.place:null,acceptsPlaces:Array.isArray(context.acceptsPlaces)?context.acceptsPlaces.filter(p=>typeof p==='string'):[]},
+      place:typeof context.place==='string' && context.place?context.place:null,acceptsPlaces:Array.isArray(context.acceptsPlaces)?context.acceptsPlaces.filter(p=>typeof p==='string'):[],
+      ...groundGateOf(o,context)},
     rays,alreadyGiven:!!context.alreadyGiven});
   if(judgment.outcome==='reject')refuse(judgment.refusal,LIGHT_STATUS[judgment.refusal]??409);
   const glowHome=judgment.glowHome??'NODE';
@@ -130,7 +141,7 @@ export function prepareSpend({uid,context,decisionId}) {
   const judgment=judgeSpend({callerUid:uid,callerStands:!!context.callerStands,
     decision:{exists:!!context.exists,type:d.type,nature:d.nature,status:d.status,listening:d.listening,communityId,votesRequired:Number(d.votesRequired)||0,verifiedSigners,spend:d.spend,alreadySpent:!!context.alreadySpent},
     offering:{exists:!!context.offering,type:o.type,active:o.offeringActive,place:typeof context.place==='string' && context.place?context.place:null,
-      acceptsPlaces:Array.isArray(context.acceptsPlaces)?context.acceptsPlaces.filter(p=>typeof p==='string'):[]},
+      acceptsPlaces:Array.isArray(context.acceptsPlaces)?context.acceptsPlaces.filter(p=>typeof p==='string'):[],...groundGateOf(o,context)},
     glowUnits:Number(context.glowUnits)||0});
   if(judgment.outcome==='reject')refuse(judgment.refusal,LIGHT_STATUS[judgment.refusal]??409);
   const spend={lid:lid(),decisionId,communityId,offeringId:text(context.offeringId),units:judgment.units,glow:judgment.glow,suspended:judgment.suspended,

@@ -108,6 +108,28 @@ const passed = (over: Partial<SpendFacts> = {}): SpendFacts => ({
 const judgeS = (f: SpendFacts) => { const mine = judgeSpend(f); expect(serverJudgeSpend(f)).toEqual(mine); return mine; };
 const spendRefusal = (f: SpendFacts) => { const j = judgeS(f); return j.outcome === 'reject' ? j.refusal : null; };
 
+describe('the ground gate — light moves around a vision only while it stands in cared-for ground (ring 2026-11-18)', () => {
+  it('an offering made to a vision is appreciated and spent on only when the server proved its light; it fails closed', () => {
+    const a = sound().offering, s = passed().offering;
+    expect(judgeA(sound({ offering: { ...a, toKind: 'vision', visionLight: true } })).outcome).toBe('give');
+    expect(judgeS(passed({ offering: { ...s, toKind: 'vision', visionLight: true } })).outcome).toBe('spend');
+    for (const visionLight of [false, undefined]) {
+      expect(judgeA(sound({ offering: { ...a, toKind: 'vision', visionLight } }))).toEqual({ outcome: 'reject', refusal: 'light_vision_ungrounded' });
+      expect(judgeS(passed({ offering: { ...s, toKind: 'vision', visionLight } }))).toEqual({ outcome: 'reject', refusal: 'light_vision_ungrounded' });
+    }
+  });
+  it('an offering made to a tree, or to no one, is not asked', () => {
+    for (const toKind of ['tree', undefined]) {
+      expect(judgeA(sound({ offering: { ...sound().offering, toKind, visionLight: false } })).outcome).toBe('give');
+      expect(judgeS(passed({ offering: { ...passed().offering, toKind, visionLight: false } })).outcome).toBe('spend');
+    }
+  });
+  it('the earlier refusals still speak first: a stranger learns nothing about a vision\'s ground', () => {
+    const o = { ...sound().offering, toKind: 'vision', visionLight: false };
+    expect(judgeA(sound({ giverUid: 'someone-else', offering: o }))).toEqual({ outcome: 'reject', refusal: 'appreciate_not_received' });
+  });
+});
+
 describe('the spend — the commons moves only by a signed purchase decision', () => {
   it('a passed, signed, unspent purchase spends: through the prism, conserved', () => {
     const j = judgeS(passed());

@@ -1886,6 +1886,11 @@ removes the old `lifetreeId` from every vision whose ground in that very tree st
 (`planFieldRetirement`), and names every vision that keeps the field because no such ground
 stands. Without `apply` it writes nothing. `/v1/documents` no longer filters visions by
 `lifetreeId`: a vision's trees are its `grounded_in` links (`/v1/links?from=…&rel=grounded_in`).
+THE GROUND GATE ON LIGHT (migration 070): `POST /v1/light/command` refuses `appreciate` and
+`spend` with `light_vision_ungrounded` (409) when the offering was made to a vision that stands
+in no tree that is alive, cared for within a year and validated (a guarded tree needs no
+validation); the contexts read those trees under the movement's locks, the shared law judges,
+the applies re-prove it (LS071).
 
 ### The mail organ (migration 056)
 

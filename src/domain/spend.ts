@@ -9,7 +9,8 @@ export type SpendRefusal = Extract<DomainKey,
   | 'gift_nothing' | 'gift_whole_units' | 'gift_needs_both' | 'gift_own_offering' | 'gift_resting' | 'gift_hold_less'
   | 'appreciate_offering_gone' | 'appreciate_not_received' | 'appreciate_already' | 'appreciate_coin_refused'
   | 'spend_no_decision' | 'spend_not_purchase' | 'spend_no_offering' | 'spend_nothing' | 'spend_no_standing'
-  | 'spend_not_passed' | 'spend_listening' | 'spend_unsigned' | 'spend_already' | 'spend_coin_refused' | 'spend_glow_short'>;
+  | 'spend_not_passed' | 'spend_listening' | 'spend_unsigned' | 'spend_already' | 'spend_coin_refused' | 'spend_glow_short'
+  | 'light_vision_ungrounded'>;
 
 // SPENDING IS A GATE, NOT A NUMBER (the season of roots, item 2; ring 2026-09-30).
 //
@@ -33,6 +34,12 @@ export type SpendRefusal = Extract<DomainKey,
 //   coin is accepted — the same place, or a place whose keeper minted an `accepts_coin_of` link to
 //   the ray's place. The node's own Light (a ray with no place) is the common tongue, accepted
 //   everywhere on the node; an offering with no place stands at the node and accepts every coin.
+//
+//   THE GROUND GATE (ring 2026-11-18; domain/grounding visionReceivesLight): light moves around a
+//   VISION only while the vision stands in a tree that is alive, cared for within a year and
+//   validated (a guarded tree needs no validation). An offering made to a vision that has no such
+//   ground can be accepted, but it is neither appreciated nor spent on: `light_vision_ungrounded`.
+//   The gate FAILS CLOSED: an offering to a vision whose light the server did not prove is refused.
 //
 // Plain contract — GUARANTEED by this law (mirrored in functions/src/spend.ts, held by
 // tests/spend.test.ts; applied only by the server callables, since no client may write light):
@@ -85,6 +92,8 @@ export interface AppreciationFacts {
     answeredBy?: unknown;      // the hand that received it (acceptOffering's caller)
     place: string | null;      // the community the offering stands in (its coin's place)
     acceptsPlaces: readonly string[];
+    toKind?: unknown;          // 'vision' puts the ground gate in force
+    visionLight?: boolean;     // domain/grounding visionLightOf, proved by the server; read only for a vision
   };
   rays: readonly HeldRayFact[]; // every ray the giver holds
   alreadyGiven: boolean;        // gifts/{offeringId}__{giverUid} exists
@@ -120,6 +129,9 @@ export const pickRays = (
   return { take, taken: units - left };
 };
 
+// The ground gate, one question for both movements; fails closed.
+const groundless = (offering: { toKind?: unknown; visionLight?: boolean }): boolean => offering.toKind === 'vision' && offering.visionLight !== true;
+
 export const judgeAppreciation = (f: AppreciationFacts): AppreciationJudgment => {
   const reject = (refusal: SpendRefusal): AppreciationJudgment => ({ outcome: 'reject', refusal });
   if (!f.offering.exists || f.offering.type !== 'offering') return reject('appreciate_offering_gone');
@@ -130,6 +142,7 @@ export const judgeAppreciation = (f: AppreciationFacts): AppreciationJudgment =>
   if (f.offering.status !== 'accepted' || f.offering.answeredBy !== f.giverUid) return reject('appreciate_not_received');
   if (f.offering.active === false) return reject('gift_resting');
   if (f.alreadyGiven) return reject('appreciate_already');
+  if (groundless(f.offering)) return reject('light_vision_ungrounded');
   const holding = f.rays.reduce((s, r) => s + (Number.isInteger(r.units) && r.units > 0 ? r.units : 0), 0);
   if (holding < f.units) return reject('gift_hold_less');
   const { take, taken } = pickRays(f.rays, f.units, f.offering.place, f.offering.acceptsPlaces);
@@ -160,6 +173,8 @@ export interface SpendFacts {
     active?: unknown;
     place: string | null;
     acceptsPlaces: readonly string[];
+    toKind?: unknown;          // 'vision' puts the ground gate in force
+    visionLight?: boolean;     // proved by the server; read only for a vision
   };
   glowUnits: number;           // glow/{communityId}.units
   glowShareDenominator?: number;
@@ -184,6 +199,7 @@ export const judgeSpend = (f: SpendFacts): SpendJudgment => {
   if (f.decision.alreadySpent) return reject('spend_already');
   if (!f.offering.exists || f.offering.type !== 'offering') return reject('spend_no_offering');
   if (f.offering.active === false) return reject('gift_resting');
+  if (groundless(f.offering)) return reject('light_vision_ungrounded');
   if (!coinAccepted(f.decision.communityId, f.offering.place, f.offering.acceptsPlaces)) return reject('spend_coin_refused');
   const units = f.decision.spend.units;
   if (!Number.isInteger(f.glowUnits) || f.glowUnits < units) return reject('spend_glow_short');

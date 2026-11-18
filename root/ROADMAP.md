@@ -257,9 +257,12 @@ canopy, in this order, no new canopy until the first two stand:
   field. Next: a walk of all of it against
   the live backends; (5) THE FIELD RETIRED from the code on both soils (2026-11-18): the vision's page,
   its Shadow, the offering's thread, resonance and the community crossing read grounds; the
-  records still carry it until `scripts/retire-vision-tree-field.mjs --apply` is run after the
-  deploy (dry run: 35 to remove, none kept). Next: and the light: define what reaches a vision, and gate it by
-  `visionReceivesLight`.
+  field left the origin's records on 2026-11-18 (`scripts/retire-vision-tree-field.mjs`, run by
+  Zoltán after the deploy: 35 removed, none kept, none skipped); a node retires it by its repair
+  `vision_tree_field`. (6) the light around a vision gated by `visionReceivesLight` on both soils (appreciation and
+  spend on an offering made to a vision). Next: a walk of all of it against the live backends; a path by which
+  light ARRIVES at a vision (none exists), asking the same gate; the care the gate reads
+  (`root/QUESTIONS.md`); releasing a deleted vision's grounds.
 - **Nodes become real (the domain–DB link).** The first boundary now exists:
   each backend can publicly name its governing node, and hosted domains no
   longer borrow the node/hub name. But Auth and data remain instance-wide inside

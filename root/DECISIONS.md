@@ -6380,7 +6380,35 @@ Plain contract. Guaranteed now: no code on either soil reads the field. Not guar
 the field is gone from the records (it is removed by `scripts/retire-vision-tree-field.mjs` and
 the node's repair `vision_tree_field`, only where the ground in that very tree stands, and only
 on the guardian's word, after the new shell is deployed — an older shell still reads it); that a
-client cannot write the dead field again (the rules do not refuse it; nothing reads it). The
+node's records are free of it before its keeper runs the repair. Zoltán, the same day: "no legacy
+pls" — the rules on both soils now refuse any hand, staff included, writing `lifetreeId` on a
+vision (`firestore.rules`; `seed.rule_visions`, migration 069; `tests/rules`,
+`tests/seed/grounding.postgres-test.ts`). The
 page's Root Vision protection is the page's alone, as it was before: no rule refuses the delete.
 Enforced by `tests/grounding.test.ts`, `tests/groundMigration.test.ts`,
 `tests/communityCrossing.test.ts`, `tests/bundle.test.ts`, `tests/seed/repairs.postgres-test.ts`.
+
+### 2026-11-18 — Light moves around a vision only while it stands in cared-for ground
+
+Zoltán, on the first day of the ground: "Only grounded visions receive light, that makes the
+system regenerative." The law was written then (`visionReceivesLight`) and guarded nothing,
+because no light arrives at a vision by any path: light only LEAVES a vision's side — its author
+appreciates an offering of care made to the vision, or a community spends its glow on one.
+Asked which to gate, he chose the light that moves around a vision.
+
+So: an offering made to a vision is appreciated, and spent on, only while that vision stands in
+a tree that is alive, not secret and not a bed, cared for within a year, and explicitly
+validated (a guarded tree needs no validation). Otherwise `light_vision_ungrounded`. Accepting
+such an offering moves no light and is not gated.
+
+Plain contract. Guaranteed on both soils: the judge refuses (`domain/spend`, failing closed when
+the server did not prove the vision's light); the facts are read inside the movement's own
+transaction (`functions/src/lightCalls.ts` `groundGateOf`; the node's contexts, migration 070);
+the node's applies re-prove it on the soil (LS071). Not guaranteed: that light ever reaches a
+vision (no such path exists); that the gate is fair to older trees — it reads `lastCaredAt`
+alone, and on the day it was built 32 of the origin's 41 trees carried none, so 6 of 35 grounded
+visions would pass (24 for want of a recorded care, 5 for want of validation); no offering to a
+vision existed, so nothing was refused that day. Whether the gate should fall back to a tree's
+last edit, as the validation badge does, is an open question (`root/QUESTIONS.md`).
+`tests/spend.test.ts`, `tests/grounding.test.ts`, `tests/seed/organs.postgres-test.ts`. The
+origin's callable path has no automated test.

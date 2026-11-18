@@ -980,12 +980,13 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
 - Grounded visions (rings 2026-11-17 and -18): no code reads `vision.lifetreeId` any more — a
   vision's tree is its HOME GROUND (`domain/grounding` `homeGroundOf`: the birth ground, else the
   eldest), a Root Vision is known by its birth ground (`isRootVision`), the community crossing
-  carries a vision by its grounds. Still unfinished: the field itself stays on the origin's
-  records until `scripts/retire-vision-tree-field.mjs` is run (and on a node until its repair
-  `vision_tree_field`); the rules do not refuse a client writing the dead field again;
+  carries a vision by its grounds. Still unfinished: the field left the origin's records on
+  2026-11-18 but stays on a node until its repair `vision_tree_field` is run; the rules refuse any hand writing the dead field again (`firestore.rules`, migration 069);
   `groundKeepsFaith` is asked by no one when visibility changes; deleting a vision leaves its
   grounds standing; a migrated ground has no block on either chain, by decision;
-  `visionReceivesLight` gates nothing because no light reaches a vision yet; resonance reads each
+  light moving around a vision is gated (`light_vision_ungrounded`: appreciation and spend on an
+  offering made to a vision, both soils), but no light ARRIVES at a vision by any path, and the
+  gate reads `lastCaredAt` alone, which most older trees do not carry; resonance reads each
   vision's grounds one by one (a read per vision).
 - Backend custody is now explicit, but backend division is not: hosted domains
   still share their authority node's instance-wide Auth and database. The next

@@ -71,7 +71,7 @@ export const DOMAIN_KEYS = [
   'limit_secret_trees', 'secret_keepers_only',
   'tree_invite_gone', 'tree_invite_revoked', 'tree_invite_expired', 'tree_invite_settled', 'tree_invite_taken', 'tree_invite_signin', 'tree_invite_own',
   // Spending is a gate (domain/spend, ring 2026-09-30)
-  'appreciate_offering_gone', 'appreciate_not_received', 'appreciate_already', 'appreciate_coin_refused',
+  'appreciate_offering_gone', 'appreciate_not_received', 'appreciate_already', 'appreciate_coin_refused', 'light_vision_ungrounded',
   'spend_no_decision', 'spend_not_purchase', 'spend_no_offering', 'spend_nothing', 'spend_no_standing',
   'spend_not_passed', 'spend_listening', 'spend_unsigned', 'spend_already', 'spend_coin_refused', 'spend_glow_short',
   // grounding — a vision asks a tree, a carer answers (domain/grounding, 2026-11-17)

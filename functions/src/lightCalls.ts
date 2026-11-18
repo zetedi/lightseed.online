@@ -8,6 +8,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { FieldValue, type Transaction } from "firebase-admin/firestore";
 import { db, mintLid, communityIdOfDomain } from "./core";
 import { judgeAppreciation, judgeSpend, type HeldRayFact, type SpendRefusal } from "./spend";
+import { visionLightOf, GROUNDED_IN } from "../../src/domain/grounding";
 import { decisionIdentity, verifiedDecisionSigners, type DecisionNature, type RecordedDecisionSignature, type SignerFacts } from "./decisionSeal";
 import type { KeyEpoch, KeyEvent } from "./keyEpoch";
 
@@ -15,7 +16,7 @@ const REFUSAL_CODE: Record<SpendRefusal, "invalid-argument" | "failed-preconditi
     gift_nothing: "invalid-argument", gift_whole_units: "invalid-argument", gift_needs_both: "invalid-argument",
     gift_own_offering: "failed-precondition", gift_resting: "failed-precondition", gift_hold_less: "failed-precondition",
     appreciate_offering_gone: "not-found", appreciate_not_received: "permission-denied", appreciate_already: "already-exists",
-    appreciate_coin_refused: "failed-precondition",
+    appreciate_coin_refused: "failed-precondition", light_vision_ungrounded: "failed-precondition",
     spend_no_decision: "not-found", spend_not_purchase: "failed-precondition", spend_no_offering: "not-found",
     spend_nothing: "invalid-argument", spend_no_standing: "permission-denied", spend_not_passed: "failed-precondition",
     spend_listening: "failed-precondition", spend_unsigned: "failed-precondition", spend_already: "already-exists",
@@ -41,6 +42,24 @@ const keepsCommunity = async (t: Transaction, uid: string, communityId: string):
     if (!com) return false;
     if (com.anchorUid === uid) return true;
     return (await t.get(db.doc(`links/${uid}__keeper__${communityId}`))).exists;
+};
+
+// THE GROUND GATE (ring 2026-11-18; domain/grounding): for an offering made to a VISION, the trees
+// that vision stands in are read inside the transaction and the shared law says whether light may
+// move around it now. Any other offering is not asked (the judge reads `visionLight` only for a vision).
+const groundGateOf = async (t: Transaction, o: Record<string, unknown>): Promise<{ toKind: unknown; visionLight?: boolean }> => {
+    if (o.offeredToKind !== "vision") return { toKind: o.offeredToKind };
+    const visionId = typeof o.offeredToId === "string" ? o.offeredToId : "";
+    if (!visionId) return { toKind: "vision", visionLight: false };
+    const grounds = await t.get(db.collection("links").where("from", "==", visionId).where("rel", "==", GROUNDED_IN));
+    const treeIds = [...new Set(grounds.docs.map((d) => String(d.data().to || "")).filter(Boolean))];
+    const trees = treeIds.length ? await t.getAll(...treeIds.map((id) => db.doc(`lifetrees/${id}`))) : [];
+    const records = trees.filter((s) => s.exists).map((s) => {
+        const tree = s.data() as Record<string, unknown>;
+        return { treeType: tree.treeType, isNature: tree.isNature, validated: tree.validated, validatorId: tree.validatorId,
+            diedAtMs: tree.diedAt ? (msOf(tree.diedAt) ?? 1) : null, lastCaredAtMs: msOf(tree.lastCaredAt) };
+    });
+    return { toKind: "vision", visionLight: visionLightOf(records, Date.now()) };
 };
 
 // ── APPRECIATION: a receiver's light moves to the offering it received ────────────────────────
@@ -74,6 +93,7 @@ export const appreciateOffering = onCall({ cors: true }, async (request) => {
         const acceptsPlaces = await acceptedPlacesOf(t, place);
         const giftRef = db.doc(`gifts/${offeringId}__${giverUid}`);
         const alreadyGiven = (await t.get(giftRef)).exists;
+        const groundGate = await groundGateOf(t, o);
         // The rays are re-read INSIDE the transaction: their units are what moves.
         const raysSnap = await t.get(db.collection("rays").where("holderUid", "==", giverUid));
         const rays: HeldRayFact[] = raysSnap.docs.map((d) => {
@@ -87,7 +107,7 @@ export const appreciateOffering = onCall({ cors: true }, async (request) => {
             offering: {
                 exists: offeringSnap.exists, type: o.type, status: o.offeringStatus, active: o.offeringActive,
                 authorId: typeof o.authorId === "string" ? o.authorId : "", answeredBy: o.offeringAnsweredBy,
-                place, acceptsPlaces,
+                place, acceptsPlaces, ...groundGate,
             },
             rays, alreadyGiven,
         });
@@ -192,6 +212,7 @@ export const spendGlow = onCall({ cors: true }, async (request) => {
         const glowUnits = glowRef ? (Number((await t.get(glowRef)).data()?.units) || 0) : 0;
         const spendRef = db.doc(`spends/${decisionId}`);
         const alreadySpent = (await t.get(spendRef)).exists;
+        const groundGate = await groundGateOf(t, o);
 
         const judgment = judgeSpend({
             callerUid, callerStands,
@@ -199,7 +220,7 @@ export const spendGlow = onCall({ cors: true }, async (request) => {
                 exists: decisionSnap.exists, type: d.type, nature: d.nature, status: d.status, listening: d.listening,
                 communityId, votesRequired: Number(d.votesRequired) || 0, verifiedSigners, spend: d.spend, alreadySpent,
             },
-            offering: { exists: !!offeringSnap?.exists, type: o.type, active: o.offeringActive, place, acceptsPlaces },
+            offering: { exists: !!offeringSnap?.exists, type: o.type, active: o.offeringActive, place, acceptsPlaces, ...groundGate },
             glowUnits,
         });
         if (judgment.outcome === "reject") throw new HttpsError(REFUSAL_CODE[judgment.refusal], judgment.refusal);

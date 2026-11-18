@@ -14,11 +14,12 @@ import type { DomainKey } from './words';
 // transaction; each grounding and each release wrote one sealed block on each chain; neither
 // being is private; no client hand, staff included, creates a ground, and none removes one but
 // staff's mend.
-// NOT GUARANTEED YET: that existing visions (which still carry the
-// `lifetreeId` field) have a ground; that the independent node knows the law (seed/PARITY.md);
-// that a ground is re-judged when a tree or vision later changes who may see it
-// (groundKeepsFaith is written and asked by no one); that light obeys visionReceivesLight (no
-// light reaches a vision today); any limit on how many visions may knock at one tree; that the
+// Since 2026-11-18 the old `lifetreeId` field is gone (a migrated ground says `migrated` and has
+// no blocks), the independent node keeps the same law, and light moving around a vision obeys
+// visionReceivesLight (domain/spend's ground gate).
+// NOT GUARANTEED YET: that a ground is re-judged when a tree or vision later changes who may see it
+// (groundKeepsFaith is written and asked by no one); that a ground is released when its vision
+// is deleted; any limit on how many visions may knock at one tree; that the
 // ids of a node-only tree and vision, and the asker's uid, stay inside the node (the LIN is
 // world-readable — only private beings are kept out of it). NEVER GUARANTEED: that a vision is being realised on the land
 // that grounds it (a ground records consent, not work), or that author and carer are different
@@ -166,8 +167,11 @@ export const isSeekingGround = (groundCount: number): boolean => !(groundCount >
 // be validated; a guarded (nature) tree is stood for by its community and needs no validation of
 // its own. Consent alone is not enough: a ground in one's own neglected tree carries no light.
 // A ground in a tree that has died is remembered, and carries none.
-// NOT ENFORCED ANYWHERE YET: no light moves to or through a vision today; when it does (the
-// appreciation of what is offered to a vision), the hand that moves it must ask this first.
+// ENFORCED (ring 2026-11-18) wherever light moves around a vision: the appreciation of an offering
+// made to a vision, and a community's spend on one, are refused (`light_vision_ungrounded`) unless
+// this answers yes — domain/spend asks it of the facts the server read (`visionLightOf`), on both
+// soils. Accepting such an offering moves no light and is not gated. No light ARRIVES at a vision
+// by any path yet; when one is built it must ask this too.
 export const GROUND_CARE_WINDOW_MS = 365 * 24 * 3600 * 1000; // a year, as guardianship's VALIDATION_WINDOW_MS
 export interface GroundLightFacts {
   treeType?: string | null;
@@ -244,3 +248,24 @@ export const homeGroundOf = (grounds: readonly VisionGroundFacts[]): string | nu
 };
 // A vision is a tree's Root Vision when one of its grounds is a birth ground — never by its title.
 export const isRootVision = (grounds: readonly Pick<VisionGroundFacts, 'birth'>[]): boolean => grounds.some(g => g.birth === true);
+
+// A tree's stored record as the light law reads it. Validation is the EXPLICIT stamp only (a
+// guardian's or an initiate's yes names its giver in `validatorId`; the system's and the genesis'
+// own stamps do not count — utils/validation isExplicitlyValidatedTree). Care is `lastCaredAt`
+// alone: a tree never cared for carries no light, whatever else was edited on it.
+export interface GroundTreeRecord {
+  treeType?: unknown; isNature?: unknown; validated?: unknown; validatorId?: unknown;
+  diedAtMs?: number | null; lastCaredAtMs?: number | null;
+}
+export const groundLightFactsOf = (tree: GroundTreeRecord): GroundLightFacts => ({
+  treeType: typeof tree.treeType === 'string' ? tree.treeType : null,
+  isNature: tree.isNature === true,
+  diedAtMs: tree.diedAtMs ?? null,
+  validated: tree.validated === true && typeof tree.validatorId === 'string' && tree.validatorId !== ''
+    && tree.validatorId !== 'SYSTEM' && tree.validatorId !== 'GENESIS',
+  lastCaredAtMs: tree.lastCaredAtMs ?? null,
+});
+// May light move around this vision now? `trees` are the records of every tree it stands in
+// (its `grounded_in` links, read by the server at the moment of movement).
+export const visionLightOf = (trees: readonly GroundTreeRecord[], nowMs: number): boolean =>
+  visionReceivesLight(trees.map(groundLightFactsOf), nowMs);

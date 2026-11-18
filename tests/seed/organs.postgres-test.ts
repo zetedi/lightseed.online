@@ -96,6 +96,38 @@ describe('the light organ', () => {
     } finally { await t.close(); }
   });
 
+  it('light moves around a vision only while it stands in cared-for ground (ring 2026-11-18)', async () => {
+    const t = await serve();
+    try {
+      forest(t.sql);
+      const cared = new Date().toISOString();
+      t.sql(`INSERT INTO rays VALUES ('t1__2026-10-01__carer','{"holderUid":"alice","role":"carer","units":50,"treeId":"t1","dayKey":"2026-10-01","sourceUid":"alice"}');
+        INSERT INTO visions VALUES ('vg','{"lid":"${LID(71)}","authorId":"alice","title":"Clear water","visibility":"public"}');
+        INSERT INTO lifetrees VALUES ('tg','{"lid":"${LID(72)}","anchorUid":"alice","name":"Ground","treeType":"LIFETREE","visibility":"public","lastCaredAt":"${cared}"}');
+        INSERT INTO pulses VALUES ('offv','{"lid":"${LID(73)}","type":"offering","authorId":"bob","visibility":"public","offeredToKind":"vision","offeredToId":"vg","offeringStatus":"accepted","offeringAnsweredBy":"alice","offeringActive":true,"createdAt":"2026-10-25T10:00:00.000000Z"}');`);
+      const appreciate = () => t.post('/v1/light/command', { action: 'appreciate', offeringId: 'offv', units: 7 }, 'alice');
+      const refused = { status: 409, body: { error: 'light_vision_ungrounded' } };
+      // No ground at all.
+      expect(await appreciate()).toEqual(refused);
+      // A ground in a living, cared-for tree that no one has validated: still no light.
+      t.sql(`INSERT INTO links(from_id,rel,to_id,lid,doc) VALUES ('vg','grounded_in','tg','${LID(74)}','{"self":true,"birth":false}')`);
+      expect(await appreciate()).toEqual(refused);
+      // The system's own stamp is no validation; a tree not cared for within the year carries none either.
+      t.sql(`UPDATE lifetrees SET doc=doc||'{"validated":true,"validatorId":"SYSTEM"}' WHERE id='tg'`);
+      expect(await appreciate()).toEqual(refused);
+      t.sql(`UPDATE lifetrees SET doc=doc||'{"validatorId":"bob","lastCaredAt":"2020-01-01T00:00:00.000000Z"}' WHERE id='tg'`);
+      expect(await appreciate()).toEqual(refused);
+      // The soil re-proves the gate whatever the API believed.
+      expect(() => t.sql(`SET seed.uid='alice'; SELECT seed.apply_appreciation('offv','{"giverUid":"alice","offeringId":"offv","units":7,"glow":1,"suspended":6,"glowHome":"NODE"}','[{"id":"t1__2026-10-01__carer","units":7}]')`)).toThrow();
+      expect(t.doc('rays', 't1__2026-10-01__carer')!.units).toBe(50);
+      expect(t.doc('pulses', 'offv')).not.toHaveProperty('offeringSuspendedLight');
+      // Validated by a being and cared for now: the light moves.
+      t.sql(`UPDATE lifetrees SET doc=doc||'{"lastCaredAt":"${cared}"}' WHERE id='tg'`);
+      expect((await appreciate()).body).toEqual({ units: 7, glow: 1, suspended: 6 });
+      expect(t.doc('rays', 't1__2026-10-01__carer')!.units).toBe(43);
+    } finally { await t.close(); }
+  });
+
   it('the commons is spent only by a signed, passed purchase decision whose seal the node re-verifies, once', async () => {
     const t = await serve();
     try {
