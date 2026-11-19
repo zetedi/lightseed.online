@@ -20,6 +20,9 @@ export function seedIdentityRealm(appOrigin, enrollment = 'closed', smtp = null)
     bruteForceProtected: true, passwordPolicy: 'length(12)',
     accessTokenLifespan: 300, ssoSessionIdleTimeout: 1800, ssoSessionMaxLifespan: 36000,
     revokeRefreshToken: true, refreshTokenMaxReuse: 0,
+    // THE DOOR'S CLOTHES (2026-11-19): the sign-in pages wear the node's theme
+    // (seed/identity/theme/lightseed, mounted by seed/identity/compose.yml). Appearance only.
+    loginTheme: 'lightseed',
     clients: [{ clientId: 'lightseed-web', protocol: 'openid-connect', enabled: true,
       publicClient: true, standardFlowEnabled: true, implicitFlowEnabled: false,
       directAccessGrantsEnabled: false, serviceAccountsEnabled: false,

@@ -1,0 +1,221 @@
+/* The sign-in window of a Lightseed node: the application's modal (white card, slate header
+   band, the node's emerald on every action) over Keycloak's own pages. Colours follow the
+   shell's defaults (src/index.css: --color-primary #059669, slate neutrals). */
+
+:root {
+    --lightseed-primary: #059669;
+    --lightseed-primary-deep: #047857;
+    --lightseed-ink: #0f172a;
+    --lightseed-ink-soft: #475569;
+    --lightseed-line: #e2e8f0;
+    --lightseed-band: #f8fafc;
+    --lightseed-card: #ffffff;
+    --lightseed-ground: #f1f5f9;
+    --lightseed-field: #ffffff;
+    --lightseed-tint: #ecfdf5;
+    --lightseed-tint-ink: #065f46;
+    --lightseed-glow: rgba(16, 185, 129, 0.16);
+    --lightseed-font: 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+    --keycloak-card-top-color: transparent;
+    --pf-v5-global--FontFamily--text: var(--lightseed-font);
+    --pf-v5-global--FontFamily--heading: var(--lightseed-font);
+    --pf-v5-global--primary-color--100: var(--lightseed-primary);
+    --pf-v5-global--primary-color--200: var(--lightseed-primary-deep);
+    --pf-v5-global--active-color--100: var(--lightseed-primary);
+    --pf-v5-global--link--Color: var(--lightseed-primary);
+    --pf-v5-global--link--Color--hover: var(--lightseed-primary-deep);
+    --pf-v5-global--BorderRadius--sm: 0.75rem;
+}
+
+.pf-v5-theme-dark {
+    --lightseed-primary: #10b981;
+    --lightseed-primary-deep: #059669;
+    --lightseed-ink: #f1f5f9;
+    --lightseed-ink-soft: #cbd5e1;
+    --lightseed-band: #0f172a;
+    --lightseed-card: #0f172a;
+    --lightseed-ground: #020617;
+    --lightseed-field: #020617;
+    --lightseed-line: #334155;
+    --lightseed-tint: rgba(6, 78, 59, 0.35);
+    --lightseed-tint-ink: #a7f3d0;
+    --lightseed-glow: rgba(16, 185, 129, 0.12);
+
+    --pf-v5-global--primary-color--100: var(--lightseed-primary);
+    --pf-v5-global--primary-color--200: var(--lightseed-primary-deep);
+    --pf-v5-global--active-color--100: var(--lightseed-primary);
+    --pf-v5-global--link--Color: var(--lightseed-primary);
+    --pf-v5-global--link--Color--hover: #34d399;
+    --pf-v5-global--BackgroundColor--100: var(--lightseed-card);
+}
+
+/* The ground: quiet slate with a breath of the node's green, no picture. */
+.login-pf body {
+    background: radial-gradient(ellipse 70% 55% at 50% 0%, var(--lightseed-glow), transparent 70%), var(--lightseed-ground);
+    background-attachment: fixed;
+    color: var(--lightseed-ink);
+    font-family: var(--lightseed-font);
+}
+
+.pf-v5-c-login__container {
+    grid-template-columns: minmax(0, 26rem);
+    justify-content: center;
+}
+
+/* The mark and the realm's name above the window. */
+.pf-v5-c-login__header {
+    padding-bottom: 1.25rem;
+}
+
+#kc-header-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+    text-transform: none;
+    color: var(--lightseed-ink-soft) !important;
+}
+
+#kc-header-wrapper::before {
+    content: '';
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 9999px;
+    background: #ffffff url('../img/logo.svg') center / contain no-repeat;
+    box-shadow: 0 0 0 1px var(--lightseed-line), 0 0 32px 6px var(--lightseed-glow);
+}
+
+/* The window: the shell's modal. */
+.pf-v5-c-login__main {
+    background-color: var(--lightseed-card);
+    border: 1px solid var(--lightseed-line);
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.pf-v5-c-login__main-header {
+    border-top: 0;
+    border-bottom: 1px solid var(--lightseed-line);
+    background-color: var(--lightseed-band);
+    padding: 0.875rem 1.25rem;
+}
+
+.pf-v5-c-login__main-header .pf-v5-c-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--lightseed-ink);
+}
+
+.pf-v5-c-login__main-body {
+    padding: 1.25rem;
+}
+
+.pf-v5-c-login__main-footer:empty {
+    display: none;
+}
+
+.pf-v5-c-form__label-text {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--lightseed-ink-soft);
+}
+
+/* Fields: one rounded line all the way round, the node's green when held. */
+.pf-v5-c-form-control {
+    --pf-v5-c-form-control--BorderRadius: 0.75rem;
+    --pf-v5-c-form-control--BackgroundColor: var(--lightseed-field);
+    --pf-v5-c-form-control--m-readonly--BackgroundColor: var(--lightseed-band);
+    --pf-v5-c-form-control--Color: var(--lightseed-ink);
+    --pf-v5-c-form-control--before--BorderTopColor: var(--lightseed-line);
+    --pf-v5-c-form-control--before--BorderRightColor: var(--lightseed-line);
+    --pf-v5-c-form-control--before--BorderLeftColor: var(--lightseed-line);
+    --pf-v5-c-form-control--before--BorderBottomColor: var(--lightseed-line);
+    --pf-v5-c-form-control--after--BorderBottomColor: var(--lightseed-line);
+    --pf-v5-c-form-control--after--BorderBottomWidth: 1px;
+    --pf-v5-c-form-control--hover--after--BorderBottomColor: var(--lightseed-primary);
+    --pf-v5-c-form-control--focus--after--BorderBottomColor: var(--lightseed-primary);
+    border-radius: 0.75rem;
+}
+
+.pf-v5-c-form-control::before,
+.pf-v5-c-form-control::after {
+    border-radius: 0.75rem;
+}
+
+.pf-v5-c-form-control:focus-within {
+    outline: 2px solid var(--lightseed-primary);
+    outline-offset: 1px;
+}
+
+.pf-v5-c-form-control > :is(input, select, textarea):focus {
+    outline: none;
+}
+
+.pf-v5-c-input-group {
+    gap: 0.5rem;
+}
+
+.pf-v5-c-button {
+    --pf-v5-c-button--BorderRadius: 0.75rem;
+    --pf-v5-c-button--after--BorderRadius: 0.75rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+}
+
+/* The small hands beside a field (show the password, begin again): quiet, the field's own line. */
+.pf-v5-c-button.pf-m-control {
+    --pf-v5-c-button--m-control--BackgroundColor: var(--lightseed-field);
+    --pf-v5-c-button--m-control--Color: var(--lightseed-ink-soft);
+    --pf-v5-c-button--m-control--after--BorderColor: var(--lightseed-line);
+    --pf-v5-c-button--m-control--after--BorderBottomColor: var(--lightseed-line);
+    --pf-v5-c-button--m-control--hover--after--BorderBottomColor: var(--lightseed-primary);
+    --pf-v5-c-button--m-control--focus--after--BorderBottomColor: var(--lightseed-primary);
+    --pf-v5-c-button--m-control--active--after--BorderBottomColor: var(--lightseed-primary);
+    --pf-v5-c-button--m-control--hover--Color: var(--lightseed-primary);
+}
+
+/* Every solid action wears the node's colour, deepened under the hand (the shell's btn-theme). */
+.pf-v5-c-button.pf-m-primary {
+    --pf-v5-c-button--m-primary--BackgroundColor: var(--lightseed-primary);
+    --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--lightseed-primary-deep);
+    --pf-v5-c-button--m-primary--focus--BackgroundColor: var(--lightseed-primary-deep);
+    --pf-v5-c-button--m-primary--active--BackgroundColor: var(--lightseed-primary-deep);
+    --pf-v5-c-button--m-primary--Color: #ffffff;
+    font-weight: 700;
+    padding-block: 0.625rem;
+}
+
+.pf-v5-c-button:focus-visible {
+    outline: 2px solid var(--lightseed-primary);
+    outline-offset: 2px;
+}
+
+.pf-v5-c-check__input {
+    accent-color: var(--lightseed-primary);
+}
+
+.pf-v5-c-alert {
+    border-radius: 0.75rem;
+}
+
+/* A plain notice speaks in the node's green; warnings and errors keep their own colours. */
+.pf-v5-c-alert.pf-m-info {
+    --pf-v5-c-alert--BorderTopColor: transparent;
+    --pf-v5-c-alert--BackgroundColor: var(--lightseed-tint);
+    --pf-v5-c-alert__icon--Color: var(--lightseed-tint-ink);
+    --pf-v5-c-alert__title--Color: var(--lightseed-tint-ink);
+    --pf-v5-c-alert--m-inline--BackgroundColor: var(--lightseed-tint);
+    border: 1px solid color-mix(in srgb, var(--lightseed-primary) 30%, transparent);
+    box-shadow: none;
+}
+
+.pf-v5-c-login__main a {
+    font-weight: 600;
+}

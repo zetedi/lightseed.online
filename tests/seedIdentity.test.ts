@@ -13,6 +13,7 @@ describe('seed identity provider', () => {
     expect(client).toMatchObject({ publicClient: true, standardFlowEnabled: true,
       implicitFlowEnabled: false, directAccessGrantsEnabled: false, serviceAccountsEnabled: false });
     expect(realm).toMatchObject({ registrationAllowed: false, verifyEmail: true, bruteForceProtected: true, accessTokenLifespan: 300 });
+    expect(realm.loginTheme).toBe('lightseed');
     expect(realm).not.toHaveProperty('users');
     expect(realm).not.toHaveProperty('roles');
     expect(realm.clientScopes[0].protocolMappers[0].config['id.token.claim']).toBe('false');

@@ -46,6 +46,33 @@ and the keeper's binding, and — after the first sign-in — appoints the keepe
   the bound uid, and the keeper's seat taken. The real-host path (`--acme-email`) has not been
   run on a VPS.
 
+**The local certificate.** On a local walk Caddy is its own certificate authority, so a browser
+warns at both hosts until that root is trusted. The installer copies the root beside the trust
+file (`seed/local/caddy-root.crt`) and, on macOS, prints the command that trusts it for your
+login only:
+
+```sh
+security add-trusted-cert -r trustRoot -k ~/Library/Keychains/login.keychain-db seed/local/caddy-root.crt
+security remove-trusted-cert seed/local/caddy-root.crt   # take the trust back
+```
+
+It is printed, never run: the root's private key lives in the edge's Docker volume, and a trusted
+root can vouch for any site to your browser — trust it only on a machine whose Docker you hold,
+and take the trust back when the node is removed (`seed:uninstall` does not touch the keychain).
+A real host (`--acme-email`) needs none of this.
+
+**The sign-in window.** The issuer's pages wear the node's own theme
+(`seed/identity/theme/lightseed`: one stylesheet, the mark and a favicon over Keycloak's login
+theme; no template is overridden and nothing is fetched from another host). The realm names it
+(`loginTheme`), so a new installation wears it from its first start. A realm made before
+2026-11-19 is told once, in the issuer's console (Realm settings → Themes → Login theme) —
+`--import-realm` never rewrites a standing realm. After editing the theme, **recreate** the
+issuer's container (`docker compose … up -d --force-recreate identity`): a restart keeps
+Keycloak's compressed copy of the old files, and browsers hold the stylesheet for thirty days
+under the same address, so a changed theme reaches a returning visitor only after a hard reload
+or an issuer upgrade. The name above the window is the realm's display name (`lightseed` until
+it is set in the console).
+
 Where it keeps things: `seed/.env`, `seed/runtime.env`, `seed/charter/`, `seed/identity/.env`,
 `seed/compose.local.yml`, and under `seed/local/` the node's input (`node.json`), the trust file
 (`auth.json`), the realm, Caddy's local root certificate and `first-login.txt` — all ignored by

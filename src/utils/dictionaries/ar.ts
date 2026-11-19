@@ -1259,6 +1259,8 @@ const ar = {
   clear: "امسح",
   shared_ground_pct: "{n}% أرض مشتركة",
   no_communities_registered: "لا مجتمعات مسجّلة",
+  no_community_here: "لا مجتمع يقوم عند هذا العنوان بعد",
+  no_community_here_note: "حين يتخذ مجتمعٌ هذا العنوان بيتًا له، سيظهر وجهه هنا.",
   no_communities_note: "كن أول من يغرس رؤية عالمية. المجتمعات تصل عُقد الغابة الرأسية في اسم واحد ومقصد واحد.",
   event_details: "تفاصيل اللقاء",
   reflect: "تأمَّل",

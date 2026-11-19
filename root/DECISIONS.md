@@ -6606,3 +6606,36 @@ not run (no installer-made node stands in the default places here); on Linux the
 `seed/data` may need the database user's rights; backups are never touched, and under the
 default layout neither are `dist-independent/` and `seed/local/` beyond the installer's own
 files. The removal is final: there is no undo but a keeping taken beforehand.
+
+### 2026-11-19 — The first visitor's three stumbles
+
+Zoltán walked the freshly installed local node in Chrome and stumbled three times; each is
+answered.
+
+About waited forever. A new node has no community at its address and none at the charter's, and
+the page waited for one of the two (`MainContent`: `place || defaultCommunity`) without knowing
+that both lookups had already answered "none". `useHostNode` now says when the fallback has
+answered (`defaultCommunityResolved`), and About — and the node's letter desk, which waited the
+same way — shows an empty state (`no_community_here`) once both are in. The same shell runs on
+both soils, so both are mended by the one change.
+
+The browser called the node unsafe: locally Caddy is its own certificate authority. The
+installer now prints, on macOS, the command that trusts that root for the operator's login, and
+the README says what trusting it means. It is printed, never run.
+
+The issuer's door looked like someone else's house. `seed/identity/theme/lightseed` lays one
+stylesheet, the mark and a favicon over Keycloak's login theme — the shell's modal, the node's
+emerald, light and dark — and `seedIdentityRealm` names it (`loginTheme`).
+
+Plain contract. Guaranteed: About and the letter desk never wait for a community once both
+lookups have answered; a new realm names the theme (`tests/seedIdentity.test.ts`); the theme
+overrides no template and fetches nothing from another host. Proven: on the local node in
+Chrome — About showing the empty state after a rebuild, the sign-in page in both colour schemes
+under the trusted root. Not guaranteed: a standing realm is not rewritten (set the theme once in
+the console); only the password sign-in page was looked at — registration, recovery, one-time
+codes and error pages inherit the same stylesheet unseen; an edited theme reaches returning
+browsers late (README); the name above the window is the realm's display name, not yet the
+charter's; the plain-HTTP port still redirects to HTTPS without the local port
+(`http://seed.localhost:8080` → `https://seed.localhost/`), named here and not mended; the
+origin (Firebase) has no issuer page, so the theme has no counterpart there.
+

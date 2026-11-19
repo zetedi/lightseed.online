@@ -30,6 +30,9 @@ export function useHostNode(params: { uid: string | undefined; isSuperAdmin: boo
   const [hostCommunityResolved, setHostCommunityResolved] = useState(false);
   // The lightseed community is the default "About" page when this node has none of its own.
   const [defaultCommunity, setDefaultCommunity] = useState<Community | null>(null);
+  // The fallback's answer has arrived (found or not): a node with no community of its own yet
+  // says so on About, instead of waiting for one that will never come.
+  const [defaultCommunityResolved, setDefaultCommunityResolved] = useState(false);
   // Superadmin "switch to community view" — when set, the whole shell (theme, logo,
   // name, About page) renders as if this were the host community. Cleared via "Exit community".
   const [impersonatedCommunity, setImpersonatedCommunity] = useState<Community | null>(null);
@@ -59,7 +62,8 @@ export function useHostNode(params: { uid: string | undefined; isSuperAdmin: boo
 
   // Load the lightseed community once as the default About page fallback.
   useEffect(() => {
-    getCommunityByDomain(charter.domain).then(setDefaultCommunity).catch(() => {});
+    getCommunityByDomain(charter.domain).then(setDefaultCommunity).catch(() => {})
+      .finally(() => setDefaultCommunityResolved(true));
   }, []);
 
   // Sync the chain-lock flag from the node's community ("big red stamp"). Off until a node sets it.
@@ -81,7 +85,7 @@ export function useHostNode(params: { uid: string | undefined; isSuperAdmin: boo
 
   return {
     hostCommunity, setHostCommunity, dataAuthority, seedView, setSeedView,
-    hostResolved, hostCommunityResolved, defaultCommunity, setDefaultCommunity,
+    hostResolved, hostCommunityResolved, defaultCommunity, setDefaultCommunity, defaultCommunityResolved,
     impersonatedCommunity, setImpersonatedCommunity,
     activeCommunity, activeDataDomain,
   };

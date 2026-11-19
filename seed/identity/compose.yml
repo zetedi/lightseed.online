@@ -35,6 +35,13 @@ services:
         source: ${SEED_IDENTITY_REALM_FILE:?Set the absolute path to the prepared realm file}
         target: /opt/keycloak/data/import/lightseed-realm.json
         read_only: true
+      # The sign-in window in the node's own clothes (theme/lightseed: one stylesheet over
+      # Keycloak's login theme, no template). After a change, recreate this container (--force-recreate): a restart keeps
+      # Keycloak's compressed copy of the old files.
+      - type: bind
+        source: ./theme/lightseed
+        target: /opt/keycloak/themes/lightseed
+        read_only: true
     depends_on:
       identity-db:
         condition: service_healthy

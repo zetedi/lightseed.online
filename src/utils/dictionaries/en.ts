@@ -1291,6 +1291,8 @@ const en = {
   clear: "Clear",
   shared_ground_pct: "{n}% shared ground",
   no_communities_registered: "No Communities Registered",
+  no_community_here: "No community stands at this address yet",
+  no_community_here_note: "When a community makes this address its home, its face will show here.",
   no_communities_note: "Be the first to plant a global vision. Communities connect vertical forest nodes into a unified brand and purpose.",
   event_details: "Event details",
   reflect: "Reflect",

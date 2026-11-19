@@ -19,6 +19,7 @@ import { placeOfRecordDomain } from '../../domain/pulseVisibility';
 import { tabTone, tabFg, CTA_GLOW } from '../../utils/tabTheme';
 import { Icons } from '../ui/Icons';
 import { Loading } from '../ui/Loading';
+import { EmptyState } from '../ui/EmptyState';
 import { SectionHeader } from '../ui/SectionHeader';
 import { FullWidthTabs } from '../ui/FullWidthTabs';
 import { EventCard } from '../event/EventCard';
@@ -86,7 +87,7 @@ export const MainContent: React.FC<{
   const { t } = useLanguage();
   const { lightseed, myTrees, guardedTrees, activeTree, defaultTreeId, setDefaultTree, isAdmin, isSuperAdmin, isInitiate } = useSession();
   const { setSelectedTree, setSelectedVision, setSelectedAlignment, setSelectedCommunity, setSelectedPulse, setViewingLightHouse, onViewPulseOrAlignment, onViewAlignmentTree, mapRefreshKey } = beings;
-  const { hostCommunity, setHostCommunity, impersonatedCommunity, setImpersonatedCommunity, defaultCommunity, setDefaultCommunity, activeCommunity, activeDataDomain } = host;
+  const { hostCommunity, setHostCommunity, impersonatedCommunity, setImpersonatedCommunity, defaultCommunity, setDefaultCommunity, activeCommunity, activeDataDomain, hostCommunityResolved, defaultCommunityResolved } = host;
   const { data, loadContent, loadingMore, forestSentinelRef } = feed;
   const place = impersonatedCommunity || hostCommunity;
 
@@ -146,10 +147,21 @@ export const MainContent: React.FC<{
     );
   }
 
+  // NO COMMUNITY AT THIS ADDRESS (2026-11-19): a freshly installed node has none until one makes
+  // this address its home. While the two lookups are out the sun waits; once both have answered
+  // with nothing, the page says so — it never waits for a community that is not coming.
+  const noPlace = (
+    <div className="min-h-screen flex items-center justify-center px-4">
+      {hostCommunityResolved && defaultCommunityResolved
+        ? <EmptyState icon={<Icons.Users />} hint={t('no_community_here_note')} className="max-w-md">{t('no_community_here')}</EmptyState>
+        : <Loading />}
+    </div>
+  );
+
   if (tab === 'newsletter' && lightseed && isSuperAdmin) {
     // The node's own letter from the profile's admin door; a face's letter is written on its community page.
     const letterPlace = place || defaultCommunity;
-    if (!letterPlace) return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+    if (!letterPlace) return noPlace;
     return <NewsletterAdmin community={letterPlace} onBack={() => setTab('profile')} />;
   }
 
@@ -159,7 +171,7 @@ export const MainContent: React.FC<{
     // independently (About / Host / Node / Hub) from backend authority. Off-domain or
     // before a host resolves, the lightseed community remains the fallback reading.
     const aboutCommunity = place || defaultCommunity;
-    if (!aboutCommunity) return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+    if (!aboutCommunity) return noPlace;
     return (
       <CommunityProfile
         onViewLightHouse={setViewingLightHouse}

@@ -144,6 +144,9 @@ import transaction/workflow, not guarantees provided by a merge report.
   `test:seed:identity` passes against the real container: discovery, code+PKCE login,
   API identity, ID-token refusal, replay/wrong-verifier refusal, refresh, logout and
   signing-key persistence after restart. This is not a full identity backup/restore drill.
+  The issuer's pages wear `seed/identity/theme/lightseed` (2026-11-19): one stylesheet, the mark
+  and a favicon over Keycloak's own login theme, mounted read-only and named by the realm
+  (`loginTheme`). Appearance only — no template or script is overridden.
 - `seed/web` is a separate React sign-in preview. `seed:web:build` requires explicit
   HTTPS application/issuer settings and rejects Firebase modules. It uses the standard
   browser OIDC client with code+PKCE, nonce/state validation and in-memory tokens;

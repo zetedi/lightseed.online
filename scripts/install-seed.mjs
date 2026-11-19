@@ -298,6 +298,8 @@ The issuer's bootstrap administrator is in ${show(paths.identityEnv)} (console: 
   if (local) {
     await compose('cp', 'proxy:/data/caddy/pki/authorities/local/root.crt', paths.rootCert);
     console.log(`Caddy's local root certificate: ${show(paths.rootCert)} — trust it, or accept the warning at each host.`);
+    // Named, never run: trusting a root is the operator's own decision about their own machine.
+    if (process.platform === 'darwin') console.log(`  macOS: security add-trusted-cert -r trustRoot -k ~/Library/Keychains/login.keychain-db ${paths.rootCert}`);
   }
   const prefix = home ? `COMPOSE_PROJECT_NAME=${project} COMPOSE_ENV_FILES=${paths.env} COMPOSE_FILE=${composeEnv.COMPOSE_FILE} ` : '';
   const appoint = `${prefix}npm run seed:keeper -- ${keeperUid}`;

@@ -1257,6 +1257,8 @@ const zh = {
   clear: "清除",
   shared_ground_pct: "{n}% 的共同土壤",
   no_communities_registered: "尚无已注册的社区",
+  no_community_here: "这个地址上还没有社区",
+  no_community_here_note: "当一个社区把这个地址作为自己的家，它的面貌就会显现在这里。",
   no_communities_note: "成为第一个种下全球愿景的人。社区把纵向的森林节点连成统一的名与共同的目的。",
   event_details: "活动详情",
   reflect: "映照",
