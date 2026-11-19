@@ -1,4 +1,4 @@
-import { Modal } from './Modal';
+import { Modal } from '../ui/Modal';
 
 export type LegalDoc = 'privacy' | 'terms' | 'imprint';
 

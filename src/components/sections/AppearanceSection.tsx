@@ -4,7 +4,7 @@ import { Icons } from '../ui/Icons';
 import { Community } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
 import { normalizeTheme } from '../../utils/theme';
-import { AppearanceEditor } from '../ui/AppearanceEditor';
+import { AppearanceEditor } from '../appearance/AppearanceEditor';
 import { AutosaveMark } from '../ui/AutosaveMark';
 import type { AutosaveState } from '../../domain/autosave';
 import { SECTION_BREAK } from '../ui/SettingRow';

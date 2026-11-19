@@ -1,6 +1,7 @@
 import { Icons } from './Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { MAX_WEB_LINKS, webLinkProblem, type WebLink } from '../../domain/webLink';
+import { FieldLabel } from './Field';
 
 // THE DOORS A RECORD CARRIES OUTWARD (ring 2026-09-30): a dynamic list of label + address rows —
 // a blog, an album, a shared folder — bounded by the law (MAX_WEB_LINKS), each address judged
@@ -20,7 +21,7 @@ export const WebLinksEditor = ({ rows, onChange, fieldClassName }: {
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[10px] font-bold uppercase text-slate-400">{t('web_links')}</span>
+        <FieldLabel flush>{t('web_links')}</FieldLabel>
         <span className="text-[11px] text-slate-400">{t('web_links_hint')}</span>
       </div>
       {rows.map((r, i) => {

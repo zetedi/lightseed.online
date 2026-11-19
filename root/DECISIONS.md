@@ -6465,3 +6465,29 @@ Not done: `ui/` still holds pieces with a being in them (`ThemeEditor`, `Appeara
 captions are still written out by hand in many places; the largest faces (`CommunityProfile`,
 `ReachThread`, `ForestMap`) were moved, not divided.
 
+### 2026-11-19 — The kit holds only shapes; the door leaves the face
+
+The second half of the same day's work, after the first was committed and released.
+
+Ten more pieces left `ui/` because each has a being or the shell in it: the update toasts, the
+network mark, the legal modal, the plant call and the quote carousel to `app/`; `EventWeather`
+to `event/`; `MiniForestMap` to `forest/`; the two theme editors to a new `appearance/`. `ui/`
+is now 52 files. The ten were the ones used by a single shell or being; the rest were not
+audited one by one.
+
+The form's skin got a name in `ui/Field.tsx`: `TEXT_INPUT`, `TEXT_AREA` and their `_SOFT`
+grounds (15 fields), `FieldLabel flush` (11 captions) and `Caption` (10). These were exact
+copies, so nothing looks different.
+
+`CommunityProfile` lost its first hundred lines to `hooks/useCommunityDoor`: the viewer's
+standing at the door (member, steward, keeper by link, the knocks made) and the four hands
+that open it. The code moved whole; the face is 857 lines, the hook 132.
+
+Plain contract. Guaranteed: the gate is green. Not guaranteed: the door was not walked in a
+browser after the move — join, step in, enter with an invitation and ask to keep have no
+automated test at the face. Not done: the face still imports `@backend` for its other work, so
+its line in the faces' ratchet stays; about a hundred other inputs keep their own class
+strings because their size or hue differs on purpose (amber for a vision, violet for a staff
+hand) or by accident, and telling the two apart is a design decision, not a refactor;
+`ReachThread` and `ForestMap` are untouched.
+

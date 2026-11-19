@@ -20,6 +20,7 @@ import type { Pulse } from '../../types';
 import { councilView } from '../../domain/views/council';
 import { speak, spokenLine } from '../../utils/translations';
 import type { PulseVisibility } from '../../domain/pulse';
+import { FieldLabel, TEXT_INPUT, TEXT_AREA } from '../ui/Field';
 
 // The crypto standing of a decision — how many signatures verify against its frozen identity, whether a
 // claimed 'passed' is honest, and who has signed. Re-run from the raw signatures so the seal is PROVEN.
@@ -221,9 +222,9 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
       {currentUserId && (
         <div className="mb-8 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-900/60">
           <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">{t('propose_decision')}</h4>
-          <input value={decTitle} onChange={e => setDecTitle(e.target.value)} placeholder={t('decision_title_ph')} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+          <input value={decTitle} onChange={e => setDecTitle(e.target.value)} placeholder={t('decision_title_ph')} className={TEXT_INPUT} />
           <label className="block space-y-1">
-            <span className="text-[10px] font-bold uppercase text-slate-400">{t('decision_nature')}</span>
+            <FieldLabel flush>{t('decision_nature')}</FieldLabel>
             <select value={decNature} onChange={e => setDecNature(e.target.value as DecisionNature)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:max-w-xs dark:bg-slate-900 dark:border-slate-700">
               {DECISION_NATURES.map(n => <option key={n.id} value={n.id}>{t(('nature_' + n.id) as any)} · {n.votes} {t('voices')}</option>)}
             </select>
@@ -231,22 +232,22 @@ export const CommunityCouncil: React.FC<CommunityCouncilProps> = ({ community, c
           {decNature === 'purchase' && (
             <div className="grid gap-2 sm:grid-cols-[1fr_8rem]">
               <label className="block space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-400">{t('spend_offering_label')}</span>
+                <FieldLabel flush>{t('spend_offering_label')}</FieldLabel>
                 <select value={spendOfferingId} onChange={e => setSpendOfferingId(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">
                   <option value="">{t('spend_pick_offering')}</option>
                   {offerings.map(o => <option key={o.id} value={o.id}>{o.title}</option>)}
                 </select>
               </label>
               <label className="block space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-400">{t('spend_units_label')}</span>
-                <input type="number" min={1} step={1} inputMode="numeric" value={spendUnits} onChange={e => setSpendUnits(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+                <FieldLabel flush>{t('spend_units_label')}</FieldLabel>
+                <input type="number" min={1} step={1} inputMode="numeric" value={spendUnits} onChange={e => setSpendUnits(e.target.value)} className={TEXT_INPUT} />
               </label>
               {spendDraftProblem && <p className="text-[11px] text-rose-600 sm:col-span-2 dark:text-rose-300">{speak(spendDraftProblem)}</p>}
             </div>
           )}
-          <textarea value={decBody} onChange={e => setDecBody(e.target.value)} placeholder={t('decision_body_ph')} className="min-h-20 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+          <textarea value={decBody} onChange={e => setDecBody(e.target.value)} placeholder={t('decision_body_ph')} className={`min-h-20 ${TEXT_AREA}`} />
           <div className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase text-slate-400">{t('council_mode_label')}</span>
+            <FieldLabel flush>{t('council_mode_label')}</FieldLabel>
             <div className="flex rounded-full border border-slate-200 bg-white p-0.5 text-xs font-bold w-full sm:max-w-md dark:bg-slate-900 dark:border-slate-700">
               <button type="button" onClick={() => setDecMode('threshold')} className={`flex-1 rounded-full px-3 py-1.5 transition-colors ${decMode === 'threshold' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>{t('voices')} ({votesRequired(decNature)})</button>
               <button type="button" onClick={() => setDecMode('consensus')} className={`flex-1 rounded-full px-3 py-1.5 transition-colors ${decMode === 'consensus' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}>{t('council_mode_consensus')}</button>

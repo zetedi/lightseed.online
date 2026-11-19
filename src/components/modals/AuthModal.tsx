@@ -8,6 +8,7 @@ import { TermsModal } from './TermsModal';
 import { getTerms } from '../../utils/terms';
 import { signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, getNetworkInvite, submitInviteRequest, authCapabilities, signInWithIssuer } from '@backend';
 import { friendlyAuthError, isUserCancelledAuth } from '../../utils/authErrors';
+import { TEXT_AREA_SOFT } from '../ui/Field';
 
 const field = "h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-700 dark:bg-slate-900";
 
@@ -143,7 +144,7 @@ export const AuthModal = ({ onClose, inviteId, inviteOnly, theme, startMode, gre
           <form onSubmit={handleRequest} className="space-y-3">
             <p className="text-sm text-slate-500">{t('auth_request_intro')}</p>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder={t('auth_your_email')} className={field} />
-            <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder={t('auth_reason_placeholder')} className="min-h-28 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+            <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder={t('auth_reason_placeholder')} className={`min-h-28 ${TEXT_AREA_SOFT}`} />
             <button type="submit" disabled={busy} style={{ backgroundColor: primary }} className={modalButton('primary', { extra: 'hover:opacity-90' })}>
               {busy ? '…' : t('auth_request_invitation')}
             </button>

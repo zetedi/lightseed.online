@@ -12,7 +12,7 @@ import { announce } from '../../services/refreshBus';
 import { bedPlantingProblem } from '../../domain/bed';
 import type { LightHouse } from '../../types';
 import { speak } from '../../utils/translations';
-import { ErrorNote } from '../ui/Field';
+import { ErrorNote, Caption } from '../ui/Field';
 
 // Offer a bed inside a Light House — the keeper-only door. A bed is a being (plantBed seals its
 // genesis chain), so this is deliberately light: a name, a word of welcome, a face. The house
@@ -86,7 +86,7 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
         </div>
         <div>
           <div className="mb-1 flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('upload_photo')}</label>
+            <Caption>{t('upload_photo')}</Caption>
             <button type="button" onClick={imagine} disabled={imagining || uploading}
               className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700 hover:bg-violet-200 disabled:opacity-50 dark:bg-violet-950/40 dark:text-violet-300">
               <span className="[&>svg]:h-3 [&>svg]:w-3"><Icons.Intelligence /></span>{imagining ? '…' : t('generate_image')}

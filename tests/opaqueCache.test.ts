@@ -26,7 +26,7 @@ const CORS_MODE = /crossorigin|crossOrigin/;
 
 const TILE_LAYERS = [
   'components/forest/ForestMap.tsx',
-  'components/ui/MiniForestMap.tsx',
+  'components/forest/MiniForestMap.tsx',
   'components/ui/LocationPicker.tsx',
 ];
 

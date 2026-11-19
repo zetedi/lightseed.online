@@ -3,7 +3,7 @@ import { Icons } from '../ui/Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { updateUserSiteTheme, uploadImage, releasePicture } from '@backend';
 import { normalizeTheme, type CommunityThemePreset } from '../../utils/theme';
-import { AppearanceEditor } from '../ui/AppearanceEditor';
+import { AppearanceEditor } from '../appearance/AppearanceEditor';
 import { notify as toast } from '../ui/Toast';
 import { AutosaveMark } from '../ui/AutosaveMark';
 import { useAutosave } from '../../hooks/useAutosave';

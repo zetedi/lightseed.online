@@ -11,6 +11,7 @@ import { AppearanceSection } from '../sections/AppearanceSection';
 import type { AutosaveState } from '../../domain/autosave';
 import { MAIL_LINE_MAX } from '../../domain/mailVoice';
 import { Switch } from '../ui/Switch';
+import { FieldLabel } from '../ui/Field';
 
 type SocialLinks = NonNullable<Community['socialLinks']>;
 export type MailDraft = { greeting: string; signature: string; footer: string };
@@ -152,7 +153,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
       </div>
       {(['greeting', 'signature', 'footer'] as const).map(k => (
         <label key={k} className="block space-y-1">
-          <span className="text-[10px] font-bold uppercase text-slate-400">{t(`mail_${k}`)}</span>
+          <FieldLabel flush>{t(`mail_${k}`)}</FieldLabel>
           <textarea
             dir="auto"
             rows={k === 'signature' ? 2 : 1}

@@ -23,6 +23,7 @@ import { FullViewButton } from '../ui/FullView';
 import { PictureGallery } from '../ui/PictureGallery';
 import { picturesOf } from '../../domain/pictures';
 import { DETAIL_PAGE } from '../ui/DetailPage';
+import { Caption } from '../ui/Field';
 // The bed's own profile — a bed IS a Lifetree, so it wears the same face (BeingProfile) and the
 // same chain (ChainTree, each stay a leaf). What's its own: a HOUSED/LOOSE pill, a calendar of
 // nights, and a details card with no tree machinery (no domain, no convert, no steward).
@@ -163,7 +164,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
       key: 'details', label: t('bed_details'), icon: <Icons.Info />, render: () => (
         <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-6 dark:bg-slate-900 dark:border-slate-800">
           <div>
-            <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('location')}</div>
+            <Caption>{t('location')}</Caption>
             <div className="mt-1 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
               <span className="text-slate-400 [&>svg]:h-4 [&>svg]:w-4">{housed ? <Icons.Building /> : <Icons.Moon />}</span>
               {housed
@@ -173,13 +174,13 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
           </div>
           {bed.body && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('body')}</div>
+              <Caption>{t('body')}</Caption>
               <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{bed.body}</p>
             </div>
           )}
           {isAnchor && (
             <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-              <label className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('visibility')}</label>
+              <Caption>{t('visibility')}</Caption>
               <select value={vis} onChange={e => changeVisibility(e.target.value as Lifetree['visibility'])}
                 className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-700 dark:text-slate-200 dark:border-slate-700">
                 {VIS.map(v => <option key={v} value={v}>{t(VIS_CHIP_KEY[v as keyof typeof VIS_CHIP_KEY])}</option>)}

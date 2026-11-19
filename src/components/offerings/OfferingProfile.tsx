@@ -26,6 +26,7 @@ import type { Pulse } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { DETAIL_PAGE } from '../ui/DetailPage';
 import { Switch } from '../ui/Switch';
+import { Caption } from '../ui/Field';
 
 // THE OFFERING'S OWN FACE — an offering is a being (it carries a lid, a QR, a heart), so it
 // wears the shared BeingProfile like a tree or a bed. Its tree view is its LIFECYCLE: the
@@ -224,13 +225,13 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
           {pictures.length > 1 && <PictureGallery images={pictures} alt={offering.title} className="h-64" />}
           {(offering.content || offering.body) && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('the_offering')}</div>
+              <Caption>{t('the_offering')}</Caption>
               <p dir="auto" className="mt-1 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{offering.content || offering.body}</p>
             </div>
           )}
 
           <div>
-            <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('offer_suggested')}</div>
+            <Caption>{t('offer_suggested')}</Caption>
             <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200">
               <span className="text-amber-500 [&>svg]:h-4 [&>svg]:w-4"><Icons.Sun /></span>
               {formatLight(offering.offeringAppreciationLight || 0, coin)}
@@ -245,7 +246,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
 
           {offering.offeringBedName && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('offering_bed_label')}</div>
+              <Caption>{t('offering_bed_label')}</Caption>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200">
                 <span className="text-indigo-400 [&>svg]:h-4 [&>svg]:w-4"><Icons.Moon /></span>
                 {offering.offeringBedName}
@@ -255,7 +256,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
 
           {offering.offeringUrl && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('more_detail')}</div>
+              <Caption>{t('more_detail')}</Caption>
               <OutwardLink href={offering.offeringUrl}
                 className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
                 <span className="[&>svg]:h-3.5 [&>svg]:w-3.5"><Icons.Globe /></span>
@@ -266,7 +267,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
 
           {offering.authorName && (
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('offered_by')}</div>
+              <Caption>{t('offered_by')}</Caption>
               <p className="mt-1 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
                 {offering.authorPhoto
                   ? <Picture src={offering.authorPhoto} alt="" className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />

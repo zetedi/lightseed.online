@@ -22,6 +22,7 @@ import type { Lifetree, Pulse } from '../../types';
 
 import { Picture } from '../ui/Picture';
 import { EmptyState } from '../ui/EmptyState';
+import { Caption } from '../ui/Field';
 // THE CIRCLE — the whole circle of care around a Lifetree, one view (the two old tabs merged). It
 // is a prism over the tree's incoming links (domain/views/circle), which already groups owner +
 // keeper + guardian + steward + observer. Two layers of belonging live here, kept legible, never
@@ -626,7 +627,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
             {canEdit && currentUserId && (
                 <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
                     <div className="mb-1.5 flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{t('invite_into_circle')}</p>
+                        <Caption>{t('invite_into_circle')}</Caption>
                         {canInviteRoles && roles.length > 1 && (
                             <select value={inviteRole} onChange={e => setInviteRole(e.target.value as InvitableRole)}
                                 className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">

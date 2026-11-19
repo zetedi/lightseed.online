@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { communityThemePresets, normalizeTheme, themeEquals, type CommunityThemePreset } from '../../utils/theme';
 import { normalizeHex } from '../../domain/color';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { FieldLabel } from '../ui/Field';
 
 export type ThemeValue = ReturnType<typeof normalizeTheme>;
 
@@ -89,7 +90,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
       {(isCustom || expanded) && (
         <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase text-slate-400">{t('theme_mode')}</span>
+            <FieldLabel flush>{t('theme_mode')}</FieldLabel>
             {(['light', 'dark'] as const).map(m => (
               <button key={m} type="button" onClick={() => onChange(normalizeTheme({ ...value, mode: m }))} className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition-colors ${value.mode === m ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:text-slate-800 dark:bg-slate-900 dark:border-slate-700'}`}>
                 {m}
@@ -100,7 +101,7 @@ export const ThemeEditor = ({ value, onChange, defaultTheme }: { value: ThemeVal
             {CUSTOM_FIELDS.map(([key, label]) => (
               <div key={key} className="space-y-1">
                 <label className="block space-y-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-400">{t(label as any)}</span>
+                  <FieldLabel flush>{t(label as any)}</FieldLabel>
                   <input type="color" value={(value as any)[key]} onChange={e => { setDrafts(d => ({ ...d, [key]: undefined })); setColor(key, e.target.value); }} className="block h-10 w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-1 dark:bg-slate-900 dark:border-slate-700" />
                 </label>
                 <input

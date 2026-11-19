@@ -15,7 +15,7 @@ import { Pulse, Lifetree, Community } from '../../types';
 import { Icons } from '../ui/Icons';
 import { WebLinksList } from '../ui/WebLinksList';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
-import { EventWeather } from '../ui/EventWeather';
+import { EventWeather } from './EventWeather';
 import { ProfileHero } from '../ui/ProfileHero';
 import { ProfileLayout } from '../ui/ProfileLayout';
 import { SectionTitle } from '../ui/SectionTitle';

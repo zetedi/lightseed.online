@@ -13,6 +13,7 @@ import { AIAccessCard } from './AIAccessCard';
 import { SectionMenu } from '../ui/SectionMenu';
 import { INTELLIGENCE_DUTIES, DUTY_LABEL_KEY, dutiesOf, type DutyAssignment, type IntelligenceDuty } from '../../domain/intelligenceDuty';
 import { say } from '../../utils/translations';
+import { FieldLabel } from '../ui/Field';
 
 // The model names are brand tokens; only the parenthetical hint speaks — so the label
 // is a translation key that carries the brand name inside it.
@@ -219,11 +220,11 @@ export const IntelligencePanel = ({
       </details>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1">
-          <span className="text-[10px] font-bold uppercase text-slate-400">{t('intel_name')}</span>
+          <FieldLabel flush>{t('intel_name')}</FieldLabel>
           <input value={name} onChange={e => setName(e.target.value)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
         </label>
         <label className="space-y-1">
-          <span className="text-[10px] font-bold uppercase text-slate-400">{t('intel_model')}</span>
+          <FieldLabel flush>{t('intel_model')}</FieldLabel>
           <select value={model} onChange={e => setModel(e.target.value)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
             {CLAUDE_MODELS.map(m => <option key={m.id} value={m.id}>{t(m.labelKey)}</option>)}
           </select>

@@ -11,7 +11,7 @@ import { webLinksOf } from '../../domain/webLink';
 import { spanProblem } from '../../domain/eventSpan';
 import { WebLinksEditor, rowsOf } from '../ui/WebLinksEditor';
 import { speak } from '../../utils/translations';
-import { FieldLabel } from '../ui/Field';
+import { FieldLabel, TEXT_INPUT_SOFT, TEXT_AREA_SOFT } from '../ui/Field';
 
 /**
  * Plant a standalone event — anyone can, no community required. A community can later form
@@ -111,14 +111,14 @@ export const EventModal = ({
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
             <FieldLabel>{t('event_from')}</FieldLabel>
-            <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+            <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className={TEXT_INPUT_SOFT} />
           </label>
           <label className="block">
             <FieldLabel>{t('event_until')}</FieldLabel>
-            <input type="datetime-local" value={endDate} min={date || undefined} onChange={e => setEndDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+            <input type="datetime-local" value={endDate} min={date || undefined} onChange={e => setEndDate(e.target.value)} className={TEXT_INPUT_SOFT} />
           </label>
         </div>
-        <input dir="auto" value={location} onChange={e => setLocation(e.target.value)} placeholder={t('location')} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+        <input dir="auto" value={location} onChange={e => setLocation(e.target.value)} placeholder={t('location')} className={TEXT_INPUT_SOFT} />
         <input
           type="number"
           min="1"
@@ -126,13 +126,13 @@ export const EventModal = ({
           value={maxParticipants}
           onChange={e => setMaxParticipants(e.target.value)}
           placeholder={t('max_participants_ph')}
-          className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
+          className={TEXT_INPUT_SOFT}
         />
-        <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('event_details_ph')} className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+        <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('event_details_ph')} className={`min-h-24 ${TEXT_AREA_SOFT}`} />
         <WebLinksEditor rows={linkRows} onChange={setLinkRows} />
         <label className="block">
           <FieldLabel>{t('visibility')}</FieldLabel>
-          <select value={visibility} onChange={e => setVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">
+          <select value={visibility} onChange={e => setVisibility(e.target.value as PulseVisibility)} className={TEXT_INPUT_SOFT}>
             {visibilitiesForScope(scope).map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
           </select>
         </label>

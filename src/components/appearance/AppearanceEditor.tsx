@@ -1,10 +1,11 @@
-import { Icons } from './Icons';
-import { ImagePicker } from './ImagePicker';
-import { ImageStrip } from './ImageStrip';
-import { Loading } from './Loading';
-import { Picture } from './Picture';
+import { Icons } from '../ui/Icons';
+import { ImagePicker } from '../ui/ImagePicker';
+import { ImageStrip } from '../ui/ImageStrip';
+import { Loading } from '../ui/Loading';
+import { Picture } from '../ui/Picture';
 import { ThemeEditor, type ThemeValue } from './ThemeEditor';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { FieldLabel } from '../ui/Field';
 
 /**
  * One appearance editor shared by communities and people: a square logo, an optional name,
@@ -48,7 +49,7 @@ export const AppearanceEditor = ({
       {/* WYSIWYG header — mirrors the live hero: a wide banner with the logo badge (and
           name) resting over it. Click the banner to set the hero, the circle to set the logo. */}
       <div className="space-y-2">
-        <label className="text-[10px] font-bold uppercase text-slate-400">{t('appearance_header')}</label>
+        <FieldLabel flush>{t('appearance_header')}</FieldLabel>
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 shadow-inner">
           {/* Hero banner: the background, and itself the hero picker. Its busy sun is drawn by
               the z-30 overlay BELOW (not the picker's own), because the gradient and the z-10/z-20

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavArrow, NAV_ARROW_PREV_X, NAV_ARROW_NEXT_X } from './NavArrow';
+import { NavArrow, NAV_ARROW_PREV_X, NAV_ARROW_NEXT_X } from '../ui/NavArrow';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 // A responsive, full-width text carousel of reflections — shown to signed-out visitors in place

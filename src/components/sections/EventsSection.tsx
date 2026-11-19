@@ -18,13 +18,13 @@ import { Pulse } from '../../types';
 import { updateEvent, deleteCommunityEvent, uploadImage, duplicateEvent } from '@backend';
 import { ImageStrip } from '../ui/ImageStrip';
 import { SectionTitle } from '../ui/SectionTitle';
-import { EventWeather } from '../ui/EventWeather';
+import { EventWeather } from '../event/EventWeather';
 import { visibilitiesForScope } from '../../domain/pulseVisibility';
 import type { PulseVisibility } from '../../domain/pulse';
 
 import { Picture } from '../ui/Picture';
 import { FullViewButton } from '../ui/FullView';
-import { FieldLabel } from '../ui/Field';
+import { FieldLabel, TEXT_INPUT, TEXT_AREA } from '../ui/Field';
 // Being-generic events section. Events are conceptually the same for communities, nodes and
 // personal profiles — only where they're rooted (and therefore how they're fetched/created)
 // differs, so the owner binds those via `loadEvents` / `onCreate`. CommunityEvents is a thin
@@ -248,19 +248,19 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <FieldLabel>{t('event_from')}</FieldLabel>
-              <input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+              <input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} className={TEXT_INPUT} />
             </label>
             <label className="block">
               <FieldLabel>{t('event_until')}</FieldLabel>
-              <input type="datetime-local" value={eventEndDate} min={eventDate || undefined} onChange={e => setEventEndDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
+              <input type="datetime-local" value={eventEndDate} min={eventDate || undefined} onChange={e => setEventEndDate(e.target.value)} className={TEXT_INPUT} />
             </label>
           </div>
-          <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('location')} />
-          <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className="min-h-24 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" placeholder={t('event_details_ph')} />
+          <input dir="auto" value={eventLocation} onChange={e => setEventLocation(e.target.value)} className={TEXT_INPUT} placeholder={t('location')} />
+          <textarea dir="auto" value={eventBody} onChange={e => setEventBody(e.target.value)} className={`min-h-24 ${TEXT_AREA}`} placeholder={t('event_details_ph')} />
           <WebLinksEditor rows={eventLinkRows} onChange={setEventLinkRows} />
           <label className="block">
             <FieldLabel>{t('visibility')}</FieldLabel>
-            <select value={eventVisibility} onChange={e => setEventVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">
+            <select value={eventVisibility} onChange={e => setEventVisibility(e.target.value as PulseVisibility)} className={TEXT_INPUT}>
               {visibilitiesForScope(visibilityScope).map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
             </select>
           </label>

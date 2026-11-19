@@ -6,13 +6,13 @@ import { getNetworkStats, getLightHousesByDomain, getAllLightHouses, getRootedTr
 import { dataDomainFor } from '../../domain/communityDoor';
 import { headerSurface } from '../../domain/themeSurface';
 import { treeCoordinates } from '../../domain/views/forest';
-import { PlantCTA } from '../ui/PlantCTA';
+import { PlantCTA } from './PlantCTA';
 import { Icons } from '../ui/Icons';
 import { ScrollChevrons } from '../ui/ScrollChevrons';
-import { QuoteCarousel } from '../ui/QuoteCarousel';
+import { QuoteCarousel } from './QuoteCarousel';
 import { quotesFor } from '../../content/quotes';
 import { useScrollEdges } from '../../hooks/useScrollEdges';
-import { MiniForestMap, type MapPoint } from '../ui/MiniForestMap';
+import { MiniForestMap, type MapPoint } from '../forest/MiniForestMap';
 import { EventCard } from '../event/EventCard';
 import { fetchMyRays } from '@backend/light';
 import { formatLight } from '../../domain/light';
