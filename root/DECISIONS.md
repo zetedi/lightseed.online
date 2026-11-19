@@ -6585,3 +6585,24 @@ run on a VPS; on Linux under an account other than UID 1000 the API cannot read 
 charter, which the installer says and does not mend; no browser walked the sign-in. The
 installer marks the keeper's own address verified at the issuer — the operator vouching for
 themselves, so that no mail is needed to walk in; every other account still verifies by mail.
+
+### 2026-11-19 — What one hand plants, one hand can lift
+
+`npm run seed:uninstall` (`scripts/uninstall-seed.mjs`) takes an installed node off the machine:
+the containers, volumes, networks and built image of its two Compose projects, and the files the
+installer wrote. The two hands now read one table (`scripts/seed-layout.mjs`) for where a node
+keeps its things, and the installer signs the first line of the private Compose override with
+its mark and the Compose project it installed.
+
+Plain contract. Guaranteed: it shows everything it would remove and removes nothing until the
+project's name is given back (typed, or `--confirm` where there is no terminal); the project is
+read from the installation's own mark, never from an option, so the remover cannot be pointed
+at another node, and a node set up by hand (no mark) is refused; Docker things go by the Compose
+project's label and files by fixed names. Proven: on a trial node installed with `--dir` beside
+this machine's own local node — refused without the name, refused with the wrong name, then
+removed, the machine's other volumes identical before and after, a second run finding nothing;
+and the hand-made local node here was refused. Not guaranteed: the default layout's removal was
+not run (no installer-made node stands in the default places here); on Linux the default node's
+`seed/data` may need the database user's rights; backups are never touched, and under the
+default layout neither are `dist-independent/` and `seed/local/` beyond the installer's own
+files. The removal is final: there is no undo but a keeping taken beforehand.

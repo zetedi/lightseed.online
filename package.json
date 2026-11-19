@@ -43,6 +43,7 @@
     "seed:migrate": "node scripts/migrate-seed.mjs",
     "test:seed": "vitest run --config vitest.seed.config.ts",
     "seed:install": "node scripts/install-seed.mjs",
+    "seed:uninstall": "node scripts/uninstall-seed.mjs",
     "seed:configure": "node scripts/configure-seed.mjs",
     "seed:provision": "node scripts/provision-seed.mjs",
     "seed:keeper": "node scripts/appoint-seed-keeper.mjs",

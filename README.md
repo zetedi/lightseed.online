@@ -240,6 +240,24 @@ Open `https://seed.localhost:8443`, sign in, and press Enter in the terminal to 
 seat. It refuses, before writing anything, where a node already stands. `npm run seed:install --
 --help` lists the options (other ports, a real host, a second node on one machine).
 
+**Taking it off the machine again:**
+
+```sh
+npm run seed:uninstall                       # the node seed:install made in the default places
+npm run seed:uninstall -- --dir /that/dir    # one installed with --dir
+```
+
+**This destroys the node**: its database, pictures, sign-in accounts, the issuer's signing keys
+and every generated secret. Take the keeping first if any of it matters (`npm run seed:backup`).
+It lists everything it would remove — the containers, volumes, networks and image of the node's
+two Compose projects, and the installer's files — and removes nothing until you type the
+project's name back (`--confirm <project>` where there is no terminal). It only removes a node
+the installer made, and reads which one from the installation itself (the first line of its
+private Compose override): a node set up by hand is refused. Backups are left; in the default
+places so are `dist-independent/` and anything else you keep in `seed/local/`. On Linux the
+default node's `seed/data` belongs to the database's own user and may need `sudo` to remove.
+Afterwards `npm run seed:install` starts from scratch.
+
 **By hand**, the same eight steps. All commands run from the repository root unless they say
 otherwise.
 

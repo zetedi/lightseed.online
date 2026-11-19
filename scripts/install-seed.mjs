@@ -14,13 +14,11 @@
 import { mkdir, writeFile, readFile, readdir, rmdir, access, chmod } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { resolve, dirname, join, delimiter, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, delimiter, relative } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { uuidv7 } from '../src/domain/uuidv7.mjs';
+import { root, seed, seedLayoutOf, INSTALL_MARK, PROJECT_NAME } from './seed-layout.mjs';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const seed = join(root, 'seed');
 const USAGE = `Usage: npm run seed:install -- [options]
 
 A local walk needs no option: https://seed.localhost:8443, Caddy as its own certificate authority.
@@ -83,7 +81,7 @@ const plain = (flag, fallback) => {
 const nodeName = plain('name', 'Lightseed node');
 const keeperName = plain('keeper-name', 'Node Keeper');
 const project = asked.project ?? 'seed';
-if (!/^[a-z0-9][a-z0-9_-]{0,40}$/.test(project)) refuse('--project must be a lowercase Compose project name.');
+if (!PROJECT_NAME.test(project)) refuse('--project must be a lowercase Compose project name.');
 const edgeNetwork = asked['edge-network'] ?? (project === 'seed' ? 'lightseed_edge' : `${project}_edge`);
 if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,60}$/.test(edgeNetwork)) refuse('--edge-network must be a Docker network name.');
 const tls = local ? 'internal' : 'acme';
@@ -97,26 +95,8 @@ const origin = at(host);
 const identityOrigin = at(identityHost);
 const issuer = `${identityOrigin}/realms/lightseed`;
 
-// ── Where everything is kept ────────────────────────────────────────────────────────────────
-// By default the places the README names, so every later `docker compose …` in seed/ and every
-// `npm run seed:*` finds the node without ceremony. With --dir, one private directory holds all.
-const home = asked.dir ? resolve(asked.dir) : null;
-const priv = home ?? join(seed, 'local');
-const paths = home ? {
-  env: join(home, '.env'), runtime: join(home, 'runtime.env'), charter: join(home, 'charter'),
-  identityEnv: join(home, 'identity.env'), override: join(home, 'compose.override.yml'), dist: join(home, 'dist'),
-} : {
-  env: join(seed, '.env'), runtime: join(seed, 'runtime.env'), charter: join(seed, 'charter'),
-  identityEnv: join(seed, 'identity', '.env'), override: join(seed, 'compose.local.yml'), dist: join(root, 'dist-independent'),
-};
-Object.assign(paths, {
-  node: join(priv, 'node.json'), auth: join(priv, 'auth.json'), realm: join(priv, 'lightseed-realm.json'),
-  login: join(priv, 'first-login.txt'), rootCert: join(priv, 'caddy-root.crt'),
-});
-const identityProject = project === 'seed' ? 'identity' : `${project}-identity`;
-// A bind mount under Docker Desktop (macOS) breaks initdb on ownership, and a second node must
-// never share seed/data: the documented ./data mount stays only for the default node on Linux.
-const namedVolume = process.platform !== 'linux' || !!home;
+// ── Where everything is kept (scripts/seed-layout.mjs) ───────────────────────────────────────
+const { home, priv, paths, identityProject, namedVolume } = seedLayoutOf({ dir: asked.dir, project });
 // The issuer's first and last name from one name: the last word is the family name (as domain/seedEnrollment).
 const namePartsOf = name => { const w = name.split(/\s+/); return w.length === 1 ? { firstName: w[0], lastName: '' } : { firstName: w.slice(0, -1).join(' '), lastName: w.at(-1) }; };
 // A path as the operator would type it: relative inside the checkout, whole outside it.
@@ -142,7 +122,7 @@ const hand = (script, ...args) => run(process.execPath, [join(root, 'scripts', s
 const secret = (bytes = 32) => randomBytes(bytes).toString('base64url');
 const keep = (file, text, mode = 0o600) => writeFile(file, text, { flag: 'wx', mode });
 const exists = file => access(file).then(() => true, () => false);
-const overrideOf = trusted => `# Written by seed:install — this installation's private Compose override (never committed).
+const overrideOf = trusted => `${INSTALL_MARK} for the Compose project "${project}" — this installation's private Compose override (never committed).
 services:
   api:
     env_file: !override

@@ -52,6 +52,17 @@ Where it keeps things: `seed/.env`, `seed/runtime.env`, `seed/charter/`, `seed/i
 Git. With `--dir <directory>` everything goes into that one new private directory instead, and
 the installer prints the three Compose variables later commands then need.
 
+`npm run seed:uninstall` (`scripts/uninstall-seed.mjs`, `--dir` for a node installed with one)
+is the opposite hand: it removes the containers, volumes, networks and image of the node's two
+Compose projects and the installer's files. **It destroys the node's data, accounts, signing
+keys and secrets** — take `npm run seed:backup` first. It lists what it would remove and waits
+for the project's name to be typed back (`--confirm <project>` without a terminal); it removes
+only a node the installer made, read from the mark on the first line of the private override,
+and refuses a node set up by hand. Backups stay; in the default layout so do `dist-independent/`
+and whatever else lives in `seed/local/`. Proven on the same trial as the installer's
+(2026-11-19): refused without the name and with the wrong name, then removed everything of the
+trial node and nothing else — the machine's other volumes were the same before and after.
+
 > The database port's first breath (ring 2026-08-31). The client-direct-with-law model —
 > the app reads with its own sight, the datastore enforces — survives the crossing:
 > Firestore security rules become Postgres RLS policies, translated collection by
