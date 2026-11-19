@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  treeCoordinates, canViewTree, canViewVision, passesForestFilter, forestMarkers,
+  treeCoordinates, canViewTree, canViewVision, passesForestFilter, forestMarkers, clusterOnScreen,
   type ForestFilter,
 } from '../src/domain/views/forest';
 import type { Lifetree } from '../src/domain/lifetree';
@@ -126,3 +126,35 @@ describe('forestMarkers', () => {
     expect(forestMarkers([tree()])[0].guardianCount).toBe(0);
   });
 });
+
+describe('clusterOnScreen', () => {
+  const at = (id: string, x: number, y: number) => ({ item: id, id, lat: y, lng: x, x, y });
+
+  it('gathers what would overlap, and leaves the far ones alone', () => {
+    const clusters = clusterOnScreen([at('a', 0, 0), at('b', 30, 0), at('c', 200, 0)], 50);
+    expect(clusters.map(c => [c.center, c.children])).toEqual([['a', ['b']], ['c', []]]);
+  });
+
+  it('the first in the caller\'s order is the face, and stands at its own place', () => {
+    const [cluster] = clusterOnScreen([at('house', 10, 10), at('tree', 0, 0)], 50);
+    expect(cluster).toMatchObject({ id: 'house', center: 'house', children: ['tree'], lat: 10, lng: 10 });
+  });
+
+  it('measures from the seed, never from another member (no chains)', () => {
+    // b is near a, c is near b but not near a: c seeds its own cluster.
+    const clusters = clusterOnScreen([at('a', 0, 0), at('b', 40, 0), at('c', 80, 0)], 50);
+    expect(clusters.map(c => c.id)).toEqual(['a', 'c']);
+  });
+
+  it('the threshold itself is not near enough', () => {
+    expect(clusterOnScreen([at('a', 0, 0), at('b', 50, 0)], 50)).toHaveLength(2);
+    expect(clusterOnScreen([at('a', 0, 0), at('b', 30, 40)], 50)).toHaveLength(2);
+  });
+
+  it('a being with no place is skipped, and every other appears exactly once', () => {
+    const clusters = clusterOnScreen([null, at('a', 0, 0), null, at('b', 1, 1), at('c', 2, 2)], 50);
+    expect(clusters.flatMap(c => [c.center, ...c.children])).toEqual(['a', 'b', 'c']);
+    expect(clusterOnScreen([], 50)).toEqual([]);
+  });
+});
+

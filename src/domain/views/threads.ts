@@ -109,3 +109,66 @@ export function reachThreads(pulses: Pulse[], viewer: ThreadViewer): ReachThread
   }
   return Array.from(map.values()).sort((a, b) => b.lastAt - a.lastAt);
 }
+
+// A group thread chosen from the inbox — carries enough to open it and reply within it.
+export interface GroupThreadDescriptor {
+  threadId: string;
+  partnerId: string;          // the subject tree the circle is about
+  partnerName: string;        // display name, e.g. "Oak · Guardians"
+  partnerPhoto?: string;
+  audience?: ReachAudience;
+  participantCount?: number;
+}
+
+// One rendered line of a conversation. `authorId`/`authorName` let group threads show who
+// spoke; 1:1 and Oracle threads leave them unset and render as a plain two-party chat.
+export interface ThreadLine {
+  role: 'user' | 'model';
+  text: string;
+  id?: string;         // the underlying reach pulse id, so a message can be liked
+  loveCount?: number;  // likes on that pulse
+  authorId?: string;
+  authorName?: string;
+  authorPersonName?: string;
+  authorPhoto?: string;
+  system?: boolean; // a centered notice (e.g. "X minted this conversation to the chain"), not a bubble
+  careAlert?: 'watering'; // a "water me" alert — rendered with a blue border
+  retracted?: boolean;    // the author withdrew it: the mark shows, the words do not
+}
+type ChatMessage = ThreadLine;
+
+// Raw reach pulses → the rendered conversation, oldest first as given. A pulse is MINE when I
+// wrote it or it speaks from one of my trees: my words are 'user', the other side's 'model',
+// and a stored reply (`reachResponse`) is the opposite voice of its pulse. In a group thread
+// every line is attributed. A mint notice is a system line; a retracted line keeps its mark.
+export function threadLines(pulses: Pulse[], viewer: { uid?: string; treeIds: string[]; group: boolean }): ThreadLine[] {
+  const myUid = viewer.uid;
+  const myIds = new Set<string>(viewer.treeIds);
+  const group = viewer.group;
+    const history: ChatMessage[] = [];
+    pulses.forEach(p => {
+        const text = p.content || p.body || '';
+        // A mint notice is a system line both sides see, not a chat bubble.
+        if (p.mintNotice) { if (text) history.push({ role: 'model', system: true, text }); return; }
+        const mine = (!!myUid && p.authorId === myUid) || myIds.has(p.lifetreeId || '');
+        const careAlert = (p as any).careAlert as ChatMessage['careAlert'];
+        const base = { id: p.id, loveCount: p.loveCount || 0, ...((p as { retractedAt?: unknown }).retractedAt ? { retracted: true } : {}), ...(group ? { authorId: p.authorId, authorName: p.authorName, authorPersonName: p.authorPersonName, authorPhoto: p.authorPhoto } : {}), ...(careAlert ? { careAlert } : {}) };
+        if (mine) {
+            if (text) history.push({ role: 'user', text, ...base });
+            if (p.reachResponse) history.push({ role: 'model', text: p.reachResponse });
+        } else {
+            if (text) history.push({ role: 'model', text, ...base });
+            if (p.reachResponse) history.push({ role: 'user', text: p.reachResponse });
+        }
+    });
+    return history;
+}
+
+// The reaches addressed to this viewer, by another hand, that they have not yet seen.
+export function unseenReachIds(pulses: Pulse[], uid: string): string[] {
+  return pulses
+    .filter(p => p.authorId !== uid
+      && (p.recipientUid === uid || (p.participantUids || []).includes(uid))
+      && !(p.seenBy || []).includes(uid))
+    .map(p => p.id);
+}

@@ -1,46 +1,17 @@
 
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { type Lifetree } from '../../types';
-import { isExplicitlyValidatedTree } from '../../utils/validation';
-import { escapeHtml, safeImageUrl, DARK_IMAGE_FALLBACK } from '../../utils/sanitize';
-import { imageVariantUrlOf } from '../../domain/imageVariant';
 import { isWateringOverdue } from '../../domain/watering';
 import { Loading } from '../ui/Loading';
 import { Icons } from '../ui/Icons';
-import { treeCoordinates as getTreeCoordinates, forestMarkers } from '../../domain/views/forest';
+import { treeCoordinates as getTreeCoordinates, forestMarkers, clusterOnScreen, type ScreenCluster } from '../../domain/views/forest';
+import { markerHtml, treePopup, lightHousePopup, pieClusterHtml, lightHouseClusterHtml, closeHtml, moreNodeHtml, type MapBeing, type StackLevel } from './mapMarkup';
 import { graphStore } from '../../services/store';
 import { loadLeaflet } from '../../services/leaflet';
 import type { LightHouse } from '../../domain/lightHouse';
 import { useVisibleLightHouses } from '../../hooks/useVisibleLightHouses';
 import { useLanguage } from '../../contexts/LanguageContext';
-
-// A seat in marker HTML: the 480 variant in src, the primary a step behind it in data-primary.
-// The map container's capture-phase error listener (below) swaps the primary in when the
-// variant is not (yet) there. Both pass safeImageUrl — attribute-safe, http(s) or / only.
-const seatAttrs = (url: string | null | undefined, fallback = ''): string => {
-    const primary = safeImageUrl(url, fallback);
-    const variant = safeImageUrl(imageVariantUrlOf(url, 480), fallback);
-    return `src="${variant}" data-primary="${primary}"`;
-};
-
-interface Cluster {
-    id: string;
-    center: Lifetree;
-    children: Lifetree[];
-    lat: number;
-    lng: number;
-}
-
-interface StackLevel {
-    clusterId: string;  // ID of the root cluster (for matching which cluster is open)
-    trees: Lifetree[];  // [center, ...petals, ...remaining]
-    lat: number;
-    lng: number;
-}
-
-// A lightHouse rides the map as a being like any other — this pseudo-tree shape lets it join
-// the same clustering, petal expansion and popup plumbing the trees use.
-type MapBeing = Lifetree & { __lightHouse?: LightHouse };
+type Cluster = ScreenCluster<Lifetree>;
 
 export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = false, onRefresh, primaryTree = null, refreshKey = 0, lightHouseDomain = null, lightHousesPublicOnly = false, showLightHouses = true, filtersOverlay = null }: { trees: Lifetree[], onView: (tree: Lifetree) => void, onReach?: (tree: Lifetree) => void, onViewLightHouse?: (s: LightHouse) => void, loading?: boolean, onRefresh?: () => void, primaryTree?: Lifetree | null, refreshKey?: number, lightHouseDomain?: string | null, lightHousesPublicOnly?: boolean, showLightHouses?: boolean, filtersOverlay?: React.ReactNode }) => {
     const { t } = useLanguage();
@@ -317,156 +288,18 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on treesSignature on purpose: visibleTrees changes identity every render; the one-shot initial focus only needs to re-run when the tree set actually changes
     }, [isMapReady, primaryTree, treesSignature]);
 
-    const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) => {
-        const sanct = (tree as MapBeing).__lightHouse;
-        if (sanct) {
-            const size = isSmall ? 'w-10 h-10' : 'w-12 h-12';
-            const img = seatAttrs(sanct.imageUrl || '/lighthouse.webp', DARK_IMAGE_FALLBACK);
-            return `
-            <div class="marker-pop relative ${size} hover:scale-110 transition-transform duration-300" style="animation-delay: ${delay}ms;" role="button" aria-label="${escapeHtml(sanct.name)}, ${escapeHtml(t('light_house'))}">
-                <div class="lightHouse-glow absolute -inset-4 rounded-full"></div>
-                <div class="absolute -inset-1 rounded-full border-2 border-yellow-300/90"></div>
-                <div class="relative ${size} rounded-full border-2 border-amber-400 overflow-hidden bg-[#04070f] shadow-xl z-10">
-                    <img ${img} style="width:100%;height:100%;object-fit:cover;display:block;" />
-                </div>
-            </div>`;
-        }
-        const isNature = tree.isNature;
-        const isDanger = tree.status === 'DANGER';
-        const guardianCount = guardianCounts.get(tree.id) || 0;
-        const sizeClass = isSmall ? 'w-10 h-10' : 'w-12 h-12';
-        const borderClass = isSmall ? 'border' : 'border-2';
-        // A tree with no face yet shows as a seed — planted, waiting to grow.
-        const displayImage = seatAttrs(tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : '/seed.webp'), DARK_IMAGE_FALLBACK);
-        const imgStyle = "width: 100%; height: 100%; object-fit: cover; display: block;";
-        const animStyle = `animation-delay: ${delay}ms;`;
-
-        const ariaName = escapeHtml(tree.name || t('type_lifetree'));
-
-        if (isNature) {
-            return `
-            <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300 group" style="${animStyle}" role="button" aria-label="${ariaName}">
-                ${isWateringOverdue(tree) ? '<div class="absolute -inset-1 rounded-full border-2 border-sky-400 animate-pulse z-20"></div>' : ''}
-                <div class="absolute inset-0 bg-sky-500 rounded-full animate-pulse opacity-20"></div>
-                <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white z-10 dark:bg-slate-900">
-                    <img ${displayImage} style="${imgStyle}" class="w-full h-full object-cover" />
-                </div>
-                <div class="absolute -top-1 -right-1 z-20 w-4 h-4 bg-sky-500 border border-white rounded-full flex items-center justify-center text-[8px] text-white font-bold shadow-md">
-                    ${guardianCount}
-                </div>
-                ${isDanger ? `<div class="absolute -top-1 -left-1 z-20 w-3 h-3 bg-red-500 border border-white rounded-full animate-bounce"></div>` : ''}
-            </div>`;
-        }
-
-        // A secret tree wears a violet glow and a small key (domain/secretTree) — seen only by its circle.
-        const secret = tree.treeType === 'SECRET';
-        const secretKey = secret
-            ? `<div class="absolute -top-1.5 -right-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border border-white bg-violet-600 text-white shadow-md" title="${escapeHtml(t('secret_tree_visibility'))}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:11px;height:11px"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/></svg></div>`
-            : '';
-        return `
-        <div class="marker-pop relative ${sizeClass} hover:scale-110 transition-transform duration-300" style="${animStyle}" role="button" aria-label="${ariaName}${secret ? ', ' + escapeHtml(t('type_secret')) : ''}">
-            ${isWateringOverdue(tree) ? '<div class="absolute -inset-1 rounded-full border-2 border-sky-400 animate-pulse z-20"></div>' : ''}
-            <div class="absolute inset-0 ${secret ? 'bg-violet-500' : 'bg-emerald-500'} rounded-full animate-ping opacity-20"></div>
-            <div class="relative ${sizeClass} rounded-full ${borderClass} border-white shadow-xl overflow-hidden bg-white dark:bg-slate-900">
-                <img ${displayImage} style="${imgStyle}" class="w-full h-full object-cover" />
-            </div>
-            ${isExplicitlyValidatedTree(tree) ? '<div class="absolute -top-1.5 -right-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border border-white bg-emerald-600 text-[10px] font-black leading-none text-yellow-300 shadow-md" title="' + escapeHtml(t('forest_validated_badge')) + '" aria-label="' + escapeHtml(t('forest_validated_badge')) + '">V</div>' : ''}
-            ${isDanger ? `<div class="absolute -top-1 -left-1 z-20 w-3 h-3 bg-red-500 border border-white rounded-full animate-bounce"></div>` : ''}
-            ${secretKey}
-        </div>`;
-    }
-
-    const clusterPrimaryOf = (tree: Lifetree) => tree.latestGrowthUrl || tree.imageUrl || (tree.id === 'GENESIS_TREE' ? '/mahameru.svg' : '/seed.webp');
-    const clusterImage = (tree: Lifetree) => safeImageUrl(imageVariantUrlOf(clusterPrimaryOf(tree), 480), DARK_IMAGE_FALLBACK);
-    const clusterPrimary = (tree: Lifetree) => safeImageUrl(clusterPrimaryOf(tree), DARK_IMAGE_FALLBACK);
-
-    // A cluster of nearby trees as a pie of their images (up to 4 slices, rest in the count badge).
-    const getClusterPieHtml = (trees: Lifetree[], clusterId: string) => {
-        const shown = trees.slice(0, 4);
-        const k = shown.length;
-        const size = 64;
-        const cx = size / 2, cy = size / 2, r = size / 2 - 2;
-        const safe = clusterId.replace(/[^a-zA-Z0-9]/g, '');
-
-        if (k <= 1) {
-            return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><defs><clipPath id="cc${safe}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath></defs><circle cx="${cx}" cy="${cy}" r="${r}" fill="#e2e8f0"/><image href="${clusterImage(shown[0])}" data-primary="${clusterPrimary(shown[0])}" x="0" y="0" width="${size}" height="${size}" preserveAspectRatio="xMidYMid slice" clip-path="url(#cc${safe})"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="white" stroke-width="2"/></svg>`;
-        }
-
-        let defs = '';
-        let body = '';
-        for (let i = 0; i < k; i++) {
-            const a0 = (i / k) * 2 * Math.PI - Math.PI / 2;
-            const a1 = ((i + 1) / k) * 2 * Math.PI - Math.PI / 2;
-            const x0 = (cx + r * Math.cos(a0)).toFixed(2), y0 = (cy + r * Math.sin(a0)).toFixed(2);
-            const x1 = (cx + r * Math.cos(a1)).toFixed(2), y1 = (cy + r * Math.sin(a1)).toFixed(2);
-            const large = (a1 - a0) > Math.PI ? 1 : 0;
-            const path = `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`;
-            const id = `s${safe}_${i}`;
-            defs += `<clipPath id="${id}"><path d="${path}"/></clipPath>`;
-            body += `<image href="${clusterImage(shown[i])}" data-primary="${clusterPrimary(shown[i])}" x="0" y="0" width="${size}" height="${size}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/><path d="${path}" fill="none" stroke="white" stroke-width="1.5"/>`;
-        }
-        return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><defs>${defs}</defs><circle cx="${cx}" cy="${cy}" r="${r}" fill="#e2e8f0"/>${body}<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="white" stroke-width="2"/></svg>`;
-    };
-
+    // The markup itself lives in ./mapMarkup; these two close over what the map knows.
+    const getHtmlForTree = (tree: Lifetree, isSmall = false, delay = 0) =>
+        markerHtml(tree, t, guardianCounts.get(tree.id) || 0, isSmall, delay);
     const createPopupContent = (tree: Lifetree) => {
-        const sanct = (tree as MapBeing).__lightHouse;
-        if (sanct) return createLightHousePopup(sanct);
-        const primaryImage = tree.latestGrowthUrl || tree.imageUrl;
-        const displayImage = primaryImage ? seatAttrs(primaryImage) : '';
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <div class="text-center min-w-[160px]">
-                ${displayImage ? `<img ${displayImage} style="width:100%;height:120px;object-fit:cover;display:block;" class="rounded-t-lg" />` : ''}
-                <div class="p-2">
-                    <h3 class="font-bold text-sm text-slate-800 mb-1 dark:text-slate-100">${escapeHtml(tree.name)}</h3>
-                    <p class="text-xs text-slate-500 line-clamp-2 italic mb-2">"${escapeHtml(tree.body)}"</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button class="view-btn btn-theme text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('view'))}</button>
-                        <button class="reach-btn bg-amber-500 text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('reach'))}</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        div.querySelector('.view-btn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            onView(tree);
-        });
-        div.querySelector('.reach-btn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            onReach?.(tree);
-        });
-        return div;
-    }
-
-    const createLightHousePopup = (s: LightHouse) => {
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <div class="text-center min-w-[170px]">
-                ${s.imageUrl ? `<img ${seatAttrs(s.imageUrl)} style="width:100%;height:110px;object-fit:cover;display:block;" class="rounded-t-lg" />` : ''}
-                <div class="p-2.5">
-                    <p class="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-500">${escapeHtml(t('light_house'))}</p>
-                    <h3 class="font-bold text-sm text-slate-800 mt-0.5 dark:text-slate-100">${escapeHtml(s.name)}</h3>
-                    ${s.locationName ? `<p class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(s.locationName)}</p>` : ''}
-                    ${s.body ? `<p class="text-xs text-slate-500 line-clamp-2 italic mt-1">${escapeHtml(s.body)}</p>` : ''}
-                    <div class="mt-2 grid ${s.splatUrl ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
-                        <button class="lightHouse-view-btn btn-theme text-white text-xs font-bold px-3 py-2.5 rounded-full w-full">${escapeHtml(t('view'))}</button>
-                        ${s.splatUrl ? `<a href="${safeImageUrl(s.splatUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-full bg-amber-500 px-3 py-2.5 text-xs font-bold text-white">${escapeHtml(t('forest_in_3d'))}</a>` : ''}
-                    </div>
-                </div>
-            </div>`;
-        div.querySelector('.lightHouse-view-btn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            onViewLightHouse?.(s);
-        });
-        return div;
+        const lightHouse = (tree as MapBeing).__lightHouse;
+        return lightHouse ? lightHousePopup(lightHouse, t, onViewLightHouse) : treePopup(tree, t, onView, onReach);
     };
 
     const updateMarkers = (L: any, force = false) => {
         if (!markersLayer.current || !mapInstance.current) return;
 
         const CLUSTER_THRESHOLD_PX = 50;
-        const clusters: Cluster[] = [];
-        const processed = new Set<string>();
         const map = mapInstance.current;
         const nextLayer = L.layerGroup();
         let nextMarkerCount = 0;
@@ -487,35 +320,15 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
         // leave the open Seed of Life showing yesterday's images and statuses.
         const liveById = new Map(sortedTrees.map(t => [t.id, t]));
 
-        // Project every tree to pixel space ONCE (the costly step), then cluster on the
-        // cached points with squared-distance math — avoids ~n² Leaflet projections + sqrt.
+        // Project every being to pixel space ONCE (the costly step); the law of who gathers
+        // with whom is domain/views/forest clusterOnScreen.
         const points = sortedTrees.map(tree => {
             const coords = getTreeCoordinates(tree);
             if (!coords) return null;
             const p = map.latLngToLayerPoint([coords.lat, coords.lng]);
-            return { tree, lat: coords.lat, lng: coords.lng, x: p.x, y: p.y };
+            return { item: tree as Lifetree, id: tree.id, lat: coords.lat, lng: coords.lng, x: p.x, y: p.y };
         });
-        const thresholdSq = CLUSTER_THRESHOLD_PX * CLUSTER_THRESHOLD_PX;
-
-        for (let i = 0; i < points.length; i++) {
-            const a = points[i];
-            if (!a || processed.has(a.tree.id)) continue;
-            const cluster: Cluster = { id: a.tree.id, center: a.tree, children: [], lat: a.lat, lng: a.lng };
-            processed.add(a.tree.id);
-
-            for (let j = i + 1; j < points.length; j++) {
-                const b = points[j];
-                if (!b || processed.has(b.tree.id)) continue;
-                const dx = a.x - b.x;
-                const dy = a.y - b.y;
-                if (dx * dx + dy * dy < thresholdSq) {
-                    cluster.children.push(b.tree);
-                    processed.add(b.tree.id);
-                }
-            }
-
-            clusters.push(cluster);
-        }
+        const clusters: Cluster[] = clusterOnScreen(points, CLUSTER_THRESHOLD_PX);
 
         // Determine active expansion state
         const topLevel = expansionStack.length > 0 ? expansionStack[expansionStack.length - 1] : null;
@@ -570,13 +383,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                 // X button — positioned above the center
                 const xPoint = map.layerPointToLatLng(L.point(centerPoint.x, centerPoint.y - 72));
                 const isDeep = expansionStack.length > 1;
-                const xHtml = `
-                <div class="marker-pop flex items-center justify-center w-10 h-10 rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform"
-                     style="background:${isDeep ? '#f59e0b' : '#ef4444'};animation-delay:0ms;" role="button" aria-label="${escapeHtml(t('close'))}">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" style="width:14px;height:14px;">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </div>`;
+                const xHtml = closeHtml(t, isDeep);
                 const xIcon = L.divIcon({ html: xHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
                 const xMarker = L.marker(xPoint, { icon: xIcon, zIndexOffset: depthZOffset + 500 });
                 xMarker.on('click', (e: any) => {
@@ -640,16 +447,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                         color: 'white', weight: 1, opacity: 0.3
                     }).addTo(nextLayer);
 
-                    const moreHtml = `
-                    <div class="marker-pop relative w-10 h-10 cursor-pointer hover:scale-110 transition-transform duration-300" style="animation-delay:${6 * 50}ms;" role="button" aria-label="${escapeHtml(t('forest_more_lifetrees').replace('{n}', String(remainingTrees.length)))}">
-                        <div class="absolute inset-0 drop-shadow-lg">
-                            <img src="/logo.svg" alt="" style="width:100%;height:100%;display:block;" />
-                        </div>
-                        <div class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-600 border-2 border-white text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow z-20">
-                            ${remainingTrees.length}
-                        </div>
-                        ${moreDanger ? `<div class="absolute -top-1 -left-1 w-3 h-3 bg-red-500 border border-white rounded-full animate-bounce z-20"></div>` : ''}
-                    </div>`;
+                    const moreHtml = moreNodeHtml(t, remainingTrees.length, moreDanger);
 
                     const moreIcon = L.divIcon({ html: moreHtml, className: '', iconSize: [40, 40], iconAnchor: [20, 20] });
                     const moreMarker = L.marker(moreLatLng, { icon: moreIcon, zIndexOffset: depthZOffset });
@@ -674,14 +472,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                 // count badge tells how many beings gather in its light.
                 const clusterTrees = [cluster.center, ...cluster.children];
                 const hasDanger = clusterTrees.some(t => t.status === 'DANGER');
-                const html = `
-                <div class="relative w-12 h-12 group cursor-pointer transition-transform duration-300 hover:scale-125" style="transform-origin:center;" role="button" aria-label="${escapeHtml(t('forest_beings_gather').replace('{name}', cluster.center.name || t('light_house')).replace('{n}', String(count)))}">
-                    ${getHtmlForTree(cluster.center)}
-                    <div class="absolute -top-1.5 -right-1.5 w-6 h-6 bg-amber-500 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
-                        ${count}
-                    </div>
-                    ${hasDanger ? `<div class="absolute -top-1 -left-1 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full animate-bounce z-20"></div>` : ''}
-                </div>`;
+                const html = lightHouseClusterHtml(t, getHtmlForTree(cluster.center), cluster.center.name, count, hasDanger);
 
                 const icon = L.divIcon({ html, className: '', iconSize: [48, 48], iconAnchor: [24, 24] });
                 const marker = L.marker([cluster.lat, cluster.lng], { icon });
@@ -703,16 +494,7 @@ export const ForestMap = ({ trees, onView, onReach, onViewLightHouse, loading = 
                 // COLLAPSED CLUSTER — pie of the member trees' images; grows on hover.
                 const clusterTrees = [cluster.center, ...cluster.children];
                 const hasDanger = clusterTrees.some(t => t.status === 'DANGER');
-                const html = `
-                <div class="relative w-16 h-16 group cursor-pointer transition-transform duration-300 hover:scale-150 hover:z-[400]" style="transform-origin:center;" role="button" aria-label="${escapeHtml(t('forest_lifetrees_here').replace('{n}', String(count)))}">
-                    <div class="absolute inset-0 drop-shadow-xl">
-                        ${getClusterPieHtml(clusterTrees, cluster.id)}
-                    </div>
-                    <div class="absolute -top-1 -right-1 w-6 h-6 bg-emerald-600 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md z-20">
-                        ${count}
-                    </div>
-                    ${hasDanger ? `<div class="absolute -top-1 -left-1 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full animate-bounce z-20"></div>` : ''}
-                </div>`;
+                const html = pieClusterHtml(t, clusterTrees, cluster.id, count, hasDanger);
 
                 const icon = L.divIcon({ html, className: '', iconSize: [64, 64], iconAnchor: [32, 32] });
                 const marker = L.marker([cluster.lat, cluster.lng], { icon });

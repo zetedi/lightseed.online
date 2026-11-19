@@ -6491,3 +6491,36 @@ strings because their size or hue differs on purpose (amber for a vision, violet
 hand) or by accident, and telling the two apart is a design decision, not a refactor;
 `ReachThread` and `ForestMap` are untouched.
 
+### 2026-11-19 — Three large faces give their hands to hooks
+
+Zoltán asked for what the day's two earlier rings left: `ReachThread` and `ForestMap`
+undivided, and the backend calls that kept `CommunityProfile` on the faces' ratchet.
+
+`CommunityProfile` (956 lines at dawn, 443 now) draws; five hooks hold its hands:
+`useCommunityDoor` (already out), `useCommunityEditing` (the editable copies, the appearance
+autosave and its reconcile, the Vision tab's Save, the uploads, the delete),
+`useCommunityGarden` (its trees and the viewer's guardian hand), `useCommunityLightHouses`
+(what the viewer may see, what could step in, consecrate / adopt), `useCircleForming`. It no
+longer imports `@backend` and left the ratchet.
+
+`ReachThread` (838 → 363) draws the room; `useReachConversation` holds what is said in it
+(loading, sending, retracting, minting, the interpretation). Two pure parts went to
+`domain/views/threads` with tests (`tests/threadLines.test.ts`): `threadLines` (whose words
+are whose, what a group attributes, notices, retractions) and `unseenReachIds`. It left the
+ratchet too: 75 faces remain.
+
+`ForestMap` (837 → 619) keeps the map's life; `forest/mapMarkup.ts` builds every marker,
+cluster and popup string; who gathers with whom on the screen is `clusterOnScreen` in
+`domain/views/forest`, tested (`tests/forestView.test.ts`) — including that the measure is
+from the seed, never chained, and that the threshold itself is not near enough.
+
+Plain contract. Guaranteed: the gate is green; the code moved whole, by line ranges, with three
+hand-written joins (the Light House tab's three hands, the map's two closures, the thread's two
+wrappers over the domain). Not guaranteed: none of the three faces was walked in a browser after
+the move, and no automated test renders them — editing and autosaving a community, the map's
+clusters and popups, and sending, minting and retracting in a thread each want a hand's check.
+One word changed its speaker: the Light House consecration toast is now spoken by `speak`
+(the hook has no `t` of its own there), the same key. Not done: the hooks are large because
+the faces were — `useReachConversation` is 469 lines and still one piece; the hooks reach
+`components/ui` for the dialog and the toast, as `useDoorArrivals` already did.
+

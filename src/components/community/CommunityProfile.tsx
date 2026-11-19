@@ -1,16 +1,12 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { getMySecretTreesAt } from '@backend/trees';
-import { showAlert, showConfirm } from "../ui/Dialog";
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSession } from '../../contexts/SessionContext';
 import { Icons } from '../ui/Icons';
 import { OutwardLink } from '../ui/OutwardLink';
 import { MahameruAvatar } from '../ui/MahameruAvatar';
-import { Community, CommunityInvite, Lifetree, Pulse, LightHouse } from '../../types';
-import { uploadFileName } from '../../domain/imageBytes';
-import { updateCommunity, uploadImage, releasePicture, getTreesByDomain, treesStandingIn, getParticipatingTrees, deleteCommunity, getCommunityByDomain, getLightHousesByDomain, getLightHousesByCommunity, getAllLightHouses, createLightHouse, adoptLightHouse, formCommunityFromCircle } from '@backend';
-import { formCircleRefusal, isTreeCircle } from '../../domain/treeCircle';
+import { Community, CommunityInvite, Lifetree, Pulse } from '../../types';
+import { isTreeCircle } from '../../domain/treeCircle';
 import { isDomainVerified } from '../../domain/domainVerification';
 import { CommunityVision } from './CommunityVision';
 import { CommunityCouncil } from './CommunityCouncil';
@@ -30,26 +26,19 @@ import { CommunityInterbeingMatrix } from './CommunityInterbeingMatrix';
 import { BeingProfile, type BeingSection } from '../sections/BeingProfile';
 import { SectionTitle } from '../ui/SectionTitle';
 import { SuperDot } from '../ui/SuperDot';
-import { normalizeTheme } from '../../utils/theme';
-import { canViewLightHouse, type LightHouse as LightHouseType } from '../../domain/lightHouse';
-import { notify } from '../ui/Toast';
-import { announce } from '../../services/refreshBus';
-import { useRefreshSignal } from '../../hooks/useRefreshSignal';
+import { type LightHouse as LightHouseType } from '../../domain/lightHouse';
 import { LoreSection, loreTabs, type LoreTabId } from '../about/AboutSections';
 import { NodeGrowthTree } from '../about/NodeGrowthTree';
-import { queryableLevels, ownMergeUid } from '../../domain/pulseVisibility';
-import { graphStore } from '../../services/store';
-import { canCareForTree } from '../../domain/policy';
-import { speak, spokenLine } from '../../utils/translations';
+import { queryableLevels } from '../../domain/pulseVisibility';
 
 import { Picture } from '../ui/Picture';
 import { FullViewButton } from '../ui/FullView';
 import { nodeDomains } from '../../config/charter';
-import { useAutosave } from '../../hooks/useAutosave';
 import { useCommunityDoor } from '../../hooks/useCommunityDoor';
-import { COMMUNITY_APPEARANCE_FIELDS, reconcile } from '../../domain/autosave';
-import { mailWordsOf } from '../../domain/mailVoice';
-import { VISION_KEY, papersOf, visionOf, withVision, type Paper } from '../../domain/papers';
+import { useCommunityEditing } from '../../hooks/useCommunityEditing';
+import { useCommunityGarden } from '../../hooks/useCommunityGarden';
+import { useCommunityLightHouses } from '../../hooks/useCommunityLightHouses';
+import { useCircleForming } from '../../hooks/useCircleForming';
 import { NewsletterAdmin } from './NewsletterAdmin';
 interface CommunityProfileProps {
   community: Community;
@@ -111,410 +100,21 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
     { communityId: community.id },
   ), [currentUserId, isSuperAdmin, isAdmin, isMember, community.id]);
 
-  // Editable copies of the community fields (branding + vision).
-  const [editName, setEditName] = useState(community.name);
-  const [editVision, setEditVision] = useState(visionOf(community));
-  // THE PAPERS (ring 2026-09-21; domain/papers): the chapters beside the vision, edited on the
-  // Vision tab and saved with it — the vision is papers[0], the rest follow.
-  const [editPapers, setEditPapers] = useState<Paper[]>(() => papersOf(community.papers).filter(p => p.key !== VISION_KEY));
-  const [editSocial, setEditSocial] = useState<{ instagram?: string; telegram?: string; whatsapp?: string; website?: string }>(community.socialLinks || {});
-  const [editCarouselQuotes, setEditCarouselQuotes] = useState<string[]>(community.carouselQuotes || []);
-  const [editCustomLanding, setEditCustomLanding] = useState(community.customLanding === true);
-  const [editShowStats, setEditShowStats] = useState(community.showStats === true);
-  const [editLandingPages, setEditLandingPages] = useState<{ id: string; label: string; html: string }[]>(community.landingPages || []);
-  const [editTheme, setEditTheme] = useState(normalizeTheme(community.theme));
-  // The palette's reach and the letters' words (rings 2026-09-14) — live dials like the rest.
-  const [editPaletteReach, setEditPaletteReach] = useState(community.paletteReach === true);
-  const [editMail, setEditMail] = useState<{ greeting: string; signature: string; footer: string }>({ greeting: community.mail?.greeting || '', signature: community.mail?.signature || '', footer: community.mail?.footer || '' });
-  const [logoUrl, setLogoUrl] = useState(community.logoUrl || '');
-  const [heroImageUrl, setHeroImageUrl] = useState(community.heroImageUrl || '');
-  const [imageUrls, setImageUrls] = useState<string[]>(community.imageUrls || []);
-  const [isUploadingHero, setIsUploadingHero] = useState(false);
-
-  const [linkedTrees, setLinkedTrees] = useState<Lifetree[]>([]);
-  // The viewer's SECRET trees rooted here (domain/secretTree): shown in the garden to their circle
-  // alone, kept apart from linkedTrees so a secret tree never becomes the place's first tree or
-  // flows into its vision.
-  const [secretTrees, setSecretTrees] = useState<Lifetree[]>([]);
-  useEffect(() => {
-    let alive = true;
-    if (currentUserId) getMySecretTreesAt(currentUserId, community.domain).then(ts => { if (alive) setSecretTrees(ts); }).catch(() => {});
-    return () => { alive = false; };
-  }, [currentUserId, community.domain]);
-  // Trees that joined this community via 'participant' links (invited, or self-joined).
-  const [participatingTrees, setParticipatingTrees] = useState<Lifetree[]>([]);
-  const [lightHouses, setLightHouses] = useState<LightHouse[]>([]);
-  const lightHouseSignal = useRefreshSignal(['lightHouses']);
-
-  const [togglingId, setTogglingId] = useState<string | null>(null);
-  // Which trees the signed-in user guards — read from their outgoing 'guardian' links (the LIN),
-  // not the legacy tree.guardians array (which writes no longer touch).
-  const [guardedTreeIds, setGuardedTreeIds] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset-on-signout before the async links fetch below
-    if (!currentUserId) { setGuardedTreeIds(new Set()); return; }
-    let alive = true;
-    graphStore.linksFrom(currentUserId, 'guardian')
-      .then(links => { if (alive) setGuardedTreeIds(new Set(links.map(l => l.to))); })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, [currentUserId]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
-
-  // THE APPEARANCE IS LIVE (ring 2026-09-07): what the hand shapes on the Appearance tab is
-  // the draft below; the law (domain/autosave) names what differs from the community as
-  // persisted, and the hook writes exactly that a breath after the last change, then hands
-  // the patch up (onUpdate) so the shell, the header and every open list wear it. The Vision
-  // tab keeps its Save (long-form writing wants a deliberate hand) — handleSave still carries
-  // these fields too, harmlessly.
-  const appearanceDraft = useMemo(() => ({
-    name: editName,
-    theme: normalizeTheme(editTheme),
-    logoUrl,
-    heroImageUrl,
-    imageUrls,
-    socialLinks: editSocial,
-    carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
-    customLanding: editCustomLanding,
-    showStats: editShowStats,
-    landingPages: editLandingPages.filter(p => p.label.trim()),
-    paletteReach: editPaletteReach,
-    mail: mailWordsOf(editMail),
-  }), [editName, editTheme, logoUrl, heroImageUrl, imageUrls, editSocial, editCarouselQuotes, editCustomLanding, editShowStats, editLandingPages, editPaletteReach, editMail]);
-  const appearancePersisted = useMemo(() => ({
-    name: community.name,
-    theme: normalizeTheme(community.theme),
-    logoUrl: community.logoUrl || '',
-    heroImageUrl: community.heroImageUrl || '',
-    imageUrls: community.imageUrls || [],
-    socialLinks: community.socialLinks || {},
-    carouselQuotes: community.carouselQuotes || [],
-    customLanding: community.customLanding === true,
-    showStats: community.showStats === true,
-    landingPages: community.landingPages || [],
-    paletteReach: community.paletteReach === true,
-    mail: mailWordsOf(community.mail),
-  }), [community]);
-  const appearanceSave = useAutosave({
-    persisted: appearancePersisted,
-    draft: appearanceDraft,
-    keys: COMMUNITY_APPEARANCE_FIELDS,
-    resetKey: community.id,
-    save: async (patch) => {
-      await updateCommunity(community.id, patch);
-      onUpdate?.(patch);
-      // A gallery image dropped from the draft leaves the bucket once the document no longer shows it.
-      if (patch.imageUrls) for (const gone of appearancePersisted.imageUrls.filter(u => !patch.imageUrls!.includes(u))) releasePicture(gone);
-    },
-  });
-  useEffect(() => {
-    if (appearanceSave.state === 'saved') notify(`🌱 ${speak('autosaved')}`);
-    if (appearanceSave.state === 'error') notify(speak('err_autosave'), 'error');
-  }, [appearanceSave.state]);
-
-  // Keep editable copies in step with the community prop — a RECONCILE, not a reset (ring
-  // 2026-09-07): a field this hand has not touched since it last adopted the store follows the
-  // fresh value; a field still under the hand keeps its draft (an autosave landing mid-word,
-  // or landing while the Vision tab holds unsaved writing, drops nothing). A new community
-  // adopts everything.
-  const adoptedRef = React.useRef<{ id: string; fields: typeof appearancePersisted & { vision: string; papers: Paper[] } } | null>(null);
-  const imageUrlsKey = (community.imageUrls || []).join(',');
-  useEffect(() => {
-    const fresh = { ...appearancePersisted, vision: visionOf(community), papers: papersOf(community.papers).filter(p => p.key !== VISION_KEY) };
-    const keys = [...COMMUNITY_APPEARANCE_FIELDS, 'vision', 'papers'] as const;
-    const adopted = adoptedRef.current?.id === community.id ? adoptedRef.current.fields : null;
-    const draft = { ...appearanceDraft, vision: editVision, papers: editPapers };
-    const next = adopted ? reconcile(adopted, fresh, draft, keys) : fresh;
-    adoptedRef.current = { id: community.id, fields: fresh };
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state reconcile of the editable copies; deriving instead would clobber in-flight edits
-    setEditName(next.name);
-    setEditVision(next.vision);
-    setEditPapers(next.papers);
-    setEditSocial(next.socialLinks);
-    setEditTheme(normalizeTheme(next.theme));
-    setLogoUrl(next.logoUrl);
-    setHeroImageUrl(next.heroImageUrl);
-    setImageUrls(next.imageUrls);
-    setEditCustomLanding(next.customLanding);
-    setEditShowStats(next.showStats);
-    setEditLandingPages(next.landingPages);
-    setEditPaletteReach(next.paletteReach);
-    setEditMail({ greeting: next.mail.greeting || '', signature: next.mail.signature || '', footer: next.mail.footer || '' });
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); object identities change per fetch and would re-run this needlessly; the draft is read, not depended on
-  }, [community.id, community.name, community.papers, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, community.paletteReach, community.mail, imageUrlsKey]);
-
-  useEffect(() => {
-    // Own-tree merge only where the place allows it (domain ownMergeUid): a STRICT face
-    // shows this place's forest and nothing else — the viewer's off-domain trees stay home.
-    // PLUS the standing trees (grows_in, ring 2026-08-24): trees from other places that
-    // entered this garden through its door — one tree, many gardens, every edge explicit.
-    const host = { reflectsPublic: community.reflectsPublic, strictScope: community.strictScope };
-    Promise.all([
-      getTreesByDomain(community.domain, ownMergeUid(currentUserId, host)).catch(() => [] as Lifetree[]),
-      treesStandingIn(community.id).catch(() => [] as Lifetree[]),
-    ]).then(([byDomain, standing]) => {
-      const seen = new Set(byDomain.map(t => t.id));
-      setLinkedTrees([...byDomain, ...standing.filter(t => !seen.has(t.id))]);
-    }).catch(() => {});
-  }, [community.id, community.domain, currentUserId, community.reflectsPublic, community.strictScope]);
-
-  useEffect(() => {
-    // Rooted here (by domain) PLUS stepped-into (by communityIds), deduped. Signed-out
-    // viewers may only run public-provable queries — the read rule refuses the rest.
-    const publicOnly = !currentUserId;
-    Promise.all([
-      getLightHousesByDomain(community.domain, { publicOnly }).catch(() => [] as LightHouse[]),
-      publicOnly ? Promise.resolve([] as LightHouse[]) : getLightHousesByCommunity(community.id).catch(() => [] as LightHouse[]),
-    ]).then(([byDomain, byBelonging]) => {
-      const seen = new Set<string>();
-      setLightHouses([...byDomain, ...byBelonging].filter(s => !seen.has(s.id) && seen.add(s.id) !== undefined));
-    }).catch(() => {});
-  }, [community.domain, community.id, currentUserId, lightHouseSignal]);
-
-  // LightHouses elsewhere in the network this community could step into — keepers only.
-  const [adoptable, setAdoptable] = useState<LightHouse[]>([]);
-  useEffect(() => {
-    if (!canEdit || !currentUserId) { return; }
-    let alive = true;
-    Promise.all([getAllLightHouses(), graphStore.linksByRel('shelters')])
-      .then(([all, shelterLinks]) => {
-        if (!alive) return;
-        const homesOf = new Map<string, string[]>();
-        for (const l of shelterLinks) homesOf.set(l.from, [...(homesOf.get(l.from) || []), l.to]);
-        setAdoptable(all.filter(s => {
-          const homes = [...(s.communityId ? [s.communityId] : []), ...(homesOf.get(s.id) || [])];
-          // Consent lives with the lightHouse: only its keeper (or staff) may step it in —
-          // the rules enforce this, so the panel offers only what would actually succeed.
-          const mayStepIn = s.anchorUid === currentUserId || isSuperAdmin || isAdmin;
-          return mayStepIn
-            && !homes.includes(community.id)
-            && s.domain !== community.domain
-            && canViewLightHouse(s, { uid: currentUserId, isStaff: isSuperAdmin || isAdmin, memberCommunityIds: new Set<string>() }, homes);
-        }));
-      }).catch(() => {});
-    return () => { alive = false; };
-  }, [canEdit, currentUserId, isSuperAdmin, isAdmin, community.id, community.domain, lightHouseSignal]);
-
-  // The lightHouses rooted in this domain THAT THIS VIEWER MAY SEE —
-  // lightHouses are private (community-level) by default.
-  // Homes come from the shelters links, so a stepped-in lightHouse is visible to members
-  // of THIS community even when its primary home is elsewhere.
-  const [shelterHomes, setShelterHomes] = useState<Map<string, string[]>>(new Map());
-  useEffect(() => {
-    let alive = true;
-    graphStore.linksByRel('shelters').then(links => {
-      if (!alive) return;
-      const m = new Map<string, string[]>();
-      for (const l of links) m.set(l.from, [...(m.get(l.from) || []), l.to]);
-      setShelterHomes(m);
-    }).catch(() => {});
-    return () => { alive = false; };
-  }, [lightHouseSignal]);
-  const viewableLightHouses = useMemo(() => lightHouses.filter(s => canViewLightHouse(s, {
-    uid: currentUserId,
-    isStaff: isSuperAdmin || isAdmin,
-    memberCommunityIds: isMember ? new Set([community.id]) : new Set(),
-  }, [...(s.communityId ? [s.communityId] : []), ...(shelterHomes.get(s.id) || [])])), [lightHouses, shelterHomes, currentUserId, isSuperAdmin, isAdmin, isMember, community.id]);
-
-
-  // The first lifetree rooted in this community's domain (earliest planted).
-  const domainTrees = useMemo(() => {
-    const d = bareDomain(community.domain);
-    return linkedTrees
-      .filter(tree => bareDomain(tree.domain) === d)
-      .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
-  }, [linkedTrees, community.domain]);
-  const firstTree = domainTrees[0] || null;
-
-  // Load the trees standing with this community via participant links.
-  useEffect(() => {
-    let alive = true;
-    getParticipatingTrees(community.id).then(ts => { if (alive) setParticipatingTrees(ts); }).catch(() => {});
-    return () => { alive = false; };
-  }, [community.id]);
-
-  // The trees tab shows domain trees + participating trees, deduped.
-  const communityTrees = useMemo(() => {
-    const byId = new Map<string, Lifetree>();
-    domainTrees.forEach(t => byId.set(t.id, t));
-    participatingTrees.forEach(t => byId.set(t.id, t));
-    (currentUserId ? secretTrees : []).forEach(t => byId.set(t.id, t));
-    return Array.from(byId.values());
-  }, [domainTrees, participatingTrees, secretTrees, currentUserId]);
-
-  const handleToggleGuardian = async (tree: Lifetree) => {
-    if (!canCareForTree(currentUserId)) { showAlert('err_signin_guard'); return; }
-    const join = !guardedTreeIds.has(tree.id);
-    setTogglingId(tree.id);
-    try {
-      await (join ? graphStore.link(currentUserId, 'guardian', tree.id) : graphStore.unlink(currentUserId, 'guardian', tree.id));
-      setGuardedTreeIds(prev => {
-        const next = new Set(prev);
-        if (join) next.add(tree.id); else next.delete(tree.id);
-        return next;
-      });
-    } catch (e) {
-      console.error(e);
-      showAlert('err_guardianship');
-    }
-    setTogglingId(null);
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    setStatus(null);
-    try {
-      const updates = {
-        name: editName,
-        papers: withVision(editPapers, editVision),
-        imageUrls,
-        theme: normalizeTheme(editTheme),
-        logoUrl,
-        heroImageUrl,
-        socialLinks: editSocial,
-        carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
-        customLanding: editCustomLanding,
-        showStats: editShowStats,
-        landingPages: editLandingPages.filter(p => p.label.trim()),
-        paletteReach: editPaletteReach,
-        mail: mailWordsOf(editMail),
-      };
-      await updateCommunity(community.id, updates);
-      // Refresh from Firestore so the view reflects exactly what was persisted.
-      const fresh = await getCommunityByDomain(community.domain);
-      if (onUpdate) onUpdate(fresh ? { ...fresh } : updates);
-      setStatus(t('saved'));
-      notify(`🌱 ${t('saved')}`);
-      setTimeout(() => setStatus(null), 2500);
-    } catch (e) {
-      console.error(e);
-      setStatus(t('err_save_retry'));
-      notify(speak('err_save_retry'), 'error');
-    }
-    setIsSaving(false);
-  };
-
-  const handleDelete = async () => {
-    if (!(await showConfirm('community_delete_confirm', { title: 'delete_community', confirmText: 'delete', danger: true }))) return;
-    setIsDeleting(true);
-    try {
-      await deleteCommunity(community.id);
-      onClose();
-      window.location.reload();
-    } catch (e) {
-      console.error(e);
-      showAlert('err_community_delete');
-    }
-    setIsDeleting(false);
-  };
-
-  const handleLogoUpload = async (file: File) => {
-    setIsUploadingLogo(true);
-    try {
-      const url = await uploadImage(file, `communities/${community.id}/logo_${Date.now()}`);
-      const previous = logoUrl;
-      setLogoUrl(url);
-      // Persist immediately so the change can't get lost before the next Save.
-      await updateCommunity(community.id, { logoUrl: url });
-      onUpdate?.({ logoUrl: url });
-      if (previous && previous !== url) releasePicture(previous);
-      setStatus(t('saved'));
-    } catch (e: any) {
-      console.error(e);
-      setStatus(speak(e?.message || 'err_logo_upload'));
-      notify(speak('err_upload'), 'error');
-    }
-    setIsUploadingLogo(false);
-  };
-
-  const handleHeroUpload = async (file: File) => {
-    setIsUploadingHero(true);
-    try {
-      const url = await uploadImage(file, `communities/${community.id}/hero_${Date.now()}`);
-      const previous = heroImageUrl;
-      setHeroImageUrl(url);
-      await updateCommunity(community.id, { heroImageUrl: url });
-      onUpdate?.({ heroImageUrl: url });
-      if (previous && previous !== url) releasePicture(previous);
-      setStatus(t('saved'));
-    } catch (e: any) {
-      console.error(e);
-      setStatus(speak(e?.message || 'err_hero_upload'));
-      notify(speak('err_upload'), 'error');
-    }
-    setIsUploadingHero(false);
-  };
-
-  const handleAddImage = async (file: File) => {
-    setIsUploadingImage(true);
-    try {
-      const url = await uploadImage(file, `communities/${community.id}/${Date.now()}`);
-      setImageUrls(prev => [...prev, url]);
-    } catch (e: any) {
-      console.error(e);
-      setStatus(speak(e?.message || 'err_image_upload'));
-      notify(speak('err_upload'), 'error');
-    }
-    setIsUploadingImage(false);
-  };
-
-  // A removal or a re-ordering of the gallery (ui/ImageStrip) — the autosave diff releases what left.
-  const handleImagesChange = (next: string[]) => setImageUrls(next);
-
-  const handleRemoveHero = () => {
-    // Persist immediately (like upload does) — otherwise the old photo returns
-    // unless the user also remembers to hit Save.
-    const previous = heroImageUrl;
-    setHeroImageUrl('');
-    updateCommunity(community.id, { heroImageUrl: '' }).then(() => releasePicture(previous)).catch(() => {});
-    onUpdate?.({ heroImageUrl: '' });
-  };
-
-  // A circle's GRADUATION banner (domain/treeCircle formCircleRefusal): shown to the hands
-  // that may form — the keeper circle, or a keeper of the root tree. The server is the
-  // one hand that stamps forming; this banner only carries the ask and the chosen name.
-  const isUnformedCircle = community.formation === 'tree_keeping' && !community.formedAt;
-  const [treeKeeper, setTreeKeeper] = useState(false);
-  const [formName, setFormName] = useState('');
-  const [forming, setForming] = useState(false);
-  const [justFormed, setJustFormed] = useState(false);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- re-keys the draft + formed state when the profile switches communities
-    setFormName((community.name || '').replace(/\s*Circle\s*$/i, '')); setJustFormed(false);
-  }, [community.id, community.name]);
-  useEffect(() => {
-    if (!isUnformedCircle || !currentUserId || !community.rootLifetreeId) { setTreeKeeper(false); return; }
-    let alive = true;
-    graphStore.linksFrom(currentUserId, 'keeper')
-      .then(links => { if (alive) setTreeKeeper(links.some(l => l.to === community.rootLifetreeId)); })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, [isUnformedCircle, currentUserId, community.rootLifetreeId]);
-  const mayFormCommunity = isUnformedCircle && !justFormed && !!currentUserId
-    && formCircleRefusal({
-      formation: community.formation, formedAtMs: null,
-      isCircleKeeper: canEdit, isTreeKeeper: treeKeeper,
-    }) === null;
-  const handleFormCommunity = async () => {
-    const name = formName.trim();
-    if (!name || forming) return;
-    setForming(true);
-    try {
-      const res = await formCommunityFromCircle(community.id, name);
-      setJustFormed(true);
-      onUpdate?.({ name: res.name, visibility: 'public', ...(res.bornOn ? { bornOn: res.bornOn } : {}) });
-      announce('communities');
-      notify(spokenLine('circle_formed', { name: res.name }));
-    } catch (e: any) {
-      const m = String(e?.message || '');
-      showAlert(m.includes('not_hand') ? 'circle_form_not_hand' : m.includes('already_formed') ? 'circle_form_already' : m || 'err_action');
-    }
-    setForming(false);
-  };
+  // The face draws; four hooks hold its hands (hooks/useCommunity*, useCircleForming).
+  const {
+    editName, setEditName, editVision, setEditVision, editPapers, setEditPapers,
+    editSocial, setEditSocial, editCarouselQuotes, setEditCarouselQuotes,
+    editCustomLanding, setEditCustomLanding, editShowStats, setEditShowStats,
+    editLandingPages, setEditLandingPages, editTheme, setEditTheme,
+    editPaletteReach, setEditPaletteReach, editMail, setEditMail,
+    logoUrl, heroImageUrl, imageUrls,
+    isSaving, isDeleting, isUploadingLogo, isUploadingHero, isUploadingImage, status,
+    appearanceSave,
+    handleSave, handleDelete, handleLogoUpload, handleHeroUpload, handleAddImage, handleImagesChange, handleRemoveHero,
+  } = useCommunityEditing(community, onUpdate, onClose);
+  const { linkedTrees, domainTrees, firstTree, communityTrees, guardedTreeIds, togglingId, handleToggleGuardian } = useCommunityGarden(community, currentUserId);
+  const lightHouseHands = useCommunityLightHouses(community, { currentUserId, isSuperAdmin, isAdmin, isMember, canEdit });
+  const { mayFormCommunity, formName, setFormName, forming, handleFormCommunity } = useCircleForming(community, currentUserId, canEdit, onUpdate);
 
   // Icons for the shared network-lore tabs (Path, Yantra).
   const loreIcons: Record<LoreTabId, React.ReactNode> = {
@@ -572,27 +172,13 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
       key: 'lightHouse', label: t('light_houses'), icon: <Icons.Sun />, render: () => (
         <CommunityLightHouse
           community={community}
-          lightHouses={viewableLightHouses}
+          lightHouses={lightHouseHands.viewableLightHouses}
           canEdit={canEdit}
-          onCreate={async (draft) => {
-            if (!currentUserId) return;
-            await createLightHouse({
-              ...draft,
-              anchorUid: currentUserId,
-              domain: community.domain,
-              communityId: community.id,
-            });
-            announce('lightHouses');
-            notify(t('lh_consecrated_toast'));
-          }}
-          onUploadImage={(file) => uploadImage(file, `communities/${community.id}/lightHouses/${uploadFileName(file.name, Date.now())}`)}
+          onCreate={lightHouseHands.consecrate}
+          onUploadImage={lightHouseHands.uploadLightHouseImage}
           onOpen={onViewLightHouse}
-          adoptable={adoptable}
-          onAdopt={async (s) => {
-            await adoptLightHouse(s.id, community.id);
-            announce('lightHouses');
-            notify(spokenLine('lh_holds_community_too', { name: s.name }));
-          }}
+          adoptable={lightHouseHands.adoptable}
+          onAdopt={lightHouseHands.adopt}
         />
       ),
     },

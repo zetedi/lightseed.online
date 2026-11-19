@@ -98,3 +98,34 @@ export function forestMarkers(trees: Lifetree[], guardianCounts?: Map<string, nu
   }
   return out;
 }
+
+// WHO GATHERS WITH WHOM ON THE SCREEN — beings whose markers would overlap are drawn as one
+// cluster. Greedy and order-bound, on purpose: the first point not yet gathered SEEDS a cluster
+// and takes every later point closer than the threshold to ITSELF (never to another member), so
+// the caller's order decides the faces (the map puts Light Houses first: trees gather around
+// them). The points are already projected to pixels; a null is a being with no place.
+export interface ScreenPoint<T> { item: T; id: string; lat: number; lng: number; x: number; y: number }
+export interface ScreenCluster<T> { id: string; center: T; children: T[]; lat: number; lng: number }
+export function clusterOnScreen<T>(points: (ScreenPoint<T> | null)[], thresholdPx: number): ScreenCluster<T>[] {
+  const clusters: ScreenCluster<T>[] = [];
+  const gathered = new Set<string>();
+  const thresholdSq = thresholdPx * thresholdPx;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    if (!a || gathered.has(a.id)) continue;
+    const cluster: ScreenCluster<T> = { id: a.id, center: a.item, children: [], lat: a.lat, lng: a.lng };
+    gathered.add(a.id);
+    for (let j = i + 1; j < points.length; j++) {
+      const b = points[j];
+      if (!b || gathered.has(b.id)) continue;
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      if (dx * dx + dy * dy < thresholdSq) {
+        cluster.children.push(b.item);
+        gathered.add(b.id);
+      }
+    }
+    clusters.push(cluster);
+  }
+  return clusters;
+}
