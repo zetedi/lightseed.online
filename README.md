@@ -189,9 +189,42 @@ limits, in [`seed/README.md`](seed/README.md); what the node has not grown yet i
 
 ### What you need
 
-- Docker with a Compose version that understands the `!override` / `!reset` tags.
-- Node.js and this repository's dependencies (`npm install`).
-- `openssl` (for generated secrets).
+**Always**
+
+- **Docker, running**, with a Compose version that understands the `!override` / `!reset` tags
+  and `COMPOSE_ENV_FILES` (2.24 or newer; tested with Compose 5.4 on Docker 29.7).
+- **Node.js 22 or newer** and this repository's dependencies (`npm install`); the installer
+  refuses without them.
+- **This checkout itself** — the API image is built from it.
+- **Internet access on the first run**, to pull the images (`postgres:16-alpine`,
+  `caddy:2.10.2-alpine`, `quay.io/keycloak/keycloak:26.8.1`, `node:22-alpine`) and the API's npm
+  packages during the image build.
+- **No node already standing in the default places**: none of `seed/.env`, `seed/runtime.env`,
+  `seed/identity/.env`, `seed/compose.local.yml`, a non-empty `seed/charter/`, or the installer's
+  files under `seed/local/`, and no containers or volumes of the Compose projects `seed` and
+  `identity`. Beside a standing node, install with `--dir`, `--project` and other ports.
+- **Free ports.** The installer does not check them beforehand; a taken port fails at the
+  Compose step. Loopback: 5433 (database), 8081 (API), 8082 (issuer). The edge: 8443 and 8080
+  for a local walk, 443 and 80 for a real host.
+- `openssl` only for the walk by hand (generated secrets); the installer generates its own.
+
+**For a local walk**
+
+- A browser that resolves `*.localhost` to loopback (Chrome does).
+- Either trust Caddy's root certificate (`seed/local/caddy-root.crt` after the installer) or
+  accept the warning at each of the two hosts.
+
+**For a real host (VPS)** — more under *On a VPS* below
+
+- **Two DNS names**, the application host and the identity host, both resolving to the machine
+  before you start: certificates are fetched per host.
+- **Ports 80 and 443 open** to the world.
+- **An ACME contact address** and **the keeper's e-mail address**.
+- **On Linux, run it as UID 1000.** Under another account the API container cannot read the
+  owner-only charter; the installer warns and does not mend it.
+
+The memory and disk a node needs have not been measured; Keycloak is the heaviest of the four
+containers.
 
 ### Locally, from scratch
 
