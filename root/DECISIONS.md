@@ -6554,3 +6554,34 @@ proven runbook (the long-running VPS proof is still open in the roadmap). `seed/
 still opens by saying the seed does not yet run the application independently, which its own
 later sections contradict; that paragraph was left for its keeper to reword.
 
+
+### 2026-11-19 — The first walk in one hand
+
+The morning's ring left two things at the seed's door: its README still opened by saying the
+seed does not run the application, and the new "Run a seed" section had never been run end to
+end. Both are answered.
+
+`npm run seed:install` (`scripts/install-seed.mjs`) takes the eight steps of the first walk
+itself: it generates every secret, starts and migrates the database, mints the node's identity
+and writes its charter, provisions the API's restricted role, builds the application as this
+node, starts the API and the edge, prepares the realm and starts the issuer, makes the keeper's
+login there, writes the trust file (the issuer's public keys, the keeper's explicit binding),
+and — after the first sign-in — appoints the keeper. It has no law of its own: it drives the
+hands that already existed. `seed/README.md` now opens with where the node stands and names
+its older sections as the record of their own day.
+
+Plain contract. Guaranteed: no secret is printed or passed as an argument; every generated file
+is written exclusively (owner-only, except the realm and the trust file, which hold no secret
+and must be readable by the containers); the installer refuses before its first write where any
+of its files, containers or volumes already stands. Proven: one whole local walk on macOS, as a
+second node (`--dir`, `--project`, its own ports) beside the standing local node — eight steps,
+72 migrations, then a code+PKCE sign-in with the generated login over the issuer's loopback
+port, `/v1/me` answering the bound uid, the shell and the public envelope served through the
+edge under Caddy's own root, and the keeper's seat taken; a second run refused; the trial node
+was then removed. Not guaranteed: the default layout (`seed/.env`, `seed/local/`) was not
+installed, because a node already stands there on this machine — it shares every step with the
+proven run and differs in where the files are kept; the real-host path (`--acme-email`) has not
+run on a VPS; on Linux under an account other than UID 1000 the API cannot read the owner-only
+charter, which the installer says and does not mend; no browser walked the sign-in. The
+installer marks the keeper's own address verified at the issuer — the operator vouching for
+themselves, so that no mail is needed to walk in; every other account still verifies by mail.

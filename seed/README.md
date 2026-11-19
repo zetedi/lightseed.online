@@ -1,10 +1,56 @@
 # The Seed
 
-The PostgreSQL foundation for a self-hosted Lightseed node. This does **not** yet run
-the application independently: authentication, the app's data access, storage and server
-actions still depend on Firebase. The design and release contract live in
-[Architecture → Independent node](../root/ARCHITECTURE.md#independent-node);
+A self-hosted Lightseed node on its own soil: PostgreSQL, a small Node API, a self-hosted sign-in
+issuer (Keycloak) and one TLS edge (Caddy), under Docker Compose. Since 2026-11-01 the original
+application builds for this soil (`npm run build:independent`) and runs with no Firebase at run
+time: sign-in, data access, pictures and server actions are the node's own. What the node has not
+grown yet refuses by name and is counted in [PARITY.md](PARITY.md); what is still unproven — a
+clean installation on a long-running VPS first among it — is named under
+[What does not stand yet](#what-does-not-stand-yet-named-not-hidden). The design and release
+contract live in [Architecture → Independent node](../root/ARCHITECTURE.md#independent-node);
 the delivery sequence is in [Roadmap](../root/ROADMAP.md#independent-node-2026-10-20).
+
+This file grew section by section as the node did, and the older sections still speak from their
+own day ("the existing browser still uses Firebase", "sign-in is still pending"): read them as
+the record of each step, and this paragraph and PARITY.md as where the node stands.
+
+## Install in one hand
+
+From the repository root, with Docker running and `npm install` done:
+
+```sh
+npm run seed:install            # a local walk: https://seed.localhost:8443
+npm run seed:install -- --help  # a real host, other ports, a second node on one machine
+```
+
+`scripts/install-seed.mjs` takes the whole first walk the sections below describe one by one: it
+generates every secret (the database password, the issuer's database and bootstrap-administrator
+passwords, the keeper's first password) into owner-only files, starts the database and migrates
+it, mints the node's identity and writes its charter, provisions the API's restricted role,
+builds the application as this node, starts the API and the edge, prepares the realm and starts
+the issuer, makes the keeper's login there, writes the trust file with the issuer's public keys
+and the keeper's binding, and — after the first sign-in — appoints the keeper.
+
+- **Guaranteed:** no secret is printed or passed as a command argument; nothing standing is
+  overwritten — it refuses before its first write if any of its files, or any container or volume
+  of its Compose projects, already exists. It has no law of its own: it drives `seed:migrate`,
+  `seed:configure`, `seed:provision`, `seed:identity:configure`, `seed:keeper` and the Compose
+  files exactly as a hand would.
+- **Not guaranteed:** DNS, open ports, SMTP (the node's and the issuer's), a permanent issuer
+  operator in place of the bootstrap administrator, backups. A walk that fails halfway is left
+  standing for inspection, and the commands that clear it are printed. The keeper's address is
+  marked verified by the installer (the operator vouches for their own address), so no mail is
+  needed to walk in.
+- **Proven so far:** a whole local walk on macOS (2026-11-19) as a second node beside a standing
+  one — all eight steps, then a code+PKCE sign-in with the generated login, `/v1/me` answering
+  the bound uid, and the keeper's seat taken. The real-host path (`--acme-email`) has not been
+  run on a VPS.
+
+Where it keeps things: `seed/.env`, `seed/runtime.env`, `seed/charter/`, `seed/identity/.env`,
+`seed/compose.local.yml`, and under `seed/local/` the node's input (`node.json`), the trust file
+(`auth.json`), the realm, Caddy's local root certificate and `first-login.txt` — all ignored by
+Git. With `--dir <directory>` everything goes into that one new private directory instead, and
+the installer prints the three Compose variables later commands then need.
 
 > The database port's first breath (ring 2026-08-31). The client-direct-with-law model —
 > the app reads with its own sight, the datastore enforces — survives the crossing:

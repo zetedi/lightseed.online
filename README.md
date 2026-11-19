@@ -181,11 +181,11 @@ Firebase at run time. This section is the short path. Every step is told in full
 limits, in [`seed/README.md`](seed/README.md); what the node has not grown yet is counted in
 [`seed/PARITY.md`](seed/PARITY.md).
 
-> **Where this stands.** The steps below are gathered from `seed/README.md`. The local walk has
-> been done by hand on this project's own machine; the Docker proof (`npm run test:seed:docker`)
-> exercises the database and API automatically. A clean installation on a long-running VPS is
-> still an open item of the roadmap, so treat the VPS list as what is needed, not as a proven
-> runbook.
+> **Where this stands.** `npm run seed:install` took the whole local walk on this project's own
+> machine (2026-11-19): all eight steps, a sign-in with the generated login, and the keeper's
+> seat. The Docker proof (`npm run test:seed:docker`) exercises the database and API
+> automatically. A clean installation on a long-running VPS is still an open item of the roadmap,
+> so treat the VPS list as what is needed, not as a proven runbook.
 
 ### What you need
 
@@ -195,7 +195,20 @@ limits, in [`seed/README.md`](seed/README.md); what the node has not grown yet i
 
 ### Locally, from scratch
 
-All commands run from the repository root unless they say otherwise.
+**In one hand:**
+
+```sh
+npm run seed:install
+```
+
+It does the eight steps below, generates every password into owner-only files (never printed),
+and ends by telling you where the keeper's first login is kept (`seed/local/first-login.txt`).
+Open `https://seed.localhost:8443`, sign in, and press Enter in the terminal to take the keeper's
+seat. It refuses, before writing anything, where a node already stands. `npm run seed:install --
+--help` lists the options (other ports, a real host, a second node on one machine).
+
+**By hand**, the same eight steps. All commands run from the repository root unless they say
+otherwise.
 
 1. **The soil.** Start the database and install the schema.
 
@@ -275,7 +288,14 @@ Optional organs, each refusing by name until its secret is given in `seed/runtim
 
 ### On a VPS
 
-The same eight steps, with these differences and needs:
+The same eight steps, by hand or by the installer — which has not yet been run on a VPS:
+
+```sh
+npm run seed:install -- --host app.your-node.example --identity-host identity.your-node.example \
+  --acme-email you@your-node.example --keeper-email you@your-node.example --name "Your node"
+```
+
+Either way, with these differences and needs:
 
 - **A machine** that runs Docker Compose, with **ports 80 and 443 open** to the world. The
   database, API and identity ports bind to loopback only; keep them that way.
