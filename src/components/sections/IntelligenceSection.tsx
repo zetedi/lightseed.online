@@ -6,6 +6,7 @@ import { SectionTitle } from '../ui/SectionTitle';
 import { IntelligencePanel } from '../intelligence/IntelligencePanel';
 import type { DutyAssignment, IntelligenceDuty } from '../../domain/intelligenceDuty';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { EmptyState } from '../ui/EmptyState';
 
 // Being-generic intelligence section — any being's intelligences (Indra's net). "Which
 // intelligences stand here, and which speaks by default" is the same question for a community,
@@ -176,10 +177,7 @@ export const IntelligenceSection: React.FC<IntelligenceSectionProps> = ({
 
       <h4 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-400">{t('intel_all')}</h4>
       {intelligences.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-950/40"><Icons.Intelligence /></div>
-          <p className="text-sm">{t('intel_none')}</p>
-        </div>
+        <EmptyState icon={<Icons.Intelligence />} tone="amber">{t('intel_none')}</EmptyState>
       ) : (
         <div className="space-y-3">
           {intelligences.map(intel => {

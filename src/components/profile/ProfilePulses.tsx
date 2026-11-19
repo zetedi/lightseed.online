@@ -7,7 +7,7 @@ import { getMyPulses } from '@backend';
 import { pulseKinds, matchesKind, pulseKindLabelKey } from '../../domain/pulseKinds';
 import type { PulseType } from '../../domain/pulse';
 import { SectionTitle } from '../ui/SectionTitle';
-import { Loading } from '../ui/Loading';
+import { LoadingPanel } from '../ui/Loading';
 
 import { Picture } from '../ui/Picture';
 import { FullViewButton } from '../ui/FullView';
@@ -78,7 +78,7 @@ export const ProfilePulses: React.FC<ProfilePulsesProps> = ({ uid, onViewPulse, 
           })}
         </div>
       )}
-      {loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16 dark:bg-slate-900/50 dark:border-slate-800"><Loading /></div> : (
+      {loading ? <LoadingPanel /> : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {shown.length === 0 ? (
             <div className="col-span-full py-10 text-center text-slate-400">

@@ -25,6 +25,7 @@ import type { Intelligence } from '../domain/intelligence';
 import type { Community } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { spokenLine, speak, type TranslationKey } from '../utils/translations';
+import { EmptyLine } from '../components/ui/EmptyState';
 
 // Per-provider fallback descriptions, used when an intelligence has no description of its own.
 // Named by KEY — the words are spoken at render, in the reader's language.
@@ -229,9 +230,9 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
           <>
             <div className={gridFor(density)}>
               {list === null ? (
-                <p className="col-span-full py-10 text-center text-slate-500">{t('loading')}</p>
+                <EmptyLine>{t('loading')}</EmptyLine>
               ) : list.length === 0 ? (
-                <p className="col-span-full py-10 text-center text-slate-500">{t('intel_none_node')}</p>
+                <EmptyLine>{t('intel_none_node')}</EmptyLine>
               ) : list.map(intel => {
                 const provider = providerLabel(intel.provider);
                 const isDefault = intel.id === DEFAULT_INTELLIGENCE_ID;
@@ -296,9 +297,9 @@ export const CollabsPage = ({ theme, onSelectCommunity, quote, quoteCopied, onCo
             )}
             <div className={gridFor(density)}>
               {orgs === null ? (
-                <p className="col-span-full py-10 text-center text-slate-500">{t('loading')}</p>
+                <EmptyLine>{t('loading')}</EmptyLine>
               ) : orgs.length === 0 ? (
-                <p className="col-span-full py-10 text-center text-slate-500">{t('orgs_none')}</p>
+                <EmptyLine>{t('orgs_none')}</EmptyLine>
               ) : orgs.map(org => {
                 const isCarer = isStaff || (!!lightseed && org.createdBy === lightseed.uid);
                 return (

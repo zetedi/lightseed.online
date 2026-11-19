@@ -7,7 +7,7 @@ import { getMyPulses } from '@backend';
 import { offeringStatusOf } from '../../domain/offering';
 import { normalizePulseType } from '../../domain/pulse';
 import { SectionTitle } from '../ui/SectionTitle';
-import { Loading } from '../ui/Loading';
+import { LoadingPanel } from '../ui/Loading';
 import { Picture } from '../ui/Picture';
 
 interface ProfileOfferingsProps {
@@ -52,7 +52,7 @@ export const ProfileOfferings: React.FC<ProfileOfferingsProps> = ({ uid, onViewO
     <div>
       <SectionTitle title={t('my_offerings')} sub={t('my_offerings_sub')} />
       {loading ? (
-        <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16 dark:border-slate-800 dark:bg-slate-900/50"><Loading /></div>
+        <LoadingPanel />
       ) : offerings.length === 0 ? (
         <p className="py-10 text-center text-slate-400">{t('no_offerings_yet')}</p>
       ) : (

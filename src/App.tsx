@@ -18,7 +18,7 @@ import {
 } from '@backend';
 import { SigningKeyNeedsRestoreError } from '@backend/keys';
 import { type Pulse, type Lifetree, type Alignment, type Vision, type ReachAudience } from './types';
-import Logo from './components/Logo';
+import Logo from './components/ui/Logo';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { SessionProvider, useSession } from './contexts/SessionContext';
 import { isSeedShellHost, useConfig } from './hooks/useConfig';
@@ -49,11 +49,11 @@ import { useHostStanding } from './hooks/useHostStanding';
 import { memberEventsPlace } from './domain/pulseVisibility';
 import type { WebLink } from './domain/webLink';
 import { coinOf } from './domain/coin';
-import { GDPRBanner } from './components/GDPRBanner';
+import { GDPRBanner } from './components/app/GDPRBanner';
 
 // Components — the always-present shell (nav, footer, loaders, dialogs) stays statically imported.
 import { Icons } from './components/ui/Icons';
-import { Navigation } from './components/Navigation';
+import { Navigation } from './components/app/Navigation';
 import { eventsOnView } from './domain/pulseVisibility';
 import { passesForestFilter, canViewTree } from './domain/views/forest';
 import { isWateringOverdue } from './domain/watering';
@@ -69,14 +69,14 @@ import { onRefresh as onBusRefresh } from './services/refreshBus';
 import { lidFromPath, beingPath } from './domain/beingLink';
 import { motherDoorUrl } from './domain/communityDoor';
 import { CustomLandingPage } from './pages/CustomLandingPage';
-import { Footer } from './components/ui/Footer';
-import { PathwayCTA } from './components/PathwayCTA';
+import { Footer } from './components/app/Footer';
+import { PathwayCTA } from './components/pathway/PathwayCTA';
 import type { PathwayStepKey } from './domain/pathway';
 import { derivePathway } from './domain/pathway';
 import { deriveCrownRole } from './domain/dataAuthority';
-import { PathOverview } from './components/PathOverview';
+import { PathOverview } from './components/pathway/PathOverview';
 import { Modal } from './components/ui/Modal';
-import { LifeseedWidget } from './components/LifeseedWidget';
+import { LifeseedWidget } from './components/app/LifeseedWidget';
 import { DialogHost, showAlert, showConfirm } from './components/ui/Dialog';
 import { isExplicitlyValidatedTree } from './utils/validation';
 import { speak } from './utils/translations';
@@ -89,8 +89,8 @@ import { MainContent, type OfferingsSub } from './components/app/MainContent';
 
 // Detail overlays and modals are code-split: each becomes its own chunk that loads only when
 // first shown, so the initial bundle no longer ships them on first paint.
-const EventProfile = lazy(() => import('./components/EventProfile').then(m => ({ default: m.EventProfile })));
-const PulseDetail = lazy(() => import('./components/PulseDetail').then(m => ({ default: m.PulseDetail })));
+const EventProfile = lazy(() => import('./components/event/EventProfile').then(m => ({ default: m.EventProfile })));
+const PulseDetail = lazy(() => import('./components/pulse/PulseDetail').then(m => ({ default: m.PulseDetail })));
 const AuthModal = lazy(() => import('./components/modals/AuthModal').then(m => ({ default: m.AuthModal })));
 const DataModelCrystal = lazy(() => import('./components/about/DataModelCrystal').then(m => ({ default: m.DataModelCrystal })));
 

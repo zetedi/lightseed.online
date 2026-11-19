@@ -3,7 +3,7 @@ import { picturesOf } from '../../domain/pictures';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { SuperDot } from '../ui/SuperDot';
-import Logo from '../Logo';
+import Logo from '../ui/Logo';
 import { Pulse } from '../../types';
 
 import { Picture } from '../ui/Picture';

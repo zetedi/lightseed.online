@@ -11,6 +11,7 @@ import { webLinksOf } from '../../domain/webLink';
 import { spanProblem } from '../../domain/eventSpan';
 import { WebLinksEditor, rowsOf } from '../ui/WebLinksEditor';
 import { speak } from '../../utils/translations';
+import { FieldLabel } from '../ui/Field';
 
 /**
  * Plant a standalone event — anyone can, no community required. A community can later form
@@ -109,11 +110,11 @@ export const EventModal = ({
         {/* The span: from, and (for a retreat) until — the end is optional, and must follow the beginning. */}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('event_from')}</span>
+            <FieldLabel>{t('event_from')}</FieldLabel>
             <input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
           </label>
           <label className="block">
-            <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('event_until')}</span>
+            <FieldLabel>{t('event_until')}</FieldLabel>
             <input type="datetime-local" value={endDate} min={date || undefined} onChange={e => setEndDate(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
           </label>
         </div>
@@ -130,7 +131,7 @@ export const EventModal = ({
         <textarea dir="auto" value={body} onChange={e => setBody(e.target.value)} placeholder={t('event_details_ph')} className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700" />
         <WebLinksEditor rows={linkRows} onChange={setLinkRows} />
         <label className="block">
-          <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('visibility')}</span>
+          <FieldLabel>{t('visibility')}</FieldLabel>
           <select value={visibility} onChange={e => setVisibility(e.target.value as PulseVisibility)} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700">
             {visibilitiesForScope(scope).map(v => <option key={v} value={v}>{t(`vis_${v}` as any)}</option>)}
           </select>

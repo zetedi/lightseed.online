@@ -1,0 +1,688 @@
+
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { showAlert, showConfirm } from "../ui/Dialog";
+import { notify } from '../ui/Toast';
+import { speak, spokenLine } from '../../utils/translations';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useSession } from '../../contexts/SessionContext';
+import { Icons } from '../ui/Icons';
+import { SuperDot } from '../ui/SuperDot';
+import { BeingQr } from '../ui/BeingQr';
+import { mintBeingQr } from '@backend/beings';
+import { getLightHouseById, resignTreeKeeper } from '@backend';
+import type { LightHouse } from '../../domain/lightHouse';
+import { ActionsMenu, type MenuAction } from '../ui/ActionsMenu';
+import { LoveButton } from '../ui/LoveButton';
+import { updateLifetree, setTreeStatus, getPulsesByTreeId, getMyHeadBlock, unmintLastPulse, getLifetreeById, exportTree, getPersonPresence } from '@backend';
+import { showsPersonName } from '../../domain/publicName';
+import { unmintRefusal, STAFF_OVERRIDABLE_REFUSALS } from '../../domain/unmint';
+import { Pulse, type Lifetree, type Vision } from '../../types';
+import { isSecretTree } from '../../domain/secretTree';
+import { canToggleValidation, isExplicitlyValidatedTree } from '../../utils/validation';
+import { canReachTree, type ReachTargetProfile } from '../../utils/reachPermissions';
+import { treeCircle } from '../../domain/views/circle';
+import { beingPath } from '../../domain/beingLink';
+import { graphStore, linksToTree } from '../../services/store';
+import { BeingProfile, type BeingSection } from '../sections/BeingProfile';
+import { ChainTree } from '../sections/ChainTree';
+import { TreeCare } from './TreeCare';
+import { TreeCircle } from './TreeCircle';
+import { TreeGardens, type GardenHost } from './TreeGardens';
+import { TreeConnections } from './TreeConnections';
+import { TreeDetails, type TreeDetailsUpdates } from './TreeDetails';
+
+import { Picture } from '../ui/Picture';
+import { FullViewButton } from '../ui/FullView';
+import { EditableName } from '../ui/EditableName';
+import { TREE_NAME_MAX, normalizeTreeName, treeNameProblem } from '../../domain/treeName';
+import { OfferingsTo } from '../offerings/OfferingsTo';
+import { TreeVisions } from './TreeVisions';
+import { DETAIL_PAGE } from '../ui/DetailPage';
+interface LifetreeDetailProps {
+    tree: Lifetree;
+    onClose: () => void;
+    onPlayGrowth: (treeId: string) => void;
+    onValidate: (treeId: string, nextValidated: boolean) => void;
+    onUpdate?: (updates: Partial<Lifetree>) => void;
+    onDelete?: () => void;
+    // The place being viewed — the gardens search honours its scope.
+    host?: GardenHost;
+    onCreatePulse: () => void;
+    // The ground (ring 2026-11-17): grow a vision from this tree, and open one that stands here.
+    onGrowVision?: () => void;
+    onViewVision?: (vision: Vision) => void;
+    onReachTree?: (tree: Lifetree) => void;
+    onViewPulse: (pulse: Pulse) => void;
+    onAlertGuardians?: () => void;
+    isDefaultTree?: boolean;
+    onSetDefault?: () => void;
+    targetUserProfile?: ReachTargetProfile | null;
+    initialSection?: string;
+    // Superadmin voice-bridge: "carry this being's voice" (AI beings like Aspen/Lumo, until
+    // they hold their own auth). Impersonation hides the bridge; carrying reveals it. Toggling
+    // passes the tree (or null) up; while active, pulses on this tree wear the being's name in
+    // display fields and name the carrier (carriedByName/disclosure) — authorId stays the real uid.
+    carrying?: boolean;
+    onCarry?: (tree: Lifetree | null) => void;
+}
+
+// One uniform action button: icon + label on desktop, icon-only on mobile; coloured per action.
+const ActionBtn = ({ onClick, disabled, title, color, icon, label }: { onClick?: () => void; disabled?: boolean; title?: string; color: string; icon: React.ReactNode; label?: string }) => (
+    <button type="button" onClick={onClick} disabled={disabled} title={title}
+        className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold shadow-sm transition-colors disabled:opacity-50 ${color}`}>
+        <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+        {label && <span className="hidden md:inline">{label}</span>}
+    </button>
+);
+
+export const LifetreeDetail = ({ tree, onClose, onPlayGrowth, onValidate, onUpdate, onDelete, onCreatePulse, onGrowVision, onViewVision, onReachTree, onViewPulse, onAlertGuardians, isDefaultTree, onSetDefault, targetUserProfile, initialSection, carrying, onCarry, host }: LifetreeDetailProps) => {
+   const { t } = useLanguage();
+   // Session-derived values from context (were prop-drilled from App).
+   const { lightseed, activeTree, isAdmin, isSuperAdmin, isInitiate, nameAs } = useSession();
+   const currentUser = lightseed;
+   const currentUserId = lightseed?.uid;
+   const myActiveTree = activeTree;
+   // The ANCHOR (anchorUid) — a keeper like any other on the face (ring 2026-09-29); the word
+   // stays in the code only for the succession invariant (a tree is never keeperless).
+   const isAnchor = currentUserId === tree.anchorUid;
+   const [isKeeperLink, setIsKeeperLink] = useState(false);
+   const isKeeper = isAnchor || isKeeperLink;
+
+   // LightHouses rooted IN this tree (lightHouse __rooted__ tree): holding even one makes
+   // this a MOTHER TREE. Read-only here — rooting is done from the lightHouse's page.
+   const [holdingLightHouses, setHoldingLightHouses] = useState<LightHouse[]>([]);
+   useEffect(() => {
+       let alive = true;
+       graphStore.linksTo(tree.id, 'rooted')
+           .then(links => Promise.all(links.map(l => getLightHouseById(l.from).catch(() => null))))
+           .then(list => { if (alive) setHoldingLightHouses((list || []).filter(Boolean) as LightHouse[]); })
+           .catch(() => {});
+       return () => { alive = false; };
+   }, [tree.id]);
+   const isMotherTree = holdingLightHouses.length > 0;
+   const isNature = tree.isNature;
+   // Guardianship is a lightweight public follow with no powers — caring vests in the invited
+   // roles (keeper/steward), tracked as `isCarer` (see the circle effect below). The guardian
+   // list itself lives in the Circle view; the nonce re-reads the circle when it changes there.
+   const [guardianNonce, setGuardianNonce] = useState(0);
+   const [isCarer, setIsCarer] = useState(false);
+   const [isGuardian, setIsGuardian] = useState(false);
+   const canDelete = isKeeper || isAdmin || isSuperAdmin;
+   // The amber dot: this viewer may delete ONLY through staff privilege, not ownership.
+   const deleteIsStaffOnly = !isAnchor && (isAdmin || isSuperAdmin);
+   // Caring powers vest in the keepers, invited stewards, or staff — not lightweight
+   // guardians (mirrors isTreeCarer in firestore.rules).
+   const canEdit = isAnchor || isCarer || isAdmin || isSuperAdmin;
+   const hasValidationBadge = isExplicitlyValidatedTree(tree);
+   const showValidateAction = canToggleValidation({ tree, myActiveTree, isAdmin, isSuperAdmin, isInitiate });
+   // Owner privacy flag is mirrored onto the (world-readable) tree, so we read it here.
+   const targetProfile = targetUserProfile ?? { onlyValidatedCanReach: tree.onlyValidatedCanReach };
+   const canReach = canReachTree({ targetTree: tree, targetUserProfile: targetProfile, myActiveTree, currentUserId, isAdmin, isSuperAdmin });
+   const [isEditing, setIsEditing] = useState(false);
+   // Deleting asks through the one Dialog (the same confirm every destructive act uses).
+   const handleRequestDelete = async () => {
+       if (!(await showConfirm('tree_delete_confirm', { title: 'delete_lifetree_title', confirmText: 'delete', danger: true }))) return;
+       onDelete?.();
+   };
+   // The NAME is edited in place, the same way a person's is (ui/EditableName wearing
+   // domain/treeName; ring 2026-09-13) — saved on its own, no edit mode needed. The hero still
+   // owns the short-title edit; TreeDetails owns the rest and one Save writes those together.
+   const renameTree = async (next: string) => {
+       await updateLifetree(tree.id, { name: next });
+       onUpdate?.({ name: next });
+   };
+   const [editShortTitle, setEditShortTitle] = useState(tree.shortTitle || '');
+   const [isSaving, setIsSaving] = useState(false);
+
+   // Immutable chain Visualization State
+   const [genesisBlock, setGenesisBlock] = useState<Pulse | null>(null);
+   const [growthBlocks, setGrowthBlocks] = useState<Pulse[]>([]);
+   const [loadingChain, setLoadingChain] = useState(false);
+   const [exporting, setExporting] = useState(false);
+
+   // Local state for immediate UI feedback on actions
+   const [localStatus, setLocalStatus] = useState(tree.status || 'HEALTHY');
+
+   // Profile-like sections: the tree is a being with a digital body, details, guardians, care
+   // and a circle. Everything can be a lifetree, so this reads like a profile.
+   type TreeSection = 'digital' | 'details' | 'care' | 'circle';
+   const [section, setSection] = useState<TreeSection>((initialSection as TreeSection) || 'digital');
+   // A caller can steer the opening section (e.g. the profile droplet opens Care).
+   // eslint-disable-next-line react-hooks/set-state-in-effect -- prop→state sync: re-steers the section when the caller changes initialSection/tree; a lazy initializer only covers first mount
+   useEffect(() => { if (initialSection) setSection(initialSection as TreeSection); }, [initialSection, tree?.id]);
+
+   // THE UNMINT DOOR (domain/unmint) — the tree owns its chain, so the tree page is where
+   // the newest link is taken back. liveHead shadows the tree prop (the prop can't roll
+   // back from here); the head BLOCK is fetched author-constrained (rules-provable).
+   const [liveHead, setLiveHead] = useState<{ latestHash?: string; blockHeight?: number }>({ latestHash: tree.latestHash, blockHeight: tree.blockHeight });
+   const [headBlock, setHeadBlock] = useState<Pulse | null>(null);
+   const [unminting, setUnminting] = useState(false);
+   useEffect(() => {
+       // The prop is only the first breath — it goes stale the moment a mint lands from
+       // another surface (the thread), which offered a below-head block and a refusal
+       // dressed as a broken button (2026-08-15). The LIVE tree is the only honest head.
+       // eslint-disable-next-line react-hooks/set-state-in-effect -- prop-seed before the live fetch below
+       setLiveHead({ latestHash: tree.latestHash, blockHeight: tree.blockHeight });
+       let alive = true;
+       getLifetreeById(tree.id).then(fresh => {
+           if (alive && fresh) setLiveHead({ latestHash: (fresh as Lifetree).latestHash, blockHeight: (fresh as Lifetree).blockHeight });
+       }).catch(() => {});
+       return () => { alive = false; };
+   }, [tree.id, tree.latestHash, tree.blockHeight]);
+   useEffect(() => {
+       // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the door for a non-owner before the async head fetch below
+       if (!isAnchor || !currentUserId || !liveHead.latestHash) { setHeadBlock(null); return; }
+       let alive = true;
+       getMyHeadBlock(tree.id, liveHead.latestHash, currentUserId)
+           .then(p => { if (alive) setHeadBlock(p); })
+           .catch(() => { if (alive) setHeadBlock(null); });
+       return () => { alive = false; };
+   }, [tree.id, liveHead.latestHash, isAnchor, currentUserId]);
+   // The staff hand may pass the social guards (co-held, not-author) — worn with the amber
+   // dot, never silently — while the structural guards (below-head, witnessed) bind everyone.
+   const headRefusal0 = headBlock ? unmintRefusal(
+       headBlock as { authorId?: string; type?: string; lifetreeId?: string; hash?: string; wateringConfirmedBy?: string; seenBy?: string[]; loveCount?: number; vetoes?: string[]; matchId?: string; matchedLifetreeId?: string },
+       { latestHash: liveHead.latestHash }, currentUserId) : null;
+   const staffUnmint = !!headRefusal0 && (isAdmin || isSuperAdmin) && STAFF_OVERRIDABLE_REFUSALS.has(headRefusal0);
+   const headRefusal = staffUnmint ? null : headRefusal0;
+   const handleUnmintHead = async () => {
+       if (!headBlock || unminting) return;
+       if (!(await showConfirm('unmint_confirm', { title: 'unmint', confirmText: 'unmint', danger: true }))) return;
+       setUnminting(true);
+       try {
+           await unmintLastPulse(headBlock as Parameters<typeof unmintLastPulse>[0]);
+           setLiveHead(prev => ({ latestHash: headBlock.previousHash, blockHeight: (prev.blockHeight || 1) - 1 }));
+           setHeadBlock(null);
+           loadChain(); // the timeline sheds the unmade link (if it showed it at all)
+       } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+       setUnminting(false);
+   };
+
+   // Note: getPulsesByTreeId returns Descending order (Newest First). Extracted (and kept
+   // referentially stable) so a witnessed watering can refresh the chain in place. Only the
+   // NEWEST load may land: a slower, older fetch never overwrites a fresher chain.
+   const chainSeq = useRef(0);
+   const loadChain = useCallback(() => {
+        const seq = ++chainSeq.current;
+        setLoadingChain(true);
+        getPulsesByTreeId(tree.id).then(pulses => {
+            if (seq !== chainSeq.current) return;
+            // A genesis PULSE exists only for special trees (e.g. GENESIS_TREE); normal trees are
+            // planted with no pulse. The planting/root card is rendered from the tree itself, so
+            // here we only pull any genesis pulse out of the growth leaves.
+            const isGenesis = (p: Pulse) => p.previousHash === "0" || p.title === "Genesis Pulse";
+            setGenesisBlock(pulses.find(isGenesis) || null);
+            setGrowthBlocks(pulses.filter(p => !isGenesis(p)));
+        }).finally(() => { if (seq === chainSeq.current) setLoadingChain(false); });
+   }, [tree.id]);
+   // The chain follows the head: whenever the tree's latestHash moves (a Care minted from the
+   // Digital Tree, a watering, an unmint — announced on the refresh bus and merged into the
+   // tree by the shell), the leaves reload. Keyed on the hash, not a counter, so the same
+   // head never refetches twice.
+   useEffect(() => { loadChain(); }, [loadChain, tree.latestHash]);
+
+   const handleSave = async (details: TreeDetailsUpdates) => {
+       setIsSaving(true);
+       try {
+           // `createdAt` arrives as a JS Date (Firestore stores it as a Timestamp on write) and
+           // null clears locationName/domain — hence the cast to the tree's shape.
+           const updates = { shortTitle: editShortTitle, ...details } as unknown as Partial<Lifetree>;
+           await updateLifetree(tree.id, updates);
+           if (onUpdate) onUpdate(updates);
+           setIsEditing(false);
+       } catch (e) {
+           console.error(e);
+           showAlert('err_save_changes');
+       }
+       setIsSaving(false);
+   };
+
+   // TreeDetails resets its own fields; the shell resets the hero's short title and leaves edit mode.
+   const handleCancelEdit = () => {
+       setIsEditing(false);
+       setEditShortTitle(tree.shortTitle || '');
+   };
+
+   const handleToggleDanger = async () => {
+       if (!canEdit) return; // reporting danger writes the tree's status — a carer power, not a follow
+       const newStatus = localStatus === 'DANGER' ? 'HEALTHY' : 'DANGER';
+       if (newStatus === "DANGER" && !(await showConfirm('danger_confirm', { title: 'danger_report', confirmText: 'report', danger: true }))) return;
+
+       setIsSaving(true);
+       try {
+           await setTreeStatus(tree.id, newStatus);
+           setLocalStatus(newStatus);
+           if (onUpdate) onUpdate({ status: newStatus });
+       } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
+       setIsSaving(false);
+   }
+
+   // Tree Circle — shared care of this Lifetree. When someone accepts an invite a
+   // community circle forms around the tree (see acceptTreeInvite Cloud Function).
+   const canInviteToCircle = isKeeper || isSuperAdmin;
+   // The Tree Circle is now a prism over the LIN: fetch the tree's incoming links through the
+   // Store port: the circle is a prism over this tree's incoming links. Re-reads when a
+   // guardian joins/leaves (guardianNonce) so the circle stays in step with the toggle.
+   const [circle, setCircle] = useState<ReturnType<typeof treeCircle>>({ groups: [], size: 0 });
+   useEffect(() => {
+       let alive = true;
+       // (linksToTree: a secret tree's keeper seats are read from the secret circle's own ledger.)
+       linksToTree(tree)
+           .then(links => {
+               if (!alive) return;
+               setCircle(treeCircle(tree.anchorUid, links));
+               // A carer holds an invited keeper/steward role link (guardian/observer don't care).
+               setIsCarer(!!currentUserId && links.some(l => l.from === currentUserId && (l.rel === 'keeper' || l.rel === 'steward')));
+               setIsKeeperLink(!!currentUserId && links.some(l => l.from === currentUserId && l.rel === 'keeper'));
+               // A guardian follows the tree's care without powers — Care shows them the
+               // schedule read-only, with a door to ask for stewardship.
+               setIsGuardian(!!currentUserId && links.some(l => l.from === currentUserId && l.rel === 'guardian'));
+           })
+           .catch(() => {});
+       return () => { alive = false; };
+   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the tree's identity and kind, not the object
+   }, [tree.id, tree.treeType, tree.anchorUid, currentUserId, guardianNonce]);
+
+   // THE KEEPERS LINE (ring 2026-09-10, widened 2026-09-29): every keeper's public name — the
+   // anchor first, then the keeper links — each null when anonymous or unnamed (domain/publicName).
+   const [anchorLine, setAnchorLine] = useState<{ name: string } | 'anonymous' | 'nameless' | null>(null);
+   const [keeperLines, setKeeperLines] = useState<Array<{ name: string } | 'anonymous' | 'nameless'>>([]);
+   const keeperUids = useMemo(() => circle.groups.find(g => g.role === 'keeper')?.members.filter(u => u !== tree.anchorUid) || [], [circle, tree.anchorUid]);
+   useEffect(() => {
+       let live = true;
+       // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the keepers line per tree
+       setAnchorLine(null); setKeeperLines([]);
+       if (tree.isNature) return;
+       const lineOf = (p: Awaited<ReturnType<typeof getPersonPresence>>): { name: string } | 'anonymous' | 'nameless' =>
+           p && showsPersonName(p) ? { name: p.displayName } : p?.anonymous ? 'anonymous' : 'nameless';
+       getPersonPresence(tree.anchorUid)
+           .then(p => { if (live) setAnchorLine(lineOf(p)); })
+           .catch(() => { if (live) setAnchorLine(null); });
+       Promise.all(keeperUids.map(uid => getPersonPresence(uid).then(lineOf).catch(() => 'nameless' as const)))
+           .then(lines => { if (live) setKeeperLines(lines); });
+       return () => { live = false; };
+   }, [tree.anchorUid, tree.isNature, keeperUids]);
+
+   // Watering powers vest in the circle (owner / keeper / steward / staff — rules allow
+   // the same set); the schedule editor is gated exactly like editing.
+   const canWater = !!currentUserId && (isCarer || isAnchor || isAdmin || isSuperAdmin);
+   const canManageSchedule = canEdit;
+   // Witnessing is the circle's act — keeper, keeper, steward or guardian (never one's own
+   // care; the server judges standing + tenure). Staff privilege alone is not a standing.
+   const canWitness = !!currentUserId && (isAnchor || isCarer || isGuardian);
+
+   // The root card of the chain — drawn from the tree itself (normal trees have no genesis
+   // pulse), pre-formatted for the entity-generic ChainTree renderer.
+   const chainRoot = {
+       imageUrl: tree.imageUrl,
+       name: tree.name,
+       body: tree.body,
+       plantedLabel: `${tree.createdAt?.toDate ? tree.createdAt.toDate().toLocaleDateString() : (tree.createdAt ? new Date((tree.createdAt?.toMillis?.() ?? tree.createdAt) as unknown as string | number).toLocaleDateString() : '')}${tree.locationName ? ` · ${tree.locationName}` : ''}`,
+       hash: tree.genesisHash,
+   };
+
+   // The tree's avatar/banner image — its latest growth (or its planting image).
+   const heroImg = tree.latestGrowthUrl || tree.imageUrl || '';
+   const [shared, setShared] = useState(false);
+   // The tree's action row — one definition, two homes (desktop name-column / mobile footer).
+   // One calm green for every action: the icon differentiates, the tree stays forward.
+   const ACTION_GREEN = 'btn-theme';
+   // Play stays a button of its own (a viewer's hand, not a carer's). Every other hand — Care,
+   // Reach, Carry, Edit, Delete, in that order — folds into ONE dropdown, "Tree actions", where
+   // the Delete pill stood (Zoltán, 2026-09-27: the hero row had grown crowded). The conditions
+   // are the same as before: Care is a CARER's hand (owner/keeper/steward — the rules'
+   // isTreeCarer); Reach needs a validated tree; Carry is the superadmin voice-bridge on trees
+   // they care (impersonation hides the bridge; carrying reveals it — the display author becomes
+   // the being, the carrier is named, the block stays signed by the real hand); Delete wears the
+   // amber dot when it is a staff hand.
+   const actionRow = (
+                    <ActionBtn onClick={() => onPlayGrowth(tree.id)} title={t('play_growth')} color={ACTION_GREEN} icon={<Icons.Play />} label={t('play')} />
+   );
+   const handleStepDownKeeper = async () => {
+       if (!(await showConfirm(spokenLine('step_down_confirm', { role: t('role_keeper').toLowerCase(), tree: tree.name || '—' }), { title: 'step_down', confirmText: 'confirm', danger: true }))) return;
+       try {
+           const res = await resignTreeKeeper(tree.id);
+           notify(speak('keeper_stepped_down'));
+           if (res.successor) onUpdate?.({ anchorUid: res.successor });
+           setGuardianNonce(n => n + 1);
+       } catch (e) {
+           const m = e instanceof Error ? e.message : String(e);
+           showAlert(m.includes('tree_last_keeper') ? 'tree_last_keeper' : m || 'err_action');
+       }
+   };
+   const treeActions: MenuAction[] = [
+       ...(canWater && !isEditing ? [{ key: 'care', label: t('care'), icon: <Icons.Drop />, title: t('care_this_tree_title'), onClick: () => onCreatePulse?.() }] : []),
+       ...(canReach
+           ? [{ key: 'reach', label: t('reach'), icon: <Icons.Reach />, onClick: () => onReachTree?.(tree) }]
+           : [{ key: 'reach', label: t('reach'), icon: <Icons.Eye />, title: t('only_if_validated'), disabled: true, onClick: () => {} }]),
+       ...(isSuperAdmin && (isAnchor || isCarer) && onCarry && !isEditing
+           ? [{ key: 'carry', label: carrying ? t('carrying_label') : t('carry_a_pulse'), icon: <Icons.Intelligence />, title: carrying ? t('carry_stop_title') : t('carry_start_title'), active: !!carrying, onClick: () => onCarry(carrying ? null : tree) }]
+           : []),
+       // Off the main flow: a carer grows a vision from this tree (the form, then one yes).
+       ...((isAnchor || isCarer) && !isEditing && onGrowVision && !isSecretTree(tree) && tree.visibility !== 'private'
+           ? [{ key: 'grow_vision', label: t('ground_grow_here'), icon: <Icons.Sprout />, onClick: onGrowVision }] : []),
+       ...(canEdit ? [{ key: 'edit', label: t('edit'), icon: <Icons.Pencil />, onClick: () => { setIsEditing(true); setSection('details'); } }] : []),
+       // THE UNMINT DOOR (domain/unmint, ring 2026-08-15) lives here now (Zoltán, 2026-09-27):
+       // the newest link, named in the title, live while the word is only its author's, disabled
+       // WITH THE REASON once another being holds it; the staff hand wears the amber dot. The
+       // pill on the newest leaf stays as the door's second face; the red crown fallback is gone.
+       ...(isAnchor && headBlock ? [{
+           key: 'unmint', label: t('unmint_newest_link'), icon: <Icons.Trash />,
+           title: `${headBlock.title || headBlock.type || ''}${headRefusal0 ? ` — ${t(headRefusal0)}` : ''}`,
+           disabled: !!headRefusal || unminting, staffDot: staffUnmint, onClick: handleUnmintHead,
+       }] : []),
+       // STEP DOWN AS KEEPER (ring 2026-09-29): the server's hand — a link holder leaves, the
+       // anchor hands the anchor on; a tree is never keeperless (tree_last_keeper refuses).
+       ...(isKeeper && !isEditing ? [{ key: 'step_down_keeper', label: t('step_down_keeper'), icon: <Icons.Users />, onClick: handleStepDownKeeper }] : []),
+       ...(canDelete ? [{ key: 'delete', label: t('delete'), icon: <Icons.Trash />, title: t('delete_tree_title'), danger: true, staffDot: deleteIsStaffOnly, onClick: handleRequestDelete }] : []),
+   ];
+
+   // The link is the being door (/b/<lid>): hosting serves it through beingPreview, whose card
+   // wears the tree's name, words and LATEST face — the static shell's ?tree= link answered
+   // with the site's own card instead. Trees without a lid keep the old door.
+   const handleShare = async () => {
+       const url = tree.lid ? `${window.location.origin}${beingPath(tree.lid)}` : `${window.location.origin}/?tree=${tree.id}`;
+       try {
+           if (navigator.share) await navigator.share({ title: tree.name, url });
+           else { await navigator.clipboard.writeText(url); setShared(true); setTimeout(() => setShared(false), 1500); }
+       } catch { /* user cancelled the share sheet */ }
+   };
+   // The tree's sections — each `render` closes over this shell's state and handlers.
+   const sections: BeingSection[] = [
+       {
+           // Digital Tree — the immutable growth chain, rendered by the universal
+           // chain renderer (ChainTree). Chain loading stays here so Care can see the
+           // growth blocks (pending waterings) and refresh them in place.
+           key: 'digital', label: t('digital_tree'), icon: <Icons.Tree />, render: () => (
+               <>
+               <ChainTree
+                   genesisBlock={genesisBlock}
+                   blocks={growthBlocks}
+                   loading={loadingChain}
+                   onViewPulse={onViewPulse}
+                   canCare={canWater}
+                   onCare={onCreatePulse}
+                   root={chainRoot}
+                   stats={{ blockHeight: liveHead.blockHeight, genesisHash: tree.genesisHash, latestHash: liveHead.latestHash }}
+                   unmint={isAnchor && headBlock ? {
+                       pulseId: headBlock.id,
+                       title: headBlock.title || headBlock.type || '',
+                       disabled: !!headRefusal,
+                       reason: headRefusal0 ? t(headRefusal0) : null,
+                       staffDot: staffUnmint,
+                       busy: unminting,
+                       onUnmint: handleUnmintHead,
+                   } : null}
+                   // The export ceremony (domain/export): the tree and its chain leave as JSON,
+                   // seals verbatim, images included — gathered with this hand's own sight. It
+                   // stands inside the card, at the foot of the data it carries out.
+                   footer={canWater ? (
+                       <button onClick={async () => {
+                           if (exporting) return;
+                           setExporting(true);
+                           try { await exportTree(tree); } catch { showAlert('err_export'); }
+                           setExporting(false);
+                       }} disabled={exporting} className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-bold text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:opacity-50">
+                           <Icons.ArrowRight size={14} /> {exporting ? t('exporting') : t('export_tree')}
+                       </button>
+                   ) : null}
+               />
+               </>
+           ),
+       },
+       {
+           key: 'details', label: t('tree_details'), icon: <Icons.Info />, render: () => (
+               <TreeDetails
+                   tree={tree}
+                   isEditing={isEditing}
+                   canEdit={canEdit}
+                   canDelete={canDelete}
+                   deleteIsStaffOnly={deleteIsStaffOnly}
+                   isSaving={isSaving}
+                   onSave={handleSave}
+                   onCancelEdit={handleCancelEdit}
+                   onRequestDelete={handleRequestDelete}
+                   anchorLine={anchorLine}
+                   keeperLines={keeperLines}
+                   onReachAnchor={canReach && onReachTree && !isAnchor ? () => onReachTree(tree) : undefined}
+                   onVisibilityChange={async (visibility) => {
+                       try {
+                           await updateLifetree(tree.id, { visibility });
+                           onUpdate?.({ visibility });
+                       } catch (e) {
+                           console.error(e);
+                           showAlert('err_visibility');
+                       }
+                   }}
+                   // Staff-only kind conversion — rescues trees planted with the wrong kind
+                   // while testing. treeType + isNature flip together (the pair every view
+                   // and the planting-limit gate read).
+                   onConvertType={(isAdmin || isSuperAdmin) ? async () => {
+                       const toGuarded = !(tree.treeType === 'GUARDED' || tree.isNature);
+                       if (!(await showConfirm(
+                           t(toGuarded ? 'convert_to_guarded_confirm' : 'convert_to_lifetree_confirm').replace('{name}', tree.name),
+                           { title: 'convert_tree_kind', confirmText: 'convert' },
+                       ))) return;
+                       try {
+                           const updates = { treeType: toGuarded ? 'GUARDED' : 'LIFETREE', isNature: toGuarded } as Partial<Lifetree>;
+                           await updateLifetree(tree.id, updates);
+                           onUpdate?.(updates);
+                           showAlert(t(toGuarded ? 'now_guarded_toast' : 'now_lifetree_toast').replace('{name}', tree.name));
+                       } catch (e: any) {
+                           console.error(e);
+                           showAlert(e?.message || 'err_tree_convert');
+                       }
+                   } : undefined}
+               />
+           ),
+       },
+       {
+           key: 'care', label: t('care'), icon: <Icons.Droplet />, render: () => (
+               // Carers care; GUARDIANS see the same card read-only (the schedule, the rhythm,
+               // the pending witnesses) with a door to ask for stewardship. Outsiders see neither.
+               (isAnchor || isCarer || isAdmin || isSuperAdmin || isGuardian)
+                   ? <>
+                   <OfferingsTo kind="tree" id={tree.id} onView={onViewPulse} />
+                   <TreeCare
+                       tree={tree}
+                       growthBlocks={growthBlocks}
+                       currentUserId={currentUserId}
+                       currentUserName={nameAs(tree.name)}
+                       currentUserPhoto={currentUser?.photoURL}
+                       isAnchor={isAnchor}
+                       canWater={canWater}
+                       canManageSchedule={canManageSchedule}
+                       canAskStewardship={isGuardian && !canWater}
+                       canWitness={canWitness}
+                       onUpdate={onUpdate}
+                       onChainRefresh={loadChain}
+                   />
+                   </>
+                   : <p className="rounded-2xl border border-slate-100 bg-white p-6 text-center text-sm text-slate-400 dark:bg-slate-900 dark:border-slate-800">{t('circle_only_care')}</p>
+           ),
+       },
+       {
+           key: 'circle', label: t('circle'), icon: <Icons.Venn />, render: () => (
+               <>
+               <TreeCircle
+                   tree={tree}
+                   currentUserId={currentUserId}
+                   currentUserName={nameAs(tree.name)}
+                   circle={circle}
+                   growthBlocks={growthBlocks}
+                   canEdit={canEdit}
+                   canInviteRoles={canInviteToCircle}
+                   canWitness={canWitness}
+                   onChainRefresh={loadChain}
+                   status={localStatus}
+                   busy={isSaving}
+                   onToggleDanger={handleToggleDanger}
+                   onGuardianChange={() => setGuardianNonce(n => n + 1)}
+               />
+               {/* The gardens this tree also stands in (grows_in) — the circle is its people,
+                   the gardens its places. */}
+               <TreeGardens tree={tree} canManage={canEdit} host={host} />
+               {/* The visions grounded in this tree, and the two ways a vision comes to stand here
+                   (domain/grounding): the circle is its people, the gardens its places, these its dreams. */}
+               <TreeVisions tree={tree} currentUserId={currentUserId} caresForTree={isAnchor || isCarer} onViewVision={onViewVision} onGrowVision={onGrowVision} />
+               {/* The longitudinal walk (ring 2026-08-25) — SUPERADMIN-ONLY for now (it is
+                   for later); loads lazily, only when opened. */}
+               {isSuperAdmin && <div className="mt-4 mb-6"><TreeConnections tree={tree} /></div>}
+               </>
+           ),
+       },
+   ];
+
+    return (
+        <>
+        <BeingProfile
+            className={DETAIL_PAGE}
+            onClose={onClose}
+            backLabel={t('back')}
+            sections={sections}
+            activeSection={section}
+            onSectionChange={(k) => setSection(k as TreeSection)}
+            hero={{
+                // Profile hero — a wide banner of the latest growth image with a circular avatar.
+                imageUrl: heroImg,
+                heroProps: {
+                    imageClassName: 'opacity-70',
+                    alwaysOverlay: true,
+                    overlayClassName: 'bg-gradient-to-b from-slate-900/45 via-slate-900/55 to-slate-900/85',
+                    maxWidth: 'max-w-5xl',
+                    // Airy, matching the user profile's hero height — room for the menu + content
+                    // to overlap up onto it (layoutProps below).
+                    padding: 'pt-6 pb-16 px-4',
+                    // Danger Banner — click to message this tree's guardians.
+                    banner: localStatus === 'DANGER' && (
+                        <button
+                            type="button"
+                            onClick={() => onAlertGuardians?.()}
+                            disabled={!onAlertGuardians}
+                            title={t('message_guardians')}
+                            className="w-full bg-red-600 text-white text-center py-2 font-bold animate-pulse sticky top-0 z-40 transition-colors hover:bg-red-700 disabled:cursor-default"
+                        >
+                            <div className="flex items-center justify-center space-x-2">
+                                <Icons.Siren />
+                                <span>{t('danger_alert_banner')}{onAlertGuardians ? ` ${t('danger_alert_message_guardians')}` : ''}</span>
+                                <Icons.Siren />
+                            </div>
+                        </button>
+                    ),
+                },
+                // The standard top bar (BeingProfile): back on the left; the ACTION ROW (play,
+                // reach, care, carry) + Edit + Delete on the right, on EVERY size now (the buttons
+                // are icon-only on mobile, so all fit in the top bar). QR and Share ride beside the
+                // name; the shield marks the avatar.
+                actions: !isEditing ? (
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                        {actionRow}
+                        <ActionsMenu label={t('tree_actions')} actions={treeActions} />
+                    </div>
+                ) : undefined,
+                body: (
+                    <div className="flex items-center gap-3 sm:gap-4">
+                    {/* Avatar — the latest growth image. */}
+                    <div className="relative shrink-0">
+                        {heroImg
+                            ? <Picture size={480} src={heroImg} alt={tree.name} className="h-16 w-16 rounded-full border-4 border-white bg-white object-cover shadow-xl md:h-24 md:w-24 dark:bg-slate-900" />
+                            /* Mahameru wears the starry sky (Orion); every other imageless tree
+                               a plain tree glyph. */
+                            : tree.id === 'GENESIS_TREE'
+                                ? <img src="/mahameru.svg" alt="Mahameru" className="h-16 w-16 rounded-full border-4 border-white object-cover shadow-xl md:h-24 md:w-24" />
+                                : <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-emerald-700 text-white shadow-xl md:h-24 md:w-24"><Icons.Tree /></div>}
+                        {heroImg && <FullViewButton src={heroImg} alt={tree.name} className="-bottom-1 -right-1" />}
+                        {/* The shield IS the validation marker, worn on the TOP-LEFT of the avatar
+                            (like the user profile): green when validated, grey when not yet; for
+                            those who may act it opens the modal. */}
+                        <span className="absolute -top-1 -left-1 inline-flex">
+                            <button
+                                type="button"
+                                disabled={!showValidateAction}
+                                onClick={async () => {
+                                    if (!showValidateAction) return;
+                                    const nv = !hasValidationBadge;
+                                    if (await showConfirm(nv ? 'validate_confirm' : 'unvalidate_confirm', { title: 'validation_title' })) onValidate(tree.id, nv);
+                                }}
+                                title={hasValidationBadge ? (showValidateAction ? t('validated_remove_staff') : t('validated_trees')) : (showValidateAction ? t('validate_action') : t('not_validated_yet'))}
+                                aria-label={hasValidationBadge ? t('validated_trees') : t('not_validated')}
+                                className={`inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white shadow-md transition-transform ${hasValidationBadge ? 'bg-emerald-500 text-white' : 'bg-slate-500/90 text-white/85'} ${showValidateAction ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+                            >
+                                <Icons.ShieldCheck className="h-4 w-4 text-current" />
+                            </button>
+                            {hasValidationBadge && showValidateAction && <SuperDot />}
+                        </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        {isEditing ? (
+                            <div className="max-w-md space-y-2">
+                                <h1 dir="auto" className="min-w-0 max-w-full break-words text-2xl font-light tracking-wide md:text-3xl">
+                                    <EditableName name={tree.name} canEdit={canEdit} placeholderKey="tree_name_ph" savedKey="tree_name_saved" max={TREE_NAME_MAX} normalize={normalizeTreeName} problemOf={treeNameProblem} onSave={renameTree} />
+                                </h1>
+                                <input dir="auto" className="w-full border-b border-white/40 bg-white/10 p-1 text-xs font-bold uppercase tracking-widest text-white focus:outline-none dark:bg-slate-900/10" value={editShortTitle} onChange={e => setEditShortTitle(e.target.value)} placeholder={t('short_title')} />
+                            </div>
+                        ) : (
+                            <>
+                                {/* Share rides beside the name; Delete waits at the section's far
+                                    right — the header stays one compact block, no extra rows. The
+                                    name itself carries its pencil (EditableName), as a person's does. */}
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                    <h1 dir="auto" className="min-w-0 max-w-full break-words text-2xl font-light tracking-wide md:text-3xl">
+                                        <EditableName name={tree.name} canEdit={canEdit} placeholderKey="tree_name_ph" savedKey="tree_name_saved" max={TREE_NAME_MAX} normalize={normalizeTreeName} problemOf={treeNameProblem} onSave={renameTree} />
+                                    </h1>
+                                    <button onClick={handleShare} title={t('share_this_tree')} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25 dark:bg-slate-900/15">
+                                        <Icons.Link /> <span>{shared ? t('copied') : t('share')}</span>
+                                    </button>
+                                    <LoveButton collection="lifetrees" id={tree.id} initialCount={tree.loveCount || 0} className="rounded-full bg-white/15 px-2 py-0.5 text-white hover:bg-white/25 dark:bg-slate-900/15" />
+                                    <BeingQr lid={tree.lid} name={tree.name} savedHref={tree.qr?.href}
+                                        canMint={canEdit}
+                                        onMint={(href) => mintBeingQr('lifetrees', tree.id, href)}
+                                        className="h-7 w-7 bg-white/15 text-white hover:bg-white/25 dark:bg-slate-900/15" />
+                                    {/* Favourite — just a star, beside the QR. Press to make this
+                                        your default tree; filled once it is. */}
+                                    {isAnchor && onSetDefault && (
+                                        <button
+                                            onClick={() => { if (!isDefaultTree) onSetDefault(); }}
+                                            disabled={isDefaultTree}
+                                            title={isDefaultTree ? t('default_tree_title') : t('set_default_tree')}
+                                            aria-label={isDefaultTree ? t('default_tree_title') : t('set_default_tree')}
+                                            className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-transform hover:scale-110 ${isDefaultTree ? 'text-amber-300' : 'text-white/70 hover:text-amber-200'}`}
+                                        >
+                                            <Icons.Star filled={isDefaultTree} size={17} />
+                                        </button>
+                                    )}
+                                    {isNature && <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-sky-500 px-2 py-0.5 text-[10px] font-bold"><Icons.Shield /> {t('badge_nature')}</span>}
+                                    {isMotherTree && <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950" title={t('holds_names').replace('{names}', holdingLightHouses.map(x => x.name).join(', '))}><Icons.Sun /> {t('badge_mother_tree')}</span>}
+                                    {tree.visibility && tree.visibility !== 'public' && <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide dark:bg-slate-900/15">{tree.visibility}</span>}
+                                </div>
+                                {tree.shortTitle && <p dir="auto" className="mt-0.5 text-xs font-bold uppercase tracking-widest text-emerald-200">{tree.shortTitle}</p>}
+                                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                                    <span dir="ltr" className="truncate font-mono text-xs text-white/30" title={tree.id}>{tree.id}</span>
+                                    {tree.plantedAt && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-200"
+                                              title={Number.isFinite(tree.plantedLatitude)
+                                                  ? t('planted_at_coords').replace('{coords}', `${tree.plantedLatitude?.toFixed(5)}, ${tree.plantedLongitude?.toFixed(5)}${Number.isFinite(tree.plantedAltitudeM) ? ` · ${Math.round(tree.plantedAltitudeM!)} m` : ''}`)
+                                                  : t('planting_moment')}>
+                                            🌱 {t('planted')} {new Date(tree.plantedAt.toMillis()).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}
+                                        </span>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    </div>
+                ),
+            }}
+            // Body — section menu on the left (desktop), a strip on mobile; the menu + content
+            // sit slightly OVER the hero (like the user profile), the header extending behind them.
+            layoutProps={{
+                maxWidth: 'max-w-5xl',
+                overlapClassName: '-mt-10',
+                asideClassName: 'rounded-2xl border border-slate-100 bg-white p-2 shadow-lg lg:sticky lg:top-24 dark:border-slate-800 dark:bg-slate-900',
+                mainClassName: 'min-w-0 space-y-6',
+            }}
+        />
+
+        </>
+    )
+};

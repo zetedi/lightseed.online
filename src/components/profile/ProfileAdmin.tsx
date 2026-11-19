@@ -11,6 +11,8 @@ import { STAFF_HANDS, staffHandOn, type StaffHandSwitches } from '../../domain/s
 import { listenStaffHands, setStaffHand } from '@backend/staffHands';
 import { SectionTitle } from '../ui/SectionTitle';
 import { speak, spokenLine, say } from '../../utils/translations';
+import { SettingRow } from '../ui/SettingRow';
+import { Switch } from '../ui/Switch';
 
 interface ProfileAdminProps {
   uid: string;
@@ -188,10 +190,7 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
                     <p className="truncate text-[10px] font-mono text-slate-400" title={h.enforcedBy.join(' · ')}>{h.id} · {h.since} · {h.enforcedBy[0]}</p>
                   </div>
                   {h.switchable ? (
-                    <button type="button" role="switch" aria-checked={on} onClick={() => setStaffHand(h.id, !on).catch(() => showAlert('err_save_retry'))}
-                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${on ? 'bg-violet-600' : 'bg-slate-300 dark:bg-slate-700'}`}>
-                      <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : 'translate-x-0'}`} />
-                    </button>
+                    <Switch tone="violet" on={on} onChange={next => setStaffHand(h.id, next).catch(() => showAlert('err_save_retry'))} />
                   ) : (
                     <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">{t('admin_hands_fixed')}</span>
                   )}
@@ -282,25 +281,18 @@ export const ProfileAdmin: React.FC<ProfileAdminProps> = ({
           </div>
           {/* The AI dial — node-paid default AI for validated members only (ring 2026-08-25).
               Its own field-scoped save, so it never disturbs the caps above. */}
-          <div className="mt-2 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Intelligence /></span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('ai_dial_title')}</p>
-              <p className="mt-0.5 text-sm text-slate-500">{t('ai_dial_hint')}</p>
-            </div>
-            <button
-              role="switch" aria-checked={aiValidatedOnly} disabled={savingAiDial}
-              onClick={async () => {
-                const next = !aiValidatedOnly;
-                setSavingAiDial(true); setAiValidatedOnly(next);
-                try { await setNodeAiValidatedOnly(next); }
-                catch (e: any) { setAiValidatedOnly(!next); notify(e?.message || t('err_save_retry'), 'error'); }
-                setSavingAiDial(false);
-              }}
-              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${aiValidatedOnly ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}>
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${aiValidatedOnly ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-          </div>
+          <SettingRow
+            className="mt-2"
+            icon={<Icons.Intelligence />}
+            title={t('ai_dial_title')}
+            note={t('ai_dial_hint')}
+            control={<Switch on={aiValidatedOnly} disabled={savingAiDial} onChange={async next => {
+              setSavingAiDial(true); setAiValidatedOnly(next);
+              try { await setNodeAiValidatedOnly(next); }
+              catch (e: any) { setAiValidatedOnly(!next); notify(e?.message || t('err_save_retry'), 'error'); }
+              setSavingAiDial(false);
+            }} />}
+          />
         </div>
       )}
       {!superAdminExists && (

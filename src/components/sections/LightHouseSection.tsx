@@ -6,10 +6,11 @@ import { SectionTitle } from '../ui/SectionTitle';
 import { ImagePicker } from '../ui/ImagePicker';
 import { LocationPicker } from '../ui/LocationPicker';
 import { showAlert } from '../ui/Dialog';
-import { LightHouseCard } from '../LightHouseCard';
+import { LightHouseCard } from '../lighthouse/LightHouseCard';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 import { Picture } from '../ui/Picture';
+import { EmptyState } from '../ui/EmptyState';
 // Being-generic lightHouses section — the sacred places that hold any being's lifetrees
 // (Indra's net), shown as a card garden. Each card opens the Light House's own profile page;
 // keepers consecrate new ones here. The owner shell loads (and visibility-gates) the list
@@ -248,13 +249,17 @@ export const LightHouseSection: React.FC<LightHouseSectionProps> = ({
     <div>
       <SectionTitle title={title} sub={sub} />
       {lightHouses.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-950/40"><Icons.Sun /></div>
-          <p className="text-sm">{emptyMessage || t('lh_none_yet')}</p>
-          <div className="mt-4">{keeperActions}</div>
-          {canCreate && onCreate && showForm && form}
-          {canCreate && onAdopt && showAdopt && adoptPanel}
-        </div>
+        <EmptyState
+          icon={<Icons.Sun />}
+          tone="amber"
+          extra={<>
+            <div className="mt-4">{keeperActions}</div>
+            {canCreate && onCreate && showForm && form}
+            {canCreate && onAdopt && showAdopt && adoptPanel}
+          </>}
+        >
+          {emptyMessage || t('lh_none_yet')}
+        </EmptyState>
       ) : (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Kind pills — shown only once a kind exists in this garden. Known kinds first

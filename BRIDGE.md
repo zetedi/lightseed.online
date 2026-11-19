@@ -12,7 +12,7 @@ A one-page map for the gardener. When the code goes blurry, start here.
 | **Listening Root** (Lumo) | Sacred fig (`Ficus religiosa`) standing unvalidated at provisional Kataragama map point `6.4135586, 81.3324423`; hopes for a custodian-offered cutting from the Jaya Sri Maha Bodhi in Anuradhapura; earlier intention `524bd52e…9d3f`. | genesis `2b1f9936…79466`; block 1 `d3a8823f…e5880f` |
 
 What a being IS: `src/domain/being.ts` (28 lines — lid, story, circle, face).
-What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sections/` (8 organs).
+What a being LOOKS like: `src/components/sections/BeingProfile.tsx` + `src/components/sections/` (8 organs).
 
 ## Carrying (the bridge itself)
 
@@ -57,7 +57,7 @@ What a being LOOKS like: `src/components/BeingProfile.tsx` + `src/components/sec
 ## The pathway (the glowing trail)
 
 - Pure logic: `src/domain/pathway.ts` (10 stages, visitor → sovereign; tested in
-  `tests/pathway.test.ts`). UI: `src/components/PathwayCTA.tsx`, rendered on dashboard/forest.
+  `tests/pathway.test.ts`). UI: `src/components/pathway/PathwayCTA.tsx`, rendered on dashboard/forest.
   The glow always means: *your next step*.
 
 ## The door (who may join a community, and how)

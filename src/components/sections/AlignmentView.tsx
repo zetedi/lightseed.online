@@ -7,9 +7,10 @@ import { Loading } from '../ui/Loading';
 import { Picture } from '../ui/Picture';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { SectionTitle } from '../ui/SectionTitle';
-import { BeingProfile, type BeingSection } from '../BeingProfile';
-import { CovenantPanel } from '../CovenantPanel';
+import { BeingProfile, type BeingSection } from './BeingProfile';
+import { CovenantPanel } from '../covenant/CovenantPanel';
 import { speak } from '../../utils/translations';
+import { DETAIL_PAGE_GROUNDED } from '../ui/DetailPage';
 
 // THE alignment view — an alignment is a Being like every other, so it wears the same face
 // (BeingProfile): a hero carrying its NAME (the two trees it binds), and a section menu — The
@@ -283,7 +284,7 @@ export const AlignmentView = ({ alignment, currentUserId, onClose, onViewTree, n
 
   return (
     <BeingProfile
-      className="min-h-screen animate-in fade-in zoom-in-95 duration-300 pb-20 bg-slate-50 dark:bg-slate-900"
+      className={DETAIL_PAGE_GROUNDED}
       onClose={onClose}
       backLabel={t('back')}
       hero={{

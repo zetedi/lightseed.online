@@ -5,8 +5,8 @@ import { Icons } from '../ui/Icons';
 import { Alignment, Lifetree, VisionSynergy } from '../../types';
 import { getMyAlignmentsHistory, getLifetreeById } from '@backend';
 import { SectionTitle } from '../ui/SectionTitle';
-import { Loading } from '../ui/Loading';
-import { ResonanceCard, resonanceId } from '../ResonancePanel';
+import { LoadingPanel } from '../ui/Loading';
+import { ResonanceCard, resonanceId } from '../pulse/ResonancePanel';
 
 interface ProfileHistoryProps {
   uid: string;
@@ -80,7 +80,7 @@ export const ProfileHistory: React.FC<ProfileHistoryProps> = ({ uid, onViewAlign
         </div>
       )}
 
-      {loading ? <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16 dark:bg-slate-900/50 dark:border-slate-800"><Loading /></div> : (
+      {loading ? <LoadingPanel /> : (
         <div className="space-y-3">
           {history.length === 0 ? <p className="text-slate-400 text-center py-10">{t('no_history')}</p> : history.map((h) => {
             const a = treesById[h.initiatorTreeId];

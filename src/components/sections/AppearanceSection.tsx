@@ -7,6 +7,7 @@ import { normalizeTheme } from '../../utils/theme';
 import { AppearanceEditor } from '../ui/AppearanceEditor';
 import { AutosaveMark } from '../ui/AutosaveMark';
 import type { AutosaveState } from '../../domain/autosave';
+import { SECTION_BREAK } from '../ui/SettingRow';
 
 // Being-generic appearance section — how any being presents itself (Indra's net): name,
 // logo, hero, gallery, theme, footer links and carousel quotes. The section is purely
@@ -120,7 +121,7 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
       />
 
       {/* Footer links — shown in the site footer. */}
-      <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
+      <div className={SECTION_BREAK}>
         <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">{linksTitle || t('links_title')}</h4>
         <p className="mb-3 text-xs text-slate-500">{t('footer_links_note')}</p>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -144,7 +145,7 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
       </div>
 
       {/* Home carousel quotes — reflections shown to signed-out visitors. */}
-      <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
+      <div className={SECTION_BREAK}>
         <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">{t('carousel_quotes')}</h4>
         <p className="mb-3 text-xs text-slate-500">{t('carousel_quotes_note')}</p>
         <div className="space-y-2">

@@ -25,7 +25,7 @@ const walk = (dir: string): string[] =>
 const CORS_MODE = /crossorigin|crossOrigin/;
 
 const TILE_LAYERS = [
-  'components/ForestMap.tsx',
+  'components/forest/ForestMap.tsx',
   'components/ui/MiniForestMap.tsx',
   'components/ui/LocationPicker.tsx',
 ];

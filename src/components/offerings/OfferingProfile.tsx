@@ -15,7 +15,7 @@ import { offeringStatusOf, canWithdrawOffering, canAnswerOffering } from '../../
 import { giftsWaiting } from '../../domain/gift';
 import { appreciateOffering, hasAppreciated } from '@backend/light';
 import { say, speak } from '../../utils/translations';
-import { BeingProfile, type BeingSection } from '../BeingProfile';
+import { BeingProfile, type BeingSection } from '../sections/BeingProfile';
 import { ChainTree } from '../sections/ChainTree';
 import { formatLight, RAY_UNITS } from '../../domain/light';
 import { useCoin } from '../../hooks/useCoin';
@@ -24,6 +24,8 @@ import { notify } from '../ui/Toast';
 import { showAlert } from '../ui/Dialog';
 import type { Pulse } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { DETAIL_PAGE } from '../ui/DetailPage';
+import { Switch } from '../ui/Switch';
 
 // THE OFFERING'S OWN FACE — an offering is a being (it carries a lid, a QR, a heart), so it
 // wears the shared BeingProfile like a tree or a bed. Its tree view is its LIFECYCLE: the
@@ -280,16 +282,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{active ? t('offering_standing') : t('offering_resting')}</p>
                 <p className="text-xs text-slate-500">{active ? t('offering_standing_note') : t('offering_resting_note')}</p>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={active}
-                disabled={busy}
-                onClick={toggleActive}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-50 ${active ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
-              >
-                <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${active ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
+              <Switch on={active} onChange={() => toggleActive()} disabled={busy} />
             </div>
           )}
         </div>
@@ -299,7 +292,7 @@ export const OfferingProfile: React.FC<OfferingProfileProps> = ({ offering, onCl
 
   return (
     <BeingProfile
-      className="min-h-screen animate-in fade-in zoom-in-95 duration-300"
+      className={DETAIL_PAGE}
       onClose={onClose}
       banner={careBanner}
       backLabel={t('back_forest')}

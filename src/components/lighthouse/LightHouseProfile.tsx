@@ -1,0 +1,388 @@
+import { useEffect, useState } from 'react';
+import { LightHouseCareCard } from './LightHouseCareCard';
+import { Icons } from '../ui/Icons';
+import { OutwardLink } from '../ui/OutwardLink';
+import { ProfileHero } from '../ui/ProfileHero';
+import { ProfileLayout } from '../ui/ProfileLayout';
+import { SectionMenu, SectionItem } from '../ui/SectionMenu';
+import { SectionTitle } from '../ui/SectionTitle';
+import { SuperDot } from '../ui/SuperDot';
+import { showAlert, showConfirm } from '../ui/Dialog';
+import { BeingQr } from '../ui/BeingQr';
+import { LoveButton } from '../ui/LoveButton';
+import { mintBeingQr } from '@backend/beings';
+import { getCommunityById, updateLightHouse, getLifetreeById, getBedsForLightHouse } from '@backend';
+import { useRefreshSignal } from '../../hooks/useRefreshSignal';
+import { PlantBedModal } from '../modals/PlantBedModal';
+import { useSession } from '../../contexts/SessionContext';
+import { graphStore } from '../../services/store';
+import { LocationPicker } from '../ui/LocationPicker';
+import { announce } from '../../services/refreshBus';
+import { notify } from '../ui/Toast';
+import { lightHouseVisibility, type LightHouse, type LightHouseVisibility } from '../../domain/lightHouse';
+import type { Community, Lifetree } from '../../types';
+import { spokenLine } from '../../utils/translations';
+import { useLanguage } from '../../contexts/LanguageContext';
+
+import { Picture } from '../ui/Picture';
+import { HeroBack, DETAIL_PAGE_GROUNDED } from '../ui/DetailPage';
+import { EmptyState } from '../ui/EmptyState';
+// The Light House's own page — the shared profile anatomy (ProfileHero + ProfileLayout), so a
+// sacred place opens like every other being: from its map marker, or from a community's
+// LightHouses tab. Two sections: About (the story, the 3D door, the visibility chips) and
+// Communities — the mirror of the community profile: which houses this Light House holds.
+
+type LightHouseSection = 'about' | 'communities' | 'tree' | 'beds';
+
+interface LightHouseProfileProps {
+    lightHouse: LightHouse;
+    onClose: () => void;
+    backLabel?: string;
+    canEdit?: boolean;
+    // True when canEdit comes from staff privilege rather than being the keeper (amber dot).
+    editIsStaffOnly?: boolean;
+    onSetVisibility?: (id: string, visibility: LightHouseVisibility) => Promise<void>;
+    onDelete?: (id: string) => Promise<void>;
+    onViewCommunity?: (community: Community) => void;
+    onViewTree?: (tree: Lifetree) => void;
+}
+
+export const LightHouseProfile = ({ lightHouse, onClose, backLabel, canEdit = false, editIsStaffOnly = false, onSetVisibility, onDelete, onViewCommunity, onViewTree }: LightHouseProfileProps) => {
+    const { t } = useLanguage();
+    const visibility = lightHouseVisibility(lightHouse);
+    const [section, setSection] = useState<LightHouseSection>('about');
+
+    // The place, editable by keepers: tap the map (or refine the name), then save.
+    const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(
+        Number.isFinite(lightHouse.latitude) && Number.isFinite(lightHouse.longitude)
+            ? { latitude: lightHouse.latitude!, longitude: lightHouse.longitude! }
+            : null,
+    );
+    const [placeName, setPlaceName] = useState(lightHouse.locationName || '');
+    const [isSavingPlace, setIsSavingPlace] = useState(false);
+    const placeDirty = (coords?.latitude !== lightHouse.latitude) || (coords?.longitude !== lightHouse.longitude) || placeName.trim() !== (lightHouse.locationName || '');
+    const savePlace = async () => {
+        if (isSavingPlace) return;
+        setIsSavingPlace(true);
+        try {
+            await updateLightHouse(lightHouse.id, {
+                latitude: coords?.latitude,
+                longitude: coords?.longitude,
+                locationName: placeName.trim() || undefined,
+            });
+            announce('lightHouses', lightHouse.id);
+            notify(t('lh_place_saved'));
+        } catch (e: any) {
+            showAlert(e?.message || 'err_lh_place_save');
+        }
+        setIsSavingPlace(false);
+    };
+
+    // The circle of communities this Light House shelters — LIN edges plus the primary,
+    // resolved lazily to their documents. Belonging is links, never arrays.
+    const [homes, setHomes] = useState<Community[] | null>(null);
+    useEffect(() => {
+        let alive = true;
+        graphStore.linksFrom(lightHouse.id, 'shelters')
+            .then(links => {
+                const ids = [...new Set([...(lightHouse.communityId ? [lightHouse.communityId] : []), ...links.map(l => l.to)])];
+                return Promise.all(ids.map(id => getCommunityById(id).catch(() => null)));
+            })
+            .then(list => { if (alive) setHomes((list || []).filter(Boolean) as Community[]); })
+            .catch(() => { if (alive) setHomes([]); });
+        return () => { alive = false; };
+    }, [lightHouse.id, lightHouse.communityId]);
+
+    // The tree this Light House is ROOTED IN (lightHouse __rooted__ tree) — that tree is a
+    // mother tree. A Light House is never built before a tree is planted.
+    const [rootTree, setRootTree] = useState<Lifetree | null>(null);
+    const [rootLoaded, setRootLoaded] = useState(false);
+    // The keeper roots the Light House in one of THEIR OWN lifetrees — a personal avatar,
+    // never a guarded nature tree: the mother is a being who answers for it.
+    const { myTrees: sessionTrees } = useSession();
+    const rootCandidates = (sessionTrees || []).filter((t: Lifetree) => !t.isNature);
+    const [isRooting, setIsRooting] = useState(false);
+    useEffect(() => {
+        let alive = true;
+        graphStore.linksFrom(lightHouse.id, 'rooted')
+            .then(async links => {
+                const tid = links[0]?.to;
+                const t = tid ? await getLifetreeById(tid).catch(() => null) : null;
+                if (alive) { setRootTree(t); setRootLoaded(true); }
+            })
+            .catch(() => { if (alive) setRootLoaded(true); });
+        return () => { alive = false; };
+    }, [lightHouse.id]);
+    const rootIn = async (tree: Lifetree) => {
+        if (isRooting) return;
+        setIsRooting(true);
+        try {
+            if (rootTree) await graphStore.unlink(lightHouse.id, 'rooted', rootTree.id);
+            await graphStore.link(lightHouse.id, 'rooted', tree.id);
+            setRootTree(tree);
+            notify(t('lh_rooted_toast').replace('{house}', lightHouse.name).replace('{tree}', tree.name));
+        } catch (e: any) { showAlert(e?.message || 'err_lh_root'); }
+        setIsRooting(false);
+    };
+
+    // Beds — a Light House's beds are BEINGS (domain/bed.ts): each its own Lifetree with a
+    // profile, a chain (the leaves of who stayed), and a calendar. The keeper offers them; a
+    // guest reserves them on the bed's own page. (The old whole-house count offer is retired.)
+    const { lightseed } = useSession();
+    const viewerUid = lightseed?.uid;
+    const isKeeperViewer = !!viewerUid && lightHouse.anchorUid === viewerUid;
+    const bedsBump = useRefreshSignal(['beds']);
+    const [bedList, setBedList] = useState<Lifetree[]>([]);
+    const [showOfferBed, setShowOfferBed] = useState(false);
+    useEffect(() => {
+        let alive = true;
+        getBedsForLightHouse(lightHouse.id).then(list => { if (alive) setBedList(list); }).catch(() => {});
+        return () => { alive = false; };
+        // viewerUid: the fetch reads auth at CALL time (node-visibility beds need a signed-in
+        // viewer). If this profile mounts before the session hydrates (cold start via QR, deep
+        // link, or an early tap), the first fetch runs signed-out and misses them; re-running on
+        // hydration keeps the profile honest with the beds menu, whose house list is already
+        // session-reactive (useVisibleLightHouses re-fetches on viewerUid).
+    }, [lightHouse.id, bedsBump, viewerUid]);
+
+    const sections: SectionItem[] = [
+        { key: 'about', label: t('about'), icon: <Icons.Sun /> },
+        { key: 'tree', label: t('the_tree'), icon: <Icons.Tree /> },
+        { key: 'beds', label: `${t('beds')}${bedList.length > 0 ? ` (${bedList.length})` : ''}`, icon: <Icons.Moon /> },
+        { key: 'communities', label: `${t('communities')}${homes && homes.length > 0 ? ` (${homes.length})` : ''}`, icon: <Icons.Globe /> },
+    ];
+
+    const handleDelete = async () => {
+        if (!onDelete) return;
+        if (!(await showConfirm(spokenLine('lh_release_confirm', { name: lightHouse.name || '' }), { title: 'lh_release', confirmText: 'release', danger: true }))) return;
+        try { await onDelete(lightHouse.id); } catch (e: any) { showAlert(e?.message || 'err_lh_release'); }
+    };
+
+    return (
+        <div className={DETAIL_PAGE_GROUNDED}>
+            <ProfileHero heroImageUrl={lightHouse.imageUrl || '/lighthouse.webp'}>
+                <div className="flex items-center justify-between mb-6">
+                    <HeroBack onClick={onClose} label={backLabel || t('back')} />
+                    <div className="flex items-center gap-2">
+                        {canEdit && onDelete && (
+                            <button onClick={handleDelete} title={t('lh_release_this')} aria-label={t('lh_release_this')}
+                                className="relative flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-red-200 transition-colors hover:bg-red-500 hover:text-white [&>svg]:h-3 [&>svg]:w-3">
+                                <Icons.Trash /> {t('release')}
+                                {editIsStaffOnly && <SuperDot />}
+                            </button>
+                        )}
+                        <span className="flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-200 [&>svg]:h-3 [&>svg]:w-3">
+                            <Icons.Sun /> {t('light_house')}
+                        </span>
+                        <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-200 dark:bg-slate-900/15">
+                            {visibility}
+                        </span>
+                        <BeingQr lid={lightHouse.lid} name={lightHouse.name} savedHref={lightHouse.qr?.href}
+                            canMint={canEdit}
+                            onMint={(href) => mintBeingQr('lightHouses', lightHouse.id, href)}
+                            className="h-8 w-8 border border-white/15 bg-white/10 text-slate-200 hover:bg-white/25 hover:text-white dark:bg-slate-900/10" />
+                        <LoveButton collection="lightHouses" id={lightHouse.id} initialCount={lightHouse.loveCount || 0}
+                            className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-slate-200 hover:bg-white/20 dark:bg-slate-900/10" />
+                    </div>
+                </div>
+                <div className="flex items-center gap-4 sm:gap-5">
+                    <div className="flex h-16 w-16 md:h-20 md:w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-amber-200 bg-[#04070f] shadow-xl dark:border-amber-900">
+                        <Picture size={1200} src={lightHouse.imageUrl || '/lighthouse.webp'} className="h-full w-full object-cover" alt={lightHouse.name} referrerPolicy="no-referrer" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h1 dir="auto" className="min-w-0 break-words text-2xl font-light tracking-wide">{lightHouse.name}</h1>
+                        {lightHouse.shortTitle && <p className="mt-1 text-sm font-bold uppercase tracking-widest text-amber-300">{lightHouse.shortTitle}</p>}
+                        {lightHouse.locationName && (
+                            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] text-slate-300 dark:bg-slate-900/10">
+                                <Icons.Loc /> {lightHouse.locationName}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            </ProfileHero>
+
+            <ProfileLayout
+                menu={<SectionMenu items={sections} active={section} onSelect={(k) => setSection(k as LightHouseSection)} />}
+            >
+                {section === 'about' && (
+                    <div className="space-y-6">
+                        <SectionTitle title={t('lh_about_title')} sub={t('lh_about_sub')} />
+                        {/* The founding care and its observation — the ceremony that makes it stand. */}
+                        <LightHouseCareCard lightHouse={lightHouse} currentUserId={viewerUid} />
+                        {lightHouse.body ? (
+                            <div className="rounded-2xl border border-slate-100 bg-white p-5 sm:p-6 shadow-lg dark:bg-slate-900 dark:border-slate-800">
+                                <p dir="auto" className="whitespace-pre-line text-justify font-serif text-lg leading-relaxed text-slate-700 dark:text-slate-200">{lightHouse.body}</p>
+                            </div>
+                        ) : (
+                            <EmptyState size="md">{t('story_unwritten')}</EmptyState>
+                        )}
+
+                        {/* The 3D door — step into the Light House's Gaussian-splat scene. */}
+                        {lightHouse.splatUrl && (
+                            <OutwardLink href={lightHouse.splatUrl}
+                               className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow transition-colors hover:bg-amber-600">
+                                {t('lh_enter_3d')}
+                            </OutwardLink>
+                        )}
+
+                        {/* The place — keepers move the Light House with the map's help. */}
+                        {canEdit && (
+                            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm dark:border-amber-900 dark:bg-amber-950/50">
+                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300">{t('lh_the_place')}</h3>
+                                <p className="mb-2 text-[11px] text-slate-500">{t('lh_map_move')}</p>
+                                <LocationPicker value={coords} onChange={setCoords} className="h-56 w-full overflow-hidden rounded-xl border border-amber-100 shadow-inner dark:border-amber-900" />
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                    <input value={placeName} onChange={e => setPlaceName(e.target.value)} placeholder={t('lh_place_ph')}
+                                        className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:bg-slate-900 dark:border-slate-700" />
+                                    <button onClick={savePlace} disabled={!placeDirty || isSavingPlace}
+                                        className="rounded-full bg-amber-500 px-5 py-2 text-xs font-bold text-white shadow transition-colors hover:bg-amber-600 disabled:opacity-40">
+                                        {isSavingPlace ? t('saving') : t('lh_save_place')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Who may see it — keepers can open it wider or draw it back, right here. */}
+                        {canEdit && onSetVisibility && (
+                            <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5 shadow-sm dark:border-amber-900 dark:bg-amber-950/50">
+                                <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300">{t('lh_who_sees')}</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {(['community', 'node', 'public'] as const).map(v => (
+                                        <button key={v} type="button"
+                                            onClick={() => { if (v !== visibility) onSetVisibility(lightHouse.id, v); }}
+                                            className={`rounded-full border px-4 py-1.5 text-xs font-bold capitalize transition-all ${visibility === v ? 'border-amber-400 bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200' : 'border-slate-200 bg-white text-slate-500 hover:border-amber-200 dark:border-slate-700 dark:bg-slate-900'}`}>
+                                            {v}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {section === 'tree' && (
+                    <div>
+                        <SectionTitle title={t('the_tree')} sub={t('lh_tree_sub')} />
+                        {!rootLoaded ? (
+                            <p className="py-8 text-center text-sm text-slate-400">{t('lh_listening')}</p>
+                        ) : rootTree ? (
+                            <div
+                                onClick={onViewTree ? () => onViewTree(rootTree) : undefined}
+                                role={onViewTree ? 'button' : undefined}
+                                className={`flex items-center gap-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-4 shadow-sm dark:border-amber-900 ${onViewTree ? 'cursor-pointer transition-shadow hover:shadow-md' : ''}`}
+                            >
+                                <Picture size={480} src={rootTree.latestGrowthUrl || rootTree.imageUrl || '/mahameru.svg'} alt="" className="h-16 w-16 shrink-0 rounded-full border-4 border-amber-300 object-cover bg-[#04070f] shadow" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-lg font-light tracking-wide text-slate-800 dark:text-slate-100">{rootTree.name}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-300">{t('lh_mother_tree_here')}</p>
+                                </div>
+                                <Icons.ArrowRight size={18} className="shrink-0 text-amber-300" />
+                            </div>
+                        ) : (
+                            <EmptyState size="md">{t('lh_not_rooted')}</EmptyState>
+                        )}
+
+                        {/* The keeper roots (or re-roots) the Light House in one of the domain's trees. */}
+                        {canEdit && rootCandidates.length > 0 && (
+                            <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50/50 p-4 dark:border-amber-900 dark:bg-amber-950/50">
+                                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300">{rootTree ? t('lh_reroot') : t('lh_root_in_tree')}</p>
+                                <div className="space-y-2">
+                                    {rootCandidates.filter(tree => tree.id !== rootTree?.id).map(tree => (
+                                        <div key={tree.id} className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white p-2.5 dark:bg-slate-900 dark:border-amber-900">
+                                            <Picture size={480} src={tree.latestGrowthUrl || tree.imageUrl || '/mahameru.svg'} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover bg-[#04070f]" />
+                                            <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{tree.name}</p>
+                                            <button onClick={() => rootIn(tree)} disabled={isRooting}
+                                                className="shrink-0 rounded-full bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-600 disabled:opacity-50">
+                                                {isRooting ? t('lh_rooting') : t('lh_root_here')}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {section === 'beds' && (
+                    <div className="space-y-6">
+                        <SectionTitle title={t('beds')} sub={t('lh_beds_sub')} />
+
+                        {bedList.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                {bedList.map(bed => {
+                                    const img = bed.latestGrowthUrl || bed.imageUrl || '';
+                                    return (
+                                        <button key={bed.id} type="button" onClick={() => onViewTree?.(bed)}
+                                            className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-800">
+                                            {img
+                                                ? <Picture size={480} src={img} alt={bed.name} className="h-14 w-14 flex-none rounded-xl object-cover" />
+                                                : <span className="flex h-14 w-14 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-indigo-400 to-violet-500 text-white [&>svg]:h-6 [&>svg]:w-6"><Icons.Moon /></span>}
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{bed.name}</p>
+                                                <p className="truncate text-[11px] text-slate-400">{bed.body ? bed.body.slice(0, 60) : t('a_place_to_sleep')}</p>
+                                            </div>
+                                            <span className="flex-none text-slate-300 [&>svg]:h-4 [&>svg]:w-4 group-hover:text-slate-500"><Icons.ChevronRight /></span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <EmptyState size="md">{t('no_beds_yet')}</EmptyState>
+                        )}
+
+                        {isKeeperViewer && (
+                            <button type="button" onClick={() => setShowOfferBed(true)}
+                                className="inline-flex items-center gap-2 rounded-full btn-theme px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow transition-colors">
+                                <span className="[&>svg]:h-4 [&>svg]:w-4"><Icons.Plus /></span>{t('offer_a_bed')}
+                            </button>
+                        )}
+
+                        {showOfferBed && (
+                            <PlantBedModal lightHouse={lightHouse} onClose={() => setShowOfferBed(false)}
+                                onPlanted={() => announce('beds', lightHouse.id)} />
+                        )}
+                    </div>
+                )}
+
+                {section === 'communities' && (
+                    <div>
+                        <SectionTitle title={t('communities')} sub={t('lh_communities_sub')} />
+                        {homes === null ? (
+                            <p className="py-8 text-center text-sm text-slate-400">{t('lh_listening')}</p>
+                        ) : homes.length === 0 ? (
+                            <EmptyState size="md">{t('lh_no_community')}</EmptyState>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                {homes.map(c => (
+                                    <div
+                                        key={c.id}
+                                        onClick={onViewCommunity ? () => onViewCommunity(c) : undefined}
+                                        role={onViewCommunity ? 'button' : undefined}
+                                        aria-label={onViewCommunity ? t('lh_open_community').replace('{name}', c.name) : undefined}
+                                        className={`group relative h-36 overflow-hidden rounded-2xl shadow-md ring-1 ring-slate-100 ${onViewCommunity ? 'cursor-pointer transition-shadow hover:shadow-lg' : ''}`}
+                                    >
+                                        {c.heroImageUrl ? (
+                                            <Picture size={1200} src={c.heroImageUrl} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" alt={c.name} />
+                                        ) : (
+                                            <div className="absolute inset-0" style={{ backgroundColor: c.theme?.primary || '#0f766e' }} />
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
+                                        <div className="absolute bottom-3 left-4 right-4 flex items-center gap-3 text-white">
+                                            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/30 bg-white/20 backdrop-blur dark:bg-slate-900/20">
+                                                {c.logoUrl ? <Picture size={480} src={c.logoUrl} className="h-full w-full object-cover" alt="" /> : <Icons.Globe />}
+                                            </span>
+                                            <span className="min-w-0">
+                                                <span className="block truncate text-base font-light tracking-wide">{c.name}</span>
+                                                <span className="block truncate text-[11px] text-slate-300">{c.domain}</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </ProfileLayout>
+        </div>
+    );
+};

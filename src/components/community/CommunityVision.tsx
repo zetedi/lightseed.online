@@ -17,6 +17,8 @@ import { setTokenisationEnabled } from '../../domain/tokenisation';
 import { VisionSection } from '../sections/VisionSection';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { spokenLine, speak } from '../../utils/translations';
+import { SettingRow, SECTION_BREAK } from '../ui/SettingRow';
+import { Switch } from '../ui/Switch';
 
 interface CommunityVisionProps {
   community: Community;
@@ -340,7 +342,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
   // saved by the tab's Save with the vision; everyone else reads them under it.
   const shownPapers = canEdit ? editPapers : papersOf(community.papers).filter(p => p.key !== 'vision');
   const papersBlock = (canEdit || shownPapers.length > 0) && (
-    <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
+    <div className={SECTION_BREAK}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('papers_title')}</p>
@@ -383,7 +385,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       {/* The chain seal — this node's commitment to a verifiable chain. Sealed is a public
           mark of integrity (shown to all); sealing is the owner's one-way "big red stamp". */}
       {(chainSealed || canEdit) && (
-        <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
+        <div className={SECTION_BREAK}>
           {chainSealed ? (
             <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900 dark:bg-emerald-950/70">
               <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-emerald-300 dark:bg-slate-900"><Icons.ShieldCheck /></span>
@@ -422,19 +424,14 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
               </div>
             </div>
           ) : (
-            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Stamp /></span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('chain_seal')}</p>
-                <p className="mt-0.5 text-sm text-slate-500">{t('chain_seal_note')}</p>
+            <SettingRow icon={<Icons.Stamp />} title={t('chain_seal')} note={t('chain_seal_note')}>
                 <div className="mt-3 flex items-center gap-3">
                   <button onClick={() => handleToggleSeal(true)} disabled={isSealing} className="inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50">
                     <Icons.Stamp /> {isSealing ? t('sealing') : t('chain_seal_this')}
                   </button>
                   {sealStatus && <span className="text-sm text-slate-500">{sealStatus}</span>}
                 </div>
-              </div>
-            </div>
+            </SettingRow>
           )}
         </div>
       )}
@@ -442,24 +439,13 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
       {/* Tokenisation toggle — turn the AI-token ("Attention-Energy") economy on/off for
           this node, the same way the chain seal is flipped. Owner/admin only. */}
       {canEdit && (
-        <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
-          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
-            <MahameruAvatar size={36} className="mt-0.5" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('tokens_title')}</p>
-              <p className="mt-0.5 text-sm text-slate-500">{t('tokens_note')}</p>
-            </div>
-            <button
-              onClick={() => handleToggleTokenisation(!tokenisationOn)}
-              disabled={isTogglingTokens}
-              role="switch"
-              aria-checked={tokenisationOn}
-              title={tokenisationOn ? t('tokens_on_title') : t('tokens_off_title')}
-              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${tokenisationOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tokenisationOn ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-          </div>
+        <div className={SECTION_BREAK}>
+          <SettingRow
+            lead={<MahameruAvatar size={36} className="mt-0.5" />}
+            title={t('tokens_title')}
+            note={t('tokens_note')}
+            control={<Switch on={tokenisationOn} onChange={handleToggleTokenisation} disabled={isTogglingTokens} title={tokenisationOn ? t('tokens_on_title') : t('tokens_off_title')} />}
+          />
         </div>
       )}
 
@@ -469,14 +455,10 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
           about what it does NOT do: beings already stamped with the old domain keep their
           stamps (their re-homing is the staff mend / a migration, not a side effect). */}
       {canEdit && (
-        <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
+        <div className={SECTION_BREAK}>
           {/* THE NAME — shown everywhere exactly as this property says it (the tab title
               included), so the keeper edits it here, at the source. */}
-          <div className="mb-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Users /></span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('community_name')}</p>
-              <p className="mt-0.5 text-sm text-slate-500">{t('community_name_hint')}</p>
+          <SettingRow className="mb-2" icon={<Icons.Users />} title={t('community_name')} note={t('community_name_hint')}>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <input
                   dir="auto"
@@ -492,13 +474,8 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                   {nameSaving ? t('saving') : t('save')}
                 </button>
               </div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Loc /></span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('community_domain')}</p>
-              <p className="mt-0.5 text-sm text-slate-500">{t('community_domain_hint')}</p>
+          </SettingRow>
+          <SettingRow icon={<Icons.Loc />} title={t('community_domain')} note={t('community_domain_hint')}>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <input
                   dir="ltr"
@@ -625,8 +602,7 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
                     className="h-9 shrink-0 rounded-full border border-emerald-200 bg-white px-3.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50 dark:bg-slate-900 dark:border-emerald-900 dark:text-emerald-300">{doorBusy === '+' ? '…' : t('door_add')}</button>
                 </form>
               </div>
-            </div>
-          </div>
+          </SettingRow>
           {/* The export ceremony (domain/export): the community, its links and events leave
               as JSON with images — gathered with the keeper's own sight. */}
           {canEdit && (
@@ -648,67 +624,35 @@ export const CommunityVision: React.FC<CommunityVisionProps> = ({
           forest, or show only its own domain? A community choice (Indra's net), for Nodes and
           Hosts alike. Reflects PUBLIC content only; sensitive-to-light content stays local. */}
       {canEdit && hasDomain && (
-        <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
-          <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Globe /></span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('reflect_commons')}</p>
-              <p className="mt-0.5 text-sm text-slate-500">{t('reflect_commons_note').replace('{domain}', community.domain || '')}</p>
-            </div>
-            <button
-              onClick={() => handleToggleReflect(!reflectsOn)}
-              disabled={isTogglingReflect}
-              role="switch"
-              aria-checked={reflectsOn}
-              title={reflectsOn ? t('reflect_on_title') : t('reflect_off_title')}
-              className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${reflectsOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${reflectsOn ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-          </div>
+        <div className={SECTION_BREAK}>
+          <SettingRow
+            icon={<Icons.Globe />}
+            title={t('reflect_commons')}
+            note={t('reflect_commons_note').replace('{domain}', community.domain || '')}
+            control={<Switch on={reflectsOn} onChange={handleToggleReflect} disabled={isTogglingReflect} title={reflectsOn ? t('reflect_on_title') : t('reflect_off_title')} />}
+          />
 
           {/* Strict scope — only offered while scoped (reflect off). Hides even the keeper's own
               off-domain trees, for a clean "this place only" forest. */}
           {!reflectsOn && (
-            <div className="mt-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Eye /></span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('strict_scope')}</p>
-                <p className="mt-0.5 text-sm text-slate-500">{t('strict_scope_note').replace('{domain}', community.domain || '')}</p>
-              </div>
-              <button
-                onClick={() => handleToggleStrict(!strictOn)}
-                disabled={isTogglingStrict}
-                role="switch"
-                aria-checked={strictOn}
-                title={strictOn ? t('strict_on_title') : t('strict_off_title')}
-                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${strictOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${strictOn ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
+            <SettingRow
+              className="mt-2"
+              icon={<Icons.Eye />}
+              title={t('strict_scope')}
+              note={t('strict_scope_note').replace('{domain}', community.domain || '')}
+              control={<Switch on={strictOn} onChange={handleToggleStrict} disabled={isTogglingStrict} title={strictOn ? t('strict_on_title') : t('strict_off_title')} />}
+            />
           )}
 
           {/* Seed cradle — the hybrid shape: the living web lives on a subdomain, the domain
               itself is the community's own site, and the portal wears a corner door home. */}
-          {(
-            <div className="mt-2 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Globe /></span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('seed_cradle')}</p>
-                <p className="mt-0.5 text-sm text-slate-500">{t('seed_cradle_hint')}</p>
-              </div>
-              <button
-                onClick={() => handleToggleCradle(!cradleOn)}
-                disabled={isTogglingCradle}
-                role="switch"
-                aria-checked={cradleOn}
-                className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${cradleOn ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${cradleOn ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-          )}
+          <SettingRow
+            className="mt-2"
+            icon={<Icons.Globe />}
+            title={t('seed_cradle')}
+            note={t('seed_cradle_hint')}
+            control={<Switch on={cradleOn} onChange={handleToggleCradle} disabled={isTogglingCradle} />}
+          />
         </div>
       )}
     </>

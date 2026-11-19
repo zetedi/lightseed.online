@@ -6,8 +6,8 @@ import { MahameruAvatar } from '../ui/MahameruAvatar';
 import { Vision, VisionSynergy } from '../../types';
 import { getMyVisions, getJoinedVisions } from '@backend';
 import { findVisionSynergies } from '@backend/gemini';
-import { VisionCard } from '../VisionCard';
-import { Loading } from '../ui/Loading';
+import { VisionCard } from '../vision/VisionCard';
+import { Loading, LoadingPanel } from '../ui/Loading';
 import { speak } from '../../utils/translations';
 
 interface ProfileVisionsProps {
@@ -73,7 +73,7 @@ export const ProfileVisions: React.FC<ProfileVisionsProps> = ({ uid, onViewVisio
     }
   };
 
-  if (loading) return <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16 dark:bg-slate-900/50 dark:border-slate-800"><Loading /></div>;
+  if (loading) return <LoadingPanel />;
 
   return (
     <div>

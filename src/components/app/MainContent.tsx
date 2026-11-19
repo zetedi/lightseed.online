@@ -21,17 +21,17 @@ import { Icons } from '../ui/Icons';
 import { Loading } from '../ui/Loading';
 import { SectionHeader } from '../ui/SectionHeader';
 import { FullWidthTabs } from '../ui/FullWidthTabs';
-import { EventCard } from '../EventCard';
+import { EventCard } from '../event/EventCard';
 import { notify } from '../ui/Toast';
 import { speak } from '../../utils/translations';
 import { SearchBox } from './SearchBox';
 
 // Route pages are code-split: each becomes its own chunk that loads only when first shown.
-const Dashboard = lazy(() => import('../Dashboard').then(m => ({ default: m.Dashboard })));
-const LightseedProfile = lazy(() => import('../LightseedProfile').then(m => ({ default: m.LightseedProfile })));
-const NewsletterAdmin = lazy(() => import('../NewsletterAdmin').then(m => ({ default: m.NewsletterAdmin })));
-const CommunityList = lazy(() => import('../CommunityList').then(m => ({ default: m.CommunityList })));
-const CommunityProfile = lazy(() => import('../CommunityProfile').then(m => ({ default: m.CommunityProfile })));
+const Dashboard = lazy(() => import('./Dashboard').then(m => ({ default: m.Dashboard })));
+const LightseedProfile = lazy(() => import('../profile/LightseedProfile').then(m => ({ default: m.LightseedProfile })));
+const NewsletterAdmin = lazy(() => import('../community/NewsletterAdmin').then(m => ({ default: m.NewsletterAdmin })));
+const CommunityList = lazy(() => import('../community/CommunityList').then(m => ({ default: m.CommunityList })));
+const CommunityProfile = lazy(() => import('../community/CommunityProfile').then(m => ({ default: m.CommunityProfile })));
 const CollabsPage = lazy(() => import('../../pages/CollabsPage').then(m => ({ default: m.CollabsPage })));
 const ObservatoryPage = lazy(() => import('../../pages/ObservatoryPage').then(m => ({ default: m.ObservatoryPage })));
 const ForestPage = lazy(() => import('../../pages/ForestPage').then(m => ({ default: m.ForestPage })));

@@ -12,6 +12,7 @@ import { Lightseed, Lifetree } from '../../types';
 import { generateVisionImage } from '@backend/gemini';
 import { checkAndIncrementAiUsage, acceptGround } from '@backend';
 import { speak } from '../../utils/translations';
+import { ErrorNote } from '../ui/Field';
 
 interface CreateVisionModalProps {
   lightseed: Lightseed | null;
@@ -128,7 +129,7 @@ export const CreateVisionModal: React.FC<CreateVisionModalProps> = ({
                  <span>{t('generate_image')}</span>
              </button>
         </div>
-        {genError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(genError)}</p>}
+        {genError && <ErrorNote>{speak(genError)}</ErrorNote>}
 
         <input 
             dir="auto" 

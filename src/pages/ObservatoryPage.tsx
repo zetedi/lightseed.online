@@ -2,7 +2,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
 import { MahameruAvatar } from '../components/ui/MahameruAvatar';
 import { ResonanceScan } from '../components/ui/ResonanceScan';
-import { ResonanceCard, resonanceId } from '../components/ResonancePanel';
+import { ResonanceCard, resonanceId } from '../components/pulse/ResonancePanel';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { ListBox } from '../components/ui/ListBox';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';

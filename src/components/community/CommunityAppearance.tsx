@@ -10,6 +10,7 @@ import { nodeDefaultTheme } from '../../hooks/useConfig';
 import { AppearanceSection } from '../sections/AppearanceSection';
 import type { AutosaveState } from '../../domain/autosave';
 import { MAIL_LINE_MAX } from '../../domain/mailVoice';
+import { Switch } from '../ui/Switch';
 
 type SocialLinks = NonNullable<Community['socialLinks']>;
 export type MailDraft = { greeting: string; signature: string; footer: string };
@@ -139,15 +140,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('palette_reach')}</p>
         <p className="text-xs text-slate-500">{t('palette_reach_note')}</p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={editPaletteReach}
-        onClick={() => onPaletteReachChange(!editPaletteReach)}
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editPaletteReach ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
-      >
-        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editPaletteReach ? 'translate-x-5' : 'translate-x-0'}`} />
-      </button>
+      <Switch on={editPaletteReach} onChange={onPaletteReachChange} />
     </div>
 
     {/* Letters from this place (ring 2026-09-14): the words every system mail sent from this
@@ -181,15 +174,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('landing_custom')}</p>
         <p className="text-xs text-slate-500">{t('landing_custom_note')}</p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={editCustomLanding}
-        onClick={() => onCustomLandingChange(!editCustomLanding)}
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editCustomLanding ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
-      >
-        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editCustomLanding ? 'translate-x-5' : 'translate-x-0'}`} />
-      </button>
+      <Switch on={editCustomLanding} onChange={onCustomLandingChange} />
     </div>
 
     {/* Landing pages — the organisation authors its own menu panels (a food menu, an About…)
@@ -246,15 +231,7 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
         <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('home_counts')}</p>
         <p className="text-xs text-slate-500">{t('home_counts_note')}</p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={editShowStats}
-        onClick={() => onShowStatsChange(!editShowStats)}
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${editShowStats ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
-      >
-        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${editShowStats ? 'translate-x-5' : 'translate-x-0'}`} />
-      </button>
+      <Switch on={editShowStats} onChange={onShowStatsChange} />
     </div>
 
     </div>

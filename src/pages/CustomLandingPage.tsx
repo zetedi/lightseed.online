@@ -6,7 +6,7 @@ import { createCommunityEvent, fetchEventPulses } from '@backend';
 import { queryableLevels } from '../domain/pulseVisibility';
 import { dataDomainFor } from '../domain/communityDoor';
 import { sanitizeRichText } from '../utils/sanitize';
-import Logo from '../components/Logo';
+import Logo from '../components/ui/Logo';
 import { parseLandingSections } from '../domain/appearance';
 import { SECTION_COMPONENTS } from '../components/landing/registry';
 import { useLanguage } from '../contexts/LanguageContext';

@@ -25,7 +25,7 @@ const DATA_HREF = /<a\s[^>]*href=\{/;
 const ALLOWED = new Map<string, string>([
   // The map's popups are raw HTML strings handed to Leaflet, where a React component cannot go;
   // the href there is passed through safeImageUrl (http(s) or nothing).
-  ['components/ForestMap.tsx', 'Leaflet popup HTML, guarded by safeImageUrl'],
+  ['components/forest/ForestMap.tsx', 'Leaflet popup HTML, guarded by safeImageUrl'],
   // The QR download is a data: URL the page just made, saved by the reader's own browser.
   ['components/ui/BeingQr.tsx', 'a data: URL for download, made in the page'],
   // The component itself.

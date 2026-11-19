@@ -3,7 +3,7 @@ import type { Lifetree, ReachAudience, VisionSynergy } from '../types';
 import { fetchVisions, getLifetreeById, getGroundsOfVision } from '@backend';
 import { homeGroundOf } from '../domain/grounding';
 import { showAlert } from '../components/ui/Dialog';
-import { resonanceId } from '../components/ResonancePanel';
+import { resonanceId } from '../components/pulse/ResonancePanel';
 import { spokenLine } from '../utils/translations';
 
 // Resonance refreshes once a week for members; admins have no limit. The whole point is

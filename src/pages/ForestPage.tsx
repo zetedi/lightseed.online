@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Icons } from '../components/ui/Icons';
-import { ForestMap } from '../components/ForestMap';
+import { ForestMap } from '../components/forest/ForestMap';
 import type { LightHouse } from '../domain/lightHouse';
-import { LightHouseCard } from '../components/LightHouseCard';
+import { LightHouseCard } from '../components/lighthouse/LightHouseCard';
 import { useVisibleLightHouses } from '../hooks/useVisibleLightHouses';
-import { LifetreeCard } from '../components/LifetreeCard';
+import { LifetreeCard } from '../components/lifetree/LifetreeCard';
 import { Loading } from '../components/ui/Loading';
 import type { Lifetree } from '../types';
 import type { ReachAudience } from '../domain/reach';

@@ -4,7 +4,7 @@ import { useSession } from '../../contexts/SessionContext';
 import { Icons } from '../ui/Icons';
 import { Lifetree } from '../../types';
 import { SectionTitle } from '../ui/SectionTitle';
-import { ValidationBadge } from '../ValidationBadge';
+import { ValidationBadge } from '../lifetree/ValidationBadge';
 import { graphStore } from '../../services/store';
 import type { TendedTree } from '@backend';
 import { roleLabelKey } from '../../domain/treeCircle';
@@ -13,6 +13,7 @@ import { sustainingSeven, SUSTAINING_SEVEN, type GuardianEdge } from '../../doma
 import { isExplicitlyValidatedTree, daysUntilLapse } from '../../utils/validation';
 
 import { Picture } from '../ui/Picture';
+import { EmptyState } from '../ui/EmptyState';
 // THE DROPLET (2026-11-17): every tree on a watering schedule carries one in these lists, and it
 // always opens that tree's Care. Thirsty, it is the solid theme button it has been; while the next
 // watering is still ahead it is a quiet outline that says in how many days. No schedule, no droplet.
@@ -313,11 +314,7 @@ export const ProfileTrees: React.FC<ProfileTreesProps> = ({
       <div>
         <SectionTitle title={t('guarded_trees')} sub={t('guarded_trees_sub')} />
         {guardedOnly.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-slate-400 dark:border-slate-700">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-sky-500 dark:bg-sky-950/40"><Icons.Shield /></div>
-            <p className="text-sm">{t('not_guarding')}</p>
-            <p className="mt-1 text-xs">{t('guard_hint')}</p>
-          </div>
+          <EmptyState icon={<Icons.Shield />} tone="sky" size="md" hint={t('guard_hint')}>{t('not_guarding')}</EmptyState>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {guardedOnly.map((tree: Lifetree) => (

@@ -8,6 +8,8 @@ import { notify as toast } from '../ui/Toast';
 import { AutosaveMark } from '../ui/AutosaveMark';
 import { useAutosave } from '../../hooks/useAutosave';
 import { PERSONAL_APPEARANCE_FIELDS } from '../../domain/autosave';
+import { SettingRow } from '../ui/SettingRow';
+import { Switch } from '../ui/Switch';
 
 type EditableTheme = ReturnType<typeof normalizeTheme>;
 
@@ -137,22 +139,12 @@ export const ProfileAppearance: React.FC<ProfileAppearanceProps> = ({
       {/* INHERIT FROM THE COMMUNITY (ring 2026-08-24) — the first choice, above every dial:
           while on, the personal palette rests and each garden dresses the site in its own
           colors; the settings below step out of sight rather than lie about applying. */}
-      <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:bg-slate-900/70 dark:border-slate-700">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 dark:bg-slate-800"><Icons.Globe /></span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('site_inherit')}</p>
-          <p className="mt-0.5 text-sm text-slate-500">{t('site_inherit_hint')}</p>
-        </div>
-        <button
-          onClick={() => handleToggleInherit(!siteInherit)}
-          disabled={savingInherit}
-          role="switch"
-          aria-checked={siteInherit}
-          className={`relative mt-1 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${siteInherit ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
-        >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${siteInherit ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
-      </div>
+      <SettingRow
+        icon={<Icons.Globe />}
+        title={t('site_inherit')}
+        note={t('site_inherit_hint')}
+        control={<Switch on={siteInherit} onChange={handleToggleInherit} disabled={savingInherit} />}
+      />
       {siteInherit ? null : (<>
       {/* Title + the mark + Reset share the row; the explainer sits UNDER them, small — on mobile
           the old side-by-side layout squeezed it into a nine-line sliver. */}

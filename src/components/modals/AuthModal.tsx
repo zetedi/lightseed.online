@@ -4,7 +4,7 @@ import { Modal, modalButton } from '../ui/Modal';
 import { Icons } from '../ui/Icons';
 import { showAlert } from '../ui/Dialog';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { TermsModal } from '../TermsModal';
+import { TermsModal } from './TermsModal';
 import { getTerms } from '../../utils/terms';
 import { signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, getNetworkInvite, submitInviteRequest, authCapabilities, signInWithIssuer } from '@backend';
 import { friendlyAuthError, isUserCancelledAuth } from '../../utils/authErrors';

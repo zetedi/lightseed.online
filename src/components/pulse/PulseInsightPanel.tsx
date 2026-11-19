@@ -1,0 +1,239 @@
+import { useState } from 'react';
+import { loadSubgraphAround } from '@backend/subgraph';
+import { subgraphOf } from '../../domain/subgraph';
+import { Pulse, Lifetree } from '../../types';
+import { Icons } from '../ui/Icons';
+import { translatePulse } from '@backend/gemini';
+import { getActiveIntelligenceId, getIntelligence, DEFAULT_INTELLIGENCE_ID } from '@backend/intelligence';
+import { spendAiTokens } from '@backend';
+import { savePulseInterpretation } from '@backend/pulses';
+import { isTokenisationEnabled } from '../../domain/tokenisation';
+import { speak, spokenLine } from '../../utils/translations';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { Accordion } from '../ui/Accordion';
+
+// The AI "Translation Depth" + "Network Memory" column that reveals a pulse's deeper intent (spending
+// a tree's AI tokens) and shows its validation standing. Extracted from PulseDetail so the event
+// profile (and any future pulse-like view) can offer the same reflection without duplicating it.
+export const PulseInsightPanel = ({ pulse, activeTree }: { pulse: Pulse; activeTree?: Lifetree | null }) => {
+    const { t } = useLanguage();
+    const [depth, setDepth] = useState<number>(3);
+    // Re-reading: the stored reading is an OVERLAY, not chain content — when the event's
+    // words change, any reader may run a fresh reading over them (ring 2026-08-22).
+    const [rereading, setRereading] = useState(false);
+    const [isTranslating, setIsTranslating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    // The AI-token economy is a per-node toggle (About → Vision). While off, translation is free
+    // and the token cost/balance UI is hidden.
+    const tokensOn = isTokenisationEnabled();
+
+    const handleTranslate = async () => {
+        if (!activeTree) {
+            setError('translate_need_tree');
+            return;
+        }
+
+        setIsTranslating(true);
+        setError(null);
+
+        try {
+            // 1. Spend AI Tokens (1 token per depth level) — only when the node runs the token economy.
+            if (tokensOn) {
+                await spendAiTokens(activeTree.id, depth);
+            }
+
+            // 2. Call the Translation engine through the reader's chosen intelligence — resolved
+            // HERE so the provenance we persist below names the lens that actually read.
+            const intelligenceId = getActiveIntelligenceId('insight') ?? DEFAULT_INTELLIGENCE_ID;
+            const intelligence = await getIntelligence(intelligenceId).catch(() => null);
+            // DEPTH 4 = THE SUBGRAPH, finally true (ring 2026-08-25): the reading draws on
+            // the reader's tree's real neighborhood — one person-crossing of the walk,
+            // names only, capped. Depth stays CONTEXT BREADTH, never speculation.
+            let context: string | undefined;
+            if (depth >= 4) {
+                try {
+                    const g = await loadSubgraphAround({ id: activeTree.id, kind: 'tree', anchorUid: activeTree.anchorUid || null, name: activeTree.name, lid: activeTree.lid });
+                    const walk = subgraphOf(activeTree.id, { nodes: g.nodes, edges: g.edges }, { personDepth: 1 });
+                    const names = walk.beings.filter(b => b.id !== activeTree.id)
+                        .map(b => g.display.get(b.id)?.name).filter(Boolean).slice(0, 24);
+                    if (names.length) context = `The reader's tree stands connected to: ${names.join(' · ')}`;
+                } catch { /* the reading works without the wider web */ }
+            }
+            const response = await translatePulse({
+                senderTreeName: pulse.authorName,
+                receiverTreeName: activeTree.name,
+                message: pulse.content || pulse.body,
+                depth,
+                ...(context ? { context } : {}),
+            }, intelligenceId);
+
+            // 3. Update the Pulse doc with the reading — the five distinctions (NVC) plus
+            // provenance (who read, through which intelligence — the Carry honesty law).
+            // Firestore rejects undefined values, so only the layers the model filled are saved.
+            const interpretationData = Object.fromEntries(Object.entries({
+                depth,
+                happened: response.happened,
+                feeling: response.feeling,
+                inference: response.inference,
+                need: response.need,
+                asks: response.asks,
+                alternatives: response.alternatives,
+                readByTreeId: activeTree.id,
+                readByTreeName: activeTree.name,
+                intelligenceId,
+                intelligenceName: intelligence?.name || 'Osiris',
+                readAt: Date.now(),
+            }).filter(([, v]) => v !== undefined)) as unknown as NonNullable<Pulse['aiInterpretation']>;
+
+            await savePulseInterpretation(pulse.id, interpretationData);
+
+            // eslint-disable-next-line react-hooks/immutability -- intentional optimistic mutation of the parent-owned pulse object so all views of it show the saved interpretation without a refetch
+            pulse.aiInterpretation = interpretationData; // optimistic update
+            setRereading(false); // the fresh reading stands; the panel shows it
+        } catch (e: any) {
+            console.error(e);
+            setError(e.message);
+        } finally {
+            setIsTranslating(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* The depth system rests folded (ring 2026-09-03): the header names it, the chip
+                says a reading exists, one tap opens the reading and the controls. */}
+            <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
+                <div className="relative z-10">
+                    <Accordion
+                        icon={<Icons.Intelligence />}
+                        title={<span className="text-lg font-bold text-sky-400 uppercase tracking-wider">{t('translation_depth_system')}</span>}
+                        summary={pulse.aiInterpretation
+                            ? <span className="rounded-full border border-indigo-400/40 bg-indigo-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-indigo-200">{speak(spokenLine('reading_depth', { depth: pulse.aiInterpretation.depth }))}</span>
+                            : undefined}
+                        headerClassName="text-sky-400"
+                        bodyClassName="mt-6"
+                    >
+                    {pulse.aiInterpretation && !rereading ? (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                            {/* The five distinctions (NVC) — legacy single-blob readings fall into
+                                the first layer so old pulses keep rendering. */}
+                            <div className="bg-white/10 p-4 rounded-xl border border-white/20 space-y-2 dark:bg-slate-900/10">
+                                <span className="text-xs uppercase tracking-widest text-indigo-300 font-bold">{speak(spokenLine('reading_depth', { depth: pulse.aiInterpretation.depth }))}</span>
+                                {/* Provenance — a persisted reading names its lens (the Carry honesty law). */}
+                                {(pulse.aiInterpretation.readByTreeName || pulse.aiInterpretation.intelligenceName) && (
+                                    <p className="text-[10px] text-indigo-200/70">
+                                        {t('reading_provenance')
+                                            .replace('{tree}', pulse.aiInterpretation.readByTreeName || t('a_tree_lower'))
+                                            .replace('{intel}', pulse.aiInterpretation.intelligenceName || t('an_intelligence'))}
+                                        {pulse.aiInterpretation.readAt ? ` · ${new Date(pulse.aiInterpretation.readAt).toLocaleDateString()}` : ''}
+                                    </p>
+                                )}
+                                {([
+                                    ['happened', t('nvc_happened'), pulse.aiInterpretation.happened ?? pulse.aiInterpretation.interpretation],
+                                    ['feels', t('nvc_feels'), pulse.aiInterpretation.feeling],
+                                    ['assume', t('nvc_assume'), pulse.aiInterpretation.inference],
+                                    ['needs', t('nvc_needs'), pulse.aiInterpretation.need],
+                                    ['asks', t('nvc_asks'), pulse.aiInterpretation.asks ?? pulse.aiInterpretation.growthSuggestion],
+                                ] as [string, string, string | undefined][]).filter(([, , v]) => v && v.trim()).map(([slot, label, v]) => (
+                                    <p key={slot} className="text-sm font-medium leading-relaxed">
+                                        <span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-indigo-300/80">{label}</span> {v}
+                                    </p>
+                                ))}
+                            </div>
+
+                            {pulse.aiInterpretation.alternatives && pulse.aiInterpretation.alternatives.length > 0 && (
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/10 dark:bg-slate-900/5">
+                                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold block mb-2">{t('also_possible')}</span>
+                                    <ul className="text-xs text-slate-300 space-y-1 list-disc list-inside pl-4">
+                                        {pulse.aiInterpretation.alternatives.map((alt, i) => (
+                                            <li key={i}>{alt}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {/* The words may have moved on since readAt (shown above) — open the
+                                depth controls again and let a fresh reading replace this one. */}
+                            <button type="button" onClick={() => setRereading(true)}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-indigo-400/40 bg-indigo-500/15 px-4 py-1.5 text-xs font-bold text-indigo-200 transition-colors hover:bg-indigo-500/30">
+                                <span aria-hidden>✦</span> {t('read_again')}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            <p className="text-sm text-indigo-200 font-light">
+                                {tokensOn ? t('translate_intro_tokens') : t('translate_intro')}
+                            </p>
+
+                            {/* Depth = how much of the being's living context the reading draws on
+                                (never how speculative it may get) — see domain/translation. */}
+                            <div className="space-y-3">
+                                <div className="flex justify-between text-xs font-bold text-slate-400 uppercase">
+                                    <span>{t('context_depth')}</span>
+                                    <span>{depth} / 4</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1" max="4"
+                                    value={depth}
+                                    onChange={(e) => setDepth(Number(e.target.value))}
+                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                />
+                                <div className="text-[10px] text-slate-400 flex justify-between">
+                                    <span>{t('depth_1_label')}</span>
+                                    <span>{t('depth_4_label')}</span>
+                                </div>
+                            </div>
+
+                            {tokensOn && (
+                                <div className="bg-black/20 p-4 rounded-xl border border-white/10 flex items-center justify-between">
+                                    <div>
+                                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('energy_cost')}</div>
+                                        <div className="text-lg font-mono font-bold text-amber-400">{t('ai_tokens_n').replace('{n}', String(depth))}</div>
+                                    </div>
+                                    {activeTree && (
+                                        <div className="text-right">
+                                            <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('your_balance')}</div>
+                                            <div className="text-lg font-mono font-bold text-white">{activeTree.aiTokenBalance || 0}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {error && <div className="text-xs text-red-400 bg-red-900/30 border border-red-500/50 p-3 rounded-lg">{speak(error)}</div>}
+
+                            <button
+                                disabled={isTranslating || !activeTree || (tokensOn && (activeTree.aiTokenBalance || 0) < depth)}
+                                onClick={handleTranslate}
+                                className="mx-auto bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-10 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-900/50 transition-all active:scale-95 flex justify-center items-center gap-2"
+                            >
+                                {isTranslating ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" /> : <Icons.Intelligence />}
+                                {isTranslating ? t('translating') : t('translate_pulse')}
+                            </button>
+
+                            {!activeTree && <p className="text-[10px] text-center text-rose-400">{t('translate_need_tree')}</p>}
+                            {tokensOn && activeTree && (activeTree.aiTokenBalance || 0) < depth && <p className="text-[10px] text-center text-amber-400">{t('err_tokens_short')}</p>}
+                        </div>
+                    )}
+                    </Accordion>
+                </div>
+            </div>
+
+            {/* Immutable chain Ledger info - Repurposed for Memory / Validation */}
+            <div className="bg-white border border-slate-200 p-6 rounded-2xl dark:bg-slate-900 dark:border-slate-700">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center">
+                    <Icons.ShieldCheck />
+                    <span className="ml-2">{t('network_memory')}</span>
+                </h3>
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-3 dark:border-slate-800">
+                        <span className="text-sm text-slate-600 dark:text-slate-300">{t('validation_score')}</span>
+                        <span className="font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded dark:text-emerald-300 dark:bg-emerald-950/40">{pulse.validationScore || pulse.loveCount || 0}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 italic">
+                        {tokensOn ? t('memory_note_tokens') : t('memory_note')}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};

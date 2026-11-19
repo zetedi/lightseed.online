@@ -6,8 +6,8 @@ import { Icons } from '../ui/Icons';
 import { BeingQr } from '../ui/BeingQr';
 import { LoveButton } from '../ui/LoveButton';
 import { mintBeingQr } from '@backend/beings';
-import { ValidationBadge } from '../ValidationBadge';
-import { BeingProfile, type BeingSection } from '../BeingProfile';
+import { ValidationBadge } from '../lifetree/ValidationBadge';
+import { BeingProfile, type BeingSection } from '../sections/BeingProfile';
 import { ChainTree } from '../sections/ChainTree';
 import { TreeCircle } from '../lifetree/TreeCircle';
 import { BedCalendar } from './BedCalendar';
@@ -22,6 +22,7 @@ import { Picture } from '../ui/Picture';
 import { FullViewButton } from '../ui/FullView';
 import { PictureGallery } from '../ui/PictureGallery';
 import { picturesOf } from '../../domain/pictures';
+import { DETAIL_PAGE } from '../ui/DetailPage';
 // The bed's own profile — a bed IS a Lifetree, so it wears the same face (BeingProfile) and the
 // same chain (ChainTree, each stay a leaf). What's its own: a HOUSED/LOOSE pill, a calendar of
 // nights, and a details card with no tree machinery (no domain, no convert, no steward).
@@ -196,7 +197,7 @@ export const BedProfile: React.FC<BedProfileProps> = ({ bed, onClose, onViewTree
 
   return (
     <BeingProfile
-      className="min-h-screen animate-in fade-in zoom-in-95 duration-300"
+      className={DETAIL_PAGE}
       onClose={onClose}
       backLabel={t('back_forest')}
       hero={{

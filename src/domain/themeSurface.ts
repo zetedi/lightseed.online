@@ -1,5 +1,5 @@
 // The header's surface colours, derived from the community theme — extracted so the footer and
-// the onboarding card can match the navigation exactly (same formula as components/Navigation.tsx).
+// the onboarding card can match the navigation exactly (same formula as components/app/Navigation.tsx).
 export interface SurfaceColors {
   background: string;
   text: string;

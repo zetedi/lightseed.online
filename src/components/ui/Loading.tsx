@@ -13,6 +13,11 @@ import { speak } from '../../utils/translations';
  *
  * `size` is the full width of the figure (two circles side by side; height is size / 2).
  */
+// The waiting sun inside a section's own panel: a list that is still arriving holds its place.
+export const LoadingPanel = () => (
+    <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16 dark:border-slate-800 dark:bg-slate-900/50"><Loading /></div>
+);
+
 export const Loading = ({ timeoutMs = 12000, label, size = 80 }: { timeoutMs?: number; label?: string; size?: number }) => {
     const [timedOut, setTimedOut] = useState(false);
 

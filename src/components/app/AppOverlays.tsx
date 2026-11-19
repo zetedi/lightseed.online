@@ -17,10 +17,10 @@ import { notify } from '../ui/Toast';
 import { speak, spokenLine } from '../../utils/translations';
 import { DetailWrapper } from './DetailWrapper';
 
-const CommunityProfile = lazy(() => import('../CommunityProfile').then(m => ({ default: m.CommunityProfile })));
-const PulseDetail = lazy(() => import('../PulseDetail').then(m => ({ default: m.PulseDetail })));
-const LightHouseProfile = lazy(() => import('../LightHouseProfile').then(m => ({ default: m.LightHouseProfile })));
-const GrowthPlayerModal = lazy(() => import('../GrowthPlayerModal').then(m => ({ default: m.GrowthPlayerModal })));
+const CommunityProfile = lazy(() => import('../community/CommunityProfile').then(m => ({ default: m.CommunityProfile })));
+const PulseDetail = lazy(() => import('../pulse/PulseDetail').then(m => ({ default: m.PulseDetail })));
+const LightHouseProfile = lazy(() => import('../lighthouse/LightHouseProfile').then(m => ({ default: m.LightHouseProfile })));
+const GrowthPlayerModal = lazy(() => import('../lifetree/GrowthPlayerModal').then(m => ({ default: m.GrowthPlayerModal })));
 const PlantTreeModal = lazy(() => import('../modals/PlantTreeModal').then(m => ({ default: m.PlantTreeModal })));
 const EmitPulseModal = lazy(() => import('../modals/EmitPulseModal').then(m => ({ default: m.EmitPulseModal })));
 const EventModal = lazy(() => import('../modals/EventModal').then(m => ({ default: m.EventModal })));

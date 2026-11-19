@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { notify } from '../ui/Toast';
 import { WhitePaperSection } from './WhitePaper';
 import { showAlert } from "../ui/Dialog";
-import Logo from '../Logo';
+import Logo from '../ui/Logo';
 import { Icons } from '../ui/Icons';
 import { OutwardLink } from '../ui/OutwardLink';
 import { Modal } from '../ui/Modal';

@@ -8,6 +8,7 @@ import { GuardianButton } from './GuardianButton';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 import { Picture } from '../ui/Picture';
+import { EmptyState } from '../ui/EmptyState';
 interface CommunityFirstTreeProps {
   community: Community;
   // The first lifetree rooted in this community's domain (earliest planted), if any.
@@ -46,10 +47,7 @@ export const CommunityFirstTree: React.FC<CommunityFirstTreeProps> = ({
     <div>
       <SectionTitle title={t('community_first_tree')} sub={t('community_first_tree_sub')} />
       {!firstTree ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40"><Icons.Tree /></div>
-          <p className="text-sm">{t('community_no_tree')}</p>
-        </div>
+        <EmptyState icon={<Icons.Tree />} tone="emerald">{t('community_no_tree')}</EmptyState>
       ) : (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div

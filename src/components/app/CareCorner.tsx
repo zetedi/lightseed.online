@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Lifetree } from '../../types';
-import { CareModal } from '../CareModal';
+import { CareModal } from '../lifetree/CareModal';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 // THE CARE CORNER (Zoltán, 2026-07-22; lifted out of App.tsx unchanged, ring 2026-09-16) —

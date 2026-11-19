@@ -782,8 +782,17 @@ adapters/   implementations of the graph Store port (Firestore today)
 services/   store.ts selects the graph adapter; graph.ts assembles tree circles;
             Firebase aggregates (barrel: services/firebase.ts) + weather, refreshBus
 hooks/      session (useLifeseed → SessionContext), feeds, facts, visible-lightHouses
-components/ the faces; components/sections/ = the shared Being anatomy (8 organs);
-            components/app/ = the conductor's own limbs (main content, overlays, being detail)
+components/ the faces, one folder per being and nothing loose beside them (ring 2026-11-19):
+            ui/        the kit: shapes with no being in them (Modal, Switch, SettingRow,
+                       EmptyState, Field, DetailPage, Loading, Picture, Icons …)
+            sections/  the shared Being anatomy (BeingProfile + the 8 organs)
+            app/       the conductor's own limbs (navigation, dashboard, main content,
+                       overlays, being detail, footer)
+            modals/    the doors that open over any page (plant, mint, offer, sign in, keys)
+            lifetree/ vision/ event/ pulse/ lighthouse/ beds/ offerings/ covenant/
+            community/ profile/ intelligence/ inspiration/   each being's own face: its
+                       card, its profile, its panels
+            forest/ pathway/ about/ landing/   the map, the Light Path, the node's own pages
 pages/      tab-level shells; App.tsx is the single conductor — composing hooks/use* seams
             (overlays, modal doors, host node, door arrivals, carrying), not holding them
 ```

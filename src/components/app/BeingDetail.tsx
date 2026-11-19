@@ -12,14 +12,14 @@ import { notify } from '../ui/Toast';
 import { showAlert } from '../ui/Dialog';
 import { speak } from '../../utils/translations';
 
-const LifetreeDetail = lazy(() => import('../LifetreeDetail').then(m => ({ default: m.LifetreeDetail })));
+const LifetreeDetail = lazy(() => import('../lifetree/LifetreeDetail').then(m => ({ default: m.LifetreeDetail })));
 const BedProfile = lazy(() => import('../beds/BedProfile').then(m => ({ default: m.BedProfile })));
-const VisionProfile = lazy(() => import('../VisionProfile').then(m => ({ default: m.VisionProfile })));
-const EventProfile = lazy(() => import('../EventProfile').then(m => ({ default: m.EventProfile })));
-const GrowthPlayerModal = lazy(() => import('../GrowthPlayerModal').then(m => ({ default: m.GrowthPlayerModal })));
+const VisionProfile = lazy(() => import('../vision/VisionProfile').then(m => ({ default: m.VisionProfile })));
+const EventProfile = lazy(() => import('../event/EventProfile').then(m => ({ default: m.EventProfile })));
+const GrowthPlayerModal = lazy(() => import('../lifetree/GrowthPlayerModal').then(m => ({ default: m.GrowthPlayerModal })));
 const OfferingProfile = lazy(() => import('../offerings/OfferingProfile').then(m => ({ default: m.OfferingProfile })));
 const AlignmentView = lazy(() => import('../sections/AlignmentView').then(m => ({ default: m.AlignmentView })));
-const CovenantProfile = lazy(() => import('../CovenantProfile').then(m => ({ default: m.CovenantProfile })));
+const CovenantProfile = lazy(() => import('../covenant/CovenantProfile').then(m => ({ default: m.CovenantProfile })));
 
 type EffectiveTheme = ReturnType<typeof useSiteTheme>['effectiveTheme'];
 

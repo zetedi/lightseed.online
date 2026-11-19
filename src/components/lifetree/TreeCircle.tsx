@@ -21,6 +21,7 @@ import { WitnessWaterings } from './WitnessWaterings';
 import type { Lifetree, Pulse } from '../../types';
 
 import { Picture } from '../ui/Picture';
+import { EmptyState } from '../ui/EmptyState';
 // THE CIRCLE — the whole circle of care around a Lifetree, one view (the two old tabs merged). It
 // is a prism over the tree's incoming links (domain/views/circle), which already groups owner +
 // keeper + guardian + steward + observer. Two layers of belonging live here, kept legible, never
@@ -473,9 +474,7 @@ export const TreeCircle: React.FC<TreeCircleProps> = ({
                     ))}
                 </div>
             ) : (
-                <p className="mb-5 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400 dark:border-slate-700">
-                    {t('circle_empty')}
-                </p>
+                <EmptyState size="sm" className="mb-5">{t('circle_empty')}</EmptyState>
             )}
 
             {/* Actions — compact pills, never full width. */}

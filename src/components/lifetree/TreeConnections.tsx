@@ -5,6 +5,7 @@ import { subgraphOf, type SubgraphWalk } from '../../domain/subgraph';
 import { beingPath } from '../../domain/beingLink';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Loading } from '../ui/Loading';
+import { EmptyState } from '../ui/EmptyState';
 import { Icons } from '../ui/Icons';
 
 // THE CONNECTIONS PANEL (ring 2026-08-25) — knowing a tree by walking its edges. Depth is
@@ -97,7 +98,7 @@ export const TreeConnections = ({ tree }: { tree: Lifetree }) => {
         </div>
       </div>
       {loading ? <div className="py-8"><Loading /></div> : byDistance.length === 0 ? (
-        <p className="mt-4 rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400 dark:border-slate-700">{t('conn_empty')}</p>
+        <EmptyState size="sm" className="mt-4">{t('conn_empty')}</EmptyState>
       ) : (
         byDistance.map(([d, beings]) => (
           <div key={d} className="mt-4">

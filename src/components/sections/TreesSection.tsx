@@ -10,6 +10,7 @@ import { GuardianButton } from '../community/GuardianButton';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 import { Picture } from '../ui/Picture';
+import { EmptyState } from '../ui/EmptyState';
 // Being-generic trees section — the lifetrees standing with any being (Indra's net).
 // A community, a node or a person gathers trees the same way; only where the gathering is
 // rooted (and therefore how trees are listed, searched and invited) differs, so the owner
@@ -127,10 +128,7 @@ export const TreesSection: React.FC<TreesSectionProps> = ({
         </div>
       )}
       {trees.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40"><Icons.Tree /></div>
-          <p className="text-sm">{emptyLine}</p>
-        </div>
+        <EmptyState icon={<Icons.Tree />} tone="emerald">{emptyLine}</EmptyState>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {trees.map(tree => (

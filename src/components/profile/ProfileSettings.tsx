@@ -4,7 +4,7 @@ import { Icons } from '../ui/Icons';
 import { setNewsletterSubscription, updateUserProfile, setOnlyValidatedCanReach, setAnonymous, deleteUserAccount, logout, fetchAllLifetrees, exportPerson } from '@backend';
 import { fetchMyRays } from '@backend/light';
 import type { Lifetree } from '../../types';
-import { isLightPathOn, setLightPathOn } from '../PathwayCTA';
+import { isLightPathOn, setLightPathOn } from '../pathway/PathwayCTA';
 import { SectionTitle } from '../ui/SectionTitle';
 import { Modal } from '../ui/Modal';
 import { SigningKeyModal } from '../modals/SigningKeyModal';
@@ -13,19 +13,7 @@ import { useSession } from '../../contexts/SessionContext';
 import { pushState, enablePush, disablePush, type PushState } from '@backend/push';
 
 import { Picture } from '../ui/Picture';
-// Module-scope (not created during render) so React keeps the DOM node between renders.
-const Toggle = ({ on, onClick, disabled }: { on: boolean; onClick: () => void; disabled?: boolean }) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={on}
-    onClick={onClick}
-    disabled={disabled}
-    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-50 ${on ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}
-  >
-    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${on ? 'translate-x-5' : 'translate-x-0'}`} />
-  </button>
-);
+import { Switch } from '../ui/Switch';
 
 interface ProfileSettingsProps {
   uid: string;
@@ -196,42 +184,42 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('anonymous_toggle')}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('anonymous_help')}</p>
           </div>
-          <Toggle on={anonymous} onClick={handleAnonymousToggle} disabled={togglingAnonymous} />
+          <Switch on={anonymous} onChange={() => handleAnonymousToggle()} disabled={togglingAnonymous} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('only_validated_can_reach')}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('only_validated_can_reach_help')}</p>
           </div>
-          <Toggle on={onlyValidatedCanReach} onClick={handleOnlyValidatedToggle} disabled={togglingValidatedReach} />
+          <Switch on={onlyValidatedCanReach} onChange={() => handleOnlyValidatedToggle()} disabled={togglingValidatedReach} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('newsletter_of_place').replace('{place}', placeName)}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('newsletter_help')}</p>
           </div>
-          <Toggle on={newsletterSubscribed} onClick={handleNewsletterToggle} disabled={togglingNewsletter || !email} />
+          <Switch on={newsletterSubscribed} onChange={() => handleNewsletterToggle()} disabled={togglingNewsletter || !email} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('dm_email_toggle')}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('toggle_anytime')}</p>
           </div>
-          <Toggle on={dmEmailNotifications} onClick={handleDmEmailToggle} disabled={togglingDmEmail || !email} />
+          <Switch on={dmEmailNotifications} onChange={() => handleDmEmailToggle()} disabled={togglingDmEmail || !email} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('push_toggle')}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{push === 'unsupported' ? t('push_unsupported') : push === 'denied' ? t('push_denied') : t('push_note')}</p>
           </div>
-          <Toggle on={push === 'on'} onClick={handlePushToggle} disabled={togglingPush || push === 'unsupported' || push === 'denied'} />
+          <Switch on={push === 'on'} onChange={() => handlePushToggle()} disabled={togglingPush || push === 'unsupported' || push === 'denied'} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="font-semibold text-slate-800 text-sm dark:text-slate-100">{t('light_path')} {lightPathOn ? <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">{t('on')}</span> : <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">{t('off')}</span>}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('lightpath_note')}</p>
           </div>
-          <Toggle on={lightPathOn} onClick={handleLightPathToggle} />
+          <Switch on={lightPathOn} onChange={() => handleLightPathToggle()} />
         </div>
         <div className="p-4 flex items-center justify-between gap-4">
           <div className="min-w-0">

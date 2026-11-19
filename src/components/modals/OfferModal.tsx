@@ -14,6 +14,7 @@ import { tabTone } from '../../utils/tabTheme';
 import type { Lifetree, Pulse } from '../../types';
 import { speak, spokenLine, say } from '../../utils/translations';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { FieldLabel } from '../ui/Field';
 
 // MAKE AN OFFERING — post a BED or SERVICE through trust, with light named only as the hoped-for
 // appreciation AFTER someone receives it (domain/offering). It creates an offering pulse on the
@@ -162,7 +163,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
                 {/* The tree this offering stands on — its chain carries the twin block on acceptance. */}
                 {to && !editing && (
                     <label className="block">
-                        <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{t('offer_from_tree')}</span>
+                        <FieldLabel>{t('offer_from_tree')}</FieldLabel>
                         <select value={fromTreeId} onChange={e => setFromTreeId(e.target.value)} className={`${field} h-11 px-3`}>
                             {standing.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
                         </select>
@@ -186,7 +187,7 @@ export const OfferModal = ({ onClose, onCreated, offering, onSaved, to }: {
 
                 {/* An optional door to more detail: a booking page, a menu, the offerer's site. */}
                 <label className="block">
-                    <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400">{kind === 'code' ? t('offer_code_link_label') : t('offer_detail_link')}</span>
+                    <FieldLabel>{kind === 'code' ? t('offer_code_link_label') : t('offer_detail_link')}</FieldLabel>
                     <input dir="ltr" type="url" inputMode="url" value={url} onChange={e => setUrl(e.target.value)}
                         placeholder="https://…"
                         className={`${field} h-11 px-3`} />

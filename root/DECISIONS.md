@@ -6433,3 +6433,35 @@ staff delete another's vision — the trigger believes the event's principal onl
 person of the node, and how the platform labels a signed-in delete was not verified against a
 live one; failing that it is the vision's author. The origin's trigger has no automated test.
 Also mended: the node's `/v1/visions?tree=` read a vision's retired field; it reads grounds.
+
+### 2026-11-19 — Every face has a folder; the repeated shapes have one name
+
+Zoltán asked for the faces to be refined further: find the common components, make the
+structure of the components clearer. Nothing in the law, the rules or either soil changes; this
+ring is about where a face lives and what it is built from.
+
+Thirty components lay loose in `src/components/`, beside folders that already held their
+siblings (a tree's card outside `lifetree/`, a vision's profile outside `vision/`). They moved
+into the folder of the being they show, and four folders were born for beings that had none
+(`event/`, `pulse/`, `lighthouse/`, `covenant/`) plus `forest/` and `pathway/`. Two pieces that
+sat in `ui/` but belong to a being went home (`PulseInsightPanel` to `pulse/`, `Footer` to
+`app/`); `Logo` went into `ui/`, `BeingProfile` beside its organs in `sections/`. The map is in
+`ARCHITECTURE.md` → Layers. The faces' ratchet kept its count (77) under the new paths.
+
+Seven shapes that were copied by hand got one name each in `ui/`: `Switch` (twelve hand-drawn
+switches in two sizes and two greens), `SettingRow` and `SECTION_BREAK` (the keeper's dial
+card), `EmptyState` and `EmptyLine`, `LoadingPanel`, `FieldLabel` and `ErrorNote`
+(`Field.tsx`), `HeroBack` and the `DETAIL_PAGE` arrival (`DetailPage.tsx`).
+
+Plain contract. Guaranteed: the gate (`npm run check`) is green and no import crosses a layer
+it did not cross before. What a reader will see differently, on purpose: every switch now has
+the larger knob and the one green (six had a smaller knob and a darker green); the staff AI
+dial's card is rounded like its siblings; two empty lines became the dashed box's own
+paragraph; a form's error line is announced to screen readers (`role="alert"`). Not
+guaranteed: that the result looks right — there is still no automated walk of the assembled
+faces (Known debts), and this ring was not looked at in a browser by the hand that made it.
+Not done: `ui/` still holds pieces with a being in them (`ThemeEditor`, `AppearanceEditor`,
+`EventWeather`, `MiniForestMap`, the update toasts); the text inputs and the small uppercase
+captions are still written out by hand in many places; the largest faces (`CommunityProfile`,
+`ReachThread`, `ForestMap`) were moved, not divided.
+

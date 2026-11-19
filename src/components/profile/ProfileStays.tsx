@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icons } from '../ui/Icons';
 import { SectionTitle } from '../ui/SectionTitle';
-import { Loading } from '../ui/Loading';
+import { LoadingPanel } from '../ui/Loading';
 import { getMyStays, getLifetreeById } from '@backend';
 import { type Stay } from '../../domain/stay';
 import type { Lifetree } from '../../types';
@@ -51,7 +51,7 @@ export const ProfileStays: React.FC<ProfileStaysProps> = ({ uid, onViewTree }) =
     <div>
       <SectionTitle title={t('my_stays')} sub={t('my_stays_sub')} />
       {loading ? (
-        <div className="flex justify-center rounded-2xl border border-slate-100 bg-slate-50/50 py-16 dark:bg-slate-900/50 dark:border-slate-800"><Loading /></div>
+        <LoadingPanel />
       ) : stays.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400 dark:border-slate-700">
           {t('no_stays_yet')}

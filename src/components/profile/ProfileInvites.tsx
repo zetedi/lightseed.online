@@ -7,6 +7,7 @@ import { SectionTitle } from '../ui/SectionTitle';
 import { ProfileInviteBanners } from './ProfileInviteBanners';
 import { Modal } from '../ui/Modal';
 import { speak } from '../../utils/translations';
+import { EmptyState } from '../ui/EmptyState';
 
 // The invite documents are schemaless in Firestore; these are the fields this tab reads.
 interface SentInvite {
@@ -128,10 +129,7 @@ export const ProfileInvites: React.FC<ProfileInvitesProps> = ({ uid, isSuperAdmi
             invitations live, no longer as a banner above every tab. */}
         <ProfileInviteBanners uid={uid} notify={notify} />
         {(!hasTrees && !isSuperAdmin) ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-400 dark:border-slate-700">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"><Icons.Tree /></div>
-            <p className="text-sm">{t('invites_plant_first')}</p>
-          </div>
+          <EmptyState icon={<Icons.Tree />}>{t('invites_plant_first')}</EmptyState>
         ) : (
           <div className="rounded-2xl border border-slate-100 p-5 space-y-3 dark:border-slate-800">
             <p className="text-sm text-slate-500">{t('invites_remaining')}: <span className="font-bold text-emerald-600 dark:text-emerald-300">{isSuperAdmin ? t('unlimited') : invitesRemaining}</span></p>

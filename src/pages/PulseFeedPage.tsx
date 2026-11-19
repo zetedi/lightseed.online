@@ -1,11 +1,12 @@
 import React from 'react';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { PulseCard } from '../components/PulseCard';
+import { PulseCard } from '../components/pulse/PulseCard';
 import { Loading } from '../components/ui/Loading';
 import { ViewDensityToggle } from '../components/ui/ViewDensityToggle';
 import { ListBox } from '../components/ui/ListBox';
 import { useListDensity, densityGridClass } from '../hooks/useListDensity';
 import type { Pulse, Lightseed } from '../types';
+import { EmptyLine } from '../components/ui/EmptyState';
 
 // A presentational feed of PulseCards under the coloured header band. Shared by the Events and
 // Pulses tabs — the shell supplies data + handlers; the page owns its reading density (rows /
@@ -53,7 +54,7 @@ export const PulseFeedPage = ({
         <ListBox tone={tone}>
           <div className={densityGridClass(density)}>
             {items.length === 0 && !loadingMore ? (
-              <p className="col-span-full py-10 text-center text-slate-500">{emptyText}</p>
+              <EmptyLine>{emptyText}</EmptyLine>
             ) : (
               items.map(item => (
                 <div key={item.id}>

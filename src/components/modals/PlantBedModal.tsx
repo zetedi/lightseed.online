@@ -12,6 +12,7 @@ import { announce } from '../../services/refreshBus';
 import { bedPlantingProblem } from '../../domain/bed';
 import type { LightHouse } from '../../types';
 import { speak } from '../../utils/translations';
+import { ErrorNote } from '../ui/Field';
 
 // Offer a bed inside a Light House — the keeper-only door. A bed is a being (plantBed seals its
 // genesis chain), so this is deliberately light: a name, a word of welcome, a face. The house
@@ -99,7 +100,7 @@ export const PlantBedModal: React.FC<{ lightHouse: LightHouse; onClose: () => vo
             uploading={uploading}
             cover />
         </div>
-        {err && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300">{speak(err)}</p>}
+        {err && <ErrorNote>{speak(err)}</ErrorNote>}
         <button type="button" onClick={submit} disabled={submitting || !name.trim()}
           className={modalButton('primary')}>
           {submitting ? t('planting') : t('offer_a_bed')}
