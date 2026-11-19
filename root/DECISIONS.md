@@ -6524,3 +6524,33 @@ One word changed its speaker: the Light House consecration toast is now spoken b
 the faces were — `useReachConversation` is 469 lines and still one piece; the hooks reach
 `components/ui` for the dialog and the toast, as `useDoorArrivals` already did.
 
+### 2026-11-19 — Nothing below the faces reaches up; the conversation is four hooks
+
+Two things the morning's ring named as not done, and one asked for beside them.
+
+The hooks imported the dialog and the toast from `components/ui`. The asking and the announcing
+are not faces: they are buses a face listens to. They now live in `services/dialogBus`
+(`showAlert`, `showConfirm`) and `services/toastBus` (`notify`); `ui/Dialog` and `ui/Toast` keep
+the hosts and re-export the words for the faces that always imported them there. `resonanceId`
+left a component for `utils/resonance`. The direction is held by the gate: `eslint.config.js`
+refuses a value import of `components/` or `pages/` from `hooks/`, `services/`, `utils/`,
+`adapters/` and `contexts/`.
+
+`useReachConversation` was 469 lines in one piece. It is 313 now, beside
+`useActiveIntelligence` (the chosen intelligence, its name, today's allowance),
+`useReachInterpretations` (what a message means) and `useReachMint` (sealing a conversation).
+The session is read once, in the conversation, and handed to the mint.
+
+The README gained "Run a seed": the short path to a local node from scratch and what a VPS
+needs, gathered from `seed/README.md`.
+
+Plain contract. Guaranteed: the gate is green; the lint rule fails the build on a new upward
+import. One behaviour changed on purpose: the intelligence's name is now remembered with the id
+it was read for, so while a newly chosen intelligence is still being read the thread says the
+fallback name, where before it kept saying the previous one. Not guaranteed: the thread was not
+walked in a browser after the carving. The README's seed section was assembled from the seed's
+own README and not run end to end while writing it; the VPS list is what is needed, not a
+proven runbook (the long-running VPS proof is still open in the roadmap). `seed/README.md`
+still opens by saying the seed does not yet run the application independently, which its own
+later sections contradict; that paragraph was left for its keeper to reword.
+

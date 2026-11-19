@@ -5,7 +5,7 @@ import type { Community, Lifetree } from '../types';
 import { ownMergeUid } from '../domain/pulseVisibility';
 import { canCareForTree } from '../domain/policy';
 import { graphStore } from '../services/store';
-import { showAlert } from '../components/ui/Dialog';
+import { showAlert } from '../services/dialogBus';
 
 const bareDomain = (d?: string) => (d || '').toLowerCase().replace(/^www\./, '');
 

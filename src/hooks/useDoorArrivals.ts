@@ -4,7 +4,7 @@ import type { BeingOverlays } from './useBeingOverlays';
 import { getPendingTreeInvites, getCommunityInvite, getCommunityById, getPersonName } from '@backend';
 import { getTreeInvite, claimTreeInvite, acceptTreeInvite } from '@backend/trees';
 import { getLifetreeById } from '@backend/pulses';
-import { showConfirm } from '../components/ui/Dialog';
+import { showConfirm } from '../services/dialogBus';
 import { treeInviteClaimRefusal } from '../domain/treeInvite';
 import { roleLabelKey } from '../domain/treeCircle';
 import type { TreeKeepingInvite } from '../domain/treeCircle';
@@ -12,7 +12,7 @@ import { findBeingByLid } from '@backend/beings';
 import { lidFromPath, beingPath } from '../domain/beingLink';
 import { inviteIdFromPath } from '../domain/communityDoor';
 import { asksSignIn, withoutSignInAsk } from '../domain/ssoDoor';
-import { notify } from '../components/ui/Toast';
+import { notify } from '../services/toastBus';
 import { speak, spokenLine } from '../utils/translations';
 
 // THE DOORS A VISITOR ARRIVES THROUGH (ring 2026-09-16, lifted out of App.tsx unchanged).

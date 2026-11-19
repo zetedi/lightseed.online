@@ -6,7 +6,8 @@ import { Alignment, Lifetree, VisionSynergy } from '../../types';
 import { getMyAlignmentsHistory, getLifetreeById } from '@backend';
 import { SectionTitle } from '../ui/SectionTitle';
 import { LoadingPanel } from '../ui/Loading';
-import { ResonanceCard, resonanceId } from '../pulse/ResonancePanel';
+import { ResonanceCard } from '../pulse/ResonancePanel';
+import { resonanceId } from '../../utils/resonance';
 
 interface ProfileHistoryProps {
   uid: string;

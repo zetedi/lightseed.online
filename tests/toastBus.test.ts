@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createToastBus, TOAST_HOLD_MS, TOAST_DWELL, dwellMs } from '../src/components/ui/toastBus';
+import { createToastBus, TOAST_HOLD_MS, TOAST_DWELL, dwellMs } from '../src/services/toastBus';
 
 // The toast bus's law: a word spoken to an empty room is held for the host, and spoken the
 // moment the host arrives — if it is still fresh. The /b/ door's "not public" was dropped for

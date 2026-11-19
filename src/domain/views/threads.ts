@@ -172,3 +172,14 @@ export function unseenReachIds(pulses: Pulse[], uid: string): string[] {
       && !(p.seenBy || []).includes(uid))
     .map(p => p.id);
 }
+
+// What a loaded group thread remembers of itself, so a reply lands in the same conversation
+// with the same participants.
+export interface ThreadMeta {
+  threadId: string;
+  participantUids: string[];
+  reachTreeId?: string;
+  reachTreeName?: string;
+  threadName?: string;
+  audience?: ReachAudience;
+}

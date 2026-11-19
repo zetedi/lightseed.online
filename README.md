@@ -173,6 +173,131 @@ npm install
 npm run dev
 ```
 
+## 🌰 Run a seed (an independent node)
+
+A **seed** is a Lightseed node on its own soil: PostgreSQL, a small Node API, a self-hosted
+sign-in (Keycloak) and one TLS proxy (Caddy), all under Docker Compose in [`seed/`](seed/) — no
+Firebase at run time. This section is the short path. Every step is told in full, with its
+limits, in [`seed/README.md`](seed/README.md); what the node has not grown yet is counted in
+[`seed/PARITY.md`](seed/PARITY.md).
+
+> **Where this stands.** The steps below are gathered from `seed/README.md`. The local walk has
+> been done by hand on this project's own machine; the Docker proof (`npm run test:seed:docker`)
+> exercises the database and API automatically. A clean installation on a long-running VPS is
+> still an open item of the roadmap, so treat the VPS list as what is needed, not as a proven
+> runbook.
+
+### What you need
+
+- Docker with a Compose version that understands the `!override` / `!reset` tags.
+- Node.js and this repository's dependencies (`npm install`).
+- `openssl` (for generated secrets).
+
+### Locally, from scratch
+
+All commands run from the repository root unless they say otherwise.
+
+1. **The soil.** Start the database and install the schema.
+
+   ```sh
+   cp seed/.env.example seed/.env        # set SEED_DB_PASSWORD to a generated password
+   (cd seed && docker compose up -d --wait)
+   npm run seed:migrate                  # first installation and every later upgrade
+   ```
+
+   On macOS (Docker Desktop) give the database a *named volume* in a private Compose override
+   first; the default `./data` bind mount breaks `initdb` there.
+
+2. **The node's own name.** Copy `seed/node.example.json`, give it a **new UUID v7** as
+   `nodeLid` (never another node's), your domains and contacts, then write the charter:
+
+   ```sh
+   npm run seed:configure -- /path/to/my-node.json seed/charter   # the output directory must not exist yet
+   ```
+
+3. **The API's database login** (a restricted role, never the owner):
+
+   ```sh
+   npm run seed:provision -- seed/runtime.env
+   ```
+
+4. **Local hosts and certificates.** In `seed/.env` set, for a walk on your own machine:
+
+   ```sh
+   SEED_APP_HOST=seed.localhost
+   SEED_IDENTITY_HOST=identity.localhost
+   SEED_TLS=internal                      # Caddy is its own certificate authority
+   SEED_EDGE_HTTPS_PORT=8443
+   SEED_NODE_ORIGIN=https://seed.localhost:8443
+   ```
+
+5. **Build the application as this node**, then start the API and the edge:
+
+   ```sh
+   SEED_CHARTER=seed/charter/node.json \
+   SEED_WEB_ORIGIN=https://seed.localhost:8443 \
+   SEED_IDENTITY_ISSUER=https://identity.localhost:8443/realms/lightseed \
+   npm run build:independent              # → dist-independent/
+   (cd seed && docker compose --profile api --profile edge up -d --build --wait)
+   ```
+
+6. **Sign-in.** Write the realm for the exact application origin, fill
+   `seed/identity/.env` from its example (its own database password, a bootstrap admin, the
+   identity origin, the absolute path of the realm file), and start the issuer — after the edge,
+   which creates the network they share:
+
+   ```sh
+   npm run seed:identity:configure -- https://seed.localhost:8443 /absolute/path/lightseed-realm.json
+   docker compose --env-file seed/identity/.env -f seed/identity/compose.yml up -d
+   ```
+
+   Add `--open-registration` to the first command if people may register themselves. Create
+   your own account in the Keycloak admin console.
+
+7. **Tell the API whom to trust.** Write the trust file (`auth.json`: the issuer, the audience
+   `lightseed-api`, the issuer's RS256 public keys, and either explicit `bindings` or
+   `"enrollment": "open"`), mount it into the API through your Compose override as
+   `SEED_AUTH_CONFIG`, and restart the API. The exact shape is in
+   `seed/README.md` → *Authentication trust configuration* and *Self-hosted OpenID Connect
+   provider*.
+
+8. **Walk in.** Trust Caddy's local root certificate (or accept the warning per host), open
+   `https://seed.localhost:8443`, sign in, and appoint the node's keeper:
+
+   ```sh
+   (cd seed && docker compose cp proxy:/data/caddy/pki/authorities/local/root.crt .)
+   npm run seed:keeper -- <your uid>
+   ```
+
+Optional organs, each refusing by name until its secret is given in `seed/runtime.env`: mail
+(`SEED_SMTP_URL`), push (`SEED_VAPID_PRIVATE_KEY`), and AI (`SEED_ANTHROPIC_API_KEY`,
+`SEED_GEMINI_API_KEY`, `SEED_CREDENTIAL_KEY`).
+
+### On a VPS
+
+The same eight steps, with these differences and needs:
+
+- **A machine** that runs Docker Compose, with **ports 80 and 443 open** to the world. The
+  database, API and identity ports bind to loopback only; keep them that way.
+- **DNS**: the application host, the identity host, and every face host, each resolving to the
+  machine *before* the edge starts (certificates are fetched per host).
+- **Certificates by ACME**: `SEED_TLS=acme` and `SEED_ACME_EMAIL` in `seed/.env`; real hosts in
+  `SEED_APP_HOST`, `SEED_IDENTITY_HOST`, `SEED_NODE_ORIGIN` (and `SEED_FACE_DOORS` /
+  `SEED_FACE_HOSTS` for faces). Build with the same https origins.
+- **Secrets kept outside the repository and backed up apart from the data**: `seed/.env`,
+  `seed/runtime.env`, `seed/identity/.env`, the trust file, and the private charter
+  (`node.json`). Only `lightseed.json` is public.
+- **An SMTP account**, for the node's letters and for the issuer's e-mail verification and
+  password recovery (configured in Keycloak as well).
+- **A permanent Keycloak operator account**, replacing the bootstrap administrator, whose
+  credentials then leave the environment.
+- **Backups**: `npm run seed:backup` and `npm run seed:restore` carry the whole node (database,
+  pictures, identity, configuration); see *Back up / restore* in `seed/README.md`.
+- **Upgrades**: pull, `npm run seed:migrate`, rebuild (`npm run build:independent`), and
+  `docker compose --profile api --profile edge up -d --build --wait`.
+- **Moving an existing place in**: the crossing (`seed:export` / `seed:export:origin` →
+  `seed:import`) and, for a whole census of people, `seed:identity:enroll`.
+
 ## 🌍 Deploying to Production
 
 ### Step 1: Set up GitHub Secrets (Critical for Oracle/AI)

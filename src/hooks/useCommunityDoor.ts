@@ -4,8 +4,8 @@ import type { Community, CommunityInvite } from '../types';
 import { doorOf, checkInvite } from '../domain/communityDoor';
 import { isParticipant } from '../domain/views/participation';
 import { graphStore } from '../services/store';
-import { showAlert } from '../components/ui/Dialog';
-import { notify } from '../components/ui/Toast';
+import { showAlert } from '../services/dialogBus';
+import { notify } from '../services/toastBus';
 import { spokenLine } from '../utils/translations';
 
 // THE VIEWER AT A COMMUNITY'S DOOR — everything the community's face needs to know about the

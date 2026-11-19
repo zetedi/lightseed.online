@@ -1,8 +1,7 @@
-import { speak } from '../../utils/translations';
 import { useEffect, useRef, useState } from 'react';
-import { toastBus, dwellMs, type ToastKind, type ToastNote } from './toastBus';
+import { toastBus, dwellMs, notify, type ToastNote } from '../../services/toastBus';
 
-export type { ToastKind } from './toastBus';
+export type { ToastKind } from '../../services/toastBus';
 
 // A confirmation toast — the visible "done" for background work (saves, flips, consecrations).
 // Sits just below the header so an important result is seen, glows green when all is well and
@@ -10,10 +9,9 @@ export type { ToastKind } from './toastBus';
 // 'error') from anywhere; the single ToastHost (mounted once in App) shows it briefly and fades.
 // A word said before the host stands is HELD by the bus (./toastBus) and spoken when it mounts.
 
-// The toast SPEAKS (ring 2026-09-19): a key, or a spoken line `key::{json}`, is said in the
-// reader's tongue here; a composed sentence passes through untouched. Offering keepership
-// showed `keeper_offer_sent::{"name":…}` raw because this boundary let the line through.
-export const notify = (message: string, kind: ToastKind = 'success'): void => { toastBus.say({ message: speak(message), kind }); };
+// The word itself is said through the bus (services/toastBus `notify`), re-exported here for
+// the faces that have always imported it from this file.
+export { notify };
 
 export const ToastHost = () => {
   const [toast, setToast] = useState<ToastNote | null>(null);

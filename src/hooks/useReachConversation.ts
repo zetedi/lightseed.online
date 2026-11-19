@@ -1,33 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { sendMessageToOracle, generateImage, translatePulse, type TranslationResponse } from '@backend/gemini';
-import { getIntelligence } from '@backend/intelligence';
-import { checkAndIncrementAiUsage, mintPulse, uploadBase64Image, listenToUserProfile, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, fetchGrowthPulses, retractReachMessage } from '@backend';
-import { notify } from '../components/ui/Toast';
-import { showAlert, showConfirm } from '../components/ui/Dialog';
+import { sendMessageToOracle } from '@backend/gemini';
+import { checkAndIncrementAiUsage, fetchReachThread, fetchThreadById, markReachesSeen, sendReach, sendThreadMessage, retractReachMessage } from '@backend';
+import { showAlert, showConfirm } from '../services/dialogBus';
 import { useLanguage } from '../contexts/LanguageContext';
 import { reachAudienceLabels } from '../utils/reachPermissions';
-import { spokenLine } from '../utils/translations';
+import { withTimeout } from '../utils/withTimeout';
 import { isWateringOverdue } from '../domain/watering';
-import { threadLines, unseenReachIds, type ThreadLine, type GroupThreadDescriptor } from '../domain/views/threads';
+import { threadLines, unseenReachIds, type ThreadLine, type ThreadMeta, type GroupThreadDescriptor } from '../domain/views/threads';
 import { useLifeseed } from './useLifeseed';
 import { useRefreshSignal } from './useRefreshSignal';
+import { useActiveIntelligence } from './useActiveIntelligence';
+import { useReachInterpretations } from './useReachInterpretations';
+import { useReachMint } from './useReachMint';
 import type { Lifetree, Pulse, ReachAudience } from '../types';
 
 type ChatMessage = ThreadLine;
 
-const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> =>
-    new Promise((resolve, reject) => {
-        const timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
-        promise
-            .then((value) => {
-                window.clearTimeout(timer);
-                resolve(value);
-            })
-            .catch((error) => {
-                window.clearTimeout(timer);
-                reject(error);
-            });
-    });
 
 // ONE CONVERSATION, HELD — a reach to a tree (1:1 or to a slice of its circle), a group thread
 // opened from the inbox, or the Oracle: its lines, the composing hand, and the four things a
@@ -48,15 +36,8 @@ export const useReachConversation = ({ targetTree = null, groupThread = null, in
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [isSending, setIsSending] = useState(false);
-    const [isMinting, setIsMinting] = useState(false);
     // The minting explainer, folded behind a small (i) toggle under the messages.
     const [showMintInfo, setShowMintInfo] = useState(false);
-    const [usage, setUsage] = useState(0);
-    const [preferredIntelligenceId, setPreferredIntelligenceId] = useState<string | undefined>(undefined);
-    // The name of the enabled, active intelligence — shown throughout the DM in place of "Osiris".
-    const [aiName, setAiName] = useState('Osiris');
-    // Per-message AI interpretations — the "shadow text" beneath an incoming tree's words.
-    const [interpretations, setInterpretations] = useState<Record<number, TranslationResponse | 'loading' | { error: string }>>({});
     const [mode, setMode] = useState<'oracle' | 'tree'>(targetTree || groupThread ? 'tree' : 'oracle');
     const [selectedTree, setSelectedTree] = useState<Lifetree | null>(targetTree);
     // Who the next message goes to when composing to a tree: undefined = owner (1:1), else a
@@ -64,11 +45,13 @@ export const useReachConversation = ({ targetTree = null, groupThread = null, in
     const [audience, setAudience] = useState<ReachAudience | undefined>(groupThread?.audience ?? initialAudience);
     // Metadata for the thread currently loaded — lets a group reply reuse the same threadId
     // + participantUids so everyone stays in one conversation.
-    const [threadMeta, setThreadMeta] = useState<{ threadId: string; participantUids: string[]; reachTreeId?: string; reachTreeName?: string; threadName?: string; audience?: ReachAudience } | null>(null);
+    const [threadMeta, setThreadMeta] = useState<ThreadMeta | null>(null);
     // The human behind the partner tree in a 1:1 thread — shown under the tree name. Derived
     // from the partner's own messages (their reaches carry authorPersonName).
     const [partnerPersonName, setPartnerPersonName] = useState<string | undefined>(undefined);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const { usage, preferredIntelligenceId, aiName } = useActiveIntelligence(lightseed);
+    const { interpretations, revealInterpretation, clearInterpretations } = useReachInterpretations(selectedTree, activeTree, preferredIntelligenceId);
 
     const isGroup = !!groupThread || (mode === 'tree' && audience !== undefined);
 
@@ -117,7 +100,7 @@ export const useReachConversation = ({ targetTree = null, groupThread = null, in
         if (groupThread) {
             const greeting = t('reach_group_greeting').replace('{name}', groupThread.partnerName);
             setMessages([]);
-            setInterpretations({});
+            clearInterpretations();
             setIsTyping(true);
             fetchThreadById(groupThread.threadId, lightseed?.uid)
                 .then(pulses => {
@@ -148,7 +131,7 @@ export const useReachConversation = ({ targetTree = null, groupThread = null, in
                 ? t('reach_group_circle_greeting').replace('{name}', partner.name).replace('{circle}', reachAudienceLabels[audience].toLowerCase())
                 : t('reach_direct_greeting').replace('{name}', partner.name);
             setMessages([]);
-            setInterpretations({});
+            clearInterpretations();
             setIsTyping(true);
 
             const load = audience && lightseed
@@ -196,62 +179,11 @@ export const useReachConversation = ({ targetTree = null, groupThread = null, in
         // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive ids; depending on the tree/thread objects would re-run on identity churn and could override the user's selected tree
     }, [mode, selectedTree?.id, activeTree?.id, groupThread?.threadId]);
 
-    useEffect(() => {
-        if (lightseed) {
-            const unsub = listenToUserProfile(lightseed.uid, (data) => {
-                setUsage(data?.dailyAiText || 0);
-                setPreferredIntelligenceId(data?.preferredIntelligenceId || undefined);
-            });
-            return () => unsub();
-        }
-    }, [lightseed]);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Resolve the active intelligence's display name (falls back to Osiris).
-    useEffect(() => {
-        let cancelled = false;
-        if (preferredIntelligenceId) {
-            getIntelligence(preferredIntelligenceId)
-                .then(i => { if (!cancelled) setAiName(i && i.enabled !== false && i.name ? i.name : 'Osiris'); })
-                .catch(() => {});
-        } else {
-            setAiName('Osiris');
-        }
-        return () => { cancelled = true; };
-    }, [preferredIntelligenceId]);
-
-    // Reveal what an incoming tree's message means — interpreted through the reader's
-    // chosen intelligence against both trees' visions, shown as greyed shadow text.
-    const revealInterpretation = async (index: number, text: string) => {
-        if (!selectedTree || !activeTree) return;
-        const current = interpretations[index];
-        if (current === 'loading' || (current && !('error' in current))) return; // already loading or done
-        setInterpretations(prev => ({ ...prev, [index]: 'loading' }));
-        try {
-            // Depth = context depth (domain/translation): the visions, plus the sender tree's
-            // public growth (its mints). The subgraph (depth 4) can widen this later.
-            let context = [selectedTree.shortTitle, selectedTree.body, activeTree.body]
-                .filter(Boolean).join(' — ');
-            try {
-                const mints = (await fetchGrowthPulses(selectedTree.id))
-                    .slice(0, 5).map(p => p.title).filter(Boolean).join(' · ');
-                if (mints) context += ` — Recent public growth of ${selectedTree.name}: ${mints}`;
-            } catch { /* optional context — the reading works without it */ }
-            const result = await translatePulse({
-                senderTreeName: selectedTree.name,
-                receiverTreeName: activeTree.name,
-                message: text,
-                depth: 3, // message + visions + public mints (what we actually gathered)
-                context,
-            }, preferredIntelligenceId);
-            setInterpretations(prev => ({ ...prev, [index]: result }));
-        } catch (e: any) {
-            setInterpretations(prev => ({ ...prev, [index]: { error: e?.message || t('err_interpreter') } }));
-        }
-    };
 
     const partnerTreeId = selectedTree?.id || groupThread?.partnerId || null;
     // A quenched tree's care pings dissolve here too — the full tree record (with its watering
@@ -364,99 +296,11 @@ export const useReachConversation = ({ targetTree = null, groupThread = null, in
         } catch (e) { showAlert(e instanceof Error ? e.message : String(e)); }
     };
 
-    const handleMint = async () => {
-        if (!lightseed || !activeTree) {
-            showAlert('mint_need_tree');
-            return;
-        }
-        if (mode === 'tree' && !selectedTree && !groupThread) {
-            showAlert('mint_open_first');
-            return;
-        }
-        if (messages.filter(m => !m.system).length <= 1) return; // nothing but the greeting
+    const { isMinting, handleMint } = useReachMint({
+        session: { lightseed, activeTree, nameAs, isAdmin, isSuperAdmin },
+        messages, setMessages, mode, selectedTree, groupThread, threadMeta, audience, aiName,
+    });
 
-        // ONLY WHAT GREW SINCE THE LAST MINT (or the origin): each mint-notice in the thread
-        // is the previous seal's watermark — the next mint takes the words after it, so
-        // repeated mints record increments, never the same words twice.
-        const lastMintIdx = messages.reduce((acc, m, i) => (m.system ? i : acc), -1);
-        const freshMessages = messages.slice(lastMintIdx + 1).filter(m => !m.system);
-        if (freshMessages.length === 0) { showAlert('mint_nothing_new'); return; }
-
-        const partnerLabel = groupThread?.partnerName || selectedTree?.name || t('this_conversation');
-
-        // Tree DM: seal the conversation onto the minter's tree as a PUBLIC record on the
-        // immutable chain (a contract on the LIN), then post a notice into the thread so the
-        // other party sees who minted it and where.
-        if (mode === 'tree') {
-            const ok = await showConfirm(
-                spokenLine('mint_confirm', { name: activeTree.name || '' }),
-                { title: 'mint_to_chain', confirmText: 'mint_short' },
-            );
-            if (!ok) return;
-            setIsMinting(true);
-            try {
-                const meName = nameAs(activeTree.name) || activeTree.name;
-                const conversationText = freshMessages
-                    .map(m => `${m.role === 'user' ? meName : (m.authorPersonName || m.authorName || partnerLabel)}: ${m.text}`)
-                    .join('\n\n');
-                // The record on the tree — a 'standard' pulse shows in the tree's growth chain (and the LIN).
-                await mintPulse({
-                    lifetreeId: activeTree.id,
-                    type: 'standard',
-                    title: t('mint_conversation_title').replace('{name}', partnerLabel),
-                    body: conversationText,
-                    reachTreeId: selectedTree?.id || groupThread?.partnerId,
-                    reachTreeName: selectedTree?.name || groupThread?.partnerName,
-                    authorId: lightseed.uid,
-                    authorName: meName,
-                    authorPhoto: lightseed.photoURL || activeTree.imageUrl,
-                });
-                // The notice in the thread (a system line both sides see).
-                const noticeText = t('mint_notice_line').replace('{who}', meName).replace('{tree}', activeTree.name);
-                if (groupThread && threadMeta) {
-                    await sendThreadMessage({ thread: { ...threadMeta, isGroup: true }, fromTree: activeTree, sender: lightseed, text: noticeText, mintNotice: true });
-                } else if (selectedTree) {
-                    await sendReach({ fromTree: activeTree, toTree: selectedTree, text: noticeText, sender: lightseed, audience, mintNotice: true, isAdmin, isSuperAdmin });
-                }
-                setMessages(prev => [...prev, { role: 'model', system: true, text: noticeText }]);
-                notify('🌿 ' + t('mint_done_chain'));
-            } catch (e: any) {
-                console.error(e);
-                showAlert(e?.message || 'err_mint');
-            }
-            setIsMinting(false);
-            return;
-        }
-
-        // Oracle: "Mint Wisdom" — an abstract image + the conversation, on your active tree.
-        setIsMinting(true);
-        try {
-            const conversationText = messages.map(m => `${m.role === 'user' ? t('seeker') : aiName}: ${m.text}`).join('\n\n');
-            const summaryPrompt = conversationText.substring(0, 1000);
-            await checkAndIncrementAiUsage('image');
-            const prompt = `Create an abstract, artistic image representing the essence of this conversation: ${summaryPrompt}. Do not contain any text, words, letters, or typography in the image.`;
-            const imageUrl = await withTimeout(generateImage(prompt), 45000, t('err_image_timeout'));
-            let finalImageUrl = "";
-            if (imageUrl && imageUrl.startsWith('data:')) {
-                finalImageUrl = await uploadBase64Image(imageUrl, `users/${lightseed.uid}/pulses/ai/${Date.now()}`);
-            }
-            await mintPulse({
-                lifetreeId: activeTree.id,
-                type: 'standard',
-                title: t('wisdom_title').replace('{name}', aiName),
-                body: conversationText,
-                imageUrl: finalImageUrl,
-                authorId: lightseed.uid,
-                authorName: nameAs(activeTree?.name) || t('soul'),
-                authorPhoto: lightseed.photoURL ?? undefined,
-            });
-            notify('🌿 ' + t('mint_done_pulse'));
-        } catch (e: any) {
-            console.error(e);
-            showAlert(e?.message || 'err_mint');
-        }
-        setIsMinting(false);
-    }
 
     return {
         lightseed, activeTree, nameAs,

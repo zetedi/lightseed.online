@@ -8,8 +8,8 @@ import { normalizeTheme } from '../utils/theme';
 import { speak } from '../utils/translations';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAutosave } from './useAutosave';
-import { showAlert, showConfirm } from '../components/ui/Dialog';
-import { notify } from '../components/ui/Toast';
+import { showAlert, showConfirm } from '../services/dialogBus';
+import { notify } from '../services/toastBus';
 
 // A KEEPER'S HAND ON A COMMUNITY'S FACE — the editable copies of its fields, the live
 // appearance autosave and its reconcile with the store, the Vision tab's deliberate Save, the

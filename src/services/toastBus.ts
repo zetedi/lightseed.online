@@ -1,5 +1,8 @@
-// The toast's BUS — the plain half of the toast, with no React in reach (the host in Toast.tsx
-// is the face). One listener at a time: the single ToastHost mounted in App.
+import { speak } from '../utils/translations';
+
+// The toast's BUS — the plain half of the toast, with no React in reach (the host in
+// components/ui/Toast.tsx is the face). It lives in services/ so a hook can say a word without
+// reaching up into the faces (ring 2026-11-19). One listener at a time: the single ToastHost mounted in App.
 //
 // A word spoken before the host stands is HELD (ring 2026-11-01): the /b/ door resolves while
 // the shell still holds its neutral loader, so "this being is not public" was said to a room
@@ -52,3 +55,8 @@ export const createToastBus = () => {
 };
 
 export const toastBus = createToastBus();
+
+// The toast SPEAKS (ring 2026-09-19): a key, or a spoken line `key::{json}`, is said in the
+// reader's tongue here; a composed sentence passes through untouched. Offering keepership
+// showed `keeper_offer_sent::{"name":…}` raw because this boundary let the line through.
+export const notify = (message: string, kind: ToastKind = 'success'): void => { toastBus.say({ message: speak(message), kind }); };

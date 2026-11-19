@@ -3,6 +3,7 @@ import { Icons } from '../ui/Icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import type { ListDensity } from '../../hooks/useListDensity';
 import type { VisionSynergy } from '../../types';
+import { resonanceId } from '../../utils/resonance';
 
 // Resonance read as a heat: the hotter the bond, the more radiant. High glows rose,
 // middling is amber, gentle kinship is emerald.
@@ -11,10 +12,6 @@ export const resonanceTier = (score: number): { labelKey: 'tier_radiant' | 'tier
   if (score >= 55) return { labelKey: 'tier_resonant', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' };
   return { labelKey: 'tier_kindred', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' };
 };
-
-// A stable, order-insensitive id for a resonance pair (used to track favourites).
-export const resonanceId = (s: VisionSynergy) =>
-  [s.vision1Title, s.vision2Title].map(x => (x || '').trim().toLowerCase()).sort().join(' :: ');
 
 /** A single resonance pair card, shared by the Visions panel and the Observatory. Wears the
  *  reading DENSITY the visions grid uses: a full card, a compact mini, or a one-line row. */

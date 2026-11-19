@@ -6,7 +6,7 @@ import { uploadFileName } from '../domain/imageBytes';
 import { graphStore } from '../services/store';
 import { announce } from '../services/refreshBus';
 import { useRefreshSignal } from './useRefreshSignal';
-import { notify } from '../components/ui/Toast';
+import { notify } from '../services/toastBus';
 import { speak, spokenLine } from '../utils/translations';
 
 // A COMMUNITY'S LIGHT HOUSES — the ones rooted in its domain or stepped into it THAT THIS

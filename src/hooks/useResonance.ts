@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import type { Lifetree, ReachAudience, VisionSynergy } from '../types';
 import { fetchVisions, getLifetreeById, getGroundsOfVision } from '@backend';
 import { homeGroundOf } from '../domain/grounding';
-import { showAlert } from '../components/ui/Dialog';
-import { resonanceId } from '../components/pulse/ResonancePanel';
+import { showAlert } from '../services/dialogBus';
+import { resonanceId } from '../utils/resonance';
 import { spokenLine } from '../utils/translations';
 
 // Resonance refreshes once a week for members; admins have no limit. The whole point is

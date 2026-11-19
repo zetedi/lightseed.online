@@ -4,8 +4,8 @@ import type { Community } from '../types';
 import { formCircleRefusal } from '../domain/treeCircle';
 import { graphStore } from '../services/store';
 import { announce } from '../services/refreshBus';
-import { showAlert } from '../components/ui/Dialog';
-import { notify } from '../components/ui/Toast';
+import { showAlert } from '../services/dialogBus';
+import { notify } from '../services/toastBus';
 import { spokenLine } from '../utils/translations';
 
 // A CIRCLE BECOMING A COMMUNITY — who may ask, the chosen name, and the ask itself. Lifted

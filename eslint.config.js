@@ -40,6 +40,16 @@ export default tseslint.config(
       ] }],
     },
   },
+  //   what stands below the faces never reaches up into them: a hook, a service or a util that
+  //   needs to ask or announce speaks through services/dialogBus and services/toastBus.
+  {
+    files: ['src/hooks/**', 'src/services/**', 'src/utils/**', 'src/adapters/**', 'src/contexts/**'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': ['error', { patterns: [
+        { regex: '(^|/)(components|pages)(/|$)', allowTypeImports: true, message: 'Nothing below the faces imports a face. Ask and announce through services/dialogBus and services/toastBus.' },
+      ] }],
+    },
+  },
   //   a Firebase package is named only by the Firebase backend (and its two declared doors).
   {
     files: ['src/**'],
