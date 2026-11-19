@@ -6687,3 +6687,33 @@ the being, the handover that moves it (the old base ceasing to accept writes), h
 node learns of new blocks, how a fork is shown, how a revoked key reaches other nodes. No code
 changed with this ring.
 
+### 2026-11-19 — A jewel holds its own, and reflects what others have opened
+
+Zoltán, following the base-node ring: a node does not hold all data. It holds its own beings
+whole, and of the beings based elsewhere it holds only reflections of what they have made
+public — eventually, when there is a net to carry them. This happens by nature where there is
+no connection: a node alone is a complete jewel that no one is reflecting yet. If every node
+held everything there would be one database with many doors, which is a host, not a net.
+
+Three sharpenings, agreed in the same conversation:
+
+- **One way.** The base node publishes; a reflecting node copies and attributes. It never writes
+  back into the being. "Syncing" here never means merging two writers.
+- **May, not will.** Public means a being's content MAY be reflected. Whether it is depends on
+  the two dials LIN already keeps apart: how far the being reaches out, and how much of the
+  wider forest a node chooses to reflect in. Private content, secret trees and their seats
+  never leave the base node.
+- **A reflection shows its age.** It names its base node and when it was last seen, and never
+  passes as the being itself.
+
+Plain contract. Decided: the direction above. Standing today: a node sees only its own
+database; `reflectsPublic` widens a community's view to everything public on that same backend
+and reaches no other node. Not built and not yet designed: the carrying of reflections between
+nodes, their attribution and age on the face, and three hard edges named so they are not
+mistaken for solved — light cannot be reliably taken back (a veto mark, a retraction or a
+being made private again reaches other nodes late, or never while they are offline: the
+promise can only be that marks travel as blocks do, not that unpublishing works everywhere); a
+link whose two ends are based on different nodes has no settled home (`QUESTIONS.md`: is the
+jewel a thing that has reflections, or the knot where they cross); and a revoked key is learned
+by the same slow path. No code changed with this ring.
+
