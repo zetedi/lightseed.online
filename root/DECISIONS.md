@@ -6639,3 +6639,51 @@ charter's; the plain-HTTP port still redirects to HTTPS without the local port
 (`http://seed.localhost:8080` → `https://seed.localhost/`), named here and not mended; the
 origin (Firebase) has no issuer page, so the theme has no counterpart there.
 
+### 2026-11-19 — A feed turns its second page; a cut list says so
+
+Lumo read the trunk at `167af1c` and found two faults in the independent node's browser hands;
+Aspen verified both against the code before believing them.
+
+The document door bookmarks a newest-first list with the pair `[moment, id]` (migration 052,
+held by `tests/seed/documents.postgres-test.ts`). `readPage` kept only strings, so the pair became
+null before `docList`'s own handling could see it: the tree feed, the vision feed and the sent
+and received invitation lists ended after their first page, and every newest-first "read all"
+stopped at 100. The pulse feeds were untouched (their door seals its bookmark as text). The
+shapes now live once, in `src/domain/pageCursor.ts`, and the core and the document helpers carry
+whatever the door made.
+
+`readAll` and `docAll` stopped at their ceiling (20 pages of 100) and returned a beginning as if
+it were the whole. The walk now says which it was (`gatherPages` → `complete`): `readWhole` and
+`docWhole` return it; `readAll` and `docAll` still answer with what they gathered and warn by
+path; the browser's person and node exports name every list cut at the ceiling in the archive's
+manifest (`incomplete`) and its notes.
+
+Type parity could not see this — every hand existed. `tests/independentPaging.test.ts` runs the
+real core and the real document helpers over a stand-in door that answers as `seed.doc_list`
+does, and fails on the old code.
+
+Plain contract. Guaranteed: a bookmark of either shape survives from the door to the caller and
+back; a walk that stops at its ceiling is reported, never silent; an export cut at the ceiling
+says so inside the archive. Not guaranteed: the seventy-odd callers of `readAll`/`docAll` still
+receive a cut list as a list (the warning is in the console, not on the face) — counts drawn
+from them can still understate; a tree's chain in a browser export is read through `readAll`
+and would be cut, with the warning only, past 2,000 blocks; the stand-in door is not the real
+one (the second page was not walked in a browser against PostgreSQL); the origin has no such
+ceiling and needed no change. The signed node bundle (`seed:export`) never used these hands.
+
+### 2026-11-19 — One base node for each being
+
+Zoltán, answering Lumo's question of what happens after two nodes begin to evolve apart: a being
+has ONE base node. Its chain is appended there and nowhere else; other nodes may show it as a
+reflection, attributed and read-only. This is close to how beings actually live — a tree stands
+in one soil — and crossings are meant to be rare: the community that hosts the node is expected
+to evolve in a way that suits the growth of its beings, so that leaving is seldom the answer.
+
+Plain contract. Decided: the direction — single-writer per being, no multi-writer consensus.
+Standing today: the additive, signed crossing (`seed:export` / `seed:import`), which refuses to
+advance a being that changed after its first crossing (`bundleMerge`: `content_conflict`) — a
+one-time move, not synchronisation. Not built and not yet designed: how a base node is named on
+the being, the handover that moves it (the old base ceasing to accept writes), how a reflecting
+node learns of new blocks, how a fork is shown, how a revoked key reaches other nodes. No code
+changed with this ring.
+

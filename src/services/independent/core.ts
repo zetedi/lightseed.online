@@ -8,6 +8,7 @@ import { charter } from '../../config/charter';
 import type { Stamp } from '../../domain/time';
 import type { Lightseed } from '../../types';
 import { seedBrowserConfig } from '../../domain/seedBrowser';
+import { gatherPages, pageCursorParam, readPageCursor, type Gathered, type PageCursor } from '../../domain/pageCursor';
 import { createSeedIdentity } from './oidc';
 import { createSeedSession } from './session';
 import { seedPublicRead } from './public';
@@ -74,25 +75,30 @@ export const readDoc = async <T>(path: string, key: string): Promise<T | null> =
     return found ? withStamps<T>(found) : null;
 };
 
-// One page of a bounded list, with the API's own bookmark for the next.
-export const readPage = async <T>(path: string, key: string, params: Record<string, string> = {}, limit = 50): Promise<{ items: T[]; next: string | null }> => {
+// One page of a bounded list, with the API's own bookmark for the next — a string or the
+// newest-first pair, carried as the door made it (domain/pageCursor).
+export const readPage = async <T>(path: string, key: string, params: Record<string, string> = {}, limit = 50): Promise<{ items: T[]; next: PageCursor | null }> => {
     const search = new URLSearchParams({ ...params, limit: String(limit) });
     const body = await apiRead(`${path}?${search}`) as Record<string, unknown>;
-    return { items: withStamps<T[]>(body[key] ?? []), next: typeof body.next === 'string' ? body.next : null };
+    return { items: withStamps<T[]>(body[key] ?? []), next: readPageCursor(body.next) };
 };
 
+// A list cut at its ceiling is said aloud, once per walk, by the path alone (never its contents).
+export const sayIncomplete = (path: string, count: number): void =>
+    console.warn(`${path}: the list was cut at its ceiling after ${count} records; more remain on the node.`);
+
+// A bounded list walked to its end or to the ceiling, saying which (`complete`). Exports and
+// counts that must not pass a beginning off as the whole read this.
+export const readWhole = <T>(path: string, key: string, params: Record<string, string> = {}, maxPages = 20): Promise<Gathered<T>> =>
+    gatherPages<T>(after => readPage<T>(path, key, { ...params, ...(after ? { after: pageCursorParam(after) } : {}) }, 100), maxPages);
+
 // Every item of a bounded list (the node's caps keep these small: ≤144 communities, a being's
-// own trees); `maxPages` is the honest ceiling, never an infinite walk.
+// own trees); `maxPages` is the honest ceiling, never an infinite walk. A list that outgrows the
+// ceiling still answers with its beginning, and says so (sayIncomplete).
 export const readAll = async <T>(path: string, key: string, params: Record<string, string> = {}, maxPages = 20): Promise<T[]> => {
-    const items: T[] = [];
-    let after: string | null = null;
-    for (let page = 0; page < maxPages; page++) {
-        const result: { items: T[]; next: string | null } = await readPage<T>(path, key, { ...params, ...(after ? { after } : {}) }, 100);
-        items.push(...result.items);
-        after = result.next;
-        if (!after) break;
-    }
-    return items;
+    const whole = await readWhole<T>(path, key, params, maxPages);
+    if (!whole.complete) sayIncomplete(path, whole.items.length);
+    return whole.items;
 };
 
 // HOW THIS NODE SIGNS A HAND IN. The shell's sign-in door asks before it draws: here the

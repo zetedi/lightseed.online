@@ -9,6 +9,7 @@ import { session, readDoc, readAll, readPage, currentUid, toMillis, newestFirst 
 import { docAll, docGet, docCommand, docList, arrayUnion, serverTime } from './docs';
 import { createSeedBlockMint } from './blockMint';
 import { announce } from '../refreshBus';
+import { pageCursorParam, type PageCursor } from '../../domain/pageCursor';
 import { blockBirthOf, type ChainBearerKind } from '../../domain/chain/birth';
 import { normalizePulseType, NON_FEED_PULSE_TYPES, isReachType } from '../../domain/pulse';
 import { mergeAuthored } from '../../domain/pulseVisibility';
@@ -26,7 +27,7 @@ const ms = (p: Pulse) => toMillis(p.createdAt);
 const oldestFirst = (pulses: Pulse[]) => [...pulses].sort((a, b) => ms(a) - ms(b));
 const pulsesWhere = (params: Record<string, string>) => readAll<Pulse>(PULSES, 'pulses', params);
 const page = async (params: Record<string, string>, cursor: PulsePageCursor | undefined, size: number, keep: (p: Pulse) => boolean) => {
-    const after = cursor ? String(cursor) : null;
+    const after = cursor ? pageCursorParam(cursor as unknown as PageCursor) : null;
     const result = await readPage<Pulse>(PULSES, 'pulses', { ...params, ...(after ? { after } : {}) }, size);
     return { items: result.items.filter(keep), lastDoc: (result.next ?? null) as unknown as PulsePageCursor | null, hasMore: !!result.next };
 };

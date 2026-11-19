@@ -8,11 +8,12 @@
 // ISO moments become Stamps on the way in (withStamps), so a component never sees the wire.
 import { plainify } from '../../domain/export';
 import { docSentinel, type SEED_DOC_COLLECTIONS } from '../../domain/seedDocs.mjs';
-import { apiRead, readPage, session, withStamps } from './core';
+import { apiRead, readPage, sayIncomplete, session, withStamps } from './core';
+import { gatherPages, pageCursorParam, type Gathered, type PageCursor } from '../../domain/pageCursor';
 import { seedPublicWrite } from './public';
 
 export type DocCollection = keyof typeof SEED_DOC_COLLECTIONS;
-export type DocCursor = string | [string, string];
+export type DocCursor = PageCursor;
 export interface DocListAsk {
     parent?: string;
     where?: Record<string, string | number | boolean>;
@@ -31,7 +32,7 @@ const paramsOf = (ask: DocListAsk): Record<string, string> => {
     for (const [k, v] of Object.entries(ask.has ?? {})) params['has.' + k] = v;
     for (const [k, v] of Object.entries(ask.within ?? {})) params['in.' + k] = v.join(',');
     if (ask.newest) params.order = 'newest';
-    if (ask.after) params.after = typeof ask.after === 'string' ? ask.after : JSON.stringify(ask.after);
+    if (ask.after) params.after = pageCursorParam(ask.after);
     return params;
 };
 
@@ -42,23 +43,17 @@ export const docGet = async <T>(collection: DocCollection, id: string, parent?: 
     return body?.doc ? withStamps<T & { id: string }>(body.doc) : null;
 };
 // One page: items with their stamps and the node's own bookmark for the next.
-export const docList = async <T>(collection: DocCollection, ask: DocListAsk = {}): Promise<{ items: (T & { id: string })[]; next: DocCursor | null }> => {
-    const result = await readPage<T & { id: string }>(`${DOCS}${collection}`, 'items', paramsOf(ask), ask.limit ?? 50);
-    const raw = result.next as unknown;
-    const next: DocCursor | null = typeof raw === 'string' ? raw : Array.isArray(raw) && raw.length === 2 ? [String(raw[0]), String(raw[1])] : null;
-    return { items: result.items, next };
-};
-// Every item of a bounded list, with an honest ceiling (never an infinite walk).
+export const docList = <T>(collection: DocCollection, ask: DocListAsk = {}): Promise<{ items: (T & { id: string })[]; next: DocCursor | null }> =>
+    readPage<T & { id: string }>(`${DOCS}${collection}`, 'items', paramsOf(ask), ask.limit ?? 50);
+// A bounded list walked to its end or to the ceiling, saying which (`complete`).
+export const docWhole = <T>(collection: DocCollection, ask: DocListAsk = {}, maxPages = 20): Promise<Gathered<T & { id: string }>> =>
+    gatherPages(after => docList<T>(collection, { ...ask, after, limit: 100 }), maxPages, ask.after ?? null);
+// Every item of a bounded list, with an honest ceiling (never an infinite walk); a list that
+// outgrows it still answers with its beginning, and says so.
 export const docAll = async <T>(collection: DocCollection, ask: DocListAsk = {}, maxPages = 20): Promise<(T & { id: string })[]> => {
-    const items: (T & { id: string })[] = [];
-    let after: DocCursor | null = ask.after ?? null;
-    for (let page = 0; page < maxPages; page++) {
-        const result = await docList<T>(collection, { ...ask, after, limit: 100 });
-        items.push(...result.items);
-        after = result.next;
-        if (!after) break;
-    }
-    return items;
+    const whole = await docWhole<T>(collection, ask, maxPages);
+    if (!whole.complete) sayIncomplete(`${DOCS}${collection}`, whole.items.length);
+    return whole.items;
 };
 
 export type DocWrite =
