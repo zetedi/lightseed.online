@@ -220,8 +220,10 @@ limits, in [`seed/README.md`](seed/README.md); what the node has not grown yet i
   before you start: certificates are fetched per host.
 - **Ports 80 and 443 open** to the world.
 - **An ACME contact address** and **the keeper's e-mail address**.
-- **On Linux, run it as UID 1000.** Under another account the API container cannot read the
-  owner-only charter; the installer warns and does not mend it.
+- **On Linux, run it as UID 1000 or as root**, against an ordinary (rootful) Docker daemon. The
+  API container reads the owner-only charter as UID 1000: as root the installer gives the
+  charter to that hand; under any other account, or a rootless or user-remapped daemon, it
+  refuses before writing anything.
 
 The memory and disk a node needs have not been measured; Keycloak is the heaviest of the four
 containers.

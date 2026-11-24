@@ -36,6 +36,11 @@ and the keeper's binding, and — after the first sign-in — appoints the keepe
   of its Compose projects, already exists. It has no law of its own: it drives `seed:migrate`,
   `seed:configure`, `seed:provision`, `seed:identity:configure`, `seed:keeper` and the Compose
   files exactly as a hand would.
+- **Refused in the preflight (Linux):** an account that is neither UID 1000 nor root, and a
+  rootless or user-remapped Docker daemon — the API container (UID 1000) could not read the
+  owner-only charter, so nothing is written. As root the installer gives the charter to UID 1000
+  and it stays owner-only (`src/domain/seedInstall.mjs`). The rule is tested; neither Linux path
+  has been run on a Linux machine.
 - **Not guaranteed:** DNS, open ports, SMTP (the node's and the issuer's), a permanent issuer
   operator in place of the bootstrap administrator, backups. A walk that fails halfway is left
   standing for inspection, and the commands that clear it are printed. The keeper's address is

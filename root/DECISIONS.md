@@ -6717,3 +6717,29 @@ link whose two ends are based on different nodes has no settled home (`QUESTIONS
 jewel a thing that has reflections, or the knot where they cross); and a revoked key is learned
 by the same slow path. No code changed with this ring.
 
+### 2026-11-19 — The installer asks who can read the charter before it writes one
+
+The third of Lumo's findings, named in this morning's ring as "says and does not mend": on
+Linux under an account other than UID 1000 the installer printed a note and walked on, and the
+API — which reads the owner-only charter as UID 1000 and treats an unreadable one as a fault —
+stopped the walk at step 5 with a database, a charter and secrets already standing.
+
+The question is now settled in the preflight by one pure rule (`src/domain/seedInstall.mjs`,
+`charterCustodyOf`): where the container's hand is the installing account, or Docker's own
+machine maps ownership (macOS, Windows, Docker Desktop), nothing is done; where the installer is
+root, it gives the charter to UID 1000 after writing it and the files stay owner-only; under any
+other account, or a rootless or user-remapped daemon (whose UID 1000 is some other account of
+the machine), the installation is refused with the reason before its first write. The charter
+was not simply opened to every reader: the README asks that the complete charter stay private,
+and the rule keeps that.
+
+Plain contract. Guaranteed: the refusal comes before any file, container or volume is made; the
+rule's five cases are held by `tests/seedInstall.test.ts`. Not guaranteed: no Linux path was
+run — not the refusal, not root's gift — and this macOS machine takes the "nothing to do" path;
+the daemon is recognised by `docker info` (`SecurityOptions` naming `rootless` or `userns`,
+`OperatingSystem` naming Docker Desktop), which was read here only for Docker Desktop; a node
+set up by hand (`seed:configure` and Compose, without the installer) meets the same limit
+unguarded; the installer itself was not run after this change, because a node stands in the
+default places here.
+
+

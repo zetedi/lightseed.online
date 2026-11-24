@@ -11,12 +11,13 @@
 //   VPS"). A walk that fails halfway is left standing for inspection; the way to clear it is said.
 // It only drives the hands that already exist (seed:migrate, seed:configure, seed:provision,
 // seed:identity:configure, seed:keeper, the Compose files): no law of its own.
-import { mkdir, writeFile, readFile, readdir, rmdir, access, chmod } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, readdir, rmdir, access, chmod, chown } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { join, delimiter, relative } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { uuidv7 } from '../src/domain/uuidv7.mjs';
+import { charterCustodyOf, SEED_API_UID } from '../src/domain/seedInstall.mjs';
 import { root, seed, seedLayoutOf, INSTALL_MARK, PROJECT_NAME } from './seed-layout.mjs';
 
 const USAGE = `Usage: npm run seed:install -- [options]
@@ -147,7 +148,19 @@ try {
   // ── Preflight: refuse before the first write ──────────────────────────────────────────────
   if (!await exists(join(root, 'node_modules', 'vite'))) refuse('Install the repository\'s dependencies first: npm install');
   await run('docker', ['compose', 'version'], { quiet: true }).catch(() => refuse('Docker Compose was not found.'));
-  await run('docker', ['info'], { quiet: true }).catch(() => refuse('Docker is not running.'));
+  const docker = await run('docker', ['info', '--format', '{{json .}}'], { quiet: true }).then(JSON.parse).catch(() => refuse('Docker is not running.'));
+  // The API reads the owner-only charter inside its container as UID 1000: settle now whether it
+  // can, instead of finding out at step 5 with half a node standing (domain/seedInstall).
+  const custody = charterCustodyOf({
+    platform: process.platform, uid: process.getuid?.() ?? -1,
+    dockerDesktop: /docker desktop/i.test(String(docker.OperatingSystem ?? '')),
+    securityOptions: Array.isArray(docker.SecurityOptions) ? docker.SecurityOptions : [],
+  });
+  if (custody.action === 'refuse') {
+    refuse(custody.reason === 'remapped_daemon'
+      ? `This Docker runs rootless or with remapped users: the API container's UID ${SEED_API_UID} is another account of this machine and could not read the node's owner-only charter. Nothing was written. Install against an ordinary (rootful) Docker daemon.`
+      : `The API container reads the node's owner-only charter as UID ${SEED_API_UID}, and this account (UID ${process.getuid()}) can neither be that hand nor give the charter to it. Nothing was written. Run the installer as UID ${SEED_API_UID}, or as root (it then gives the charter to UID ${SEED_API_UID}).`);
+  }
   const standing = [];
   for (const file of [paths.env, paths.runtime, paths.identityEnv, paths.override, paths.node, paths.auth, paths.realm, paths.login]) {
     if (await exists(file)) standing.push(show(file));
@@ -203,8 +216,10 @@ ${home ? '' : `# Every \`docker compose\` in seed/ reads the private override to
     faces: [{ id: 'home', door: host, domains: [] }],
   }, null, 2) + '\n');
   await hand('configure-seed.mjs', paths.node, paths.charter);
-  if (process.platform === 'linux' && process.getuid?.() !== 1000) {
-    console.log(`Note: the API container reads ${show(paths.charter)} as UID 1000. Under another account it cannot (the mail organ then says so at startup): give that directory to UID 1000, or run the node as it.`);
+  if (custody.action === 'give') {
+    // Root installs: the charter goes to the API's hand and stays owner-only (root still reads it for the keeping).
+    for (const file of [paths.charter, ...(await readdir(paths.charter)).map(name => join(paths.charter, name))]) await chown(file, SEED_API_UID, SEED_API_UID);
+    console.log(`${show(paths.charter)} given to UID ${SEED_API_UID}, the API container's hand; it stays owner-only.`);
   }
 
   // ── 3. The API's database login ───────────────────────────────────────────────────────────
