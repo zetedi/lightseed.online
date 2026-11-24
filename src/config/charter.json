@@ -77,6 +77,14 @@
       "site": "mamaway",
       "door": "mamaway.web.app",
       "domains": []
+    },
+    {
+      "target": "opame",
+      "site": "opame-seed",
+      "door": "seed.opame.lightseed.online",
+      "domains": [
+        "seed.opame.lightseed.online"
+      ]
     }
   ],
   "authHosts": [

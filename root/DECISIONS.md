@@ -6771,3 +6771,44 @@ a visitor's browser contacts the provider when the frame nears the screen, befor
 — the cookie-less YouTube host and Vimeo's `dnt` soften this and do not remove it, and the
 starter privacy text does not mention it. The video stands only where the carousel stands
 (signed out, or signed in with no events); a custom landing does not show it.
+
+
+### 2026-11-24 — A priestess's seed gets its door; the film is walked
+
+Two things in one day's hand.
+
+THE FILM WALKED. The ring of 2026-11-20 said nothing had been walked. Today the home page was
+opened in a browser against the Firestore emulator, its host community naming a video: from the
+`md` width the carousel and the frame share the row in equal halves (596 px each at 1280), below
+it they stack, the words first; a YouTube link became `www.youtube-nocookie.com/embed/<id>?rel=0`,
+a Vimeo link `player.vimeo.com/video/<id>?dnt=1`; a link to a stranger's house and an empty field
+left the carousel alone on the row. Under the real rules the community's anchor wrote
+`featuredVideo` and a stranger was refused. Still not walked: the editor's own field under a
+signed-in keeper's hands, the independent node, PostgreSQL.
+
+Named and not mended: `npm run devui` does not reach the emulators. `getEnv`
+(`services/firebase/core.ts`) looks for `VITE_USE_EMULATORS` in `window.process.env` — the
+build's `__STATIC_ENV__`, which does not carry it — and then in `import.meta.env` through a cast
+Vite does not recognise, so the switch is empty in the page and the "offline forest" speaks to
+production. The walk set the switch by hand in its own browser; its first attempt, before the
+fault was seen, read production as an anonymous visitor and wrote nothing there.
+
+THE FIRST SEED UNDER THE NODE'S OWN NAME. Opame's mother site stands at opame.lightseed.online
+(its own repository, its own hosting site `opame`); her seed is the sixth face: target `opame`,
+site `opame-seed`, door `seed.opame.lightseed.online`. The SSO door's law needed nothing new:
+`ssoParentOrigins` derives the mother from the door's own hostname, one label up, so a four-label
+door under the node's domain offers exactly `https://opame.lightseed.online` and its www — and
+the door still cannot open on lightseed.online itself. The charter, the four files derived from
+it and the pinned lists of `tests/charter.test.ts` changed; no law, rule or function did.
+
+Plain contract. Guaranteed now: the face is deployed — built from the commit before these three
+plus the charter — and answers at opame-seed.web.app with its `/sso.html`; both of its hosts
+stand in the Auth authorized domains; the gate and the rules suite are green. Not guaranteed
+yet: no community wears the door — the face keeps the default card until its keeper founds one
+(`domain` opame.lightseed.online, the seed host as alias, `seedCradle`, `strictScope`) and proves
+the domain; the DNS name was being added as this was written; the functions and the other faces
+were not redeployed and do not know the new host until they are; the sign-in crossing (the mint,
+the custom token, the mother's hearth) has not been walked on this pair. A fault to remember:
+while the two hosts were being added, an empty body was sent to the Auth configuration under the
+`authorizedDomains` mask and the list stood empty for about a minute, until it was restored from
+a copy read earlier the same hour.

@@ -52,8 +52,8 @@ describe('what the charter derives', () => {
     if (node.firebase.projectId !== 'lifeseed-75dfe') return; // the origin's list; another node has its own
     expect(charterHosts(node)).toEqual([
       'enlightenednations.web.app', 'lifeseed-75dfe.firebaseapp.com', 'lifeseed-75dfe.web.app', 'lifeseed.online',
-      'lightseed.online', 'mamaway.web.app', 'perauset.com', 'perauset.web.app', 'seed.enlightenednations.org', 'seed.perauset.org', 'seed.theohouse.org', 'theohouse.org',
-      'theohouse.web.app',
+      'lightseed.online', 'mamaway.web.app', 'opame-seed.web.app', 'perauset.com', 'perauset.web.app', 'seed.enlightenednations.org', 'seed.opame.lightseed.online',
+      'seed.perauset.org', 'seed.theohouse.org', 'theohouse.org', 'theohouse.web.app',
     ]);
   });
 
@@ -85,11 +85,11 @@ describe('what the charter derives', () => {
     if (node.firebase.projectId !== 'lifeseed-75dfe') return;
     expect(firebasercOf(node)).toEqual({
       projects: { default: 'lifeseed-75dfe' },
-      targets: { 'lifeseed-75dfe': { hosting: { app: ['lifeseed-75dfe'], perauset: ['perauset'], theohouse: ['theohouse'], enlightenednations: ['enlightenednations'], mamaway: ['mamaway'] } } },
+      targets: { 'lifeseed-75dfe': { hosting: { app: ['lifeseed-75dfe'], perauset: ['perauset'], theohouse: ['theohouse'], enlightenednations: ['enlightenednations'], mamaway: ['mamaway'], opame: ['opame-seed'] } } },
       etags: {},
     });
     const hosting = hostingOf(node, { predeploy: 'npm run build', public: 'dist', rewrites: [{ source: '**', destination: '/index.html' }] });
-    expect(hosting.map(h => h.target)).toEqual(['app', 'perauset', 'theohouse', 'enlightenednations', 'mamaway']);
+    expect(hosting.map(h => h.target)).toEqual(['app', 'perauset', 'theohouse', 'enlightenednations', 'mamaway', 'opame']);
     expect(hosting[0]).toMatchObject({ target: 'app', predeploy: 'npm run build', public: 'dist' });
     // Every other face is served from its own dressed copy, made by its own predeploy (ring 2026-09-30).
     expect(hosting[3]).toMatchObject({ public: 'dist-faces/enlightenednations', target: 'enlightenednations', predeploy: 'node scripts/face-og.mjs enlightenednations' });
