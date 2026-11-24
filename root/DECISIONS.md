@@ -6743,3 +6743,31 @@ unguarded; the installer itself was not run after this change, because a node st
 default places here.
 
 
+### 2026-11-20 — A film beside the words
+
+Zoltán: a featured video next to the social links; where one is set, the quote carousel takes
+half the width and the video is embedded beside it.
+
+A community carries one link, `featuredVideo`, typed on the Appearance tab under the footer
+links and saved live with them. The link is kept as the keeper pasted it; what reaches the page
+is never that text. `src/domain/featuredVideo.ts` reads it into a known house (YouTube or
+Vimeo) and an id of that house's own shape, and builds the player address from those two alone
+(`www.youtube-nocookie.com/embed/<id>`, `player.vimeo.com/video/<id>`). On the home page the
+carousel and the frame share one row from the `md` width up and stack below it, the words
+first; with no readable video the carousel keeps the whole row as before.
+
+Plain contract. Guaranteed: no stored text chooses the frame's origin, path or parameters; a
+link to any other house, or a house without a video, shows nothing and the editor says why
+(`video_not_known`); the field is among the live appearance fields
+(`tests/featuredVideo.test.ts`, `tests/autosave.test.ts`). Both soils: the field is plain data
+on the community record, written through `updateCommunity` on either backend by the hands that
+may already edit a community (anchor, keeper, staff hand) — no rule, migration or command was
+changed and none knows the field by name. Not guaranteed: neither store checks the value (any
+keeper may store any text there; only the reading law stands between it and the page); nothing
+was walked in a browser — not the row, not either player, not the node; no write of the field
+was run against the Firestore emulator or PostgreSQL; whether a video exists, is public or
+allows embedding is the provider's answer, given only inside the frame. Named and not mended:
+a visitor's browser contacts the provider when the frame nears the screen, before any consent
+— the cookie-less YouTube host and Vimeo's `dnt` soften this and do not remove it, and the
+starter privacy text does not mention it. The video stands only where the carousel stands
+(signed out, or signed in with no events); a custom landing does not show it.

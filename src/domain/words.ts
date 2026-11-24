@@ -67,6 +67,8 @@ export const DOMAIN_KEYS = [
   'guard_not_keeper', 'guard_not_lifetree', 'guard_tree_dead', 'guard_self', 'guard_no_living_tree', 'guard_already', 'guard_pending',
   // web doors — a link a being carries outward (domain/webLink)
   'link_not_web', 'link_not_valid', 'links_too_many', 'tree_no_anchor',
+  // a featured video — one film beside the footer links (domain/featuredVideo, ring 2026-11-20)
+  'video_not_known',
   // The open door to a tree's circle (domain/treeInvite, ring 2026-10-01)
   'limit_secret_trees', 'secret_keepers_only',
   'tree_invite_gone', 'tree_invite_revoked', 'tree_invite_expired', 'tree_invite_settled', 'tree_invite_taken', 'tree_invite_signin', 'tree_invite_own',

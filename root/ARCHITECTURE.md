@@ -987,6 +987,12 @@ side effect: neither the being nor pulse path mints a token, ray, balance or rew
   THE FIELD RETIRED (step 5): `planFieldRetirement` removes the field only where the ground in
   that very tree stands (`scripts/retire-vision-tree-field.mjs`; the node's repair
   `vision_tree_field`, migration 068), after the shell that no longer reads it is deployed.
+- **A featured video beside the carousel** (ring 2026-11-20): a community carries one link
+  (`featuredVideo`, edited beside the footer links, live like the rest of the Appearance tab).
+  `domain/featuredVideo` reads it into a known house (YouTube, Vimeo) and an id, and builds the
+  player address from those two alone; the home page (`components/app/Dashboard.tsx`) then gives
+  the quote carousel half the row and `FeaturedVideoFrame` the other. The field is plain data on
+  the community record on both soils: no rule, migration or command knows it by name.
 
 ## Known debts (kept honestly)
 

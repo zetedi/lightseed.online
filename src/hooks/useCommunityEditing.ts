@@ -28,6 +28,7 @@ export const useCommunityEditing = (
   // Vision tab and saved with it — the vision is papers[0], the rest follow.
   const [editPapers, setEditPapers] = useState<Paper[]>(() => papersOf(community.papers).filter(p => p.key !== VISION_KEY));
   const [editSocial, setEditSocial] = useState<{ instagram?: string; telegram?: string; whatsapp?: string; website?: string }>(community.socialLinks || {});
+  const [editFeaturedVideo, setEditFeaturedVideo] = useState(community.featuredVideo || '');
   const [editCarouselQuotes, setEditCarouselQuotes] = useState<string[]>(community.carouselQuotes || []);
   const [editCustomLanding, setEditCustomLanding] = useState(community.customLanding === true);
   const [editShowStats, setEditShowStats] = useState(community.showStats === true);
@@ -59,13 +60,14 @@ export const useCommunityEditing = (
     heroImageUrl,
     imageUrls,
     socialLinks: editSocial,
+    featuredVideo: editFeaturedVideo.trim(),
     carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
     customLanding: editCustomLanding,
     showStats: editShowStats,
     landingPages: editLandingPages.filter(p => p.label.trim()),
     paletteReach: editPaletteReach,
     mail: mailWordsOf(editMail),
-  }), [editName, editTheme, logoUrl, heroImageUrl, imageUrls, editSocial, editCarouselQuotes, editCustomLanding, editShowStats, editLandingPages, editPaletteReach, editMail]);
+  }), [editName, editTheme, logoUrl, heroImageUrl, imageUrls, editSocial, editFeaturedVideo, editCarouselQuotes, editCustomLanding, editShowStats, editLandingPages, editPaletteReach, editMail]);
   const appearancePersisted = useMemo(() => ({
     name: community.name,
     theme: normalizeTheme(community.theme),
@@ -73,6 +75,7 @@ export const useCommunityEditing = (
     heroImageUrl: community.heroImageUrl || '',
     imageUrls: community.imageUrls || [],
     socialLinks: community.socialLinks || {},
+    featuredVideo: community.featuredVideo || '',
     carouselQuotes: community.carouselQuotes || [],
     customLanding: community.customLanding === true,
     showStats: community.showStats === true,
@@ -116,6 +119,7 @@ export const useCommunityEditing = (
     setEditVision(next.vision);
     setEditPapers(next.papers);
     setEditSocial(next.socialLinks);
+    setEditFeaturedVideo(next.featuredVideo);
     setEditTheme(normalizeTheme(next.theme));
     setLogoUrl(next.logoUrl);
     setHeroImageUrl(next.heroImageUrl);
@@ -126,7 +130,7 @@ export const useCommunityEditing = (
     setEditPaletteReach(next.paletteReach);
     setEditMail({ greeting: next.mail.greeting || '', signature: next.mail.signature || '', footer: next.mail.footer || '' });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); object identities change per fetch and would re-run this needlessly; the draft is read, not depended on
-  }, [community.id, community.name, community.papers, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, community.paletteReach, community.mail, imageUrlsKey]);
+  }, [community.id, community.name, community.papers, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, community.paletteReach, community.mail, community.featuredVideo, imageUrlsKey]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -140,6 +144,7 @@ export const useCommunityEditing = (
         logoUrl,
         heroImageUrl,
         socialLinks: editSocial,
+        featuredVideo: editFeaturedVideo.trim(),
         carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
         customLanding: editCustomLanding,
         showStats: editShowStats,
@@ -240,7 +245,7 @@ export const useCommunityEditing = (
 
   return {
     editName, setEditName, editVision, setEditVision, editPapers, setEditPapers,
-    editSocial, setEditSocial, editCarouselQuotes, setEditCarouselQuotes,
+    editSocial, setEditSocial, editFeaturedVideo, setEditFeaturedVideo, editCarouselQuotes, setEditCarouselQuotes,
     editCustomLanding, setEditCustomLanding, editShowStats, setEditShowStats,
     editLandingPages, setEditLandingPages, editTheme, setEditTheme,
     editPaletteReach, setEditPaletteReach, editMail, setEditMail,

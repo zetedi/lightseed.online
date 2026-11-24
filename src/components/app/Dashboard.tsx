@@ -10,6 +10,8 @@ import { PlantCTA } from './PlantCTA';
 import { Icons } from '../ui/Icons';
 import { ScrollChevrons } from '../ui/ScrollChevrons';
 import { QuoteCarousel } from './QuoteCarousel';
+import { FeaturedVideoFrame } from './FeaturedVideoFrame';
+import { featuredVideoOf } from '../../domain/featuredVideo';
 import { quotesFor } from '../../content/quotes';
 import { useScrollEdges } from '../../hooks/useScrollEdges';
 import { MiniForestMap, type MapPoint } from '../forest/MiniForestMap';
@@ -140,6 +142,9 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
     }, [lightseed, hostCommunity?.domain, hostCommunity?.reflectsPublic]);
 
 
+    const carouselQuotes = hostCommunity?.carouselQuotes?.length ? hostCommunity.carouselQuotes : quotesFor(language);
+    const featuredVideo = featuredVideoOf(hostCommunity?.featuredVideo);
+
     return (
         <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* (The node banner that used to sit here is gone — About Node is the same page, and
@@ -149,7 +154,15 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                 in place of the Home + Observatory cards. */}
             {/* …and for a signed-in reader with NO events to show, the same carousel stands where
                 the events banner would (Zoltán, 2026-09-30): the hero never goes quiet. */}
-            {(!lightseed || !events || events.length === 0) && <QuoteCarousel quotes={(hostCommunity?.carouselQuotes?.length ? hostCommunity.carouselQuotes : quotesFor(language))} />}
+            {/* A FEATURED VIDEO (ring 2026-11-20): where the host community names one the law can
+                read, the carousel keeps half the row and the film takes the other; on a narrow
+                screen they stack, the words first. */}
+            {(!lightseed || !events || events.length === 0) && (featuredVideo ? (
+                <div className="grid gap-3 sm:gap-6 md:grid-cols-2">
+                    <QuoteCarousel quotes={carouselQuotes} />
+                    <FeaturedVideoFrame video={featuredVideo} />
+                </div>
+            ) : <QuoteCarousel quotes={carouselQuotes} />)}
 
             {/* Events banner — logged-in only. Full width (home card → plant card), half a card
                 tall. A distorted node/community hero, a living leaf texture, and an oversized

@@ -36,6 +36,10 @@ export interface Community extends Being {
     whatsapp?: string;
     website?: string;
   };
+  // A FEATURED VIDEO (domain/featuredVideo): one link, as a keeper pasted it. Where the law
+  // reads it into a known house, the home carousel gives it half the row. Stored text never
+  // reaches a frame — only the id the law reads out of it.
+  featuredVideo?: string;
   // Reflections shown in the signed-out home carousel — an editable list curated by the admin.
   carouselQuotes?: string[];
   // Custom landing: the domain greets visitors with the community's own full-screen hero page

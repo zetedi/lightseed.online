@@ -8,6 +8,7 @@ import { AppearanceEditor } from '../appearance/AppearanceEditor';
 import { AutosaveMark } from '../ui/AutosaveMark';
 import type { AutosaveState } from '../../domain/autosave';
 import { SECTION_BREAK } from '../ui/SettingRow';
+import { featuredVideoProblem } from '../../domain/featuredVideo';
 
 // Being-generic appearance section — how any being presents itself (Indra's net): name,
 // logo, hero, gallery, theme, footer links and carousel quotes. The section is purely
@@ -41,6 +42,9 @@ interface AppearanceSectionProps {
   uploadingImage: boolean;
   social: AppearanceSocialLinks;
   onSocialChange: React.Dispatch<React.SetStateAction<AppearanceSocialLinks>>;
+  // A featured video beside the links (domain/featuredVideo) — shown only where the owner binds it.
+  featuredVideo?: string;
+  onFeaturedVideoChange?: (value: string) => void;
   carouselQuotes: string[];
   onCarouselQuotesChange: React.Dispatch<React.SetStateAction<string[]>>;
   // Heading over the footer links (the owner names its own anatomy, e.g. "Community links").
@@ -75,6 +79,8 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   uploadingImage,
   social,
   onSocialChange,
+  featuredVideo = '',
+  onFeaturedVideoChange,
   carouselQuotes,
   onCarouselQuotesChange,
   linksTitle,
@@ -85,6 +91,7 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   autosave = 'idle',
 }) => {
   const { t } = useLanguage();
+  const videoProblem = featuredVideoProblem(featuredVideo);
 
   return (
     <div>
@@ -142,6 +149,15 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
             <input value={social.website || ''} onChange={e => onSocialChange(s => ({ ...s, website: e.target.value }))} placeholder="example.com" className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700" />
           </label>
         </div>
+        {/* The featured video — one link beside the links; the home carousel gives it half the row. */}
+        {onFeaturedVideoChange && (
+          <label className="mt-3 block">
+            <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">{t('featured_video')}</span>
+            <input value={featuredVideo} onChange={e => onFeaturedVideoChange(e.target.value)} inputMode="url" placeholder="https://youtu.be/…" aria-invalid={!!videoProblem} aria-describedby="featured-video-note"
+                   className={`h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 ${videoProblem ? 'border-red-300 focus:ring-red-400 dark:border-red-800' : 'border-slate-200 focus:ring-emerald-500 dark:border-slate-700'}`} />
+            <span id="featured-video-note" className={`mt-1 block text-xs ${videoProblem ? 'text-red-600 dark:text-red-400' : 'text-slate-500'}`}>{videoProblem ? t(videoProblem) : t('featured_video_note')}</span>
+          </label>
+        )}
       </div>
 
       {/* Home carousel quotes — reflections shown to signed-out visitors. */}
