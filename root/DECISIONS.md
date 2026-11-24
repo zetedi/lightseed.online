@@ -6812,3 +6812,68 @@ the custom token, the mother's hearth) has not been walked on this pair. A fault
 while the two hosts were being added, an empty body was sent to the Auth configuration under the
 `authorizedDomains` mask and the list stood empty for about a minute, until it was restored from
 a copy read earlier the same hour.
+
+
+### 2026-11-24 — The films get a carousel of their own
+
+Zoltán: "I can't see the featured video settings, why?" — and what he wanted to find: a list of
+featured videos next to the quote list, edited the same way; where videos are set, the quote
+carousel at half width on desktop with the same carousel, for videos, beside it; on a phone the
+videos above the quotes; where none is set, nothing changed.
+
+WHY IT WAS NOT SEEN. The ring of 2026-11-20 was committed on the 24th and never deployed to the
+app: lightseed.online still serves the build of 2026-11-19 (its index's `Last-Modified`), and
+that bundle carries the quotes' words and no word of a featured video. And where it was built,
+it was one link under the footer links, not a list beside the quotes.
+
+WHAT CHANGED. A community carries a list, `featuredVideos`, in place of the one link
+`featuredVideo` (which no released shell could write, and no code reads any more).
+`domain/featuredVideo` keeps its law — a link is read into a known house and an id, and the
+player address is built from those two alone — and grows two hands: `featuredVideosOf` (every
+link it can read, in the keeper's order, each video once, at most `FEATURED_VIDEOS_MAX` = 12)
+and `featuredVideoLinks` (what the editor stores, and how it reads the store back: text rows
+only, trimmed, none empty, the same cap; a link the law cannot read is kept, so the editor can
+name it beside its row).
+
+On the home page the card, the arrows and the dots of the reflections became `CarouselFrame`,
+and `VideoCarousel` is that same frame holding films. One player stands at a time — only the
+shown video has a frame — and the films never advance by themselves, since the page cannot know
+one is playing. From the `md` width the two cards share the row, quotes left, films right, each
+centring what it holds at the taller one's height; below it they stack, the films ABOVE the
+words (the ring of -20 had the words first). On the Appearance tab the two lists stand side by
+side from the `lg` width, each with its rows, its remove and its add; a row the law cannot read
+turns red and says why; at twelve rows the add button is gone.
+
+The video rows follow the store only when the store says something the rows do not
+(`useCommunityEditing`): an empty row is a link not yet written, and laying the stored list
+back after every save would close it under the hand.
+
+Plain contract. Guaranteed: no stored text chooses a frame's origin, path or parameters; the
+face shows at most twelve videos, each once, and passes over what it cannot read; with no
+readable video the quote carousel keeps the whole row at the height it had
+(`tests/featuredVideo.test.ts`, `tests/autosave.test.ts`; the gate green at 1501 tests). Walked
+in a browser on a page mounting the two carousels and the Appearance section with no backend:
+at 1510 px two cards of 604 × 383 with 10 px between their inner arrows; at 388 px the films
+above the words and no sideways scroll; the arrows and dots stepping YouTube, Vimeo, YouTube
+and round again with one frame in the page; a stranger's link named in red and left off the
+home; the add button gone at twelve; with every row removed, one card of 1248 × 334 — the
+height the quotes had before. Both soils: the field is plain data on the community record,
+written through `updateCommunity` by the hands that may already edit a community; no rule,
+migration or command was changed and none knows the field by name.
+
+Not guaranteed, not walked: the real home page under a host community; the editor under a
+signed-in keeper with the autosave writing to either store; the rows' reconcile under a landing
+save (reasoned, not run); the dark theme and a right-to-left tongue; the independent node.
+Neither store checks the value or the cap — a hand outside the shell may store any text or
+more than twelve rows; the reading law stands between that and the page, and the editor reads
+such a field as the rows it can hold, so the next edit of the list writes it clean. Whether a
+video exists, is public or allows embedding stays the provider's answer.
+
+Named and not mended: the quote rows are not reconciled with the store at all — they adopt it
+only when the tab is mounted (older than this ring). A visitor's browser still contacts the
+provider of the shown video before any consent, and the starter privacy text still does not
+say so. The shared row is taller than the quotes alone (383 against 334 at that width), because
+the film keeps 16:9 at half the row. A swipe steps the quotes and not the films: a touch on a
+player belongs to the player. The videos stand only where the quote carousel stands (signed
+out, or signed in with no events); a custom landing does not show them. Nothing here is
+deployed.

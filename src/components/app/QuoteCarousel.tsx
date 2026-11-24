@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavArrow, NAV_ARROW_PREV_X, NAV_ARROW_NEXT_X } from '../ui/NavArrow';
+import { CarouselFrame } from './CarouselFrame';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 // A responsive, full-width text carousel of reflections — shown to signed-out visitors in place
 // of the home/observatory cards. Auto-advances, but pauses on hover/focus, honours
 // prefers-reduced-motion, supports keyboard (arrows/dots), and swipe on touch. Kept compact so
-// the hero + footer fit one laptop viewport.
+// the hero + footer fit one laptop viewport. The card, its arrows and its dots are CarouselFrame,
+// shared with the featured videos that may stand beside it.
 export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[]; intervalMs?: number }) => {
   const { t } = useLanguage();
   const [i, setI] = useState(0);
@@ -26,10 +27,15 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
   const long = q.length > 160;
 
   return (
-    <section
-      aria-roledescription="carousel"
-      aria-label={t('reflections_aria')}
-      className="relative w-full rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-8 py-5 shadow-sm sm:px-10 sm:py-16 dark:border-emerald-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-sky-950/60 dark:shadow-none"
+    <CarouselFrame
+      count={quotes.length}
+      index={i}
+      onGo={go}
+      label={t('reflections_aria')}
+      prevLabel={t('reflection_prev')}
+      nextLabel={t('reflection_next')}
+      dotLabel={n => t('reflection_n').replace('{n}', String(n))}
+      className="px-8 py-5 sm:px-10 sm:py-16"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -44,7 +50,7 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
     >
       {/* Compact on mobile so the whole hero (light path + carousel + cards + footer) fits one
           screen; the text size is FLUID — it scales with the viewport via clamp(). */}
-      <div aria-live="polite" className="mx-auto flex h-[clamp(3.5rem,14vh,7rem)] max-w-3xl items-center justify-center overflow-hidden sm:h-[clamp(5rem,24vh,11rem)]">
+      <div aria-live="polite" className="mx-auto flex h-[clamp(3.5rem,14vh,7rem)] w-full max-w-3xl shrink-0 items-center justify-center overflow-hidden sm:h-[clamp(5rem,24vh,11rem)]">
         <p
           key={i}
           dir="auto"
@@ -54,20 +60,6 @@ export const QuoteCarousel = ({ quotes, intervalMs = 8000 }: { quotes: string[];
           {q}
         </p>
       </div>
-
-      {quotes.length > 1 && (
-        <>
-          <NavArrow dir="left" label={t('reflection_prev')} onClick={() => go(i - 1)} pos={NAV_ARROW_PREV_X} />
-          <NavArrow dir="right" label={t('reflection_next')} onClick={() => go(i + 1)} pos={NAV_ARROW_NEXT_X} />
-
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:mt-5">
-            {quotes.map((_, n) => (
-              <button key={n} onClick={() => go(n)} aria-label={t('reflection_n').replace('{n}', String(n + 1))} aria-current={n === i}
-                className={`h-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${n === i ? 'w-6 bg-emerald-600 dark:bg-emerald-400' : 'w-2 bg-emerald-200 hover:bg-emerald-300 dark:bg-emerald-800 dark:hover:bg-emerald-700'}`} />
-            ))}
-          </div>
-        </>
-      )}
-    </section>
+    </CarouselFrame>
   );
 };

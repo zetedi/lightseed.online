@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { featuredVideoOf, featuredVideoProblem } from '../src/domain/featuredVideo';
+import { FEATURED_VIDEOS_MAX, featuredVideoLinks, featuredVideoOf, featuredVideoProblem, featuredVideosOf } from '../src/domain/featuredVideo';
 import { DOMAIN_KEYS } from '../src/domain/words';
 
 const ID = 'dQw4w9WgXcQ';
@@ -72,5 +72,51 @@ describe('what a keeper can fix', () => {
     expect(featuredVideoProblem('https://example.org/film')).toBe('video_not_known');
     expect(featuredVideoProblem('youtu')).toBe('video_not_known');
     expect(DOMAIN_KEYS).toContain('video_not_known');
+  });
+});
+
+// Eleven-character ids of YouTube's own shape, each different.
+const idOf = (n: number) => `video${String(n).padStart(6, '0')}`;
+
+describe('a list of featured videos', () => {
+  it('reads every link it can, in the keeper\'s order, and passes over the rest', () => {
+    const list = featuredVideosOf([`https://youtu.be/${ID}`, 'https://example.org/film', '', 'https://vimeo.com/76979871']);
+    expect(list.map(v => `${v.house}:${v.id}`)).toEqual([`youtube:${ID}`, 'vimeo:76979871']);
+    expect(list[0].embedUrl).toBe(YT_EMBED);
+  });
+
+  it('shows one video once, however many ways it was pasted', () => {
+    expect(featuredVideosOf([`https://youtu.be/${ID}`, `https://www.youtube.com/watch?v=${ID}&t=9s`, `https://www.youtube.com/shorts/${ID}`])).toHaveLength(1);
+  });
+
+  it('answers an empty list for anything that is not a list of links', () => {
+    for (const not of [undefined, null, '', `https://youtu.be/${ID}`, 7, {}, { 0: `https://youtu.be/${ID}` }]) expect(featuredVideosOf(not), String(not)).toEqual([]);
+    expect(featuredVideosOf([null, 7, {}, [`https://youtu.be/${ID}`]])).toEqual([]);
+  });
+
+  it('never shows more than the cap, and counts only what it can read', () => {
+    const many = Array.from({ length: FEATURED_VIDEOS_MAX + 5 }, (_, n) => `https://youtu.be/${idOf(n)}`);
+    expect(featuredVideosOf(many)).toHaveLength(FEATURED_VIDEOS_MAX);
+    // Unreadable rows before the readable ones do not use the cap up.
+    const strangers = Array.from({ length: FEATURED_VIDEOS_MAX }, () => 'https://example.org/film');
+    expect(featuredVideosOf([...strangers, `https://youtu.be/${ID}`]).map(v => v.id)).toEqual([ID]);
+  });
+});
+
+describe('what a hand stores from its rows', () => {
+  it('trims each link, drops empty rows, keeps the order and the cap', () => {
+    expect(featuredVideoLinks([`  https://youtu.be/${ID} `, '', '   ', 'https://vimeo.com/76979871'])).toEqual([`https://youtu.be/${ID}`, 'https://vimeo.com/76979871']);
+    expect(featuredVideoLinks([])).toEqual([]);
+    expect(featuredVideoLinks(Array.from({ length: FEATURED_VIDEOS_MAX + 3 }, (_, n) => `https://youtu.be/${idOf(n)}`))).toHaveLength(FEATURED_VIDEOS_MAX);
+  });
+
+  it('reads no rows out of what is not a list of text', () => {
+    for (const not of [undefined, null, '', `https://youtu.be/${ID}`, 7, {}]) expect(featuredVideoLinks(not), String(not)).toEqual([]);
+    expect(featuredVideoLinks([null, 7, {}, ` https://youtu.be/${ID}`])).toEqual([`https://youtu.be/${ID}`]);
+  });
+
+  it('keeps a link the law cannot read, so the editor can name it', () => {
+    expect(featuredVideoLinks(['https://example.org/film'])).toEqual(['https://example.org/film']);
+    expect(featuredVideosOf(featuredVideoLinks(['https://example.org/film']))).toEqual([]);
   });
 });

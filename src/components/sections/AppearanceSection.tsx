@@ -8,10 +8,10 @@ import { AppearanceEditor } from '../appearance/AppearanceEditor';
 import { AutosaveMark } from '../ui/AutosaveMark';
 import type { AutosaveState } from '../../domain/autosave';
 import { SECTION_BREAK } from '../ui/SettingRow';
-import { featuredVideoProblem } from '../../domain/featuredVideo';
+import { FEATURED_VIDEOS_MAX, featuredVideoProblem } from '../../domain/featuredVideo';
 
 // Being-generic appearance section — how any being presents itself (Indra's net): name,
-// logo, hero, gallery, theme, footer links and carousel quotes. The section is purely
+// logo, hero, gallery, theme, footer links, carousel quotes and featured videos. The section is purely
 // presentational: every edited field is part of the owner's shared Save, so all draft state
 // stays in the owner's shell and arrives via props. CommunityAppearance is a thin wrapper
 // over this. (The personal ProfileAppearance still persists per-field on its own with a
@@ -42,9 +42,10 @@ interface AppearanceSectionProps {
   uploadingImage: boolean;
   social: AppearanceSocialLinks;
   onSocialChange: React.Dispatch<React.SetStateAction<AppearanceSocialLinks>>;
-  // A featured video beside the links (domain/featuredVideo) — shown only where the owner binds it.
-  featuredVideo?: string;
-  onFeaturedVideoChange?: (value: string) => void;
+  // Featured videos beside the quotes (domain/featuredVideo) — the list is offered only where
+  // the owner binds it; rows are links as pasted, an empty row a link not yet written.
+  featuredVideos?: string[];
+  onFeaturedVideosChange?: React.Dispatch<React.SetStateAction<string[]>>;
   carouselQuotes: string[];
   onCarouselQuotesChange: React.Dispatch<React.SetStateAction<string[]>>;
   // Heading over the footer links (the owner names its own anatomy, e.g. "Community links").
@@ -58,7 +59,7 @@ interface AppearanceSectionProps {
   autosave?: AutosaveState;
 }
 
-// Appearance section — brand, logo, imagery, theme, footer links and carousel quotes.
+// Appearance section — brand, logo, imagery, theme, footer links, carousel quotes, featured videos.
 export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   name,
   onNameChange,
@@ -79,8 +80,8 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   uploadingImage,
   social,
   onSocialChange,
-  featuredVideo = '',
-  onFeaturedVideoChange,
+  featuredVideos = [],
+  onFeaturedVideosChange,
   carouselQuotes,
   onCarouselQuotesChange,
   linksTitle,
@@ -91,7 +92,6 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   autosave = 'idle',
 }) => {
   const { t } = useLanguage();
-  const videoProblem = featuredVideoProblem(featuredVideo);
 
   return (
     <div>
@@ -149,29 +149,51 @@ export const AppearanceSection: React.FC<AppearanceSectionProps> = ({
             <input value={social.website || ''} onChange={e => onSocialChange(s => ({ ...s, website: e.target.value }))} placeholder="example.com" className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700" />
           </label>
         </div>
-        {/* The featured video — one link beside the links; the home carousel gives it half the row. */}
-        {onFeaturedVideoChange && (
-          <label className="mt-3 block">
-            <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">{t('featured_video')}</span>
-            <input value={featuredVideo} onChange={e => onFeaturedVideoChange(e.target.value)} inputMode="url" placeholder="https://youtu.be/…" aria-invalid={!!videoProblem} aria-describedby="featured-video-note"
-                   className={`h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 ${videoProblem ? 'border-red-300 focus:ring-red-400 dark:border-red-800' : 'border-slate-200 focus:ring-emerald-500 dark:border-slate-700'}`} />
-            <span id="featured-video-note" className={`mt-1 block text-xs ${videoProblem ? 'text-red-600 dark:text-red-400' : 'text-slate-500'}`}>{videoProblem ? t(videoProblem) : t('featured_video_note')}</span>
-          </label>
-        )}
       </div>
 
-      {/* Home carousel quotes — reflections shown to signed-out visitors. */}
-      <div className={SECTION_BREAK}>
-        <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">{t('carousel_quotes')}</h4>
-        <p className="mb-3 text-xs text-slate-500">{t('carousel_quotes_note')}</p>
-        <div className="space-y-2">
-          {carouselQuotes.map((q, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <textarea value={q} onChange={e => onCarouselQuotesChange(prev => prev.map((x, j) => j === i ? e.target.value : x))} rows={2} placeholder={t('reflection_ph')} className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700" />
-              <button type="button" onClick={() => onCarouselQuotesChange(prev => prev.filter((_, j) => j !== i))} className="mt-1 shrink-0 rounded-full p-1.5 text-red-500 transition-colors hover:bg-red-50" title={t('remove')}><Icons.Close /></button>
+      {/* The home row, as the visitor meets it: the quotes, and beside them the featured videos
+          where the owner binds them — two lists edited the same way. On a narrow screen the
+          videos stand above the quotes, as they do on the home page. */}
+      <div className={`${SECTION_BREAK} ${onFeaturedVideosChange ? 'grid gap-8 lg:grid-cols-2' : ''}`}>
+        {/* Featured videos — a carousel of films beside the quotes; with none, nothing changes. */}
+        {onFeaturedVideosChange && (
+          <div className="min-w-0 lg:order-last">
+            <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">{t('featured_videos')}</h4>
+            <p className="mb-3 text-xs text-slate-500">{t('featured_videos_note')}</p>
+            <div className="space-y-2">
+              {featuredVideos.map((link, i) => {
+                const problem = featuredVideoProblem(link);
+                return (
+                  <div key={i}>
+                    <div className="flex items-center gap-2">
+                      <input value={link} onChange={e => onFeaturedVideosChange(prev => prev.map((x, j) => j === i ? e.target.value : x))} inputMode="url" placeholder="https://youtu.be/…" aria-label={t('video_n').replace('{n}', String(i + 1))} aria-invalid={!!problem} aria-describedby={problem ? `featured-video-${i}-problem` : undefined}
+                             className={`h-10 min-w-0 flex-1 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 ${problem ? 'border-red-300 focus:ring-red-400 dark:border-red-800' : 'border-slate-200 focus:ring-emerald-500 dark:border-slate-700'}`} />
+                      <button type="button" onClick={() => onFeaturedVideosChange(prev => prev.filter((_, j) => j !== i))} className="shrink-0 rounded-full p-1.5 text-red-500 transition-colors hover:bg-red-50" title={t('remove')}><Icons.Close /></button>
+                    </div>
+                    {problem && <p id={`featured-video-${i}-problem`} className="mt-1 text-xs text-red-600 dark:text-red-400">{t(problem)}</p>}
+                  </div>
+                );
+              })}
+              {featuredVideos.length < FEATURED_VIDEOS_MAX && (
+                <button type="button" onClick={() => onFeaturedVideosChange(prev => [...prev, ''])} className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:border-slate-700"><Icons.Plus /> {t('add_video')}</button>
+              )}
             </div>
-          ))}
-          <button type="button" onClick={() => onCarouselQuotesChange(prev => [...prev, ''])} className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:border-slate-700"><Icons.Plus /> {t('add_quote')}</button>
+          </div>
+        )}
+
+        {/* Home carousel quotes — reflections shown to signed-out visitors. */}
+        <div className="min-w-0">
+          <h4 className="mb-1 text-sm font-bold uppercase tracking-wider text-slate-400">{t('carousel_quotes')}</h4>
+          <p className="mb-3 text-xs text-slate-500">{t('carousel_quotes_note')}</p>
+          <div className="space-y-2">
+            {carouselQuotes.map((q, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <textarea value={q} onChange={e => onCarouselQuotesChange(prev => prev.map((x, j) => j === i ? e.target.value : x))} rows={2} placeholder={t('reflection_ph')} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700" />
+                <button type="button" onClick={() => onCarouselQuotesChange(prev => prev.filter((_, j) => j !== i))} className="mt-1 shrink-0 rounded-full p-1.5 text-red-500 transition-colors hover:bg-red-50" title={t('remove')}><Icons.Close /></button>
+              </div>
+            ))}
+            <button type="button" onClick={() => onCarouselQuotesChange(prev => [...prev, ''])} className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-50 dark:text-slate-300 dark:border-slate-700"><Icons.Plus /> {t('add_quote')}</button>
+          </div>
         </div>
       </div>
     </div>

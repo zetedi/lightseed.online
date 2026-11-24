@@ -1,9 +1,10 @@
 import type { DomainKey } from './words';
 import { normalizeWebLink } from './webLink';
 
-// A FEATURED VIDEO (ring 2026-11-20). A community may name one video beside its footer links;
-// where it stands, the home carousel gives it half the row. A keeper pastes a link as a person
-// knows it (a watch page, a share link, a short); the face needs a player address.
+// FEATURED VIDEOS (rings 2026-11-20 and -24). A community may name a short list of videos beside
+// its home quotes; where one stands, the quote carousel gives a second carousel half the row. A
+// keeper pastes each link as a person knows it (a watch page, a share link, a short); the face
+// needs a player address.
 //
 // The law: what is stored is never handed to a frame. A link is read into a KNOWN house and a
 // video id of that house's own shape, and the player address is built here from those two
@@ -11,10 +12,16 @@ import { normalizeWebLink } from './webLink';
 // to any other house is not a featured video, however much it looks like a film.
 //
 // Plain contract — guaranteed: featuredVideoOf answers a player address on
-// www.youtube-nocookie.com or player.vimeo.com, or null; featuredVideoProblem answers a DOMAIN
-// key a person can fix (empty is not a fault). Enforced by tests/featuredVideo.test.ts. NOT
-// guaranteed: that the video exists, is public, or allows embedding — that is the provider's
+// www.youtube-nocookie.com or player.vimeo.com, or null; featuredVideosOf answers at most
+// FEATURED_VIDEOS_MAX of them, in the keeper's order, each video once, and an empty list for
+// anything that is not a list; featuredVideoLinks is what a hand may store and what the editor
+// reads back (text rows only, trimmed, none empty, the same cap); featuredVideoProblem answers
+// a DOMAIN key a person can fix (empty is not a fault). Enforced by tests/featuredVideo.test.ts.
+// NOT guaranteed: that a video exists, is public, or allows embedding — that is the provider's
 // answer, given only in the frame.
+
+// A carousel a visitor can walk, not a channel: twelve, like the faces of a node.
+export const FEATURED_VIDEOS_MAX = 12;
 
 export type VideoHouse = 'youtube' | 'vimeo';
 
@@ -70,3 +77,31 @@ export const featuredVideoOf = (raw: string | null | undefined): FeaturedVideo |
 // What a person can fix, in their own tongue. Empty is not a fault: the video is optional.
 export const featuredVideoProblem = (raw: string | null | undefined): DomainKey | null =>
   !String(raw ?? '').trim() || featuredVideoOf(raw) ? null : 'video_not_known';
+
+// The list a face may show: every link the law can read, in the keeper's order, each video
+// once, never more than the cap. What it cannot read is passed over, not shown broken.
+export const featuredVideosOf = (raw: unknown): FeaturedVideo[] => {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: FeaturedVideo[] = [];
+  for (const link of raw) {
+    if (out.length >= FEATURED_VIDEOS_MAX) break;
+    const video = typeof link === 'string' ? featuredVideoOf(link) : null;
+    if (!video || seen.has(`${video.house}:${video.id}`)) continue;
+    seen.add(`${video.house}:${video.id}`);
+    out.push(video);
+  }
+  return out;
+};
+
+// What a hand stores from the rows it edits — and how the editor reads what is stored, since
+// neither store checks the field: each link as pasted, trimmed; an empty row is not a link;
+// what is not text is not a row, and what is not a list has no rows; never more rows than the
+// cap. A link the law cannot read is KEPT — the editor names it beside its row, and deleting a
+// keeper's typing unasked would hide the fault.
+export const featuredVideoLinks = (rows: unknown): string[] =>
+  !Array.isArray(rows) ? [] : rows
+    .filter((r): r is string => typeof r === 'string')
+    .map(r => r.trim())
+    .filter(Boolean)
+    .slice(0, FEATURED_VIDEOS_MAX);

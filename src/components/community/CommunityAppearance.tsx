@@ -39,9 +39,9 @@ interface CommunityAppearanceProps {
   uploadingImage: boolean;
   editSocial: SocialLinks;
   onSocialChange: React.Dispatch<React.SetStateAction<SocialLinks>>;
-  // The featured video (domain/featuredVideo): one link beside the footer links.
-  editFeaturedVideo: string;
-  onFeaturedVideoChange: (value: string) => void;
+  // The featured videos (domain/featuredVideo): a list of links beside the carousel quotes.
+  editFeaturedVideos: string[];
+  onFeaturedVideosChange: React.Dispatch<React.SetStateAction<string[]>>;
   editCarouselQuotes: string[];
   onCarouselQuotesChange: React.Dispatch<React.SetStateAction<string[]>>;
   // Custom landing — the org's own full-screen page on its domain (see CustomLandingPage).
@@ -84,8 +84,8 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
   uploadingImage,
   editSocial,
   onSocialChange,
-  editFeaturedVideo,
-  onFeaturedVideoChange,
+  editFeaturedVideos,
+  onFeaturedVideosChange,
   editCarouselQuotes,
   onCarouselQuotesChange,
   editCustomLanding,
@@ -131,8 +131,8 @@ export const CommunityAppearance: React.FC<CommunityAppearanceProps> = ({
       uploadingImage={uploadingImage}
       social={editSocial}
       onSocialChange={onSocialChange}
-      featuredVideo={editFeaturedVideo}
-      onFeaturedVideoChange={onFeaturedVideoChange}
+      featuredVideos={editFeaturedVideos}
+      onFeaturedVideosChange={onFeaturedVideosChange}
       carouselQuotes={editCarouselQuotes}
       onCarouselQuotesChange={onCarouselQuotesChange}
       linksTitle="Community links"

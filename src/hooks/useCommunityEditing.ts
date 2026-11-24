@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateCommunity, uploadImage, releasePicture, deleteCommunity, getCommunityByDomain } from '@backend';
 import type { Community } from '../types';
-import { COMMUNITY_APPEARANCE_FIELDS, reconcile } from '../domain/autosave';
+import { COMMUNITY_APPEARANCE_FIELDS, reconcile, sameValue } from '../domain/autosave';
+import { featuredVideoLinks } from '../domain/featuredVideo';
 import { mailWordsOf } from '../domain/mailVoice';
 import { VISION_KEY, papersOf, visionOf, withVision, type Paper } from '../domain/papers';
 import { normalizeTheme } from '../utils/theme';
@@ -28,7 +29,7 @@ export const useCommunityEditing = (
   // Vision tab and saved with it — the vision is papers[0], the rest follow.
   const [editPapers, setEditPapers] = useState<Paper[]>(() => papersOf(community.papers).filter(p => p.key !== VISION_KEY));
   const [editSocial, setEditSocial] = useState<{ instagram?: string; telegram?: string; whatsapp?: string; website?: string }>(community.socialLinks || {});
-  const [editFeaturedVideo, setEditFeaturedVideo] = useState(community.featuredVideo || '');
+  const [editFeaturedVideos, setEditFeaturedVideos] = useState<string[]>(() => featuredVideoLinks(community.featuredVideos));
   const [editCarouselQuotes, setEditCarouselQuotes] = useState<string[]>(community.carouselQuotes || []);
   const [editCustomLanding, setEditCustomLanding] = useState(community.customLanding === true);
   const [editShowStats, setEditShowStats] = useState(community.showStats === true);
@@ -60,14 +61,14 @@ export const useCommunityEditing = (
     heroImageUrl,
     imageUrls,
     socialLinks: editSocial,
-    featuredVideo: editFeaturedVideo.trim(),
+    featuredVideos: featuredVideoLinks(editFeaturedVideos),
     carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
     customLanding: editCustomLanding,
     showStats: editShowStats,
     landingPages: editLandingPages.filter(p => p.label.trim()),
     paletteReach: editPaletteReach,
     mail: mailWordsOf(editMail),
-  }), [editName, editTheme, logoUrl, heroImageUrl, imageUrls, editSocial, editFeaturedVideo, editCarouselQuotes, editCustomLanding, editShowStats, editLandingPages, editPaletteReach, editMail]);
+  }), [editName, editTheme, logoUrl, heroImageUrl, imageUrls, editSocial, editFeaturedVideos, editCarouselQuotes, editCustomLanding, editShowStats, editLandingPages, editPaletteReach, editMail]);
   const appearancePersisted = useMemo(() => ({
     name: community.name,
     theme: normalizeTheme(community.theme),
@@ -75,7 +76,7 @@ export const useCommunityEditing = (
     heroImageUrl: community.heroImageUrl || '',
     imageUrls: community.imageUrls || [],
     socialLinks: community.socialLinks || {},
-    featuredVideo: community.featuredVideo || '',
+    featuredVideos: featuredVideoLinks(community.featuredVideos),
     carouselQuotes: community.carouselQuotes || [],
     customLanding: community.customLanding === true,
     showStats: community.showStats === true,
@@ -107,6 +108,7 @@ export const useCommunityEditing = (
   // adopts everything.
   const adoptedRef = useRef<{ id: string; fields: typeof appearancePersisted & { vision: string; papers: Paper[] } } | null>(null);
   const imageUrlsKey = (community.imageUrls || []).join(',');
+  const featuredVideosKey = featuredVideoLinks(community.featuredVideos).join('\n');
   useEffect(() => {
     const fresh = { ...appearancePersisted, vision: visionOf(community), papers: papersOf(community.papers).filter(p => p.key !== VISION_KEY) };
     const keys = [...COMMUNITY_APPEARANCE_FIELDS, 'vision', 'papers'] as const;
@@ -119,7 +121,10 @@ export const useCommunityEditing = (
     setEditVision(next.vision);
     setEditPapers(next.papers);
     setEditSocial(next.socialLinks);
-    setEditFeaturedVideo(next.featuredVideo);
+    // The video rows follow the store only when it says something this hand's rows do not: a
+    // row still empty is a link not yet written, and laying the stored list back over the rows
+    // after every save would close it under the hand.
+    if (!sameValue(next.featuredVideos, draft.featuredVideos)) setEditFeaturedVideos(next.featuredVideos);
     setEditTheme(normalizeTheme(next.theme));
     setLogoUrl(next.logoUrl);
     setHeroImageUrl(next.heroImageUrl);
@@ -129,8 +134,8 @@ export const useCommunityEditing = (
     setEditLandingPages(next.landingPages);
     setEditPaletteReach(next.paletteReach);
     setEditMail({ greeting: next.mail.greeting || '', signature: next.mail.signature || '', footer: next.mail.footer || '' });
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey); object identities change per fetch and would re-run this needlessly; the draft is read, not depended on
-  }, [community.id, community.name, community.papers, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, community.paletteReach, community.mail, community.featuredVideo, imageUrlsKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitive fields (arrays via imageUrlsKey, featuredVideosKey); object identities change per fetch and would re-run this needlessly; the draft is read, not depended on
+  }, [community.id, community.name, community.papers, community.logoUrl, community.heroImageUrl, community.theme, community.customLanding, community.showStats, community.paletteReach, community.mail, featuredVideosKey, imageUrlsKey]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -144,7 +149,7 @@ export const useCommunityEditing = (
         logoUrl,
         heroImageUrl,
         socialLinks: editSocial,
-        featuredVideo: editFeaturedVideo.trim(),
+        featuredVideos: featuredVideoLinks(editFeaturedVideos),
         carouselQuotes: editCarouselQuotes.map(q => q.trim()).filter(Boolean),
         customLanding: editCustomLanding,
         showStats: editShowStats,
@@ -245,7 +250,7 @@ export const useCommunityEditing = (
 
   return {
     editName, setEditName, editVision, setEditVision, editPapers, setEditPapers,
-    editSocial, setEditSocial, editFeaturedVideo, setEditFeaturedVideo, editCarouselQuotes, setEditCarouselQuotes,
+    editSocial, setEditSocial, editFeaturedVideos, setEditFeaturedVideos, editCarouselQuotes, setEditCarouselQuotes,
     editCustomLanding, setEditCustomLanding, editShowStats, setEditShowStats,
     editLandingPages, setEditLandingPages, editTheme, setEditTheme,
     editPaletteReach, setEditPaletteReach, editMail, setEditMail,

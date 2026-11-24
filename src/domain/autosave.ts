@@ -44,7 +44,7 @@ export const reconcile = <T extends object>(adopted: T, fresh: T, draft: T, keys
 
 // The appearance a community edits live — the fields the Appearance tab may change.
 export const COMMUNITY_APPEARANCE_FIELDS = [
-  'name', 'theme', 'logoUrl', 'heroImageUrl', 'imageUrls', 'socialLinks', 'featuredVideo', 'carouselQuotes',
+  'name', 'theme', 'logoUrl', 'heroImageUrl', 'imageUrls', 'socialLinks', 'featuredVideos', 'carouselQuotes',
   'customLanding', 'showStats', 'landingPages', 'paletteReach', 'mail',
 ] as const;
 

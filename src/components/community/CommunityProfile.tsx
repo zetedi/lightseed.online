@@ -103,7 +103,7 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
   // The face draws; four hooks hold its hands (hooks/useCommunity*, useCircleForming).
   const {
     editName, setEditName, editVision, setEditVision, editPapers, setEditPapers,
-    editSocial, setEditSocial, editFeaturedVideo, setEditFeaturedVideo, editCarouselQuotes, setEditCarouselQuotes,
+    editSocial, setEditSocial, editFeaturedVideos, setEditFeaturedVideos, editCarouselQuotes, setEditCarouselQuotes,
     editCustomLanding, setEditCustomLanding, editShowStats, setEditShowStats,
     editLandingPages, setEditLandingPages, editTheme, setEditTheme,
     editPaletteReach, setEditPaletteReach, editMail, setEditMail,
@@ -289,8 +289,8 @@ export const CommunityProfile: React.FC<CommunityProfileProps> = ({
             uploadingImage={isUploadingImage}
             editSocial={editSocial}
             onSocialChange={setEditSocial}
-            editFeaturedVideo={editFeaturedVideo}
-            onFeaturedVideoChange={setEditFeaturedVideo}
+            editFeaturedVideos={editFeaturedVideos}
+            onFeaturedVideosChange={setEditFeaturedVideos}
             editCarouselQuotes={editCarouselQuotes}
             onCarouselQuotesChange={setEditCarouselQuotes}
             editCustomLanding={editCustomLanding}

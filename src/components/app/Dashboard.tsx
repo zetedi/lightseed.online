@@ -10,8 +10,8 @@ import { PlantCTA } from './PlantCTA';
 import { Icons } from '../ui/Icons';
 import { ScrollChevrons } from '../ui/ScrollChevrons';
 import { QuoteCarousel } from './QuoteCarousel';
-import { FeaturedVideoFrame } from './FeaturedVideoFrame';
-import { featuredVideoOf } from '../../domain/featuredVideo';
+import { VideoCarousel } from './VideoCarousel';
+import { featuredVideosOf } from '../../domain/featuredVideo';
 import { quotesFor } from '../../content/quotes';
 import { useScrollEdges } from '../../hooks/useScrollEdges';
 import { MiniForestMap, type MapPoint } from '../forest/MiniForestMap';
@@ -143,7 +143,7 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
 
 
     const carouselQuotes = hostCommunity?.carouselQuotes?.length ? hostCommunity.carouselQuotes : quotesFor(language);
-    const featuredVideo = featuredVideoOf(hostCommunity?.featuredVideo);
+    const featuredVideos = featuredVideosOf(hostCommunity?.featuredVideos);
 
     return (
         <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -154,13 +154,16 @@ export const Dashboard = ({ stats, hostCommunity, events, onViewEvent, onViewCom
                 in place of the Home + Observatory cards. */}
             {/* …and for a signed-in reader with NO events to show, the same carousel stands where
                 the events banner would (Zoltán, 2026-09-30): the hero never goes quiet. */}
-            {/* A FEATURED VIDEO (ring 2026-11-20): where the host community names one the law can
-                read, the carousel keeps half the row and the film takes the other; on a narrow
-                screen they stack, the words first. */}
-            {(!lightseed || !events || events.length === 0) && (featuredVideo ? (
-                <div className="grid gap-3 sm:gap-6 md:grid-cols-2">
+            {/* FEATURED VIDEOS (rings 2026-11-20, -24): where the host community names videos the
+                law can read, the quotes keep half the row and a carousel of the films takes the
+                other, the same card beside it; on a narrow screen they stack, the films above
+                the words. With none, the quotes keep the whole row as before. The row's gap is
+                wider than the page's, so the two cards' inner arrows, each hanging over its own
+                border, do not meet in it. */}
+            {(!lightseed || !events || events.length === 0) && (featuredVideos.length ? (
+                <div className="grid gap-3 sm:gap-6 md:grid-cols-2 md:gap-10">
+                    <VideoCarousel videos={featuredVideos} className="md:order-last" />
                     <QuoteCarousel quotes={carouselQuotes} />
-                    <FeaturedVideoFrame video={featuredVideo} />
                 </div>
             ) : <QuoteCarousel quotes={carouselQuotes} />)}
 
